@@ -1,0 +1,247 @@
+.sysml-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 8px;
+}
+.sysml-stage {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 300px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--paper);
+}
+.sysml-stage > .md {
+  height: 100%;
+}
+.sysml-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 16px;
+}
+.sysml-view-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  max-width: 370px;
+  pointer-events: auto;
+}
+.sysml-view-title strong {
+  font-size: 18px;
+  font-weight: 600;
+  flex-shrink: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sysml-view-title span {
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sysml-picker {
+  min-width: 120px;
+  max-width: 280px;
+  pointer-events: auto;
+  margin: 0;
+}
+.sysml-picker select {
+  width: 100%;
+  padding: 5px 9px;
+  font: inherit;
+  color: var(--ink);
+  background: var(--card,#fff);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.sysml-exports,
+.sysml-export-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  pointer-events: auto;
+}
+.sysml-exports {
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card,#fff);
+}
+.sysml-exports button,
+.sysml-export-actions button {
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+.sysml-exports button:hover,
+.sysml-export-actions button:hover {
+  background: var(--hover);
+}
+.sysml-exports button:disabled {
+  opacity: .5;
+  cursor: wait;
+}
+.sysml-plantuml,
+.sysml-export-error {
+  position: absolute;
+  z-index: 4;
+  top: 58px;
+  right: 12px;
+  width: min(580px,calc(100% - 24px));
+  max-height: calc(100% - 72px);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  background: var(--paper);
+  box-shadow: 0 8px 24px #0002;
+  pointer-events: auto;
+}
+/* The panel is bounded by the whole diagram, not the toolbar's height. */
+.sysml-page .md-toolbar {
+  position: static;
+}
+.sysml-plantuml {
+  box-sizing: border-box;
+  width: min(860px, calc(100% - 24px));
+  height: calc(100% - 72px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  overflow: hidden;
+}
+.sysml-plantuml header,
+.sysml-plantuml > .sysml-export-actions {
+  flex: 0 0 auto;
+}
+.sysml-plantuml-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+.sysml-plantuml header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sysml-plantuml h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.sysml-plantuml header button {
+  border: 0;
+  background: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+.sysml-plantuml textarea {
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  height: auto;
+  resize: none;
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card,#fff);
+  font: 11px/1.5 var(--mono);
+  color: var(--ink);
+}
+.sysml-export-actions {
+  flex-wrap: wrap;
+}
+.sysml-export-actions span {
+  overflow-wrap: anywhere;
+}
+.sysml-export-actions span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.sysml-empty {
+  padding: 24px;
+  color: var(--muted);
+}
+.sysml-footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  flex: none;
+  padding: 0 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.sysml-footer .repo-version {
+  margin: 0;
+  padding: 0;
+  font-size: 11px;
+}
+.sysml-hint {
+  margin-left: auto;
+}
+.sysml-projection-note {
+  flex: none;
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--warn, #8a642a);
+}
+.sysml-diagnostics {
+  position: relative;
+}
+.sysml-diagnostics summary {
+  cursor: pointer;
+}
+.sysml-diagnostics ul {
+  position: absolute;
+  z-index: 5;
+  bottom: 24px;
+  left: 0;
+  width: min(600px,70vw);
+  max-height: 220px;
+  overflow: auto;
+  margin: 0;
+  padding: 16px 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 0 4px 18px #0002;
+}
+.sysml-diagnostics li + li {
+  margin-top: 8px;
+}
+@media (max-width:900px) {
+  .sysml-view-title {
+    max-width: 200px;
+  }
+  .sysml-view-title span,
+  .sysml-hint {
+    display: none;
+  }
+  .sysml-picker {
+    max-width: 220px;
+  }
+  .sysml-stage {
+    min-height: 360px;
+  }
+}

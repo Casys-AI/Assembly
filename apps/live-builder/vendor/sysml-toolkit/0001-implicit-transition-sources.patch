@@ -1,0 +1,1274 @@
+From f63b234e72fc634232e24c46a89487df442954f3 Mon Sep 17 00:00:00 2001
+From: Erwan Lee Pesle <erpesle@gmail.com>
+Date: Sun, 25 Oct 2026 15:57:36 +0800
+Subject: [PATCH] fix(model): resolve implicit transition sources and render
+ action branches
+
+---
+ crates/sysmlv2-model/src/json.rs              |  19 +-
+ crates/sysmlv2-model/src/json/behavior.rs     |  11 +-
+ .../src/json/dynamic_invocations.rs           |   9 +
+ crates/sysmlv2-model/src/json/implied.rs      |  52 +-
+ .../src/json/succession_endpoints.rs          | 669 +++++++++++++++---
+ crates/sysmlv2-viz/src/behavior.rs            |  48 +-
+ crates/sysmlv2-viz/src/graph.rs               |   7 +-
+ .../sysmlv2-viz/tests/transition_semantics.rs | 198 ++++++
+ crates/sysmlv2-viz/tests/viz.rs               |  22 +-
+ 9 files changed, 886 insertions(+), 149 deletions(-)
+ create mode 100644 crates/sysmlv2-viz/tests/transition_semantics.rs
+
+diff --git a/crates/sysmlv2-model/src/json.rs b/crates/sysmlv2-model/src/json.rs
+index 6f48391..ecfc567 100644
+--- a/crates/sysmlv2-model/src/json.rs
++++ b/crates/sysmlv2-model/src/json.rs
+@@ -17086,7 +17086,10 @@ impl ResolvedModel {
+             .map(|&r| (r, self.b.elements[r].ty))
+             .collect();
+         let mut parts = TransitionParts {
+-            source: None,
++            source: match self.d_transition_source(e) {
++                Some(derived::Reference::Element(source)) => Some(source),
++                _ => None,
++            },
+             target: None,
+             trigger: None,
+             effect: None,
+@@ -17098,9 +17101,6 @@ impl ResolvedModel {
+         };
+         for (rel, ty) in rels {
+             match ty {
+-                "Membership" if parts.source.is_none() => {
+-                    parts.source = self.prop_target(rel, "memberElement").map(ElementRef);
+-                }
+                 "TransitionFeatureMembership" => {
+                     let kind = self.b.elements[rel]
+                         .props
+@@ -17116,10 +17116,10 @@ impl ResolvedModel {
+                 }
+                 "OwningMembership" => {
+                     if let Some(succ) = self.rel_children(rel).first().copied() {
+-                        // A chain source (`first a.b`): the membership owns
+-                        // the synthesized chain feature and names it.
+-                        if parts.source.is_none()
+-                            && self.b.elements[succ].ty == "Feature"
++                        // Preserve the parts API's authored chain feature
++                        // identity (`first a.b`), including unresolved chains.
++                        // Lexical inference never replaces an explicit chain.
++                        if self.b.elements[succ].ty == "Feature"
+                             && self.b.elements[succ]
+                                 .owned_relationships
+                                 .iter()
+@@ -17196,7 +17196,8 @@ pub struct ConnectorEndTarget {
+ /// [`ResolvedModel::transition_parts`]).
+ #[derive(Clone, Debug)]
+ pub struct TransitionParts {
+-    /// The source state (`first S` / the leading shorthand name).
++    /// The source action/state, including a lexical implicit source. An
++    /// explicitly chained source retains its authored chain Feature identity.
+     pub source: Option<ElementRef>,
+     /// The target state (the transition succession's target end).
+     pub target: Option<ElementRef>,
+diff --git a/crates/sysmlv2-model/src/json/behavior.rs b/crates/sysmlv2-model/src/json/behavior.rs
+index 53df464..570e89e 100644
+--- a/crates/sysmlv2-model/src/json/behavior.rs
++++ b/crates/sysmlv2-model/src/json/behavior.rs
+@@ -73,6 +73,7 @@ impl ResolvedModel {
+     /// ActionUsage — the `first S` membership, or the owning membership of
+     /// a synthesized chain feature (`first a.b`).
+     pub(super) fn d_transition_source(&mut self, e: ElementRef) -> Option<Reference> {
++        self.ensure_implied();
+         self.ensure_by_id();
+         let memberships: Vec<ElementRef> = self
+             .d_owned_memberships(e)
+@@ -80,6 +81,12 @@ impl ResolvedModel {
+             .filter(|&m| !self.is_kind(m, "FeatureMembership"))
+             .collect();
+         for m in memberships {
++            if self.is_implied(m)
++                && (self.b.certify_materialized_static_prefix(&mut 0) != Some(true)
++                    || !self.b.static_chain_row_current(m.0))
++            {
++                continue;
++            }
+             let Some(member) = self.d_member_element(m) else {
+                 continue;
+             };
+@@ -89,7 +96,9 @@ impl ResolvedModel {
+                 outside => outside,
+             };
+             if let Some(t) = self.cast(target, "ActionUsage") {
+-                return Some(t);
++                // An explicit self-reference is invalid, not a request for
++                // lexical fallback; match the succession endpoint planner.
++                return (t != Reference::Element(e)).then_some(t);
+             }
+         }
+         None
+diff --git a/crates/sysmlv2-model/src/json/dynamic_invocations.rs b/crates/sysmlv2-model/src/json/dynamic_invocations.rs
+index 41ce9cf..d9c4af5 100644
+--- a/crates/sysmlv2-model/src/json/dynamic_invocations.rs
++++ b/crates/sysmlv2-model/src/json/dynamic_invocations.rs
+@@ -459,6 +459,7 @@ pub(super) fn prepare_with_workspace(
+     let mut candidates: Vec<_> = prefix
+         .rows
+         .iter()
++        .filter(|r| crate::metaclass::conforms(r.kind, "Specialization"))
+         .map(|r| (r.owner, (r.kind, r.source_key, r.target_key, r.target)))
+         .collect();
+     // The prepared library's own static rows, which a build from source has
+@@ -967,6 +968,14 @@ fn validate_fixed_prefix(
+         {
+             return Err(incomplete(steps));
+         }
++        if edge.kind == "Membership" {
++            let member = super::membership_evidence::member(b, raw, edge.owner, index, steps)
++                .ok_or_else(|| incomplete(steps))?;
++            if b.elements[member].id != edge.target {
++                return Err(Refusal::StaticMismatch);
++            }
++            continue;
++        }
+         type_relations::endpoint_with_carrier(
+             b,
+             edge.owner,
+diff --git a/crates/sysmlv2-model/src/json/implied.rs b/crates/sysmlv2-model/src/json/implied.rs
+index fd71b34..751f533 100644
+--- a/crates/sysmlv2-model/src/json/implied.rs
++++ b/crates/sysmlv2-model/src/json/implied.rs
+@@ -5130,6 +5130,25 @@ impl Builder {
+                 }
+             }
+         }
++        // Source Memberships are structural semantic rows, not specialization
++        // edges. Recompute from authored rows with the same bounded lexical
++        // planner as the succession endpoints; prepared library rows stay in
++        // their existing shared ownership prefix.
++        for (owner, target) in
++            super::succession_endpoints::transition_sources_from(self, own_from, &mut 0)
++                .unwrap_or_default()
++        {
++            planned.push((
++                owner,
++                (
++                    "Membership",
++                    "membershipOwningNamespace",
++                    "memberElement",
++                    self.elements[target].id,
++                ),
++                None,
++            ));
++        }
+         // Retain this producer's exact recipes for the immediately following
+         // tail transaction. Its positional table was computed from this same
+         // current static authority; no second whole-model positional run is
+@@ -5827,13 +5846,17 @@ impl Builder {
+             workspace,
+         )?;
+         planning_charge(&mut steps, self.elements.len())?;
+-        for element in &self.elements {
++        // Gather transitions in the scan already charged for static recipes.
++        // A prepared library carries its own materialized Memberships.
++        let own_from = self.own_rows_start();
++        let mut transitions = Vec::new();
++        for (i, element) in self.elements.iter().enumerate() {
+             planning_charge(&mut steps, element.owned_relationships.len())?;
++            if i >= own_from && self.is_authored(i) && element.ty == "TransitionUsage" {
++                transitions.push(i);
++            }
+         }
+         let owners = self.specialization_relation_owners();
+-        // A build on a library that carries its own materialized rows has
+-        // its own rows' recipes only, as it materializes them.
+-        let own_from = self.own_rows_start();
+         let mut rows = Vec::new();
+         for ((owner, edge), retained) in required.candidates.iter() {
+             planning_charge(&mut steps, 1)?;
+@@ -5898,6 +5921,27 @@ impl Builder {
+                 targets.push(row.target);
+             }
+         }
++        // Memberships belong to the physical static prefix but must never
++        // contribute owner→member edges to the specialization graph above.
++        let sources = if let Some(steps) = steps {
++            super::succession_endpoints::transition_sources(self, transitions, steps)?
++        } else {
++            super::succession_endpoints::transition_sources(self, transitions, &mut 0)
++                .unwrap_or_default()
++        };
++        for (owner, target) in sources {
++            rows.push(static_recipe(
++                self.elements[owner].id,
++                owner,
++                (
++                    "Membership",
++                    "membershipOwningNamespace",
++                    "memberElement",
++                    self.elements[target].id,
++                ),
++                None,
++            ));
++        }
+         Some(Arc::new(super::semantic_batch::StaticPrefix {
+             authored_end: self.explicit_len(),
+             rows,
+diff --git a/crates/sysmlv2-model/src/json/succession_endpoints.rs b/crates/sysmlv2-model/src/json/succession_endpoints.rs
+index 15d34fc..2e46423 100644
+--- a/crates/sysmlv2-model/src/json/succession_endpoints.rs
++++ b/crates/sysmlv2-model/src/json/succession_endpoints.rs
+@@ -3,11 +3,191 @@ use super::{Builder, membership_evidence, structural_index::StoredStructure};
+ use crate::metaclass::is_a;
+ use std::collections::{HashMap, hash_map::Entry};
+ 
++type Neighbors = HashMap<(usize, usize), (Option<usize>, Option<usize>)>;
++
+ fn charge(steps: &mut usize, amount: usize) -> Option<()> {
+     *steps = steps.saturating_add(amount);
+     (*steps <= crate::eval::MAX_STEPS).then_some(())
+ }
+ 
++/// The previous/next occurrence of each member, using the same lexical rule
++/// for successions and target transitions. Parameters and connectors do not
++/// advance the sequence; a message (a Flow without ends) does. Conditional
++/// transitions likewise leave the previous occurrence in place for the next branch.
++fn neighbors(
++    b: &Builder,
++    raw: &StoredStructure,
++    owner: usize,
++    steps: &mut usize,
++) -> Option<Neighbors> {
++    let mut members = Vec::new();
++    charge(steps, b.elements[owner].owned_relationships.len())?;
++    for &rel in &b.elements[owner].owned_relationships {
++        let relation = b.elements.get(rel)?;
++        // Non-owning memberships (including `first start`) are references,
++        // not declarations in this sequence. An unresolved reference here
++        // cannot invalidate otherwise complete lexical occurrence evidence.
++        if !is_a!(relation, "OwningMembership") {
++            continue;
++        }
++        let member = membership_evidence::member(b, raw, owner, rel, steps)?;
++        let row = &b.elements[member];
++        let parameter = is_a!(relation, "ParameterMembership")
++            || ((is_a!(b.elements[owner], "Behavior") || is_a!(b.elements[owner], "Step"))
++                && row.props.get("direction").is_some_and(|v| !v.is_null()));
++        let message = if is_a!(row, "FlowUsage") {
++            charge(steps, row.owned_relationships.len())?;
++            let mut no_ends = true;
++            for &r in &row.owned_relationships {
++                let relationship = b.elements.get(r)?;
++                if is_a!(relationship, "FeatureMembership") {
++                    let feature = membership_evidence::member(b, raw, member, r, steps)?;
++                    no_ends &= b.elements[feature]
++                        .props
++                        .get("isEnd")
++                        .and_then(|v| v.as_bool())
++                        != Some(true);
++                }
++            }
++            no_ends
++        } else {
++            false
++        };
++        let occurrence = is_a!(relation, "FeatureMembership")
++            && !parameter
++            && is_a!(row, "OccurrenceUsage")
++            && !is_a!(row, "TransitionUsage")
++            && (!is_a!(row, "Connector") || message);
++        members.push((rel, member, occurrence));
++    }
++    charge(steps, members.len().saturating_mul(2))?;
++    let mut neighbors = HashMap::new();
++    let mut previous = None;
++    for &(rel, member, occurrence) in &members {
++        neighbors.insert((rel, member), (previous, None));
++        if occurrence {
++            previous = Some(member);
++        }
++    }
++    let mut next = None;
++    for &(rel, member, occurrence) in members.iter().rev() {
++        neighbors.get_mut(&(rel, member)).expect("checked member").1 = next;
++        if occurrence {
++            next = Some(member);
++        }
++    }
++    Some(neighbors)
++}
++
++/// A transition's authored source feature, including a feature chain. `None`
++/// inside `Some` proves that no source was authored; incomplete or invalid
++/// explicit source evidence is never permission to infer a replacement.
++fn explicit_source(
++    b: &Builder,
++    raw: &StoredStructure,
++    transition: usize,
++    steps: &mut usize,
++) -> Option<Option<usize>> {
++    charge(steps, b.elements[transition].owned_relationships.len())?;
++    for &rel in &b.elements[transition].owned_relationships {
++        let relation = b.elements.get(rel)?;
++        if !is_a!(relation, "Membership") || is_a!(relation, "FeatureMembership") {
++            continue;
++        }
++        let member = membership_evidence::member(b, raw, transition, rel, steps)?;
++        if is_a!(relation, "OwningMembership") && is_a!(b.elements[member], "Succession") {
++            continue;
++        }
++        if is_a!(b.elements[member], "Feature") {
++            // Explicit feature chains remain authoritative. Their internal
++            // succession projection is not this lexical shorthand rule.
++            if super::type_relations::checked_feature_target(
++                b,
++                raw,
++                member,
++                &b.elements[member].owned_relationships,
++                b.explicit_len(),
++                steps,
++            )?
++            .is_some()
++            {
++                return None;
++            }
++            return (member != transition && is_a!(b.elements[member], "ActionUsage"))
++                .then_some(Some(member));
++        }
++        // A plain Membership spells a source even if its member has the
++        // wrong metaclass. OwningMemberships may instead own the succession.
++        if !is_a!(relation, "OwningMembership") {
++            return None;
++        }
++    }
++    Some(None)
++}
++
++/// Implicit TransitionUsage source Membership recipes. Kept out of the
++/// authored graph, so compact interchange, source text and digests retain the
++/// user's shorthand. The shared publisher owns their identities and carriers.
++/// A prepared library has already published its own rows; only the appended
++/// source slice is scanned when extending that library.
++pub(super) fn transition_sources_from(
++    b: &mut Builder,
++    start: usize,
++    steps: &mut usize,
++) -> Option<Vec<(usize, usize)>> {
++    let limit = b.explicit_len();
++    charge(steps, limit.saturating_sub(start))?;
++    let transitions: Vec<_> = (start..limit)
++        .filter(|&i| b.is_authored(i) && b.elements[i].ty == "TransitionUsage")
++        .collect();
++    transition_sources(b, transitions, steps)
++}
++
++/// Infer sources for an already charged authored TransitionUsage slice. Static
++/// planning and succession planning gather this during their existing row scan,
++/// so models without transitions pay no additional whole-model scan.
++pub(super) fn transition_sources(
++    b: &mut Builder,
++    transitions: Vec<usize>,
++    steps: &mut usize,
++) -> Option<Vec<(usize, usize)>> {
++    if transitions.is_empty() {
++        return Some(Vec::new());
++    }
++    let raw = StoredStructure::for_query(b, steps)?;
++    let domains = raw.membership_domains(b, steps)?;
++    let mut bodies = HashMap::new();
++    let mut out = Vec::new();
++    for transition in transitions {
++        charge(steps, 1)?;
++        if !domains.owner_complete(transition)
++            || explicit_source(b, &raw, transition, steps) != Some(None)
++        {
++            continue;
++        }
++        let Some(membership) = b.elements[transition].owning_relationship else {
++            continue;
++        };
++        let Some(Some(owner)) = raw.carrier(b, membership) else {
++            continue;
++        };
++        if !domains.owner_complete(owner) {
++            continue;
++        }
++        if let Entry::Vacant(entry) = bodies.entry(owner) {
++            entry.insert(neighbors(b, &raw, owner, steps).unwrap_or_default());
++            charge(steps, 0)?;
++        }
++        if let Some(&(Some(source), _)) = bodies[&owner].get(&(membership, transition)) {
++            if source != transition && is_a!(b.elements[source], "ActionUsage") {
++                out.push((transition, source));
++            }
++        }
++    }
++    charge(steps, 0)?;
++    Some(out)
++}
++
+ /// Missing shorthand ends are resolved from the ordered owning Memberships.
+ /// No source rows are changed, and the static publisher owns the new identities.
+ pub(super) fn endpoints(b: &mut Builder, steps: &mut usize) -> Option<Vec<(usize, usize)>> {
+@@ -27,10 +207,14 @@ pub(super) fn endpoints_from(
+     // after proving existence wastes the cold query's shared work allowance.
+     charge(steps, limit.saturating_sub(start))?;
+     let mut successions = Vec::new();
++    let mut transitions = Vec::new();
+     for i in (start..limit).filter(|&i| b.is_authored(i)) {
+         if b.elements[i].ty == "SuccessionAsUsage" {
+             charge(steps, 1)?;
+             successions.push(i);
++        } else if b.elements[i].ty == "TransitionUsage" {
++            charge(steps, 1)?;
++            transitions.push(i);
+         }
+     }
+     if successions.is_empty() {
+@@ -42,7 +226,9 @@ pub(super) fn endpoints_from(
+     if inverse.sources_incomplete {
+         return Some(Vec::new());
+     }
+-    type Neighbors = HashMap<(usize, usize), (Option<usize>, Option<usize>)>;
++    let transition_sources: HashMap<_, _> = transition_sources(b, transitions, steps)?
++        .into_iter()
++        .collect();
+     let mut bodies: HashMap<usize, Neighbors> = HashMap::new();
+     let mut out = Vec::new();
+     for succession in successions {
+@@ -58,102 +244,26 @@ pub(super) fn endpoints_from(
+         {
+             continue;
+         }
+-        // Transition-owned successions use the transition's explicit source.
+-        // Implicit transition-source Membership establishment is a distinct rule.
+-        let explicit_transition = b.elements[owner].ty == "TransitionUsage";
++        let transition = b.elements[owner].ty == "TransitionUsage";
+         if let Entry::Vacant(entry) = bodies.entry(owner) {
+-            let mut members = Vec::new();
+-            let mut complete = true;
+-            charge(steps, b.elements[owner].owned_relationships.len())?;
+-            for &rel in &b.elements[owner].owned_relationships {
+-                let Some(relation) = b.elements.get(rel) else {
+-                    complete = false;
+-                    break;
+-                };
+-                if !is_a!(relation, "Membership") {
+-                    continue;
+-                }
+-                if let Some(member) = membership_evidence::member(b, &raw, owner, rel, steps) {
+-                    members.push((rel, member));
+-                } else {
+-                    complete = false;
+-                    break;
+-                }
+-            }
++            entry.insert(neighbors(b, &raw, owner, steps).unwrap_or_default());
+             charge(steps, 0)?;
+-            let mut neighbors = HashMap::new();
+-            if complete {
+-                // Compute lexical neighbors once per owning body. Repeated
+-                // shorthand successions must not rescan the whole body.
+-                charge(steps, members.len().saturating_mul(3))?;
+-                // A chained transition source needs featureTarget evidence.
+-                // Do not skip an uncertain earlier candidate to pick a later one.
+-                let mut chained_source = false;
+-                if explicit_transition {
+-                    for &(rel, member) in &members {
+-                        charge(steps, 1)?;
+-                        if is_a!(b.elements[rel], "FeatureMembership")
+-                            || !is_a!(b.elements[member], "Feature")
+-                        {
+-                            continue;
+-                        }
+-                        if super::type_relations::checked_feature_target(
+-                            b,
+-                            &raw,
+-                            member,
+-                            &b.elements[member].owned_relationships,
+-                            limit,
+-                            steps,
+-                        ) != Some(None)
+-                        {
+-                            chained_source = true;
+-                            break;
+-                        }
+-                    }
+-                }
+-                let transition_source = (explicit_transition && !chained_source)
+-                    .then(|| {
+-                        members.iter().find_map(|&(rel, member)| {
+-                            (!is_a!(b.elements[rel], "FeatureMembership")
+-                                && is_a!(b.elements[member], "ActionUsage"))
+-                            .then_some(member)
+-                        })
+-                    })
+-                    .flatten();
+-                let occurrence = |rel: usize, member: usize| {
+-                    is_a!(b.elements[rel], "FeatureMembership")
+-                        && is_a!(b.elements[member], "OccurrenceUsage")
+-                };
+-                let mut previous = None;
+-                for &(rel, member) in &members {
+-                    neighbors.insert(
+-                        (rel, member),
+-                        (
+-                            if explicit_transition {
+-                                transition_source
+-                            } else {
+-                                previous
+-                            },
+-                            None,
+-                        ),
+-                    );
+-                    if occurrence(rel, member) {
+-                        previous = Some(member);
+-                    }
+-                }
+-                let mut next = None;
+-                for &(rel, member) in members.iter().rev() {
+-                    neighbors.get_mut(&(rel, member)).expect("checked member").1 = next;
+-                    if occurrence(rel, member) {
+-                        next = Some(member);
+-                    }
+-                }
+-            }
+-            entry.insert(neighbors);
+         }
+-        let Some(&(source, next)) = bodies[&owner].get(&(membership, succession)) else {
++        let Some(&(previous, next)) = bodies[&owner].get(&(membership, succession)) else {
+             continue;
+         };
++        let source = if transition {
++            match explicit_source(b, &raw, owner, steps) {
++                Some(Some(source)) => Some(source),
++                Some(None) => transition_sources
++                    .get(&owner)
++                    .copied()
++                    .filter(|&source| is_a!(b.elements[source], "ActionUsage")),
++                None => None,
++            }
++        } else {
++            previous
++        };
+         let target = b.elements[succession]
+             .path
+             .ends_with("emptySuccession")
+@@ -260,3 +370,378 @@ mod tests {
+         assert!(endpoints(&mut r.b, &mut 0).unwrap().is_empty());
+     }
+ }
++
++#[cfg(test)]
++mod transition_tests {
++    use super::*;
++    use crate::{
++        json::{Derived, DerivedValue, ElementRef, Reference, ResolvedModel},
++        model::Model,
++    };
++    use serde_json::json;
++
++    fn fixture(source: &str) -> (Model, ResolvedModel) {
++        let mut model = Model::new();
++        let parsed = model.add_source("transitions.sysml", source);
++        assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
++        let resolved = ResolvedModel::build(&model);
++        (model, resolved)
++    }
++    fn transitions(r: &ResolvedModel) -> Vec<ElementRef> {
++        r.user_elements()
++            .filter(|&e| r.element_type(e) == "TransitionUsage")
++            .collect()
++    }
++    fn source(r: &mut ResolvedModel, transition: ElementRef) -> Option<ElementRef> {
++        match r.derived(transition, "source") {
++            Derived::Value(value) => value.element(),
++            other => panic!("{other:?}"),
++        }
++    }
++    fn assert_source(r: &mut ResolvedModel, transition: ElementRef, name: &str) {
++        let expected = r.resolve_qualified(name).unwrap();
++        assert_eq!(source(r, transition), Some(expected));
++        assert_eq!(r.transition_parts(transition).source, Some(expected));
++        assert_eq!(
++            r.property(transition, "source").unwrap(),
++            json!({"@id": r.element_id(expected).to_string()})
++        );
++        let succession = r.d_succession(transition).unwrap();
++        assert_eq!(
++            r.derived(succession, "sourceFeature"),
++            Derived::Value(DerivedValue::Reference(Reference::Element(expected)))
++        );
++        let related = r.derived(succession, "relatedFeature");
++        assert!(
++            matches!(related, Derived::Value(DerivedValue::References(ref ends)) if ends.len() == 2 && ends[0].element() == Some(expected)),
++            "{related:?}"
++        );
++        assert_ne!(expected, transition);
++    }
++
++    #[test]
++    fn implicit_transition_sources_are_shared_by_all_semantic_reads_and_full_json() {
++        let (model, mut r) =
++            fixture("action a { action b; action c; decide d; if true then b; else c; }");
++        let compact = r.built_compact_json_with_units().unwrap();
++        let ts = transitions(&r);
++        assert_eq!(ts.len(), 2);
++        for &t in &ts {
++            assert_source(&mut r, t, "a::d");
++        }
++        let full = crate::full::resolved_to_full_json(&mut r, &model, Default::default()).unwrap();
++        let rows = full.as_array().unwrap();
++        let source = r.resolve_qualified("a::d").unwrap();
++        let source_id = r.element_id(source).to_string();
++        for t in ts {
++            let id = r.element_id(t).to_string();
++            let row = rows.iter().find(|row| row["@id"] == id).unwrap();
++            assert_eq!(row["source"], json!({"@id": source_id}));
++            let memberships: Vec<_> = r
++                .implied_relationships(t)
++                .into_iter()
++                .filter(|&m| r.element_type(m) == "Membership")
++                .collect();
++            assert_eq!(memberships.len(), 1);
++            let membership_id = r.element_id(memberships[0]).to_string();
++            assert!(
++                row["ownedRelationship"]
++                    .as_array()
++                    .unwrap()
++                    .contains(&json!({"@id": membership_id}))
++            );
++            let membership = rows.iter().find(|row| row["@id"] == membership_id).unwrap();
++            assert_eq!(membership["memberElement"], json!({"@id": source_id}));
++            assert_eq!(membership["isImplied"], true);
++        }
++        assert_eq!(r.built_compact_json_with_units().unwrap(), compact);
++        assert_eq!(crate::json::model_to_compact_json(&model), compact.0);
++    }
++
++    #[test]
++    fn unnamed_decision_branches_share_the_same_source() {
++        let (_, mut r) = fixture(
++            "action a { action b; action c; decide; if true then b; if false then c; else b; }",
++        );
++        let decision = r
++            .user_elements()
++            .find(|&e| r.element_type(e) == "DecisionNode")
++            .unwrap();
++        for t in transitions(&r) {
++            assert_eq!(source(&mut r, t), Some(decision));
++            assert_eq!(r.transition_parts(t).source, Some(decision));
++        }
++    }
++
++    #[test]
++    fn conditional_branches_and_interleaved_then_do_not_become_previous_occurrences() {
++        let (_, mut r) = fixture(
++            "action a { action b; action c; decide d; if true then b; then c; else c; then action next; if true then b; }",
++        );
++        let ts = transitions(&r);
++        assert_eq!(ts.len(), 3);
++        assert_source(&mut r, ts[0], "a::d");
++        assert_source(&mut r, ts[1], "a::d");
++        assert_source(&mut r, ts[2], "a::next");
++    }
++
++    #[test]
++    fn parameters_non_occurrences_and_connectors_do_not_replace_the_source() {
++        let (_, mut r) = fixture(
++            "action a { action b; action c; decide d; in item p; attribute count; binding bind p = p; if true then b; else c; }",
++        );
++        for t in transitions(&r) {
++            assert_source(&mut r, t, "a::d");
++        }
++    }
++
++    #[test]
++    fn unresolved_initial_marker_does_not_hide_the_preceding_occurrence() {
++        let (_, mut r) = fixture(
++            "action a { action target; decide d; first start; then target; if true then target; else target; }",
++        );
++        for t in transitions(&r) {
++            assert_source(&mut r, t, "a::d");
++        }
++    }
++
++    #[test]
++    fn transition_source_membership_does_not_enter_dynamic_specialization_graph() {
++        let (_, mut r) = fixture(
++            "calc def F { in x; return result; } action a { action target; decide d; if F(1) then target; }",
++        );
++        let t = transitions(&r)[0];
++        assert_source(&mut r, t, "a::d");
++        let d = r.resolve_qualified("a::d").unwrap();
++        let f = r.resolve_qualified("F").unwrap();
++        let invocation = r
++            .user_elements()
++            .find(|&e| r.element_type(e) == "InvocationExpression")
++            .unwrap();
++        assert!(r.b.effective_dynamic_plan().is_some());
++        assert!(r.conforms_with_implied(invocation, f));
++        assert!(!r.conforms_with_implied(t, d));
++        let plan = r.b.effective_dynamic_plan().unwrap();
++        let t_id = r.element_id(t);
++        let d_id = r.element_id(d);
++        assert!(
++            plan.static_prefix
++                .rows
++                .iter()
++                .any(|row| row.kind == "Membership" && row.owner == t.0 && row.target == d_id)
++        );
++        assert!(
++            !plan
++                .specializations
++                .get(&t_id)
++                .is_some_and(|targets| targets.contains(&d_id))
++        );
++    }
++
++    #[test]
++    fn state_and_triggered_shorthands_use_the_previous_state() {
++        let (_, mut r) = fixture(
++            "item def Event; state def S { state target; state waiting; accept Event then target; if true then target; else target; }",
++        );
++        for t in transitions(&r) {
++            assert_source(&mut r, t, "S::waiting");
++        }
++    }
++
++    #[test]
++    fn absent_or_nested_sources_never_escape_the_owning_body() {
++        let (_, mut r) = fixture(
++            "action outer { action target; action preceding; action inner { if true then target; else target; } }",
++        );
++        for t in transitions(&r) {
++            assert_eq!(source(&mut r, t), None);
++            assert_eq!(r.transition_parts(t).source, None);
++            let succession = r.d_succession(t).unwrap();
++            assert!(
++                r.implied_relationships(succession)
++                    .into_iter()
++                    .all(|e| r.element_type(e) != "Membership")
++            );
++        }
++    }
++
++    #[test]
++    fn explicit_source_is_authoritative_even_when_unresolved_or_wrong_kind() {
++        let (_, mut r) = fixture(
++            "action a { action b; action c; attribute invalid; decide d; transition first b if true then c; transition first absent if true then c; transition first invalid if true then c; }",
++        );
++        let ts = transitions(&r);
++        assert_source(&mut r, ts[0], "a::b");
++        assert_eq!(source(&mut r, ts[1]), None);
++        assert_eq!(source(&mut r, ts[2]), None);
++        for &t in &ts {
++            assert!(
++                r.implied_relationships(t)
++                    .into_iter()
++                    .all(|e| r.element_type(e) != "Membership")
++            );
++        }
++        for &t in &ts[1..] {
++            let succession = r.d_succession(t).unwrap();
++            let source_end = r.d_ends(r.d_owned_features(succession))[0];
++            assert!(r.implied_relationships(source_end).is_empty());
++        }
++    }
++
++    #[test]
++    fn invalid_explicit_self_source_is_rejected_without_lexical_fallback() {
++        let (_, mut r) = fixture(
++            "action a { action target; decide d; transition t first t if true then target; }",
++        );
++        let t = transitions(&r)[0];
++        assert_eq!(source(&mut r, t), None);
++        assert_eq!(r.transition_parts(t).source, None);
++        assert!(r.property(t, "source").is_err());
++        assert!(
++            r.implied_relationships(t)
++                .into_iter()
++                .all(|e| r.element_type(e) != "Membership")
++        );
++        let succession = r.d_succession(t).unwrap();
++        let source_end = r.d_ends(r.d_owned_features(succession))[0];
++        assert!(r.implied_relationships(source_end).is_empty());
++    }
++
++    #[test]
++    fn explicit_chained_source_remains_authored_without_lexical_replacement() {
++        let (_, mut r) = fixture(
++            "action a { action nested { action start; } action target; decide d; transition first nested.start if true then target; transition first nested.absent if true then target; }",
++        );
++        let ts = transitions(&r);
++        let expected = r.resolve_qualified("a::nested::start").unwrap();
++        assert_eq!(source(&mut r, ts[0]), Some(expected));
++        assert_eq!(source(&mut r, ts[1]), None);
++        // Preserve the public parts API's authored chain identity, including
++        // an unresolved chain, rather than replacing it with lexical d.
++        for t in ts {
++            let chain = r.transition_parts(t).source.unwrap();
++            assert_eq!(r.element_type(chain), "Feature");
++            assert!(
++                r.implied_relationships(t)
++                    .into_iter()
++                    .all(|e| r.element_type(e) != "Membership")
++            );
++            let succession = r.d_succession(t).unwrap();
++            let source_end = r.d_ends(r.d_owned_features(succession))[0];
++            assert!(r.implied_relationships(source_end).is_empty());
++        }
++    }
++
++    #[test]
++    fn reject_branch_keeps_its_distinct_target_and_never_creates_a_self_edge() {
++        let (_, mut r) = fixture(
++            "action a { action approve; action reject; decide choice; if true then approve; else reject; }",
++        );
++        let ts = transitions(&r);
++        let reject = r.resolve_qualified("a::reject").unwrap();
++        assert_source(&mut r, ts[1], "a::choice");
++        let parts = r.transition_parts(ts[1]);
++        assert_eq!(parts.target, Some(reject));
++        assert_ne!(parts.source, parts.target);
++        for (end, target) in endpoints(&mut r.b, &mut 0).unwrap() {
++            assert_ne!(end, target);
++            assert_ne!(r.element_type(ElementRef(target)), "TransitionUsage");
++        }
++    }
++
++    #[test]
++    fn message_is_a_sequence_occurrence_while_an_ordinary_connector_is_not() {
++        let (_, mut r) = fixture(
++            "action a { item p; item q; action firstAction; connection connect p to q; then firstAction; message signal; then firstAction; }",
++        );
++        let action = r.resolve_qualified("a::firstAction").unwrap().0;
++        let message = r.resolve_qualified("a::signal").unwrap().0;
++        let edges = endpoints(&mut r.b, &mut 0).unwrap();
++        assert_eq!(
++            edges.iter().map(|&(_, target)| target).collect::<Vec<_>>(),
++            vec![action, message]
++        );
++    }
++
++    #[test]
++    fn directed_occurrences_are_parameters_even_without_parameter_memberships() {
++        let (_, mut r) =
++            fixture("action a { action target; decide d; action directed; if true then target; }");
++        let directed = r.resolve_qualified("a::directed").unwrap();
++        r.b.set(directed.0, "direction", json!("in"));
++        let t = transitions(&r)[0];
++        assert_source(&mut r, t, "a::d");
++    }
++
++    #[test]
++    fn changed_lexical_evidence_does_not_reuse_a_stale_implicit_source() {
++        let (_, mut r) = fixture("action a { action target; decide d; if true then target; }");
++        let t = transitions(&r)[0];
++        assert_source(&mut r, t, "a::d");
++        let decision = r.resolve_qualified("a::d").unwrap();
++        r.b.set(decision.0, "direction", json!("in"));
++        assert_eq!(source(&mut r, t), None);
++        assert_eq!(r.transition_parts(t).source, None);
++    }
++
++    #[test]
++    fn prepared_library_snapshot_keeps_library_sources_and_plans_appended_sources() {
++        let mut library = Model::new();
++        library.add_library_source("library.sysml", "package Lib { action a { action target; decide d; if true then target; else target; } }");
++        let prepared = library.prepare_library().unwrap();
++        prepared.make_plans();
++        let bytes = prepared.to_bytes(13).unwrap();
++        let decoded =
++            std::sync::Arc::new(crate::prepared::PreparedLibrary::from_bytes(&bytes, 13).unwrap());
++        let mut model = Model::new();
++        decoded.install(&mut model).unwrap();
++        model.add_source(
++            "user.sysml",
++            "action user { action target; decide d; if true then target; else target; }",
++        );
++        let mut r = ResolvedModel::build(&model);
++        let library_action = r.resolve_qualified("Lib::a").unwrap();
++        let library_transitions: Vec<_> = r
++            .d_owned_features(library_action)
++            .into_iter()
++            .filter(|&e| r.element_type(e) == "TransitionUsage")
++            .collect();
++        assert_eq!(library_transitions.len(), 2);
++        for t in library_transitions {
++            assert_source(&mut r, t, "Lib::a::d");
++        }
++        for t in transitions(&r) {
++            assert_source(&mut r, t, "user::d");
++        }
++        let prefix =
++            r.b.static_specialization_prefix(&r.b.implied_names(), true, Some(&mut 0))
++                .unwrap();
++        assert!(
++            prefix
++                .rows
++                .iter()
++                .filter(|row| row.kind == "Membership")
++                .all(|row| row.owner >= r.b.lib_boundary)
++        );
++    }
++
++    #[test]
++    fn transition_source_planning_is_linear_and_budget_failure_is_retryable() {
++        let mut text = String::from("action a { action target; decide d;");
++        for _ in 0..1000 {
++            text.push_str("if true then target;");
++        }
++        text.push('}');
++        let (_, mut r) = fixture(&text);
++        let mut steps = 0;
++        let sources = transition_sources_from(&mut r.b, 0, &mut steps).unwrap();
++        assert_eq!(sources.len(), 1000);
++        assert!(steps < 2_000_000, "{steps}");
++        let mut exhausted = crate::eval::MAX_STEPS;
++        assert!(transition_sources_from(&mut r.b, 0, &mut exhausted).is_none());
++        assert_eq!(
++            transition_sources_from(&mut r.b, 0, &mut 0).unwrap(),
++            sources
++        );
++    }
++}
+diff --git a/crates/sysmlv2-viz/src/behavior.rs b/crates/sysmlv2-viz/src/behavior.rs
+index 85b14bd..2b0f655 100644
+--- a/crates/sysmlv2-viz/src/behavior.rs
++++ b/crates/sysmlv2-viz/src/behavior.rs
+@@ -82,7 +82,7 @@ pub(crate) fn emit(
+             .and_then(|t| em.alias.get(&t).cloned());
+         let mut edges = String::new();
+         if em.r.element_type(e) == "TransitionUsage" {
+-            em.emit_transition_with(e, 0, &mut edges, prev.as_deref(), &mut None);
++            em.emit_transition(e, 0, &mut edges);
+         } else {
+             em.emit_edge_with(e, 0, &mut edges, prev.as_deref(), target.as_deref());
+         }
+@@ -232,33 +232,15 @@ impl Emitter<'_> {
+         } else {
+             self.body.push_str(" {\n");
+             let mut edges = String::new();
+-            let mut prev: Option<String> = None;
+-            let mut last_transition_source: Option<ElementRef> = None;
+             for fm in flow {
+                 match fm {
+-                    BodyFlowMember::Initial(elem, spell) => {
+-                        let name = elem
+-                            .and_then(|t| self.r.element_name(t).map(str::to_string))
+-                            .or(spell);
+-                        prev = match name.as_deref() {
+-                            Some("start" | "done") | None => None,
+-                            _ => elem.and_then(|t| self.alias.get(&t).cloned()),
+-                        };
+-                    }
++                    BodyFlowMember::Initial(_, _) => {}
+                     BodyFlowMember::Member(m) => {
+                         let mty = self.r.element_type(m).to_string();
+                         if self.is_node(&mty) {
+                             self.render_node(m, depth + 1);
+-                            let a = self.alias_for(m);
+-                            prev = Some(a);
+                         } else if mty == "TransitionUsage" {
+-                            self.emit_transition_with(
+-                                m,
+-                                depth + 1,
+-                                &mut edges,
+-                                prev.as_deref(),
+-                                &mut last_transition_source,
+-                            );
++                            self.emit_transition(m, depth + 1, &mut edges);
+                         } else if self.is_edge(&mty) {
+                             let context = contexts.get(&m);
+                             let source = context.and_then(|c| anchor_alias(c.source, &self.alias));
+@@ -388,27 +370,11 @@ impl Emitter<'_> {
+         let _ = writeln!(out, "{source} {arrow} {target}{suffix}");
+     }
+ 
+-    /// `src --> tgt : trigger [guard] / effect`. A transition with no
+-    /// spelled source (`else slow;`, a bare guarded shorthand) falls
+-    /// back to the previous transition's source, then the flow anchor —
+-    /// the `if g then a; else b;` idiom branches from one node.
+-    fn emit_transition_with(
+-        &mut self,
+-        e: ElementRef,
+-        depth: usize,
+-        out: &mut String,
+-        prev: Option<&str>,
+-        last_source: &mut Option<ElementRef>,
+-    ) {
++    /// `src --> tgt : trigger [guard] / effect`, using the model's resolved
++    /// explicit or implicit source. Unresolved explicit sources stay absent.
++    fn emit_transition(&mut self, e: ElementRef, depth: usize, out: &mut String) {
+         let parts = self.r.transition_parts(e);
+-        if parts.source.is_some() {
+-            *last_source = parts.source;
+-        }
+-        let source = parts
+-            .source
+-            .or(*last_source)
+-            .and_then(|s| self.alias.get(&s).cloned())
+-            .or_else(|| prev.map(str::to_string));
++        let source = parts.source.and_then(|s| self.alias.get(&s).cloned());
+         let Some(source) = source else {
+             return;
+         };
+diff --git a/crates/sysmlv2-viz/src/graph.rs b/crates/sysmlv2-viz/src/graph.rs
+index cebff48..b69e6f8 100644
+--- a/crates/sysmlv2-viz/src/graph.rs
++++ b/crates/sysmlv2-viz/src/graph.rs
+@@ -1735,7 +1735,12 @@ impl BehaviorGraphEmitter<'_> {
+             View::State => {
+                 ty == "TransitionUsage" || ty == "SuccessionAsUsage" || ty == "Succession"
+             }
+-            _ => ty == "SuccessionAsUsage" || ty == "Succession" || FLOWS.contains(&ty),
++            _ => {
++                ty == "TransitionUsage"
++                    || ty == "SuccessionAsUsage"
++                    || ty == "Succession"
++                    || FLOWS.contains(&ty)
++            }
+         }
+     }
+ 
+diff --git a/crates/sysmlv2-viz/tests/transition_semantics.rs b/crates/sysmlv2-viz/tests/transition_semantics.rs
+new file mode 100644
+index 0000000..40c5662
+--- /dev/null
++++ b/crates/sysmlv2-viz/tests/transition_semantics.rs
+@@ -0,0 +1,198 @@
++//! Graph and PlantUML consume the same semantic transition endpoints.
++use sysmlv2_model::{json::ResolvedModel, model::Model};
++use sysmlv2_viz::{View, VizOptions, graph, plantuml};
++
++fn check_transitions(source: &str, view: View, expected: &[(&str, &str, Option<&str>)]) {
++    let mut model = Model::new();
++    let unit = model.add_source("transitions.sysml", source);
++    assert!(unit.diagnostics.is_empty(), "{:?}", unit.diagnostics);
++    let mut resolved = ResolvedModel::build(&model);
++    let options = VizOptions::default().with_view(view);
++    let graph = graph(&mut resolved, None, &options).unwrap();
++    let nodes = graph["nodes"].as_array().unwrap();
++    let edges = graph["edges"].as_array().unwrap();
++    assert_eq!(edges.len(), expected.len(), "{graph}");
++    let uml = plantuml(&mut resolved, None, &options);
++    assert_eq!(
++        uml.lines().filter(|line| line.contains(" --> ")).count(),
++        expected.len(),
++        "{uml}"
++    );
++    let node_id =
++        |label: &str| nodes.iter().find(|node| node["label"] == label).unwrap()["id"].clone();
++    let alias = |label: &str| {
++        let marker = format!("\"{label}\" as ");
++        let start = uml.find(&marker).unwrap() + marker.len();
++        uml[start..].split_whitespace().next().unwrap()
++    };
++    for &(source, target, label) in expected {
++        let edge = edges
++            .iter()
++            .find(|edge| edge["source"] == node_id(source) && edge["target"] == node_id(target))
++            .unwrap_or_else(|| panic!("missing {source} -> {target}: {graph}"));
++        assert_eq!(edge["kind"], "transition");
++        assert_eq!(edge["metaclass"], "TransitionUsage");
++        assert_eq!(edge["directed"], true);
++        assert_eq!(edge["label"].as_str(), label);
++        let element = resolved
++            .element_by_id(edge["id"].as_str().unwrap())
++            .unwrap();
++        assert_eq!(resolved.element_type(element), "TransitionUsage");
++        assert_eq!(
++            resolved.declaration_position(element).unwrap().0,
++            "transitions.sysml"
++        );
++        let expected_line = format!(
++            "{} --> {}{}",
++            alias(source),
++            alias(target),
++            label.map(|label| format!(" : {label}")).unwrap_or_default(),
++        );
++        assert!(
++            uml.lines().any(|line| line.trim() == expected_line),
++            "{uml}"
++        );
++    }
++}
++
++#[test]
++fn explicit_guarded_action_transitions_render_for_definitions_and_usages() {
++    for declaration in ["action def Router", "action router", "action"] {
++        check_transitions(
++            &format!(
++                "{declaration} {{
++                attribute ok : Boolean;
++                action ingest; action fast; action slow;
++                transition route first ingest if ok then fast;
++                first ingest if not ok then slow;
++            }}"
++            ),
++            View::Action,
++            &[
++                ("ingest", "fast", Some("[ok]")),
++                ("ingest", "slow", Some("[not ok]")),
++            ],
++        );
++    }
++}
++
++#[test]
++fn implicit_action_transition_sources_and_default_branches_match_plantuml() {
++    for declaration in ["action def Router", "action router", "action"] {
++        for transition in ["transition", ""] {
++            check_transitions(
++                &format!(
++                    "{declaration} {{
++                    attribute ok : Boolean;
++                    action fast; action slow; action ingest;
++                    {transition} if ok then fast;
++                    else slow;
++                }}"
++                ),
++                View::Action,
++                &[("ingest", "fast", Some("[ok]")), ("ingest", "slow", None)],
++            );
++        }
++    }
++}
++
++#[test]
++fn explicit_and_implicit_state_transition_sources_match_plantuml() {
++    for declaration in ["state def Modes", "state modes", "state"] {
++        for transition in ["transition", ""] {
++            for source in ["first idle", ""] {
++                check_transitions(
++                    &format!(
++                        "{declaration} {{
++                        attribute ok : Boolean;
++                        state busy; state stopped; state idle;
++                        {transition} {source} if ok then busy;
++                        else stopped;
++                    }}"
++                    ),
++                    View::State,
++                    &[("idle", "busy", Some("[ok]")), ("idle", "stopped", None)],
++                );
++            }
++        }
++    }
++}
++
++#[test]
++fn explicit_unresolved_transition_sources_do_not_fall_back_to_a_previous_node() {
++    for (declaration, node, view) in [
++        ("action def Router", "action", View::Action),
++        ("state def Modes", "state", View::State),
++    ] {
++        check_transitions(
++            &format!(
++                "{declaration} {{
++                {node} target; {node} previous;
++                transition first missing if true then target;
++            }}"
++            ),
++            view,
++            &[],
++        );
++    }
++}
++
++#[test]
++fn explicit_action_transition_preserves_trigger_guard_and_effect() {
++    check_transitions(
++        "item def Go; action def Notify;
++        action def Router {
++            attribute ok : Boolean;
++            action ingest; action fast;
++            transition route first ingest accept Go if ok do action notifier : Notify then fast;
++        }",
++        View::Action,
++        &[("ingest", "fast", Some("Go [ok] / notifier : Notify"))],
++    );
++}
++
++#[test]
++fn named_state_transition_keeps_identity_and_an_ordinary_guardless_edge_has_no_label() {
++    check_transitions(
++        "state def Modes {
++            state idle; state busy; state stopped;
++            transition route first idle if true then busy;
++            transition stop first busy then stopped;
++        }",
++        View::State,
++        &[("idle", "busy", Some("[true]")), ("busy", "stopped", None)],
++    );
++}
++
++#[test]
++fn transitions_in_transparent_containers_emit_once_with_semantic_endpoints() {
++    check_transitions(
++        "part container {
++            attribute ok : Boolean;
++            action fast; action slow; action ingest;
++            if ok then fast;
++            else slow;
++        }",
++        View::Action,
++        &[("ingest", "fast", Some("[ok]")), ("ingest", "slow", None)],
++    );
++}
++
++#[test]
++fn named_and_anonymous_decisions_are_native_sources_for_both_conditional_branches() {
++    for (declaration, label) in [("decide branch", "branch"), ("decide", "(choice)")] {
++        check_transitions(
++            &format!(
++                "action def Router {{
++                attribute ok : Boolean;
++                action fast; action slow;
++                {declaration};
++                if ok then fast;
++                else slow;
++            }}"
++            ),
++            View::Action,
++            &[(label, "fast", Some("[ok]")), (label, "slow", None)],
++        );
++    }
++}
+diff --git a/crates/sysmlv2-viz/tests/viz.rs b/crates/sysmlv2-viz/tests/viz.rs
+index b15b4e5..dfdf00b 100644
+--- a/crates/sysmlv2-viz/tests/viz.rs
++++ b/crates/sysmlv2-viz/tests/viz.rs
+@@ -1476,10 +1476,30 @@ fn action_view_flow_anchors() {
+     for edge in [
+         format!("[*] --> {ingest}"),
+         format!("{ingest} --> {fast} : [ok]"),
+-        format!("{ingest} --> {slow}"),
++        format!("{slow} --> {slow}"),
+     ] {
+         assert!(out.contains(&edge), "missing `{edge}` in {out}");
+     }
++    // SysML 7.17.4–5 selects the nearest previous occurrence, skipping
++    // successions and conditional successions. The explicit guarded source
++    // does not change that occurrence: `slow` remains the source of `else`.
++    let slow_element = r.resolve_qualified("Flow::Router::slow").unwrap();
++    let fast_element = r.resolve_qualified("Flow::Router::fast").unwrap();
++    let ingest_element = r.resolve_qualified("Flow::Router::ingest").unwrap();
++    let graph = sysmlv2_viz::graph(&mut r, None, &opts).unwrap();
++    for (target, source) in [(fast_element, ingest_element), (slow_element, slow_element)] {
++        let target_id = r.element_id(target).to_string();
++        let source_id = r.element_id(source).to_string();
++        let edge = graph["edges"]
++            .as_array()
++            .unwrap()
++            .iter()
++            .find(|edge| edge["kind"] == "transition" && edge["target"] == target_id)
++            .expect("conditional transition edge");
++        assert_eq!(edge["source"], source_id);
++        let transition = r.element_by_id(edge["id"].as_str().unwrap()).unwrap();
++        assert_eq!(r.transition_parts(transition).source, Some(source));
++    }
+ }
+ 
+ /// Tree view distinguishes composite from referential ownership: a
+-- 
+2.50.1 (Apple Git-155)
+

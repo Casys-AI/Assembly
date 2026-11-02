@@ -1,0 +1,238 @@
+diff --git a/apps/live-builder/frontend/client.ts b/apps/live-builder/frontend/client.ts
+index 51adc93..7db3775 100644
+--- a/apps/live-builder/frontend/client.ts
++++ b/apps/live-builder/frontend/client.ts
+@@ -5,3 +5,4 @@ import "./assets/revisions.css";
+ import "./assets/proposals.css";
+ import "./assets/agent-context.css";
+ import "./assets/desk.css";
++import "./assets/model-diagram.css";
+diff --git a/apps/live-builder/frontend/components/GraphView.tsx b/apps/live-builder/frontend/components/GraphView.tsx
+index cbc36ed..9b698c5 100644
+--- a/apps/live-builder/frontend/components/GraphView.tsx
++++ b/apps/live-builder/frontend/components/GraphView.tsx
+@@ -1,4 +1,6 @@
++import { useState } from "preact/hooks";
+ import { NativeGraph } from "./NativeGraph.tsx";
++import { ModelViews } from "./ModelViews.tsx";
+ import type { WorkbenchState } from "../lib/workbench-state.ts";
+ import { authorities, describeState } from "./workbench-copy.ts";
+ 
+@@ -20,6 +22,11 @@ export function GraphView(
+   const selected = state.selectedRevision.value;
+   const readOnly = state.readOnly.value;
+   const source = state.graphSourceSelection.value;
++  // Native views show the current model; history and execution overlays stay
++  // on the live graph until they move to the native renderer.
++  const [mode, setMode] = useState<"views" | "live">("views");
++  const historical = Boolean(source) || readOnly;
++  const native = !embedded && !historical && mode === "views";
+   const oldTools = new Set(
+     inspected?.candidates.filter((c) => c.stage === "active").map((c) => c.id),
+   );
+@@ -169,9 +176,25 @@ export function GraphView(
+           </details>
+         </>
+       )}
+-      <NativeGraph
+-        source={embedded ? "/api/model-graph" : state.graphRequestUrl.value}
+-      />
++      {!embedded && !historical && (
++        <div class="mv-switch" role="group" aria-label="Model display">
++          {(["views", "live"] as const).map((value) => (
++            <button
++              type="button"
++              key={value}
++              aria-pressed={mode === value}
++              onClick={() => setMode(value)}
++            >
++              {value === "views" ? "Views" : "Live"}
++            </button>
++          ))}
++        </div>
++      )}
++      {native ? <ModelViews refreshKey={current?.revision} /> : (
++        <NativeGraph
++          source={embedded ? "/api/model-graph" : state.graphRequestUrl.value}
++        />
++      )}
+     </>
+   );
+ }
+diff --git a/apps/live-builder/frontend/deno.json b/apps/live-builder/frontend/deno.json
+index 001f92b..612431b 100644
+--- a/apps/live-builder/frontend/deno.json
++++ b/apps/live-builder/frontend/deno.json
+@@ -12,6 +12,9 @@
+     "diff2html/css": "npm:diff2html@3.4.56/bundles/css/diff2html.min.css",
+     "cytoscape": "npm:cytoscape@3.34.4",
+     "d3-force": "npm:d3-force@3.0.0",
++    "elkjs/lib/elk.bundled.js": "npm:elkjs@0.9.3/lib/elk.bundled.js",
++    "elkjs/lib/elk-api.js": "npm:elkjs@0.9.3/lib/elk-api.js",
++    "elkjs/lib/elk-worker.min.js": "npm:elkjs@0.9.3/lib/elk-worker.min.js",
+     "vite": "npm:vite@7.3.7"
+   },
+   "compilerOptions": {
+diff --git a/apps/live-builder/frontend/deno.lock b/apps/live-builder/frontend/deno.lock
+index 15b8e2f..656efda 100644
+--- a/apps/live-builder/frontend/deno.lock
++++ b/apps/live-builder/frontend/deno.lock
+@@ -42,6 +42,7 @@
+     "npm:cytoscape@3.34.4": "3.34.4",
+     "npm:d3-force@3.0.0": "3.0.0",
+     "npm:diff2html@3.4.56": "3.4.56",
++    "npm:elkjs@0.9.3": "0.9.3",
+     "npm:esbuild-wasm@~0.25.11": "0.25.12",
+     "npm:esbuild@0.25.7": "0.25.7",
+     "npm:esbuild@~0.25.5": "0.25.12",
+@@ -1067,6 +1068,9 @@
+     "electron-to-chromium@1.5.460": {
+       "integrity": "sha512-rRaVC7bNUyGsL+GMtmZfv3AfgG6za7gE9v5bT0PIbjEerddA0IQ+tCK05NFAXqCpNlrxBZqbFqquyxHRQONHTA=="
+     },
++    "elkjs@0.9.3": {
++      "integrity": "sha512-f/ZeWvW/BCXbhGEf1Ujp29EASo/lk1FDnETgNKwJrsVvGZhUWCZyg3xLJjAsxfOmt8KjswHmI5EwCQcPMpOYhQ=="
++    },
+     "esbuild-wasm@0.25.12": {
+       "integrity": "sha512-rZqkjL3Y6FwLpSHzLnaEy8Ps6veCNo1kZa9EOfJvmWtBq5dJH4iVjfmOO6Mlkv9B0tt9WFPFmb/VxlgJOnueNg==",
+       "bin": true
+@@ -1348,6 +1352,7 @@
+       "npm:cytoscape@3.34.4",
+       "npm:d3-force@3.0.0",
+       "npm:diff2html@3.4.56",
++      "npm:elkjs@0.9.3",
+       "npm:preact-render-to-string@6.8.1",
+       "npm:preact@10.29.8",
+       "npm:vite@7.3.7"
+diff --git a/apps/live-builder/frontend/test/integration/workbench_test.tsx b/apps/live-builder/frontend/test/integration/workbench_test.tsx
+index 6fdbf07..d4534d2 100644
+--- a/apps/live-builder/frontend/test/integration/workbench_test.tsx
++++ b/apps/live-builder/frontend/test/integration/workbench_test.tsx
+@@ -138,7 +138,10 @@ Deno.test("workspace routes keep one Dock, one circle and a single graph rendere
+       html,
+       new RegExp(`data-dock="${panel === "chat-panel" ? "open" : "hidden"}"`),
+     );
+-    equal((html.match(/class="native-graph"/g) || []).length, 1);
++    equal(
++      (html.match(/class="(native-graph|model-views)"/g) || []).length,
++      1,
++    );
+     doesNotMatch(
+       html,
+       /id="conversation-sidebar"|class="masthead"|designer-toggle/,
+diff --git a/apps/live-builder/src/adapters/sysml-toolkit-adapter.ts b/apps/live-builder/src/adapters/sysml-toolkit-adapter.ts
+index d84280f..9a35310 100644
+--- a/apps/live-builder/src/adapters/sysml-toolkit-adapter.ts
++++ b/apps/live-builder/src/adapters/sysml-toolkit-adapter.ts
+@@ -1,5 +1,10 @@
+ /** Optional source authoring. The existing compiler/repository still publishes. */
+ import type { ModelToolingPort } from "../application/model-tooling.ts";
++import type {
++  ModelViewProjection,
++  ModelViewProjector,
++} from "../domain/model-views.ts";
++import { projectToolkitViews } from "./toolkit-views.ts";
+ import type {
+   ModelToolingDescription,
+   ModelToolingDiagnostic,
+@@ -426,7 +431,8 @@ function replay(sources: Sources, splices: Splice[]): Sources {
+   return validateSources(result);
+ }
+ 
+-export class SysmlToolkitAdapter implements ModelToolingPort {
++export class SysmlToolkitAdapter
++  implements ModelToolingPort, ModelViewProjector {
+   constructor(readonly options: SysmlToolkitAdapterOptions) {
+     validateToolkitTimeout(options.timeoutMs ?? SYSML_TOOLKIT_TIMEOUT_MS);
+   }
+@@ -569,6 +575,19 @@ export class SysmlToolkitAdapter implements ModelToolingPort {
+     );
+   }
+ 
++  async views(sources: Sources): Promise<ModelViewProjection> {
++    if (!this.options.loadRuntime) {
++      return await this.#worker({
++        operation: "views",
++        sources: validateSources(structuredClone(sources)),
++      });
++    }
++    return await this.#session(sources, (session, _snapshot, runtime) => ({
++      toolkit: runtime.version,
++      ...projectToolkitViews(session),
++    }));
++  }
++
+   async edit(
+     sources: Sources,
+     edits: readonly ResolvedModelEdit[],
+diff --git a/apps/live-builder/src/adapters/sysml-toolkit-loader.ts b/apps/live-builder/src/adapters/sysml-toolkit-loader.ts
+index 2c80b0f..e77805d 100644
+--- a/apps/live-builder/src/adapters/sysml-toolkit-loader.ts
++++ b/apps/live-builder/src/adapters/sysml-toolkit-loader.ts
+@@ -30,6 +30,10 @@ export interface ToolkitSession {
+   units(): string;
+   checkEdit(operations: string): string;
+   edit(operations: string): string;
++  toGraph?(options: string): string;
++  viewInfo?(qualifiedName: string): string;
++  outline?(options?: string): string;
++  members?(element: ToolkitElement): ToolkitElement[];
+ }
+ 
+ /** Small seam for unit tests; the production implementation loads only local files. */
+diff --git a/apps/live-builder/src/adapters/sysml-toolkit-worker-client.ts b/apps/live-builder/src/adapters/sysml-toolkit-worker-client.ts
+index 03ba729..818dfd2 100644
+--- a/apps/live-builder/src/adapters/sysml-toolkit-worker-client.ts
++++ b/apps/live-builder/src/adapters/sysml-toolkit-worker-client.ts
+@@ -25,7 +25,8 @@ export type ToolkitWorkerOperation =
+     operation: "edit";
+     sources: Record<string, string>;
+     edits: readonly ResolvedModelEdit[];
+-  };
++  }
++  | { operation: "views"; sources: Record<string, string> };
+ 
+ export interface ToolkitWorkerRequest {
+   id: number;
+diff --git a/apps/live-builder/src/adapters/sysml-toolkit-worker.ts b/apps/live-builder/src/adapters/sysml-toolkit-worker.ts
+index e3de2d5..8078829 100644
+--- a/apps/live-builder/src/adapters/sysml-toolkit-worker.ts
++++ b/apps/live-builder/src/adapters/sysml-toolkit-worker.ts
+@@ -68,6 +68,9 @@ port.on("message", async (message: ToolkitWorkerRequest) => {
+       case "edit":
+         result = await tooling.edit(request.sources, request.edits);
+         break;
++      case "views":
++        result = await tooling.views(request.sources);
++        break;
+       default:
+         throw new Error("Unknown toolkit worker operation");
+     }
+diff --git a/apps/live-builder/src/main.ts b/apps/live-builder/src/main.ts
+index 838c664..d766672 100644
+--- a/apps/live-builder/src/main.ts
++++ b/apps/live-builder/src/main.ts
+@@ -26,6 +26,7 @@ import { loadFreshFrontend } from "./adapters/frontend.ts";
+ import { openOperatorWorkspace } from "./adapters/operator-workspace.ts";
+ import { createConversationsHandler } from "./adapters/conversations-http.ts";
+ import { createModelGraphHandler } from "./adapters/model-graph-http.ts";
++import { createModelViewsHandler } from "./adapters/model-views-http.ts";
+ import { projectExecutionSequence } from "./adapters/execution-sequence.ts";
+ import {
+   digestProjection,
+@@ -388,6 +389,7 @@ const poll = setInterval(() => {
+   // changes still request one coalesced follow-up while a read is running.
+   if (!graphRead) refreshGraph().catch(() => {});
+ }, 5_000);
++const handleModelViews = createModelViewsHandler(repository, tooling);
+ const handleModelGraph = createModelGraphHandler({
+   current: () => ({ ...graphState, error: graphFailure, history: null }),
+   async source(modelVersion) {
+@@ -522,6 +524,8 @@ const handleRequest: Deno.ServeHandler = async (request, info) => {
+     if (frontendResponse) return frontendResponse;
+     const graphResponse = await handleModelGraph(request);
+     if (graphResponse) return graphResponse;
++    const viewsResponse = await handleModelViews(request);
++    if (viewsResponse) return viewsResponse;
+     const diagnosticsResponse = await handleModelDiagnostics(request);
+     if (diagnosticsResponse) return diagnosticsResponse;
+     const conversationResponse = await handleConversations(request);

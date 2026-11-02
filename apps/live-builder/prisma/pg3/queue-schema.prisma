@@ -1,0 +1,49 @@
+// PG-3 reference fragment adopted in prisma/schema.prisma. Do not append it
+// again: the canonical schema already includes these models/back-relations.
+// Physical columns, constraints and indexes match the raw queue adapter and
+// migration 20261027000002_model_write_queue. Custom SQL guards remain in that
+// migration and queue-migration.sql; changing one requires checking the others.
+
+// Durable W4 write commands. Payloads are immutable canonical TEXT bytes
+// (never JSONB, never display names or private paths). seq orders FIFO
+// only within (projectId, systemId, repositoryId). fence/attempts are
+// BIGINT; adapters reject values outside the safe-integer domain.
+model ModelWriteCommand {
+  projectId        String    @map("project_id")
+  systemId         String    @map("system_id")
+  repositoryId     String    @map("repository_id")
+  commandId        String    @map("command_id")
+  seq              BigInt
+  commandDigest    String    @map("command_digest")
+  dossierDigest    String    @map("dossier_digest")
+  commandJson      String    @map("command_json") @db.Text
+  dossierJson      String    @map("dossier_json") @db.Text
+  state            String
+  enqueuedAt       DateTime  @map("enqueued_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @map("updated_at") @db.Timestamptz(3)
+  attempts         BigInt    @default(0)
+  owner            String?
+  fence            BigInt    @default(0)
+  leaseExpiresAt   DateTime? @map("lease_expires_at") @db.Timestamptz(3)
+  publishedVersion String?   @map("published_version")
+  lastErrorJson    String?   @map("last_error_json") @db.Text
+  repository       SourceRepository @relation(fields: [projectId, systemId, repositoryId], references: [projectId, systemId, repositoryId], onDelete: Restrict, map: "ModelWriteCommand_repository_fk")
+
+  @@id([projectId, systemId, repositoryId, commandId])
+  @@unique([projectId, systemId, repositoryId, seq], map: "ModelWriteCommand_seq_key")
+  @@index([projectId, systemId, repositoryId, state, seq], map: "ModelWriteCommand_fifo_idx")
+  @@index([projectId, systemId, state, leaseExpiresAt], map: "ModelWriteCommand_lease_idx")
+}
+
+// One row per scoped repository: locked FOR UPDATE by enqueue/acquire to
+// serialize claims, and the scoped FIFO sequence source (nextSeq starts
+// at 1; the first allocated seq is 1).
+model ModelWriteRepositoryHead {
+  projectId    String @map("project_id")
+  systemId     String @map("system_id")
+  repositoryId String @map("repository_id")
+  nextSeq      BigInt @default(1) @map("next_seq")
+  repository   SourceRepository @relation(fields: [projectId, systemId, repositoryId], references: [projectId, systemId, repositoryId], onDelete: Restrict, map: "ModelWriteRepositoryHead_repository_fk")
+
+  @@id([projectId, systemId, repositoryId])
+}

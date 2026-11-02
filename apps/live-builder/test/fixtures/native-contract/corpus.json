@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "cases": [
+    { "id": "board-loops", "kind": "board", "files": ["board-loops.sysml"] },
+    {
+      "id": "sequence-view",
+      "kind": "views",
+      "files": ["sequence-view.sysml"]
+    },
+    { "id": "edits", "kind": "edits", "files": ["edits.sysml"] },
+    {
+      "id": "tokens-nonbmp",
+      "kind": "tokens",
+      "files": ["tokens-nonbmp.sysml"]
+    },
+    {
+      "id": "real-model",
+      "kind": "real-model",
+      "files": [
+        "real-model/core.sysml",
+        "real-model/system.sysml",
+        "real-model/views.sysml"
+      ]
+    }
+  ]
+}

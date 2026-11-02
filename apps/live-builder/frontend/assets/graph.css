@@ -1,0 +1,524 @@
+.native-graph {
+  --graph-line: #dfe6eb;
+  --graph-ink: #243447;
+  --graph-muted: #687888;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  color: var(--graph-ink);
+  background: #f8fafb;
+  font: 12px/1.45 system-ui,-apple-system,sans-serif;
+  overflow: hidden;
+}
+.native-graph * {
+  box-sizing: border-box;
+}
+.native-graph [hidden] {
+  display: none!important;
+}
+.native-graph .graph-toolbar {
+  flex: none;
+  padding: 8px 12px;
+  background: white;
+  border-bottom: 1px solid var(--graph-line);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.native-graph .graph-tabs,
+.native-graph .graph-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.native-graph .graph-tabs {
+  width: fit-content;
+  max-width: 100%;
+  gap: 3px;
+  padding: 3px;
+  background: #eef3f7;
+  border: 1px solid var(--graph-line);
+  border-radius: 7px;
+}
+.native-graph .graph-tabs button {
+  border-color: transparent;
+  background: transparent;
+}
+.native-graph .graph-tabs button:hover {
+  background: white;
+}
+.native-graph .graph-tabs button[aria-pressed=true] {
+  background: #315b7a;
+}
+.native-graph .graph-controls label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--graph-muted);
+  font-size: 11px;
+}
+.native-graph .graph-controls input[type=checkbox] {
+  margin: 0;
+}
+.native-graph button,
+.native-graph select {
+  font: inherit;
+  color: inherit;
+  background: white;
+  border: 1px solid var(--graph-line);
+  border-radius: 5px;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+.native-graph button:hover {
+  background: #edf3f7;
+}
+.native-graph button[aria-pressed=true] {
+  color: white;
+  background: #315b7a;
+  border-color: #315b7a;
+}
+.native-graph button:focus-visible,
+.native-graph select:focus-visible,
+.native-graph summary:focus-visible {
+  outline: 3px solid var(--focus, #6e6e73);
+  outline-offset: 2px;
+}
+.native-graph .graph-status {
+  margin: 0;
+  font-size: 11px;
+  color: var(--graph-muted);
+}
+.native-graph .graph-status::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 5px;
+  background: #299180;
+  border-radius: 50%;
+}
+.native-graph .graph-status.stale::before {
+  background: #acb4bc;
+}
+.native-graph .graph-legend {
+  font-size: 10px;
+  color: var(--graph-muted);
+}
+.native-graph .graph-body {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+.native-graph .graph-stage {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+.native-graph .graph-canvas {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+  background-color: #f8fafb;
+  background-image: radial-gradient(circle, #dbe5ed 1px, transparent 1.15px);
+  background-size: 22px 22px;
+}
+.native-graph .graph-canvas:active {
+  cursor: grabbing;
+}
+.native-graph .graph-note {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  max-width: calc(100% - 20px);
+  margin: 0;
+  padding: 3px 8px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  font-size: 10px;
+  color: var(--graph-muted);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: #fffffff2;
+  border: 1px solid var(--graph-line);
+  border-radius: 999px;
+}
+.native-graph .graph-browser {
+  width: 190px;
+  flex: none;
+  overflow: auto;
+  border-right: 1px solid var(--graph-line);
+  background: white;
+  padding: 8px;
+  font-size: 11px;
+  display: block;
+  gap: 0;
+}
+.native-graph .graph-browser ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 12px;
+}
+.native-graph .graph-browser > ul {
+  padding-left: 0;
+}
+.native-graph .graph-browser li > button {
+  border: 0;
+  display: block;
+  padding: 3px 5px;
+  background: none;
+  max-width: 100%;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.native-graph .graph-browser li > button.current {
+  background: #e3edf5;
+}
+.native-graph .graph-browser small {
+  color: var(--graph-muted);
+  font-size: 9px;
+  margin-left: 4px;
+}
+.native-graph h3 {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--graph-muted);
+  margin: 14px 0 5px;
+}
+.native-graph .graph-inspector {
+  width: 255px;
+  flex: none;
+  overflow: auto;
+  border-left: 1px solid var(--graph-line);
+  background: white;
+  padding: 12px;
+}
+.native-graph .graph-inspector h2 {
+  font-size: 14px;
+  margin: 8px 0;
+}
+.native-graph .graph-inspector p {
+  overflow-wrap: anywhere;
+}
+.native-graph .graph-close {
+  float: right;
+  padding: 1px 6px;
+}
+.native-graph .graph-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.native-graph .graph-badges span {
+  font-size: 10px;
+  background: #edf2f6;
+  border-radius: 4px;
+  padding: 2px 5px;
+}
+.native-graph .graph-relation {
+  display: block;
+  text-align: left;
+  width: 100%;
+  font-size: 11px;
+  margin: 4px 0;
+  padding: 5px;
+}
+.native-graph code {
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.native-graph pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 10px;
+}
+.native-graph .graph-muted,
+.native-graph .graph-evidence {
+  color: var(--graph-muted);
+}
+.native-graph details summary {
+  cursor: pointer;
+}
+.native-graph .graph-error {
+  color: #a14b2d;
+}
+.native-graph .graph-placeholder {
+  max-width: 500px;
+  margin: 40px auto;
+  background: white;
+  border: 1px solid var(--graph-line);
+  border-radius: 8px;
+  padding: 20px;
+}
+.native-graph .graph-placeholder h3 {
+  font-size: 15px;
+  text-transform: none;
+}
+.native-graph .graph-table,
+.native-graph .graph-sequence {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: 20px;
+}
+.native-graph table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+.native-graph th,
+.native-graph td {
+  border: 1px solid var(--graph-line);
+  padding: 7px;
+  text-align: left;
+}
+.native-graph th {
+  background: #eef3f7;
+}
+.native-graph .graph-sequence svg {
+  width: 100%;
+  height: auto;
+}
+.native-graph .graph-sequence text {
+  font: 12px system-ui,sans-serif;
+  fill: #243447;
+}
+@media (max-width:650px) {
+  .native-graph .graph-inspector {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 4;
+    box-shadow: -3px 0 15px #24344718;
+    max-width: 80%;
+  }
+  .native-graph .graph-browser {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 4;
+    box-shadow: 3px 0 15px #24344718;
+    max-width: 75%;
+  }
+}
+
+/* A read-only feed shares row geometry with its own Cytoscape canvas. */
+.native-graph .sequence-feed-shell {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #fafcfe;
+}
+.native-graph .sequence-controls {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--graph-line);
+  background: white;
+  flex: none;
+}
+.native-graph .sequence-controls label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--graph-muted);
+}
+.native-graph .sequence-live-status {
+  font-size: 11px;
+  color: var(--graph-muted);
+}
+.native-graph .sequence-live-status.running {
+  font-weight: 650;
+  color: #315b7a;
+}
+.native-graph .sequence-content {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+.native-graph .sequence-main {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.native-graph .sequence-summary {
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--graph-line);
+  flex: none;
+  max-height: 110px;
+  overflow: auto;
+  font-size: 12px;
+}
+.native-graph .sequence-summary:empty {
+  display: none;
+}
+.native-graph .sequence-summary p {
+  margin: 0;
+}
+.native-graph .sequence-diagnostics {
+  margin-top: 4px;
+}
+.native-graph .sequence-body {
+  --sequence-row-height: 46px;
+  display: grid;
+  grid-template-columns: minmax(0,48fr) minmax(0,52fr);
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  position: relative;
+  scrollbar-gutter: stable;
+  background: #fafcfe;
+}
+.native-graph .sequence-feed {
+  min-width: 0;
+  border-right: 1px solid var(--graph-line);
+  background: white;
+}
+.native-graph .sequence-diagram {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  min-width: 0;
+  overflow: hidden;
+  background: #fafcfe;
+}
+.native-graph .sequence-participants {
+  height: 44px;
+  position: relative;
+  overflow: hidden;
+  background: #fafcfe;
+  border-bottom: 1px solid var(--graph-line);
+  z-index: 2;
+}
+.native-graph .sequence-canvas {
+  min-height: 160px;
+  position: relative;
+}
+.native-graph .sequence-lane-head {
+  position: absolute;
+  top: 3px;
+  height: 37px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3px 5px;
+  border: 1px solid #d7e1e9;
+  border-radius: 4px;
+  background: #eef3f7;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.15;
+  white-space: normal;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  color: #29465e;
+}
+.native-graph .sequence-feed-head,
+.native-graph .sequence-feed-row {
+  display: grid;
+  grid-template-columns: 68px minmax(0,1fr) minmax(75px,32%);
+  gap: 8px;
+  align-items: center;
+  padding: 0 10px;
+  text-align: left;
+}
+.native-graph .sequence-feed-head {
+  position: sticky;
+  top: 0;
+  height: 44px;
+  z-index: 3;
+  background: #f0f5f9;
+  border-bottom: 1px solid var(--graph-line);
+  font-size: 12px;
+  font-weight: 650;
+  color: #405b72;
+}
+.native-graph .sequence-feed-row {
+  height: var(--sequence-row-height);
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid #e8edf2;
+  border-radius: 0;
+  background: white;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+.native-graph .sequence-feed-row:hover,
+.native-graph .sequence-feed-row.highlighted {
+  background: #eaf2f8;
+}
+.native-graph .sequence-feed-row.highlighted {
+  box-shadow: inset 3px 0 #315b7a;
+}
+.native-graph .sequence-feed-row time {
+  font-size: 12px;
+  color: #72879a;
+  font-variant-numeric: tabular-nums;
+}
+.native-graph .sequence-feed-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #243f56;
+}
+.native-graph .sequence-feed-route {
+  font-size: 12px;
+  color: #70869a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.native-graph .sequence-feed-row.highlighted .sequence-feed-label {
+  color: #244f72;
+  font-weight: 650;
+}
+.native-graph .sequence-receipt {
+  position: relative;
+  z-index: 4;
+}
+@media (max-width:900px) {
+  .native-graph .sequence-feed-head,
+  .native-graph .sequence-feed-row {
+    grid-template-columns: 55px minmax(0,1fr) minmax(65px,29%);
+    gap: 5px;
+    padding: 0 7px;
+  }
+}
+@media (max-width:650px) {
+  .native-graph .sequence-receipt {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+  }
+}

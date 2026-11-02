@@ -1,0 +1,25 @@
+# Local development database (`deno task db:up`). Its data lives in the named
+# volume, never in a checkout, so any checkout can use it. The credentials are
+# for this machine only and match apps/live-builder/.env.example.
+name: assembly
+
+services:
+  postgres:
+    image: postgres:18.4
+    environment:
+      POSTGRES_USER: assembly
+      POSTGRES_PASSWORD: assembly
+      POSTGRES_DB: assembly_dev
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U assembly -d assembly_dev"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+volumes:
+  postgres:

@@ -1,0 +1,1810 @@
+{
+  "schema": "ase.authority-matrix/1",
+  "model": {
+    "name": "initial",
+    "sourceDigest": "affa9005d1b3267e8b50fefcad328b8e4fea904bc6f9a99503571fc8c50679b2",
+    "toolkit": "0.10.10",
+    "authoritySchema": "legacy-v1",
+    "units": [
+      {
+        "system": "ASELiveBuilder::liveBuilder",
+        "executionDigest": "b175dc85bdc449e3d8f51382d79a97154d69e3633db85379f294cb0d890afd15"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "id": "tools",
+      "label": "Tools",
+      "order": 1
+    },
+    {
+      "id": "admission",
+      "label": "Admission",
+      "order": 2
+    },
+    {
+      "id": "mandate",
+      "label": "Mandate & operators",
+      "order": 3
+    },
+    {
+      "id": "model",
+      "label": "Model",
+      "order": 4
+    },
+    {
+      "id": "memory-skills",
+      "label": "Memory & skills",
+      "order": 5
+    },
+    {
+      "id": "behaviors",
+      "label": "Exposed behaviors",
+      "order": 6
+    }
+  ],
+  "rows": [
+    {
+      "id": "owner@ASELiveBuilder::liveBuilder",
+      "kind": "human",
+      "role": "owner",
+      "label": "Owner",
+      "unit": "ASELiveBuilder::liveBuilder",
+      "declared": false,
+      "element": null,
+      "principal": "local-owner"
+    },
+    {
+      "id": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "kind": "software",
+      "role": "builder",
+      "label": "ASELiveBuilder::liveBuilder::builder",
+      "unit": "ASELiveBuilder::liveBuilder",
+      "declared": true,
+      "element": {
+        "role": "holder",
+        "elementId": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+        "qname": "ASELiveBuilder::liveBuilder::builder",
+        "file": "configuration.sysml",
+        "line": 285,
+        "column": 9
+      },
+      "limits": {
+        "maxAgentDecisions": 7,
+        "maxToolProposals": 2,
+        "maxFlowSteps": 128,
+        "urlSelectionMode": "user-provided"
+      }
+    }
+  ],
+  "columns": [
+    {
+      "id": "tool.build:read_web_page",
+      "group": "tools",
+      "capability": "ProposeTool",
+      "inTypedPlan": true,
+      "label": "Build tool · read_web_page",
+      "mode": "propose",
+      "target": {
+        "kind": "tool-kind",
+        "ref": "read_web_page"
+      },
+      "tier": "core",
+      "doc": "Propose a candidate tool of this kind. A candidate is a proposal: it enters the catalog only after tests and an admission decision.",
+      "order": 0,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "tool.build:read_web_page_outline",
+      "group": "tools",
+      "capability": "ProposeTool",
+      "inTypedPlan": true,
+      "label": "Build tool · read_web_page_outline",
+      "mode": "propose",
+      "target": {
+        "kind": "tool-kind",
+        "ref": "read_web_page_outline"
+      },
+      "tier": "core",
+      "doc": "Propose a candidate tool of this kind. A candidate is a proposal: it enters the catalog only after tests and an admission decision.",
+      "order": 1,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "tool.invoke",
+      "group": "tools",
+      "capability": "InvokeTool",
+      "inTypedPlan": true,
+      "label": "Use active tools",
+      "mode": "execute",
+      "tier": "core",
+      "doc": "Invoke a tool of the active catalog. Bounded by the network scope and the URL selection mode.",
+      "order": 10,
+      "typedScope": "none"
+    },
+    {
+      "id": "network.reach",
+      "group": "tools",
+      "capability": "AccessNetwork",
+      "inTypedPlan": true,
+      "label": "Reach network hosts",
+      "mode": "execute",
+      "tier": "core",
+      "doc": "Exact DNS hosts the operator's tool invocations may contact.",
+      "order": 20,
+      "typedScope": "NetworkScope"
+    },
+    {
+      "id": "candidate.review",
+      "group": "admission",
+      "capability": "ReviewCandidate",
+      "inTypedPlan": true,
+      "label": "Review a tested tool",
+      "mode": "review",
+      "tier": "core",
+      "doc": "Give an approve/refuse opinion on the exact tested digest.",
+      "order": 30,
+      "typedScope": "none"
+    },
+    {
+      "id": "candidate.admit",
+      "group": "admission",
+      "capability": "AdmitCandidate",
+      "inTypedPlan": true,
+      "label": "Admit a tool",
+      "mode": "admit",
+      "tier": "core",
+      "doc": "Decide admission of the exact tested (and reviewed) candidate. Held by exactly one authority per unit (admissionMode).",
+      "order": 40,
+      "typedScope": "none"
+    },
+    {
+      "id": "candidate.activate",
+      "group": "admission",
+      "capability": "ActivateCandidate",
+      "inTypedPlan": false,
+      "label": "Activate an admitted tool",
+      "mode": "execute",
+      "tier": "detail",
+      "doc": "Reserved to the host mechanism that owns the catalog; no operator mandate may hold it (compile-time refusal).",
+      "order": 50,
+      "typedScope": "none"
+    },
+    {
+      "id": "mandate.change:network-hosts",
+      "group": "mandate",
+      "capability": "ChangeMandate",
+      "inTypedPlan": true,
+      "label": "Widen network scope",
+      "mode": "propose",
+      "target": {
+        "kind": "change",
+        "ref": "network-hosts"
+      },
+      "tier": "core",
+      "doc": "Operators propose this exact change; a human decision applies it. The model policy must allow it.",
+      "order": 60,
+      "typedScope": "MandateScope"
+    },
+    {
+      "id": "mandate.change:url-selection",
+      "group": "mandate",
+      "capability": "ChangeMandate",
+      "inTypedPlan": true,
+      "label": "Change URL selection",
+      "mode": "propose",
+      "target": {
+        "kind": "change",
+        "ref": "url-selection"
+      },
+      "tier": "core",
+      "doc": "Operators propose this exact change; a human decision applies it. The model policy must allow it.",
+      "order": 70,
+      "typedScope": "MandateScope"
+    },
+    {
+      "id": "mandate.change:self-admission",
+      "group": "mandate",
+      "capability": "ChangeMandate",
+      "inTypedPlan": true,
+      "label": "Delegate own admission",
+      "mode": "propose",
+      "target": {
+        "kind": "change",
+        "ref": "self-admission"
+      },
+      "tier": "core",
+      "doc": "Operators propose this exact change; a human decision applies it. The model policy must allow it.",
+      "order": 80,
+      "typedScope": "MandateScope"
+    },
+    {
+      "id": "operator.create:reviewer",
+      "group": "mandate",
+      "capability": "CreateOperator",
+      "inTypedPlan": true,
+      "label": "Create a reviewer",
+      "mode": "propose",
+      "target": {
+        "kind": "change",
+        "ref": "reviewer"
+      },
+      "tier": "core",
+      "doc": "Propose an independent reviewer with the exact review+admit mandate.",
+      "order": 90,
+      "typedScope": "MandateScope"
+    },
+    {
+      "id": "mandate.rewrite",
+      "group": "mandate",
+      "capability": "ChangeMandate",
+      "inTypedPlan": true,
+      "label": "Rewrite own mandate directly",
+      "mode": "execute",
+      "tier": "detail",
+      "doc": "mayChangeOwnMandate: always false (compile-time refusal).",
+      "order": 100,
+      "typedScope": "none"
+    },
+    {
+      "id": "operator.spawn",
+      "group": "mandate",
+      "capability": "CreateOperator",
+      "inTypedPlan": true,
+      "label": "Create operators directly",
+      "mode": "execute",
+      "tier": "detail",
+      "doc": "mayCreateAgents: always false (compile-time refusal).",
+      "order": 110,
+      "typedScope": "none"
+    },
+    {
+      "id": "model.consult",
+      "group": "model",
+      "capability": "ConsultModel",
+      "inTypedPlan": false,
+      "label": "Read the model sources",
+      "mode": "execute",
+      "tier": "core",
+      "doc": "Read model sources and selective model context. Unlocked by the same flag as source proposals (mayProposeSysmlRevision).",
+      "order": 120,
+      "typedScope": "ModelScope"
+    },
+    {
+      "id": "model.edit",
+      "group": "model",
+      "capability": "EditModel",
+      "inTypedPlan": true,
+      "label": "Propose model edits",
+      "mode": "propose",
+      "tier": "core",
+      "doc": "Propose source edits inside the (file, qualified roots) ceiling and the listed operations. Proposals are private until decided.",
+      "order": 130,
+      "typedScope": "ModelScope"
+    },
+    {
+      "id": "model.administer",
+      "group": "model",
+      "capability": "ChangeMandate",
+      "inTypedPlan": true,
+      "label": "Delegate edit rights",
+      "mode": "propose",
+      "tier": "core",
+      "doc": "Grant or revoke bounded model-edit rights to exact recipient systems (delegation ledger).",
+      "order": 140,
+      "typedScope": "MandateScope"
+    },
+    {
+      "id": "model.decide",
+      "group": "model",
+      "capability": "DecideModelRevision",
+      "inTypedPlan": false,
+      "label": "Accept a model revision",
+      "mode": "admit",
+      "tier": "core",
+      "doc": "Accept or refuse a proposed source revision. Owner HTTP path only.",
+      "order": 150,
+      "typedScope": "none"
+    },
+    {
+      "id": "model.adopt",
+      "group": "model",
+      "capability": "AdoptModelVersion",
+      "inTypedPlan": false,
+      "label": "Adopt a model version",
+      "mode": "admit",
+      "tier": "core",
+      "doc": "Make an accepted version the executable one. Owner HTTP path only.",
+      "order": 160,
+      "typedScope": "none"
+    },
+    {
+      "id": "behavior:context-evidence@ASELiveBuilder::liveBuilder",
+      "group": "memory-skills",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Read evidence",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "context-evidence",
+        "unit": "ASELiveBuilder::liveBuilder"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 1000,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:memory-capture@ASELiveBuilder::liveBuilder",
+      "group": "memory-skills",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Memory · capture",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "memory-capture",
+        "unit": "ASELiveBuilder::liveBuilder"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 1100,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:memory-recall@ASELiveBuilder::liveBuilder",
+      "group": "memory-skills",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Memory · recall",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "memory-recall",
+        "unit": "ASELiveBuilder::liveBuilder"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 1200,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:memory-revise@ASELiveBuilder::liveBuilder",
+      "group": "memory-skills",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Memory · revise",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "memory-revise",
+        "unit": "ASELiveBuilder::liveBuilder"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 1300,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:memory-review@ASELiveBuilder::liveBuilder",
+      "group": "memory-skills",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Memory · review",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "memory-review",
+        "unit": "ASELiveBuilder::liveBuilder"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 1400,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:memory-withdraw@ASELiveBuilder::liveBuilder",
+      "group": "memory-skills",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Memory · withdraw",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "memory-withdraw",
+        "unit": "ASELiveBuilder::liveBuilder"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 1500,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:skill-install@ASELiveBuilder::liveBuilder",
+      "group": "memory-skills",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Skills · install",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "skill-install",
+        "unit": "ASELiveBuilder::liveBuilder"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 1600,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:skill-list@ASELiveBuilder::liveBuilder",
+      "group": "memory-skills",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Skills · list",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "skill-list",
+        "unit": "ASELiveBuilder::liveBuilder"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 1700,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:skill-load@ASELiveBuilder::liveBuilder",
+      "group": "memory-skills",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Skills · load",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "skill-load",
+        "unit": "ASELiveBuilder::liveBuilder"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 1800,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:skill-unload@ASELiveBuilder::liveBuilder",
+      "group": "memory-skills",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Skills · unload",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "skill-unload",
+        "unit": "ASELiveBuilder::liveBuilder"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 1900,
+      "typedScope": "missing-in-plan"
+    }
+  ],
+  "cells": [
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "candidate.admit",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "condition",
+          "elementId": "941130c4-35a8-5cd1-bab8-7aa9c75ad65c",
+          "qname": "ASELiveBuilder::liveBuilder::admissionMode",
+          "file": "configuration.sysml",
+          "line": 283,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-decides-candidate-admission-when-admissionMode-is-human",
+        "enforcedAt": "src/application/candidate-decisions.ts:78-81; src/domain/governance.ts:336-343"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "subject": "any-candidate",
+        "requires": [
+          "tests-passed",
+          "exact-digest",
+          "current-catalog-revision"
+        ],
+        "performedBy": [
+          "ASELiveBuilder::liveBuilder::admissionGate"
+        ]
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "mandate.change:network-hosts",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "f107fbb0-18b0-5213-b08c-d9387c71c23f",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayAddNetworkHosts",
+          "file": "configuration.sysml",
+          "line": 339,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "perProposal": 8,
+        "ceiling": 32,
+        "current": []
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "mandate.change:url-selection",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "8d49735b-5119-5acd-9c60-94e4f0a5c547",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayChangeUrlSelection",
+          "file": "configuration.sysml",
+          "line": 342,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "values": [
+          "user-provided",
+          "authorized-host"
+        ],
+        "current": "user-provided"
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "mandate.change:self-admission",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "fd93b03b-9482-59d8-bbf6-4699fd6bfb61",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayDelegateOwnAdmission",
+          "file": "configuration.sysml",
+          "line": 340,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "grants": "mayAdmitOwnCandidates",
+        "currentAdmissionMode": "human"
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "operator.create:reviewer",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "df7b9478-6e3f-54b9-a1d5-09ee0dcdcce0",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayCreateReviewer",
+          "file": "configuration.sysml",
+          "line": 341,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "model.consult",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "local-owner-bypasses-operator-edit-scope",
+        "enforcedAt": "src/adapters/model-source-authorization.ts:108-113"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "bounds": "none"
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "model.edit",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "local-owner-bypasses-operator-edit-scope",
+        "enforcedAt": "src/adapters/model-source-authorization.ts:108-113"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "bounds": "none"
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "model.administer",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "local-owner-bypasses-operator-edit-scope",
+        "enforcedAt": "src/adapters/model-source-authorization.ts:108-113"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "bounds": "none"
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "model.decide",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "only-local-owner-proposes-decides-and-adopts-through-http",
+        "enforcedAt": "src/adapters/model-revisions-http.ts:249-437"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "model.adopt",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "only-local-owner-proposes-decides-and-adopts-through-http",
+        "enforcedAt": "src/adapters/model-revisions-http.ts:249-437"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "tool.build:read_web_page",
+      "state": "propose-only",
+      "mode": "propose",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "d6e12bda-be69-5c5c-95ce-2406b94a6890",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayProposeReadWebPage",
+          "file": "configuration.sysml",
+          "line": 307,
+          "column": 13
+        },
+        {
+          "role": "scope",
+          "elementId": "9c2c0640-a542-522c-9a73-9ec3b8d58b2d",
+          "qname": "ASELiveBuilder::liveBuilder::catalog::readWebPageContract",
+          "file": "configuration.sysml",
+          "line": 288,
+          "column": 13
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "maxToolProposals": 2
+      },
+      "codes": [
+        "ADMISSION_BY_HUMAN"
+      ],
+      "origin": "compiler",
+      "display": "propose-only"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "tool.build:read_web_page_outline",
+      "state": "propose-only",
+      "mode": "propose",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "d79e9c8d-7a4f-5e60-964b-7f8ae06f6081",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayProposeReadWebPageOutline",
+          "file": "configuration.sysml",
+          "line": 308,
+          "column": 13
+        },
+        {
+          "role": "scope",
+          "elementId": "6711693e-7442-59bd-8600-0bf517257262",
+          "qname": "ASELiveBuilder::liveBuilder::catalog::readWebPageOutlineContract",
+          "file": "configuration.sysml",
+          "line": 293,
+          "column": 13
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "maxToolProposals": 2
+      },
+      "codes": [
+        "ADMISSION_BY_HUMAN"
+      ],
+      "origin": "compiler",
+      "display": "propose-only"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "tool.invoke",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "d257351e-ac52-5e32-beb4-b036e3e84eb2",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayInvokeActiveCatalog",
+          "file": "configuration.sysml",
+          "line": 309,
+          "column": 13
+        },
+        {
+          "role": "scope",
+          "elementId": "039b86e2-e38b-57c9-b879-1812c62b12a8",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::urlSelectionMode",
+          "file": "configuration.sysml",
+          "line": 338,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "catalog": "active-only",
+        "activeTools": [],
+        "urlSelectionMode": "user-provided",
+        "hosts": []
+      },
+      "codes": [
+        "NO_REACHABLE_HOST"
+      ],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "network.reach",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "scope",
+          "elementId": "85060f2d-7f6f-5ca3-b0d6-bded1437ce74",
+          "qname": "ASELiveBuilder::liveBuilder::networkHosts",
+          "file": "configuration.sysml",
+          "line": 284,
+          "column": 9
+        }
+      ],
+      "codes": [
+        "NO_HOSTS_DECLARED"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "candidate.review",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "2dc330e2-9956-5849-8b69-8167f38aeaee",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayReviewExactCandidate",
+          "file": "configuration.sysml",
+          "line": 310,
+          "column": 13
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "candidate.admit",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "61491a6d-7629-5f8e-bb1c-335f00e3ba36",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayAdmit",
+          "file": "configuration.sysml",
+          "line": 311,
+          "column": 13
+        },
+        {
+          "role": "condition",
+          "elementId": "941130c4-35a8-5cd1-bab8-7aa9c75ad65c",
+          "qname": "ASELiveBuilder::liveBuilder::admissionMode",
+          "file": "configuration.sysml",
+          "line": 283,
+          "column": 9
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "candidate.activate",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "c0caf7f6-4a42-5033-8475-16786828b3a3",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayActivate",
+          "file": "configuration.sysml",
+          "line": 312,
+          "column": 13
+        },
+        {
+          "role": "allocation",
+          "elementId": "8446d0da-b9ab-51b4-b7eb-1610e83bf674",
+          "qname": "ASELiveBuilder::liveBuilder::catalog",
+          "file": "configuration.sysml",
+          "line": 287,
+          "column": 9
+        }
+      ],
+      "codes": [
+        "HOST_RESERVED"
+      ],
+      "origin": "compiler",
+      "scope": {
+        "performedBy": [
+          "ASELiveBuilder::liveBuilder::catalog"
+        ]
+      },
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "mandate.change:network-hosts",
+      "state": "propose-only",
+      "mode": "propose",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "f107fbb0-18b0-5213-b08c-d9387c71c23f",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayAddNetworkHosts",
+          "file": "configuration.sysml",
+          "line": 339,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "perProposal": 8,
+        "ceiling": 32,
+        "current": []
+      },
+      "codes": [
+        "NEEDS_HUMAN_DECISION"
+      ],
+      "origin": "compiler",
+      "display": "propose-only"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "mandate.change:url-selection",
+      "state": "propose-only",
+      "mode": "propose",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "8d49735b-5119-5acd-9c60-94e4f0a5c547",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayChangeUrlSelection",
+          "file": "configuration.sysml",
+          "line": 342,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "values": [
+          "user-provided",
+          "authorized-host"
+        ],
+        "current": "user-provided"
+      },
+      "codes": [
+        "NEEDS_HUMAN_DECISION"
+      ],
+      "origin": "compiler",
+      "display": "propose-only"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "mandate.change:self-admission",
+      "state": "propose-only",
+      "mode": "propose",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "fd93b03b-9482-59d8-bbf6-4699fd6bfb61",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayDelegateOwnAdmission",
+          "file": "configuration.sysml",
+          "line": 340,
+          "column": 17
+        },
+        {
+          "role": "condition",
+          "elementId": "941130c4-35a8-5cd1-bab8-7aa9c75ad65c",
+          "qname": "ASELiveBuilder::liveBuilder::admissionMode",
+          "file": "configuration.sysml",
+          "line": 283,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "grants": "mayAdmitOwnCandidates",
+        "currentAdmissionMode": "human"
+      },
+      "codes": [
+        "NEEDS_HUMAN_DECISION"
+      ],
+      "origin": "compiler",
+      "display": "propose-only"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "operator.create:reviewer",
+      "state": "propose-only",
+      "mode": "propose",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "df7b9478-6e3f-54b9-a1d5-09ee0dcdcce0",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayCreateReviewer",
+          "file": "configuration.sysml",
+          "line": 341,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "mandate": {
+          "mayReviewExactCandidate": true,
+          "mayAdmitReviewedCandidates": true
+        }
+      },
+      "codes": [
+        "NEEDS_HUMAN_DECISION"
+      ],
+      "origin": "compiler",
+      "display": "propose-only"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "mandate.rewrite",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "a88775d6-863a-553a-a4ad-7ebcd125ac34",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayChangeOwnMandate",
+          "file": "configuration.sysml",
+          "line": 313,
+          "column": 13
+        }
+      ],
+      "codes": [
+        "HARD_DENIED"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "operator.spawn",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "fb31c59d-e024-55a4-a903-9a431620e82d",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayCreateAgents",
+          "file": "configuration.sysml",
+          "line": 314,
+          "column": 13
+        }
+      ],
+      "codes": [
+        "HARD_DENIED"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "model.consult",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "d4fcce09-68cc-5912-ba83-fde47dc3f9b7",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayProposeSysmlRevision",
+          "file": "configuration.sysml",
+          "line": 343,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "model.edit",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "d4fcce09-68cc-5912-ba83-fde47dc3f9b7",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayProposeSysmlRevision",
+          "file": "configuration.sysml",
+          "line": 343,
+          "column": 17
+        }
+      ],
+      "codes": [
+        "NO_EDIT_POLICY"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "model.administer",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [
+        "NO_ADMINISTRATION_POLICY"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "model.decide",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [
+        "OWNER_ONLY_PATH"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "model.adopt",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [
+        "OWNER_ONLY_PATH"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:context-evidence@ASELiveBuilder::liveBuilder",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "91d06b4e-3b30-5823-b22a-5fddf4fa3102",
+          "qname": "ASELiveBuilder::liveBuilder::context::evidenceAccess",
+          "file": "configuration.sysml",
+          "line": 149,
+          "column": 5
+        },
+        {
+          "role": "flag",
+          "elementId": "bc713b44-3f23-5324-966e-607470622a77",
+          "qname": "ASELiveBuilder::liveBuilder::context::evidenceAccess::enabled",
+          "file": "configuration.sysml",
+          "line": 152,
+          "column": 9
+        },
+        {
+          "role": "target",
+          "elementId": "4cd0410a-a1b7-5b09-af50-f56b0bd9fd38",
+          "qname": "ASELiveBuilder::liveBuilder::context::evidence",
+          "file": "configuration.sysml",
+          "line": 148,
+          "column": 5
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "ConsulterPreuve",
+        "accessId": "91d06b4e-3b30-5823-b22a-5fddf4fa3102"
+      },
+      "scope": {
+        "exposureName": "ConsulterPreuve",
+        "targetUnit": "ASELiveBuilder::liveBuilder"
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:memory-capture@ASELiveBuilder::liveBuilder",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "ac6991ef-fb56-5b51-a3e2-ba5ce7166aa4",
+          "qname": "ASELiveBuilder::liveBuilder::memory::captureAccess",
+          "file": "configuration.sysml",
+          "line": 212,
+          "column": 5
+        },
+        {
+          "role": "flag",
+          "elementId": "169b3154-cd90-5975-9b65-8d0da6a1a26b",
+          "qname": "ASELiveBuilder::liveBuilder::memory::captureAccess::enabled",
+          "file": "configuration.sysml",
+          "line": 215,
+          "column": 9
+        },
+        {
+          "role": "target",
+          "elementId": "83146f1c-34f9-526f-a434-dfb9148ac91f",
+          "qname": "ASELiveBuilder::liveBuilder::memory::capture",
+          "file": "configuration.sysml",
+          "line": 211,
+          "column": 5
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "CapturerMemoire",
+        "accessId": "ac6991ef-fb56-5b51-a3e2-ba5ce7166aa4"
+      },
+      "scope": {
+        "exposureName": "CapturerMemoire",
+        "targetUnit": "ASELiveBuilder::liveBuilder",
+        "allowedScopes": [
+          "modeling"
+        ],
+        "requireSourceRefs": true,
+        "requireKnownOutcome": true,
+        "maxValidityMs": 86400000,
+        "allowSelfAdmission": false
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:memory-recall@ASELiveBuilder::liveBuilder",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "a966189c-119c-5250-807c-ded5e19fe6cf",
+          "qname": "ASELiveBuilder::liveBuilder::memory::recallAccess",
+          "file": "configuration.sysml",
+          "line": 219,
+          "column": 5
+        },
+        {
+          "role": "flag",
+          "elementId": "e3435363-5676-518a-99df-c7e4524e2ca2",
+          "qname": "ASELiveBuilder::liveBuilder::memory::recallAccess::enabled",
+          "file": "configuration.sysml",
+          "line": 222,
+          "column": 9
+        },
+        {
+          "role": "target",
+          "elementId": "b398f81d-1522-516b-8762-481ccc07ecdd",
+          "qname": "ASELiveBuilder::liveBuilder::memory::recall",
+          "file": "configuration.sysml",
+          "line": 218,
+          "column": 5
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "RappelerMemoire",
+        "accessId": "a966189c-119c-5250-807c-ded5e19fe6cf"
+      },
+      "scope": {
+        "exposureName": "RappelerMemoire",
+        "targetUnit": "ASELiveBuilder::liveBuilder",
+        "allowedScopes": [
+          "modeling"
+        ],
+        "requireSourceRefs": true,
+        "requireKnownOutcome": true,
+        "maxValidityMs": 86400000,
+        "allowSelfAdmission": false
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:memory-revise@ASELiveBuilder::liveBuilder",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "b86daeb2-ece0-5037-8abf-e2e7fe26b5fe",
+          "qname": "ASELiveBuilder::liveBuilder::memory::reviseAccess",
+          "file": "configuration.sysml",
+          "line": 226,
+          "column": 5
+        },
+        {
+          "role": "flag",
+          "elementId": "f8eea98a-2589-5db2-85ab-1d25bc9c07c6",
+          "qname": "ASELiveBuilder::liveBuilder::memory::reviseAccess::enabled",
+          "file": "configuration.sysml",
+          "line": 229,
+          "column": 9
+        },
+        {
+          "role": "target",
+          "elementId": "d165f2af-788b-5ebe-b536-a9313b792faf",
+          "qname": "ASELiveBuilder::liveBuilder::memory::revise",
+          "file": "configuration.sysml",
+          "line": 225,
+          "column": 5
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "ReviserMemoire",
+        "accessId": "b86daeb2-ece0-5037-8abf-e2e7fe26b5fe"
+      },
+      "scope": {
+        "exposureName": "ReviserMemoire",
+        "targetUnit": "ASELiveBuilder::liveBuilder",
+        "allowedScopes": [
+          "modeling"
+        ],
+        "requireSourceRefs": true,
+        "requireKnownOutcome": true,
+        "maxValidityMs": 86400000,
+        "allowSelfAdmission": false
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:memory-review@ASELiveBuilder::liveBuilder",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "19eff524-806c-5a37-9084-12e6e3c38e8c",
+          "qname": "ASELiveBuilder::liveBuilder::memory::reviewAccess",
+          "file": "configuration.sysml",
+          "line": 233,
+          "column": 5
+        },
+        {
+          "role": "flag",
+          "elementId": "98d1e97a-410a-537d-aa49-8fe0fae5aa0a",
+          "qname": "ASELiveBuilder::liveBuilder::memory::reviewAccess::enabled",
+          "file": "configuration.sysml",
+          "line": 236,
+          "column": 9
+        },
+        {
+          "role": "target",
+          "elementId": "6f55468e-b732-5232-8fa0-2b4a0aa64263",
+          "qname": "ASELiveBuilder::liveBuilder::memory::review",
+          "file": "configuration.sysml",
+          "line": 232,
+          "column": 5
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "RevoirMemoire",
+        "accessId": "19eff524-806c-5a37-9084-12e6e3c38e8c"
+      },
+      "scope": {
+        "exposureName": "RevoirMemoire",
+        "targetUnit": "ASELiveBuilder::liveBuilder",
+        "allowedScopes": [
+          "modeling"
+        ],
+        "requireSourceRefs": true,
+        "requireKnownOutcome": true,
+        "maxValidityMs": 86400000,
+        "allowSelfAdmission": false
+      },
+      "codes": [
+        "SELF_ADMISSION_FORBIDDEN",
+        "EFFECTIVELY_UNREACHABLE"
+      ],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:memory-withdraw@ASELiveBuilder::liveBuilder",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "6b5418c5-a1ef-5245-8c80-674436d41bc0",
+          "qname": "ASELiveBuilder::liveBuilder::memory::withdrawAccess",
+          "file": "configuration.sysml",
+          "line": 240,
+          "column": 5
+        },
+        {
+          "role": "flag",
+          "elementId": "0e2e9313-1fbb-52f4-bcb0-a8a10758b682",
+          "qname": "ASELiveBuilder::liveBuilder::memory::withdrawAccess::enabled",
+          "file": "configuration.sysml",
+          "line": 243,
+          "column": 9
+        },
+        {
+          "role": "target",
+          "elementId": "4f546b02-3349-565e-bac4-a77db02230eb",
+          "qname": "ASELiveBuilder::liveBuilder::memory::withdraw",
+          "file": "configuration.sysml",
+          "line": 239,
+          "column": 5
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "RetirerMemoire",
+        "accessId": "6b5418c5-a1ef-5245-8c80-674436d41bc0"
+      },
+      "scope": {
+        "exposureName": "RetirerMemoire",
+        "targetUnit": "ASELiveBuilder::liveBuilder",
+        "allowedScopes": [
+          "modeling"
+        ],
+        "requireSourceRefs": true,
+        "requireKnownOutcome": true,
+        "maxValidityMs": 86400000,
+        "allowSelfAdmission": false
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:skill-install@ASELiveBuilder::liveBuilder",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "11b0d994-7093-5e2d-9831-b69776168730",
+          "qname": "ASELiveBuilder::liveBuilder::context::skills::installAccess",
+          "file": "configuration.sysml",
+          "line": 172,
+          "column": 9
+        },
+        {
+          "role": "flag",
+          "elementId": "7eaa49d4-b57d-5eca-b518-8e921a7cc5aa",
+          "qname": "ASELiveBuilder::liveBuilder::context::skills::installAccess::enabled",
+          "file": "configuration.sysml",
+          "line": 175,
+          "column": 13
+        },
+        {
+          "role": "target",
+          "elementId": "53717e8f-99be-5563-9410-d5d75ed5c575",
+          "qname": "ASELiveBuilder::liveBuilder::context::skills::install",
+          "file": "configuration.sysml",
+          "line": 171,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "InstallerSkill",
+        "accessId": "11b0d994-7093-5e2d-9831-b69776168730"
+      },
+      "scope": {
+        "exposureName": "InstallerSkill",
+        "targetUnit": "ASELiveBuilder::liveBuilder",
+        "allowedHosts": [
+          "raw.githubusercontent.com"
+        ],
+        "maxSkillBytes": 65536,
+        "maxInstalledSkills": 32,
+        "maxLoadedSkills": 4
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:skill-list@ASELiveBuilder::liveBuilder",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "2c05e6c6-bc0f-5287-a914-343f166a9582",
+          "qname": "ASELiveBuilder::liveBuilder::context::skills::listAccess",
+          "file": "configuration.sysml",
+          "line": 179,
+          "column": 9
+        },
+        {
+          "role": "flag",
+          "elementId": "f6b2be36-d95d-55d1-a96b-90be38c92767",
+          "qname": "ASELiveBuilder::liveBuilder::context::skills::listAccess::enabled",
+          "file": "configuration.sysml",
+          "line": 182,
+          "column": 13
+        },
+        {
+          "role": "target",
+          "elementId": "8d1defd9-824a-55bc-a098-5790bc441988",
+          "qname": "ASELiveBuilder::liveBuilder::context::skills::list",
+          "file": "configuration.sysml",
+          "line": 178,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "ListerSkills",
+        "accessId": "2c05e6c6-bc0f-5287-a914-343f166a9582"
+      },
+      "scope": {
+        "exposureName": "ListerSkills",
+        "targetUnit": "ASELiveBuilder::liveBuilder",
+        "allowedHosts": [
+          "raw.githubusercontent.com"
+        ],
+        "maxSkillBytes": 65536,
+        "maxInstalledSkills": 32,
+        "maxLoadedSkills": 4
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:skill-load@ASELiveBuilder::liveBuilder",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "7288ac91-75e0-5ece-9fda-a7c1b48337dc",
+          "qname": "ASELiveBuilder::liveBuilder::context::skills::loadAccess",
+          "file": "configuration.sysml",
+          "line": 186,
+          "column": 9
+        },
+        {
+          "role": "flag",
+          "elementId": "bbcff9d9-a138-5ce4-ac4b-c25f74b5c10f",
+          "qname": "ASELiveBuilder::liveBuilder::context::skills::loadAccess::enabled",
+          "file": "configuration.sysml",
+          "line": 189,
+          "column": 13
+        },
+        {
+          "role": "target",
+          "elementId": "68988e3c-c63c-5d42-98da-6456bbf842af",
+          "qname": "ASELiveBuilder::liveBuilder::context::skills::load",
+          "file": "configuration.sysml",
+          "line": 185,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "ChargerSkill",
+        "accessId": "7288ac91-75e0-5ece-9fda-a7c1b48337dc"
+      },
+      "scope": {
+        "exposureName": "ChargerSkill",
+        "targetUnit": "ASELiveBuilder::liveBuilder",
+        "allowedHosts": [
+          "raw.githubusercontent.com"
+        ],
+        "maxSkillBytes": 65536,
+        "maxInstalledSkills": 32,
+        "maxLoadedSkills": 4
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:skill-unload@ASELiveBuilder::liveBuilder",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "b5e70605-2462-5f75-88ec-e6913d32a30f",
+          "qname": "ASELiveBuilder::liveBuilder::context::skills::unloadAccess",
+          "file": "configuration.sysml",
+          "line": 193,
+          "column": 9
+        },
+        {
+          "role": "flag",
+          "elementId": "569aef9f-93e9-5e1f-a909-3c4520579a7a",
+          "qname": "ASELiveBuilder::liveBuilder::context::skills::unloadAccess::enabled",
+          "file": "configuration.sysml",
+          "line": 196,
+          "column": 13
+        },
+        {
+          "role": "target",
+          "elementId": "db1f8419-9939-531a-ad7d-3b6949e8bd02",
+          "qname": "ASELiveBuilder::liveBuilder::context::skills::unload",
+          "file": "configuration.sysml",
+          "line": 192,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "DechargerSkill",
+        "accessId": "b5e70605-2462-5f75-88ec-e6913d32a30f"
+      },
+      "scope": {
+        "exposureName": "DechargerSkill",
+        "targetUnit": "ASELiveBuilder::liveBuilder",
+        "allowedHosts": [
+          "raw.githubusercontent.com"
+        ],
+        "maxSkillBytes": 65536,
+        "maxInstalledSkills": 32,
+        "maxLoadedSkills": 4
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    }
+  ],
+  "delegations": [],
+  "diagnostics": [
+    {
+      "code": "MEMORY_REVIEW_UNREACHABLE",
+      "severity": "warning",
+      "context": {
+        "unit": "ASELiveBuilder::liveBuilder",
+        "operator": "8605dd44-e5bd-5972-8c31-a7e88130f911"
+      },
+      "recovery": "expose memory-review to a second operator of the same memory owner, or set allowSelfAdmission"
+    },
+    {
+      "code": "OWNER_IMPLICIT",
+      "severity": "info",
+      "context": {
+        "units": [
+          "ASELiveBuilder::liveBuilder"
+        ]
+      },
+      "recovery": "authority lot 1 models the owner (HumanOperator + RootAuthority + RootGrant); until then owner cells are host rules, not declarations"
+    },
+    {
+      "code": "REVISION_FLAG_WITHOUT_EDIT_POLICY",
+      "severity": "info",
+      "context": {
+        "unit": "ASELiveBuilder::liveBuilder",
+        "effect": "builder may read the model but has no edit scope (src/adapters/model-source-authorization.ts:34-37)"
+      }
+    }
+  ],
+  "caveats": [
+    "ALLOWED_IS_DECLARED_NOT_EXECUTED: a cell states declared authority; execution still passes the host checks at call time (digest, catalog revision, executor registration: src/application/behavior-call-admission.ts:57-66).",
+    "ABSENT_CELL_IS_NOT_APPLICABLE: a missing (row, column) pair means no declaration or host rule concerns that pair.",
+    "OWNER_CELLS_ARE_HOST_RULES_BEFORE_LOT_3: the owner is not a declared operator in main; its cells cite the TS enforcement point.",
+    "ADOPTED_VERSION_ONLY: the matrix describes the compiled source version, not pending proposals."
+  ],
+  "summary": {
+    "byState": {
+      "allowed": 22,
+      "propose-only": 6,
+      "denied": 10,
+      "delegated": 0,
+      "inherited": 0
+    },
+    "uncertain": 0,
+    "hostRule": 10,
+    "byRow": {
+      "owner@ASELiveBuilder::liveBuilder": {
+        "allowed": 10,
+        "propose-only": 0,
+        "denied": 0,
+        "delegated": 0,
+        "inherited": 0
+      },
+      "8605dd44-e5bd-5972-8c31-a7e88130f911": {
+        "allowed": 12,
+        "propose-only": 6,
+        "denied": 10,
+        "delegated": 0,
+        "inherited": 0
+      }
+    },
+    "coordinates": {
+      "checked": 57,
+      "mismatches": 0
+    }
+  },
+  "digest": "48b9ab56492ae26584cf91e04e84fe2920e4cca1804b0bf614289eec3e25182d"
+}

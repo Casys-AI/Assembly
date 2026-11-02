@@ -1,0 +1,33 @@
+{
+  "tasks": {
+    "dev": "ASSEMBLY_ENV=development deno task --cwd apps/live-builder ui:dev",
+    "setup": "deno task --cwd apps/live-builder setup",
+    "setup:source": "deno task --cwd apps/live-builder setup:source",
+    "app:quality": "deno task --cwd apps/live-builder quality",
+    "quality": "deno fmt --check && deno task app:quality",
+    "check": "deno task --cwd apps/live-builder check && deno task --cwd apps/live-builder ui:check",
+    "test": {
+      "description": "Backend unit and setup tests, then frontend SSR and DOM tests, on parallel workers (runner profile workspace)",
+      "command": "apps/live-builder/.data/toolchains/deno-v2.9.7/deno run --no-prompt --allow-read --allow-write --allow-env --allow-run --allow-sys=uid,gid apps/live-builder/tools/test-runner.ts workspace"
+    },
+    "test:integration:full": "apps/live-builder/.data/toolchains/deno-v2.9.7/deno run --no-prompt --allow-read --allow-write --allow-env --allow-run --allow-sys=uid,gid apps/live-builder/tools/test-runner.ts integration-full",
+    "test:toolkit": "apps/live-builder/.data/toolchains/deno-v2.9.7/deno run --no-prompt --allow-read --allow-write --allow-env --allow-run --allow-sys=uid,gid apps/live-builder/tools/test-runner.ts toolkit",
+    "test:full": "apps/live-builder/.data/toolchains/deno-v2.9.7/deno run --no-prompt --allow-read --allow-write --allow-env --allow-run --allow-sys=uid,gid apps/live-builder/tools/test-runner.ts workspace-full",
+    "build": "deno task --cwd apps/live-builder ui:build",
+    "fmt": "deno fmt && deno task --cwd apps/live-builder fmt && deno task --cwd apps/live-builder/frontend fmt",
+    "test:changed": "apps/live-builder/.data/toolchains/deno-v2.9.7/deno run --no-prompt --allow-read --allow-write --allow-env --allow-run --allow-sys=uid,gid apps/live-builder/tools/test-runner.ts workspace-changed",
+    "test:postgres": "apps/live-builder/.data/toolchains/deno-v2.9.7/deno run --no-prompt --allow-read --allow-write --allow-env --allow-run --allow-sys=uid,gid apps/live-builder/tools/test-runner.ts postgres",
+    "test:heavy": "apps/live-builder/.data/toolchains/deno-v2.9.7/deno run --no-prompt --allow-read --allow-write --allow-env --allow-run --allow-sys=uid,gid apps/live-builder/tools/test-runner.ts heavy",
+    "test:semantic": "apps/live-builder/.data/toolchains/deno-v2.9.7/deno run --no-prompt --allow-read --allow-write --allow-env --allow-run --allow-sys=uid,gid apps/live-builder/tools/test-runner.ts semantic",
+    "dev:backend": "deno task --cwd apps/live-builder dev:backend",
+    "db:up": "docker compose up --detach --wait postgres",
+    "db:down": "docker compose stop postgres",
+    "db:migrate": "deno task --cwd apps/live-builder db:migrate"
+  },
+  "fmt": {
+    "include": [
+      "deno.json",
+      "CONTRIBUTING.md"
+    ]
+  }
+}

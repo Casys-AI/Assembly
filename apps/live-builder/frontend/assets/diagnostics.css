@@ -1,0 +1,330 @@
+/* Diagnostics keeps the System page's type, white surface and narrow reading
+   column. Colour identifies severity; words carry the same information. */
+.view-page .system-diagnostics {
+  container: system-diagnostics / inline-size;
+  max-width: 880px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.diagnostics-intro {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.diagnostics-intro p {
+  margin: 0;
+  color: var(--muted);
+}
+.diagnostics-readonly {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.diagnostics-readonly .ic,
+.diagnostics-source .ic,
+.diagnostics-severity .ic {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.diagnostics-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 28px;
+  margin: 0;
+  padding: 0 0 20px;
+  border-bottom: 1px solid var(--line);
+}
+.diagnostics-overview dt {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-weight: 600;
+}
+.diagnostics-overview dd {
+  margin: 7px 0 0;
+  font-size: 15px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.diagnostics-availability {
+  color: var(--muted);
+  background: var(--chip);
+  padding: 1px 7px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.diagnostics-availability[data-state="error"] {
+  color: var(--bad);
+}
+.diagnostics-overview .diagnostics-overview-note {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.diagnostics-boundary {
+  margin: 12px 0 30px;
+  max-width: 72ch;
+  color: var(--muted);
+  font-size: 12px;
+}
+.diagnostics-section {
+  margin: 0 0 32px;
+}
+.diagnostics-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.diagnostics-section-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -.015em;
+}
+.diagnostics-section-head > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.diagnostics-findings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.diagnostics-finding {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+.diagnostics-severity {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-top: 1px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.diagnostics-finding[data-severity="warning"] .diagnostics-severity,
+.diagnostics-attention-severity[data-severity="warning"] {
+  color: var(--warn);
+}
+.diagnostics-finding[data-severity="error"] .diagnostics-severity,
+.diagnostics-attention-severity[data-severity="error"] {
+  color: var(--bad);
+}
+.diagnostics-finding-content {
+  min-width: 0;
+}
+.diagnostics-message {
+  max-width: 72ch;
+  margin: 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.diagnostics-target {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.system-diagnostics a {
+  color: inherit;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
+.system-diagnostics a:hover {
+  text-decoration-color: currentColor;
+}
+.diagnostics-source {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 5px;
+  max-width: 100%;
+  margin-top: 7px;
+  font-size: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.diagnostics-source .ic {
+  margin-top: 1px;
+}
+.diagnostics-details {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.diagnostics-details > summary {
+  width: fit-content;
+  max-width: 100%;
+  font-size: 12px;
+}
+.diagnostics-details[open] > summary {
+  margin-bottom: 10px;
+}
+.diagnostics-facts {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+.diagnostics-facts > div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px;
+}
+.diagnostics-facts dd {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.system-diagnostics code {
+  font: 11px/1.6 var(--mono);
+  overflow-wrap: anywhere;
+}
+.diagnostics-report-identity {
+  margin-top: 14px;
+}
+.diagnostics-empty,
+.diagnostics-state,
+.diagnostics-conformance {
+  margin: 14px 0;
+  color: var(--muted);
+}
+.diagnostics-state p {
+  margin: 0;
+  max-width: 70ch;
+}
+.diagnostics-unmapped {
+  max-width: 70ch;
+  margin: 12px 0;
+  padding: 8px 12px;
+  border-left: 2px solid var(--warn);
+  color: var(--warn);
+}
+.diagnostics-masked {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--hover);
+}
+.diagnostics-masked > summary {
+  font-size: 13px;
+  color: var(--muted);
+}
+.diagnostics-masked > summary span {
+  margin-left: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.diagnostics-masked > p,
+.diagnostics-attention > p {
+  max-width: 72ch;
+  color: var(--muted);
+  font-size: 12px;
+}
+.diagnostics-masked .diagnostics-finding:last-child {
+  border-bottom: 0;
+}
+.diagnostics-more {
+  margin-top: 14px;
+  padding: 6px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 12px;
+}
+.diagnostics-more span {
+  color: var(--muted);
+}
+.diagnostics-attention {
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.diagnostics-attention > summary {
+  font-size: 13px;
+  font-weight: 500;
+}
+.diagnostics-attention > summary .diagnostics-availability {
+  margin-left: 8px;
+}
+.diagnostics-attention > ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.diagnostics-attention-item {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.diagnostics-attention-item > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.diagnostics-attention-item > code {
+  display: block;
+  margin: 5px 0;
+}
+.diagnostics-attention-item > a {
+  font-size: 12px;
+}
+.diagnostics-attention-item pre {
+  background: var(--hover);
+}
+@container system-diagnostics (width < 560px) {
+  .diagnostics-overview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .diagnostics-finding {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+    padding: 16px 0;
+  }
+  .diagnostics-facts > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .diagnostics-section-head {
+    gap: 4px 12px;
+  }
+  .diagnostics-masked {
+    padding: 10px;
+  }
+}
+
+/* Unified findings: provenance stays in a compact check disclosure. */
+.diagnostics-checks {
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.diagnostics-checks > summary {
+  cursor: pointer;
+}
+.diagnostics-check-detail {
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+.diagnostics-check-detail p {
+  margin: 6px 0;
+}
+.diagnostics-check-detail .diagnostics-facts {
+  margin-top: 8px;
+}

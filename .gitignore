@@ -1,0 +1,17 @@
+.DS_Store
+
+# Dépendances régénérables (package.json / package-lock.json restent versionnés).
+node_modules/
+__pycache__/
+.playwright-cli/
+coverage/
+
+# Réponses personnelles de l'installation BMAD (les réglages d'équipe sont dans custom/).
+/_bmad/config.user.toml
+
+# Local live-builder credentials and state.
+apps/live-builder/.env
+apps/live-builder/.env.*
+!apps/live-builder/.env.example
+apps/live-builder/.data/
+apps/live-builder/frontend/_fresh/

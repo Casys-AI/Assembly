@@ -1,0 +1,535 @@
+/* Changes, rather than explanatory copy, carry the decision in the chat. */
+.proposal-code-diff {
+  margin: 0 18px 12px;
+  max-height: 420px;
+  overflow: auto;
+  font-size: 12px;
+}
+.proposal-code-diff .d2h-file-list-wrapper {
+  display: none;
+}
+.proposal-code-diff .d2h-file-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.proposal-code-diff .d2h-file-collapse,
+.proposal-code-diff .d2h-file-switch {
+  display: none;
+}
+.proposal-code-diff .d2h-code-line-ctn {
+  white-space: pre;
+}
+.chat-proposal {
+  margin: 18px 0 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+  scroll-margin: 16px;
+}
+.chat-proposal.is-pending {
+  border-left: 3px solid var(--blue);
+}
+.evolution-blockers {
+  margin: 0 18px 12px;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.proposal-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px 12px;
+}
+.proposal-heading h3 {
+  font-size: 14px;
+  font-weight: 650;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.proposal-status {
+  color: var(--muted);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.is-pending > .proposal-heading .proposal-status {
+  color: var(--blue);
+}
+.proposal-comparison {
+  margin: 0 18px 12px;
+}
+.proposal-comparison-head,
+.proposal-values {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+}
+.proposal-comparison-head {
+  padding: 2px 0 7px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.proposal-comparison-head > span {
+  padding-inline: 10px;
+}
+.proposal-difference {
+  border-top: 1px solid var(--line);
+}
+.proposal-property {
+  padding: 9px 10px 5px;
+  font-size: 12px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.proposal-values {
+  font-size: 13px;
+  line-height: 1.55;
+}
+.proposal-values > div {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 6px 10px 10px;
+}
+.proposal-before {
+  color: #64717b;
+}
+.proposal-after {
+  color: #245847;
+  background: #f1f7f4;
+  border-radius: 3px;
+}
+.proposal-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 18px 16px;
+}
+.proposal-actions button,
+.proposal-feed-error button {
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+}
+.proposal-actions .proposal-accept {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+.proposal-actions .proposal-adjust {
+  margin-left: auto;
+  border-color: transparent;
+  color: var(--blue);
+}
+.proposal-actions button:not(:disabled):hover {
+  filter: brightness(.95);
+}
+.proposal-notice,
+.proposal-error {
+  margin: 10px 18px;
+  font-size: 12px;
+}
+.proposal-notice {
+  color: #795d2d;
+}
+.proposal-error {
+  color: #943e34;
+}
+.proposal-source,
+.proposal-rationale {
+  margin: 10px 18px;
+  font-size: 12px;
+}
+.proposal-source > summary,
+.proposal-rationale > summary {
+  color: var(--muted);
+}
+
+.operator-authority-facts {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+.operator-authority-facts > div {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: 0.75rem;
+}
+.operator-authority-facts dt {
+  color: var(--muted);
+}
+.operator-authority-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.operator-authority-facts dd code {
+  display: block;
+  font-size: 0.85em;
+}
+.proposal-source p,
+.proposal-rationale p {
+  margin: 8px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.proposal-source pre {
+  font-size: 11px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 260px;
+  overflow: auto;
+  background: #f5f7f8;
+  padding: 10px;
+}
+.proposal-source-file h4 {
+  margin: 12px 0 5px;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.proposal-source-pair {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  gap: 8px;
+}
+.proposal-source-pair > div > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.proposal-source-pair pre {
+  margin: 5px 0 12px;
+}
+.proposal-receipt > summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  font-size: 13px;
+}
+.proposal-receipt > summary > span:first-child {
+  overflow-wrap: anywhere;
+}
+.proposal-receipt > summary::before {
+  content: "›";
+  color: var(--muted);
+}
+.proposal-receipt[open] > summary::before {
+  content: "⌄";
+}
+.proposal-receipt > summary > span:first-child {
+  flex: 1;
+}
+.proposal-receipt[open] > summary {
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+.proposal-adjustment {
+  padding: 8px 18px 0;
+}
+.proposal-adjustment label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.proposal-adjustment textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  padding: 10px;
+  border: 1px solid #b6c6d3;
+  border-radius: 5px;
+  background: #fff;
+  color: var(--ink);
+}
+.proposal-adjustment .proposal-actions {
+  padding-inline: 0;
+}
+.proposal-jump {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid #dce7ef;
+  color: var(--blue);
+  background: #f1f6fa;
+  font-size: 12px;
+}
+.proposal-count {
+  display: grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  background: var(--blue);
+  color: #fff;
+  border-radius: 5px;
+  font-size: 11px;
+}
+.proposal-feed-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 18px;
+  font-size: 12px;
+  color: #943e34;
+}
+/*
+ * A change that carries the diff of the prepared sources reads like a pull
+ * request: its name, who proposed it, the commit and size, then the diff.
+ */
+.change-heading p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+div.change-heading {
+  padding: 0 18px 6px;
+}
+.change-scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 .45em;
+}
+.change-scope span + span::before {
+  content: "·";
+  margin-right: .45em;
+}
+.change-byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 .6em;
+}
+.change-byline code {
+  font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.change-stats .plus {
+  color: #19743c;
+}
+.change-stats .minus {
+  color: #b13c42;
+}
+.change-stats .faint {
+  color: #9a9a9f;
+}
+.change-chip {
+  flex-shrink: 0;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 5%);
+  color: #4a4a4f;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.change-chip.is-accepted,
+.change-chip.is-applied {
+  background: #eef4f0;
+  color: #245847;
+}
+.change-chip.is-declined {
+  color: var(--muted);
+}
+.change-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 6px 18px 12px;
+}
+.change-bar .proposal-actions {
+  padding: 0;
+}
+.change-diff > summary {
+  margin: 4px 18px 10px;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.change-layout {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: auto;
+  padding: 2px;
+  border-radius: 9px;
+  background: rgb(0 0 0 / 5%);
+}
+.change-layout button {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  padding: 3px 11px;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.change-layout button[aria-pressed="true"] {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+}
+.change-layout button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.model-change .proposal-receipt > summary {
+  align-items: center;
+}
+
+/* What an operator reported to its opener: one line, leading to its Request. */
+.operator-notice {
+  align-self: stretch;
+  margin: 0;
+}
+.notice-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  color: var(--ink);
+  font-size: 13px;
+  text-decoration: none;
+}
+.notice-line:hover {
+  background: rgb(0 0 0 / 4%);
+}
+.notice-line:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.notice-mark {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-right: 4px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+.is-escalation .notice-mark {
+  background: var(--accent);
+}
+.notice-text {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.notice-text b {
+  font-weight: 600;
+}
+.notice-state {
+  flex: none;
+  color: var(--muted);
+  font-size: 12px;
+}
+.is-escalation .notice-state,
+.is-order .notice-state {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 60%;
+  overflow-wrap: anywhere;
+}
+.notice-result {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  margin: 0;
+  padding: 0 10px 6px 29px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.notice-route {
+  margin: 0 10px 6px 29px;
+  color: var(--muted);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+.notice-route summary {
+  cursor: pointer;
+}
+.notice-route p {
+  margin: 6px 0;
+}
+@media (max-width: 700px) {
+  .conversation-main .scroll {
+    padding: 18px 12px;
+  }
+  .proposal-heading {
+    padding: 12px;
+    gap: 8px;
+  }
+  .proposal-comparison {
+    margin-inline: 12px;
+  }
+  .change-bar {
+    padding-inline: 12px;
+  }
+  div.change-heading {
+    padding-inline: 12px;
+  }
+  .proposal-code-diff {
+    margin-inline: 12px;
+  }
+  .proposal-actions {
+    padding: 10px 12px 12px;
+  }
+  .proposal-source,
+  .proposal-rationale,
+  .change-diff > summary {
+    margin-inline: 12px;
+  }
+  .proposal-source-pair {
+    grid-template-columns: minmax(0,1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .conversation-main .scroll {
+    scroll-behavior: auto;
+  }
+}
+
+/* An effective activation sits quietly between conversation entries. */
+.model-update-divider {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 9px;
+  min-width: 0;
+  margin: 14px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.model-update-divider::before,
+.model-update-divider::after {
+  content: "";
+  flex: 1 1 16px;
+  border-top: 1px solid var(--line);
+}
+.model-update-divider a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+.model-update-divider a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+.model-update-label,
+.model-update-version {
+  overflow-wrap: anywhere;
+}

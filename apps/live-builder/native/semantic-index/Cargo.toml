@@ -1,0 +1,43 @@
+# Addon N-API (napi-rs) Deno -> Rust -> Oxigraph, crate de production W5.
+# Aucun chemin WASM : pas de paquet npm Oxigraph, pas de crate wasm.
+# Meme discipline que native/toolkit : napi 3.15.0, napi-derive 3.6.13,
+# napi-build 2.6.0 (CLI npm @napi-rs/cli 3.10.9, voir package.json),
+# toolchain epingle 1.98.1 (verifie par tools/setup-semantic-index.ts,
+# comme le setup Toolkit), rust-version = borne basse declaree,
+# panic=unwind attrape a la frontiere.
+#
+# Oxigraph epingle exact, default-features=false : Store en memoire
+# uniquement, pas de RocksDB surdimensionne pour un index regenerable.
+# La persistance est la projection N-Quads du magasin W2 ; cette crate
+# ne conserve rien au-dela du processus. Cargo.lock est genere et
+# verifie par le coordinateur au premier build (chemin cargo propre,
+# aucun partage de target avec native/toolkit impose).
+[package]
+name = "ase-semantic-index-napi"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.97"
+license = "MIT"
+publish = false
+description = "napi-rs bridge Deno -> Oxigraph (native Rust), semantic index W5, no WASM"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+napi = { version = "=3.15.0", features = ["napi8", "serde-json"] }
+napi-derive = "=3.6.13"
+oxigraph = { version = "=0.4.11", default-features = false }
+# Memes versions exactes ; features explicites pour que les variantes AST
+# controlees a l'admission (Lateral/sep-0006, triples cites rdf-star)
+# existent par construction et pas seulement par unification via Oxigraph.
+spargebra = { version = "=0.3.5", features = ["rdf-star", "sep-0006"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+sha2 = "=0.10.9"
+
+[build-dependencies]
+napi-build = "=2.6.0"
+
+[profile.release]
+panic = "unwind"

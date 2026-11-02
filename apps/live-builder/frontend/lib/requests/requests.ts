@@ -1,0 +1,775 @@
+import {
+  type CaseModelScope,
+  readCaseModelScope,
+} from "../case-model-scope.ts";
+import { signal } from "@preact/signals";
+import { type AssemblyEnvironment, parseEnvironment } from "../environment.ts";
+import type {
+  AgentConversation,
+  ConversationsSnapshot,
+} from "../../../src/domain/work/records/conversations.ts";
+import type {
+  OpeningCommand,
+  OpeningSourceChoice,
+  OpeningView,
+} from "../../../src/domain/work/request-spaces.ts";
+import { createCases, isOpenCase, parseCasesSnapshot } from "../cases/cases.ts";
+import {
+  parseConversationsSnapshot,
+  takesHumanMessage,
+} from "../conversations/state.ts";
+import {
+  createSavedSystemsApi,
+  releaseOpeningKind,
+  type SavedSystemView,
+} from "../system/saved-systems.ts";
+import type { Fetcher } from "../workbench/api.ts";
+
+export interface RequestHost {
+  projectId?: string;
+  systemId?: string;
+}
+export interface IntentStorage {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}
+const object = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === "object" && !Array.isArray(value);
+const identity = (value: unknown): value is string =>
+  typeof value === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(value);
+// Host locators include the canonical `git:<project UUID>` namespace. They are
+// checked against the trusted endpoint, not interpreted as command identities.
+const hostIdentity = (value: unknown): value is string =>
+  typeof value === "string" && value.length > 0 && value.length <= 1024 &&
+  value.trim() === value && value !== "*" &&
+  // deno-lint-ignore no-control-regex -- Host locators exclude control characters.
+  !/[\u0000-\u001f\u007f]/.test(value);
+const exact = (value: unknown): value is string =>
+  typeof value === "string" && /^commit:[a-f0-9]{40}$/.test(value);
+const digest = (value: unknown): value is string =>
+  typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+const message = (error: unknown) =>
+  error instanceof Error ? error.message : "Request unavailable.";
+
+/** Selection checks only. The server alone authenticates this credential. */
+export function capabilitySecretFromFile(
+  text: string,
+  origin: string,
+  host: RequestHost,
+  now = Date.now(),
+): string {
+  if (text.length > 4096) {
+    throw new Error("Select a bounded local control file.");
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    throw new Error("Select a valid local control file.");
+  }
+  if (
+    !object(value) || Object.keys(value).sort().join(",") !==
+      "capabilitySecret,credentialId,expiresAt,format,origin,projectId,systemId" ||
+    value.format !== 1 || !hostIdentity(value.projectId) ||
+    !hostIdentity(value.systemId) ||
+    !identity(value.credentialId) || value.origin !== origin ||
+    host.projectId !== undefined && value.projectId !== host.projectId ||
+    host.systemId !== undefined && value.systemId !== host.systemId ||
+    typeof value.expiresAt !== "string" ||
+    !Number.isFinite(Date.parse(value.expiresAt)) ||
+    Date.parse(value.expiresAt) <= now || !digest(value.capabilitySecret)
+  ) {
+    throw new Error(
+      "The local control file does not match this host or has expired.",
+    );
+  }
+  return value.capabilitySecret;
+}
+
+function command(value: unknown): value is OpeningCommand {
+  if (
+    !object(value) ||
+    Object.keys(value).sort().join(",") !== "openingKey,source,text" ||
+    !identity(value.openingKey) || typeof value.text !== "string" ||
+    !value.text.trim() ||
+    value.text.length > 100_000 || value.text.includes("\0") ||
+    !object(value.source)
+  ) return false;
+  const source = value.source;
+  return source.kind === "current-main" &&
+      Object.keys(source).every((key) =>
+        ["kind", "expectedVersion"].includes(key)
+      ) &&
+      (source.expectedVersion === undefined || exact(source.expectedVersion)) ||
+    source.kind === "release" &&
+      Object.keys(source).sort().join(",") === "digest,kind,releaseId" &&
+      identity(source.releaseId) && digest(source.digest);
+}
+
+/** Independent Requests never use a Main command, store, event or fallback. */
+export function createRequests(options: {
+  fetch?: Fetcher;
+  origin?: () => string;
+  host?: () => RequestHost;
+  storage?: () => IntentStorage;
+  createKey?: () => string;
+}) {
+  const fetcher = options.fetch ?? ((path, init) => fetch(path, init));
+  const origin = options.origin ?? (() => location.origin);
+  const storage = options.storage ?? (() => localStorage);
+  const createKey = options.createKey ?? (() => crypto.randomUUID());
+  const context = signal<RequestHost | null>(options.host?.() ?? null);
+  const host = () => options.host?.() ?? context.peek() ?? {};
+  let contextFlight: Promise<boolean> | null = null;
+  const source = signal<OpeningSourceChoice>({ kind: "current-main" });
+  const releases = signal<SavedSystemView[]>([]);
+  const error = signal("");
+  const sessionReady = signal(false);
+  const environment = signal<AssemblyEnvironment | null>(null);
+  let connectionFlight: Promise<boolean> | null = null;
+  let connectionError: string | null = null;
+  let localSessionExpires = 0;
+  const sessionGeneration = signal(0);
+  const pending = signal(false);
+  const intent = signal<OpeningCommand | null>(null);
+  const opening = signal<OpeningView | null>(null);
+  const scopes = signal(new Map<string, CaseModelScope>());
+  const snapshots = signal(new Map<string, ConversationsSnapshot>());
+  const readErrors = signal(new Map<string, string>());
+  const writeErrors = signal(new Map<string, string>());
+  const sending = signal<string | null>(null);
+  const flights = new Map<string, Promise<void>>();
+  const scopeReads = new Map<string, number>();
+  const scopeHost = () => {
+    const selected = host();
+    return JSON.stringify([
+      selected.projectId ?? null,
+      selected.systemId ?? null,
+    ]);
+  };
+  let scopeContext = scopeHost(), scopeContextGeneration = 0;
+  let disposed = false;
+  let savedIntentKey: string | null = null;
+  let generation = 0;
+  let requestReadFence = 0;
+  const releaseReadFences = [
+    context.subscribe(() => {
+      requestReadFence++;
+    }),
+    sessionReady.subscribe(() => {
+      requestReadFence++;
+    }),
+    sessionGeneration.subscribe(() => {
+      requestReadFence++;
+    }),
+  ];
+  let releaseGeneration = 0;
+  const setError = (target: typeof readErrors, id: string, value: string) => {
+    target.value = new Map(target.peek()).set(id, value);
+  };
+  async function json(path: string, init?: RequestInit): Promise<unknown> {
+    const response = await fetcher(path, {
+      ...init,
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    const body: unknown = await response.json().catch(() => null);
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        localSessionExpires = 0;
+        sessionReady.value = false;
+      }
+      // Error text is deliberately bounded; never echo credential payloads.
+      throw new Error(
+        object(body) && typeof body.error === "string" &&
+          body.error.length < 1000
+          ? body.error
+          : `Request unavailable (${response.status}).`,
+      );
+    }
+    return body;
+  }
+  const post = (path: string, body: unknown) =>
+    json(path, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  const unavailable = () =>
+    Promise.reject(new Error("This Request action is not connected yet."));
+  const cases = createCases({
+    port: {
+      async read() {
+        const value = parseCasesSnapshot(
+          await json("/api/cases?space=requests"),
+        );
+        if (
+          host().systemId && value.systemId !== host().systemId
+        ) throw new Error("The Request host changed.");
+        if (
+          value.cases.some((entry) => entry.type !== "request")
+        ) throw new Error("The Request collection received is invalid.");
+        sessionReady.value = true;
+        return value;
+      },
+      async readOne(id) {
+        const value = await json(
+          `/api/cases/${encodeURIComponent(id)}?space=requests`,
+        );
+        if (
+          !object(value) || !object(value.case) || value.case.id !== id ||
+          host().systemId && value.systemId !== host().systemId
+        ) throw new Error("The Request received does not match.");
+        const record =
+          parseCasesSnapshot({ systemId: value.systemId, cases: [value.case] })
+            .cases[0];
+        if (!record || record.type !== "request") {
+          throw new Error("The Request received is unreadable.");
+        }
+        return record;
+      },
+      close: unavailable,
+      act: unavailable,
+    },
+  });
+  async function loadContext(): Promise<boolean> {
+    if (options.host) return !!host().projectId && !!host().systemId;
+    if (contextFlight) return contextFlight;
+    contextFlight = (async () => {
+      try {
+        const value = await json("/api/request-space-openings/context");
+        if (
+          !object(value) ||
+          Object.keys(value).sort().join(",") !== "projectId,systemId" ||
+          !hostIdentity(value.projectId) || !hostIdentity(value.systemId)
+        ) throw new Error("The Request host identity is unavailable.");
+        const previous = context.peek();
+        if (
+          previous &&
+          (previous.projectId !== value.projectId ||
+            previous.systemId !== value.systemId)
+        ) {
+          sessionReady.value = false;
+          throw new Error(
+            "The Request host changed. Reload before continuing.",
+          );
+        }
+        if (disposed) return false;
+        context.value = {
+          projectId: value.projectId,
+          systemId: value.systemId,
+        };
+        return true;
+      } catch (failure) {
+        if (!disposed) error.value = message(failure);
+        return false;
+      }
+    })();
+    try {
+      return await contextFlight;
+    } finally {
+      contextFlight = null;
+    }
+  }
+  /** Runtime mode and cookie issuance belong to the backend. Production never
+   * calls the local-development session endpoint. Concurrent views share one read. */
+  async function prepareConnection(): Promise<boolean> {
+    if (disposed) return false;
+    if (connectionFlight) return await connectionFlight;
+    connectionFlight = (async () => {
+      try {
+        if (environment.peek() === null) {
+          const mode = parseEnvironment(await json("/api/environment"));
+          if (disposed) return false;
+          environment.value = mode;
+        }
+        if (
+          environment.peek() === "development" &&
+          localSessionExpires <= Date.now() + 60_000
+        ) {
+          const value = await post("/api/space-session/local", {});
+          if (
+            !object(value) || Object.keys(value).join() !== "expiresAt" ||
+            typeof value.expiresAt !== "string" ||
+            !Number.isFinite(Date.parse(value.expiresAt)) ||
+            Date.parse(value.expiresAt) <= Date.now()
+          ) {
+            throw new Error("The local development session is unavailable.");
+          }
+          if (disposed) return false;
+          localSessionExpires = Date.parse(value.expiresAt);
+          sessionGeneration.value++;
+        }
+        const ready = await loadContext();
+        if (!disposed) {
+          if (!ready) connectionError = error.peek();
+          else if (connectionError !== null) {
+            // Retire this bootstrap's error without clearing a later action error.
+            if (error.peek() === connectionError) error.value = "";
+            connectionError = null;
+          }
+        }
+        return ready;
+      } catch (failure) {
+        if (!disposed) {
+          connectionError = message(failure);
+          error.value = connectionError;
+        }
+        return false;
+      }
+    })();
+    try {
+      return await connectionFlight;
+    } finally {
+      connectionFlight = null;
+    }
+  }
+  function intentKey() {
+    const scope = host();
+    if (!scope.projectId || !scope.systemId) {
+      throw new Error("Wait for the host identity before opening a Request.");
+    }
+    return `assembly-request-opening:${origin()}:${scope.projectId}:${scope.systemId}`;
+  }
+  function restore() {
+    if (disposed) return false;
+    try {
+      const key = intentKey();
+      if (savedIntentKey) {
+        if (savedIntentKey !== key) {
+          throw new Error(
+            "The Request host changed. Reload before continuing.",
+          );
+        }
+        return true;
+      }
+      const raw = storage().getItem(key);
+      if (raw) {
+        if (raw.length > 410_000) {
+          throw new Error("The saved opening intention is unreadable.");
+        }
+        const parsed: unknown = JSON.parse(raw);
+        if (!command(parsed)) {
+          throw new Error("The saved opening intention is unreadable.");
+        }
+        intent.value = parsed;
+        source.value = structuredClone(parsed.source);
+      }
+      savedIntentKey = key;
+      return true;
+    } catch (failure) {
+      error.value = message(failure);
+      return false;
+    }
+  }
+  async function connect(file: Pick<File, "size" | "text">) {
+    if (pending.peek()) return false;
+    pending.value = true;
+    error.value = "";
+    let secret = "";
+    try {
+      if (!await loadContext()) return false;
+      if (file.size < 1 || file.size > 4096) {
+        throw new Error("Select a bounded local control file (up to 4 KB).");
+      }
+      secret = capabilitySecretFromFile(await file.text(), origin(), host());
+      // Exchange errors are fixed text: a server/network error cannot expose a secret.
+      const response = await fetcher("/api/space-session/exchange", {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ capabilitySecret: secret }),
+      });
+      secret = "";
+      if (!response.ok) {
+        throw new Error(
+          "The local control file could not establish a session.",
+        );
+      }
+      sessionGeneration.value++;
+      sessionReady.value = true;
+      await cases.refresh();
+      return sessionReady.peek();
+    } catch {
+      error.value =
+        "The local control file is invalid, expired, unavailable or belongs to another host.";
+      return false;
+    } finally {
+      secret = "";
+      pending.value = false;
+    }
+  }
+  async function loadReleases() {
+    const epoch = ++releaseGeneration;
+    const currentHost = { ...host() };
+    const selectedHost = scopeHost();
+    if (scopeContext !== selectedHost) {
+      scopeContext = selectedHost;
+      scopeContextGeneration++;
+    }
+    const contextEpoch = scopeContextGeneration;
+    const session = sessionGeneration.peek(), ready = sessionReady.peek();
+    const results = await Promise.allSettled([
+      createSavedSystemsApi({ fetch: fetcher as typeof fetch }).list(),
+      createSavedSystemsApi({
+        fetch: fetcher as typeof fetch,
+        catalogue: { kind: "owned-requests" },
+      }).list(),
+    ]);
+    if (
+      disposed || epoch !== releaseGeneration ||
+      contextEpoch !== scopeContextGeneration || selectedHost !== scopeHost() ||
+      session !== sessionGeneration.peek() || ready !== sessionReady.peek()
+    ) return;
+    const records: SavedSystemView[] = [];
+    let partial = false;
+    for (const result of results) {
+      if (result.status === "fulfilled") records.push(...result.value);
+      else {
+        partial = true;
+      }
+    }
+    const counts = new Map<string, number>();
+    for (const record of records) {
+      counts.set(record.id, (counts.get(record.id) ?? 0) + 1);
+    }
+    releases.value = records.filter((entry) =>
+      counts.get(entry.id) === 1 && releaseOpeningKind(entry) !== null &&
+      (!currentHost.projectId ||
+        entry.origin.projectId === currentHost.projectId) &&
+      (!currentHost.systemId || entry.origin.systemId === currentHost.systemId)
+    );
+    const catalogueError =
+      "Some Releases could not be read in this source scope. Check the local session; the list refreshes automatically.";
+    if (partial) error.value = catalogueError;
+    else if (error.peek() === catalogueError) error.value = "";
+  }
+  async function selectRelease(id: string) {
+    if (pending.peek() || intent.peek() || disposed) return;
+    pending.value = true;
+    error.value = "";
+    try {
+      const listed = releases.peek().filter((entry) => entry.id === id);
+      if (listed.length !== 1 || !listed[0].source) {
+        throw new Error("Select an exact listed Release.");
+      }
+      const selected = listed[0];
+      const catalogue = selected.source!.branch.kind === "case"
+        ? { kind: "owned-requests" as const }
+        : { kind: "main" as const };
+      const release = await createSavedSystemsApi({
+        fetch: fetcher as typeof fetch,
+        catalogue,
+      }).inspect(id);
+      const scope = host();
+      if (disposed) return;
+      if (
+        release.id !== id || release.digest !== selected.digest ||
+        !releaseOpeningKind(release, true) ||
+        !release.source ||
+        release.source.sourceVersion !== selected.source!.sourceVersion ||
+        JSON.stringify(release.source.branch) !==
+          JSON.stringify(selected.source!.branch) ||
+        scope.projectId && release.origin.projectId !== scope.projectId ||
+        scope.systemId && release.origin.systemId !== scope.systemId ||
+        release.origin.executionSpaceId !== selected.origin.executionSpaceId
+      ) throw new Error("The exact Release is unavailable for this host.");
+      releases.value = releases.peek().map((entry) =>
+        entry.id === release.id ? release : entry
+      );
+      source.value = {
+        kind: "release",
+        releaseId: release.id,
+        digest: release.digest!,
+      };
+    } catch (failure) {
+      if (!disposed) error.value = message(failure);
+    } finally {
+      if (!disposed) pending.value = false;
+    }
+  }
+  async function loadScope(caseId: string) {
+    const selectedHost = scopeHost();
+    if (scopeContext !== selectedHost) {
+      scopeContext = selectedHost;
+      scopeContextGeneration++;
+    }
+    const contextEpoch = scopeContextGeneration, lifetime = generation;
+    const session = sessionGeneration.peek(), ready = sessionReady.peek();
+    const read = (scopeReads.get(caseId) ?? 0) + 1;
+    scopeReads.set(caseId, read);
+    const current = () =>
+      !disposed && lifetime === generation &&
+      read === scopeReads.get(caseId) &&
+      contextEpoch === scopeContextGeneration &&
+      selectedHost === scopeHost() &&
+      session === sessionGeneration.peek() &&
+      ready === sessionReady.peek();
+    try {
+      const scope = await readCaseModelScope(
+        caseId,
+        undefined,
+        fetcher as typeof fetch,
+      );
+      if (current()) scopes.value = new Map(scopes.peek()).set(caseId, scope);
+    } catch {
+      if (current()) {
+        const next = new Map(scopes.peek());
+        next.delete(caseId);
+        scopes.value = next;
+      }
+    }
+  }
+  /** A confirmed adoption invalidates only this Case before starting its read. */
+  function refreshScope(caseId: string): Promise<void> {
+    scopeReads.set(caseId, (scopeReads.get(caseId) ?? 0) + 1);
+    const next = new Map(scopes.peek());
+    next.delete(caseId);
+    scopes.value = next;
+    return loadScope(caseId);
+  }
+  async function refresh(caseId: string): Promise<void> {
+    const flight = flights.get(caseId);
+    if (flight) return flight;
+    const epoch = generation;
+    const session = sessionGeneration.peek(),
+      ready = sessionReady.peek(),
+      selectedHost = scopeHost();
+    const fence = requestReadFence;
+    const currentRead = () =>
+      !disposed && epoch === generation && fence === requestReadFence &&
+      session === sessionGeneration.peek() && ready === sessionReady.peek() &&
+      selectedHost === scopeHost();
+    const next = (async () => {
+      try {
+        const value = parseConversationsSnapshot(
+          await json(`/api/conversations?${new URLSearchParams({ caseId })}`),
+        );
+        if (
+          value.conversations.some((agent) =>
+            agent.messages.some((entry) =>
+              entry.caseId !== undefined && entry.caseId !== caseId
+            )
+          )
+        ) {
+          throw new Error("The Request conversation received does not match.");
+        }
+        if (!currentRead()) return;
+        snapshots.value = new Map(snapshots.peek()).set(caseId, value);
+        setError(readErrors, caseId, "");
+      } catch (failure) {
+        if (currentRead()) {
+          setError(readErrors, caseId, message(failure));
+        }
+      }
+    })();
+    flights.set(caseId, next);
+    try {
+      await next;
+    } finally {
+      if (flights.get(caseId) === next) flights.delete(caseId);
+    }
+  }
+  async function open(text: string): Promise<string | null> {
+    if (pending.peek() || !sessionReady.peek() || disposed) return null;
+    if (!restore()) return null;
+    pending.value = true;
+    error.value = "";
+    try {
+      const key = intentKey();
+      const existing = intent.peek();
+      if (
+        existing &&
+        (existing.text !== text.trim() ||
+          JSON.stringify(existing.source) !== JSON.stringify(source.peek()))
+      ) {
+        throw new Error(
+          "Retry the saved opening first. Its message and source stay fixed until the host acknowledges it.",
+        );
+      }
+      const next = existing ??
+        {
+          openingKey: createKey(),
+          text: text.trim(),
+          source: structuredClone(source.peek()),
+        };
+      if (!command(next)) {
+        throw new Error(
+          "Select current Main or an exact Release and enter a bounded request.",
+        );
+      }
+      // Persist before the first network byte. A failed write prevents the command.
+      storage().setItem(key, JSON.stringify(next));
+      savedIntentKey = key;
+      intent.value = next;
+      const value = await post("/api/request-space-openings/open", next);
+      if (
+        !object(value) || !identity(value.caseId) || !identity(value.id) ||
+        !identity(value.branchId) ||
+        !identity(value.executionSpaceId) ||
+        !identity(value.initialContributionId) ||
+        !Number.isSafeInteger(value.caseNumber) ||
+        Number(value.caseNumber) < 1 || !Number.isSafeInteger(value.revision) ||
+        Number(value.revision) < 0 ||
+        ![
+          "allocated",
+          "source-selected",
+          "branch-ready",
+          "runtime-ready",
+          "admitted",
+          "dispatched",
+        ].includes(String(value.phase)) ||
+        value.admissionId !== null && !identity(value.admissionId) ||
+        (value.phase === "admitted" || value.phase === "dispatched") &&
+          !identity(value.admissionId) ||
+        value.sourceVersion !== null && !exact(value.sourceVersion) ||
+        !Array.isArray(value.issues) || value.issues.some((entry) =>
+          typeof entry !== "string"
+        )
+      ) {
+        throw new Error(
+          "The opening acknowledgement is unreadable; retry this same intention.",
+        );
+      }
+      if (
+        value.phase === "dispatched" && !exact(value.sourceVersion) ||
+        next.source.kind === "release" &&
+          (value.release !== null || value.phase === "dispatched") &&
+          (!object(value.release) ||
+            value.release.id !== next.source.releaseId ||
+            value.release.digest !== next.source.digest) ||
+        next.source.kind === "current-main" && value.release !== null
+      ) {
+        throw new Error(
+          "The opening source acknowledgement does not match; retry the saved intention.",
+        );
+      }
+      opening.value = value as unknown as OpeningView;
+      // Only the complete durable ACK retires the retry command. Earlier phases
+      // remain recoverable after a reload and are never treated as an empty Case.
+      if (value.phase !== "dispatched") {
+        error.value =
+          "The opening is pending. Retry this same intention to continue it.";
+        return null;
+      }
+      storage().removeItem(key);
+      intent.value = null;
+      await Promise.all([
+        cases.refresh(),
+        cases.ensure(value.caseId),
+        refresh(value.caseId),
+        loadScope(value.caseId),
+      ]);
+      return value.caseId;
+    } catch (failure) {
+      error.value = message(failure);
+      return null;
+    } finally {
+      pending.value = false;
+    }
+  }
+  function conversation(
+    caseId: string,
+    agentId?: string | null,
+  ): AgentConversation | null {
+    const value = snapshots.value.get(caseId);
+    if (!value) return null;
+    return value.conversations.find((agent) =>
+      agent.agentId === (agentId ?? value.defaultAgentId)
+    ) ?? null;
+  }
+  function canSend(caseId: string, agent: AgentConversation | null): boolean {
+    const record = cases.byId(caseId);
+    return !!record && isOpenCase(record) && !!agent &&
+      agent === conversation(caseId, agent.agentId) &&
+      agent.nativeId === record.owner && takesHumanMessage(agent, caseId) &&
+      !agent.busy && sending.value === null && sessionReady.value &&
+      !readErrors.value.get(caseId);
+  }
+  async function send(
+    caseId: string,
+    agent: AgentConversation,
+    text: string,
+  ): Promise<boolean> {
+    if (!canSend(caseId, agent) || !text.trim() || text.length > 100_000) {
+      return false;
+    }
+    sending.value = caseId;
+    setError(writeErrors, caseId, "");
+    try {
+      // Capture the displayed CAS once; no retry or current-revision substitution.
+      const value = await post(
+        `/api/conversations/${
+          encodeURIComponent(agent.nativeId)
+        }/messages?space=requests`,
+        {
+          caseId,
+          text: text.trim(),
+          expectedRevision: agent.revision,
+        },
+      );
+      if (
+        !object(value) || value.accepted !== true || value.caseId !== caseId
+      ) {
+        throw new Error(
+          "The contribution acknowledgement is unavailable. Refresh before deciding whether to send again.",
+        );
+      }
+      await refresh(caseId);
+      return true;
+    } catch (failure) {
+      setError(
+        writeErrors,
+        caseId,
+        `${
+          message(failure)
+        } Refresh before deciding whether to send again; the contribution may have been accepted.`,
+      );
+      await refresh(caseId);
+      return false;
+    } finally {
+      sending.value = null;
+    }
+  }
+  return {
+    cases,
+    context,
+    source,
+    releases,
+    sessionReady,
+    environment,
+    sessionGeneration,
+    pending,
+    intent,
+    opening,
+    scopes,
+    snapshots,
+    readErrors,
+    writeErrors,
+    sending,
+    error,
+    loadContext,
+    prepareConnection,
+    restore,
+    connect,
+    loadReleases,
+    selectRelease,
+    loadScope,
+    refreshScope,
+    refresh,
+    open,
+    send,
+    canSend,
+    conversation,
+    dispose() {
+      disposed = true;
+      for (const release of releaseReadFences) release();
+      generation++;
+      releaseGeneration++;
+      cases.dispose();
+      snapshots.value = new Map();
+    },
+  };
+}

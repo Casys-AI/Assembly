@@ -1,0 +1,4708 @@
+{
+ "schema": "ase.board/1",
+ "meta": {
+  "model": "demo-ase",
+  "mode": "ase",
+  "toolkit": {
+   "version": "0.10.10"
+  },
+  "sourceDigest": "8015c73178cb55df56690b6c160327bada209f1f54f2cc3083c372b68efbcef3",
+  "modeRule": "mode = ase when at least one root PartUsage (owned by a package) has, in its subtree, a PartUsage that Session.conforms to ASECore::Operator, ASECore::HumanOperator or ASECore::SoftwareOperator; otherwise generic",
+  "anchors": {
+   "operator": [
+    "ASECore::SoftwareOperator"
+   ],
+   "human": [],
+   "capabilityType": [
+    "ASECore::ExecutableCapability"
+   ],
+   "tool": [
+    "ASEExecution::CapabilityContract"
+   ],
+   "skill": [
+    "APESkills::InitialSkill"
+   ],
+   "access": [
+    "ASEInvocations::BehaviorAccess"
+   ],
+   "mandate": [
+    "ASECore::ConfiguredMandate"
+   ],
+   "policy": [
+    "ASEExecution::ExecutionPolicy",
+    "ASEModelEditing::ModelEditPolicy",
+    "ASEModelAdministration::ModelAdministrationPolicy",
+    "APEContext::DecisionContextPolicy",
+    "APESkills::SkillPolicy",
+    "APEMemory::GovernedMemoryPolicy",
+    "APEWorkBudget::InvocationBudgetPolicy"
+   ],
+   "authority": []
+  },
+  "linkLabels": {
+   "allocate": {
+    "forward": "performed by",
+    "reverse": "performs"
+   },
+   "connect": {
+    "forward": "connected to",
+    "reverse": "connected to"
+   },
+   "bind:caller": {
+    "forward": "called by",
+    "reverse": "calls through"
+   },
+   "bind:target": {
+    "forward": "exposes",
+    "reverse": "exposed by"
+   },
+   "bind:mandate": {
+    "forward": "holds mandate",
+    "reverse": "mandate of"
+   },
+   "bind:holder": {
+    "forward": "held by",
+    "reverse": "holds"
+   },
+   "bind:issuer": {
+    "forward": "issued by",
+    "reverse": "issues"
+   },
+   "can-call": {
+    "forward": "may call",
+    "reverse": "callable by",
+    "derived": true
+   },
+   "exhibit": {
+    "forward": "exhibits lifecycle",
+    "reverse": "exhibited by"
+   },
+   "constrain": {
+    "forward": "constrains",
+    "reverse": "constrained by"
+   },
+   "satisfy": {
+    "forward": "satisfies",
+    "reverse": "satisfied by"
+   },
+   "subject": {
+    "forward": "applies to",
+    "reverse": "subject of"
+   },
+   "perform": {
+    "forward": "performs",
+    "reverse": "performed within"
+   },
+   "own": {
+    "forward": "contains",
+    "reverse": "contained in"
+   }
+  },
+  "counts": {
+   "files": 17,
+   "namedElements": 645,
+   "items": [
+    {
+     "column": "team",
+     "items": 1
+    },
+    {
+     "column": "cando",
+     "items": 18
+    },
+    {
+     "column": "rules",
+     "items": 15
+    },
+    {
+     "column": "guarantees",
+     "items": 8
+    },
+    {
+     "column": "information",
+     "items": 0
+    }
+   ],
+   "nested": {
+    "ids": 100,
+    "panels": 5,
+    "ports": 10,
+    "steps": 33,
+    "states": 8,
+    "clauses": 3
+   },
+   "links": {
+    "allocate": 26,
+    "connect": 5,
+    "bind:caller": 10,
+    "bind:target": 10,
+    "bind:mandate": 1,
+    "bind:holder": 1,
+    "can-call": 10,
+    "exhibit": 1,
+    "constrain": 3,
+    "perform": 14,
+    "own": 18
+   },
+   "linksTotal": 99,
+   "dataBindsIgnored": 30,
+   "droppedLinks": 0,
+   "coverage": {
+    "candidates": 50,
+    "shown": 37,
+    "details": 13,
+    "orphans": 0
+   },
+   "orphans": [],
+   "toolkitCalls": 7400,
+   "toolkitCallsByMethod": {
+    "elementId": 2807,
+    "derivedElements": 725,
+    "derived": 599,
+    "conforms": 473,
+    "metaclass": 441,
+    "owner": 420,
+    "typings": 310,
+    "isLibraryElement": 267,
+    "redefinitionRoot": 263,
+    "declarationSite": 236,
+    "qualifiedName": 212,
+    "evaluate": 203
+   },
+   "invariants": {
+    "checked": 388,
+    "violations": 0
+   }
+  },
+  "packages": [
+   {
+    "qname": "ASEInvocations",
+    "doc": "Explicit source-owned exposure of a performed behavior to an operator. Allocation alone does not authorize invocation. The actual caller and target are fixed by native bindings on each enabled occurrence. Input is a schema reference, refined to a model-owned item definition; it is not a stored request and has no binding to mutable case facts.",
+    "file": "behavior-invocations.sysml",
+    "line": 1
+   },
+   {
+    "qname": "ASELiveBuilder",
+    "doc": "A conversational builder starts alone and proposes candidate capabilities. The host waits for human admission until an approved configuration change assigns admission authority. A reviewer is added only by an approved change. PAE is the assembled behavior of these parts. It introduces no phantom runtime control parts. Runtime evidence remains in the host store. The host interprets the native bounded action-flow subset and the configured policy and mandates; definitions alone do not establish an admitted capability or execution.",
+    "file": "configuration.sysml",
+    "line": 1
+   },
+   {
+    "qname": "APEContext",
+    "doc": "APE 5.1 - Context Separation. Bounded decision-context policy and evidence access separate the current decision context from durable execution evidence. A concrete ConversationSystem may own one explicit policy. Definitions alone neither change the context nor grant access to evidence. ReadContextEvidence requires a separately admitted BehaviorAccess and remains confined to the receiving operator's own conversation.",
+    "file": "context.sysml",
+    "line": 1
+   },
+   {
+    "qname": "ASEConversation",
+    "doc": "APE 1.3 - Conversational Case Management. Native description of a bounded conversational case. The TypeScript host retains the session, reads its state, controls effects and presents outcomes to the same builder. The host interprets the supported native action occurrences, successions and decision guards; named action definitions select implemented primitive mechanisms. This is a bounded executable subset, not a complete SysML interpreter. Waiting suspends this open case; it is not closure. No verified closure or accepted-handoff mechanism exists in this slice.",
+    "file": "conversation.sysml",
+    "line": 1
+   },
+   {
+    "qname": "ASECore",
+    "doc": "Neutral structural primitives. These definitions carry values and communication contracts; they do not create runtime control actors.",
+    "file": "core.sysml",
+    "line": 1
+   },
+   {
+    "qname": "ASEExecution",
+    "doc": "Policy consumed from the selected native model by the host's bounded action-flow interpreter. Native successions and guards determine order; named action definitions select the standalone primitive-handler registry of implemented mechanisms. Unknown primitives fail closed. This package does not claim support for the complete SysML execution language. Revision permissions permit proposals subject to approved configuration changes. They do not immediately widen the active mandate or network scope.",
+    "file": "execution.sysml",
+    "line": 1
+   },
+   {
+    "qname": "ASELifecycle",
+    "doc": "Candidate promotion lifecycle specified from SystemRuntime.build, stage and initialize in src/application/system-runtime.ts. The host owns execution and retained status; this state machine is a native design description, not proof that a transition occurred in a live session.",
+    "file": "lifecycle.sysml",
+    "line": 1
+   },
+   {
+    "qname": "APEMemory",
+    "doc": "APE 5.2 - Governed Memory Promotion. Bounded local-note mechanisms promote observations to reusable guidance through an exact revision and digest decision. Capturing or reading a candidate does not admit it. A policy belongs directly to one ConversationSystem and its builder owns the local memory. Each action additionally requires an exact native BehaviorAccess; this declaration alone grants no permission.",
+    "file": "memory.sysml",
+    "line": 1
+   },
+   {
+    "qname": "ASEModelAdministration",
+    "doc": "APE 4.1 Operator Identity & Mandate: bounded authority to grant and redelegate source-editing rights. Proposals remain subject to 2.1 Proposal–Admission–Execution Separation. This declaration configures permissions; it is not execution evidence.",
+    "file": "model-administration.sysml",
+    "line": 1
+   },
+   {
+    "qname": "ASEModelEditing",
+    "doc": "APE 4.1 Operator Identity & Mandate: bounded source-editing delegation. Proposals remain subject to 2.1 Proposal–Admission–Execution Separation. This declaration configures permissions; it is not execution evidence.",
+    "file": "model-editing.sysml",
+    "line": 1
+   },
+   {
+    "qname": "APEPromotion",
+    "doc": "APE 2.1 - Proposal–Admission–Execution Separation, with APE 2.2 - Fail-Closed Admission. Bounded PAE assembly for candidate promotion. PAE abbreviates proposal, admission and execution. Proposing, judging and admitting are separate actions allocated to the concrete system's existing parts. The assembly is behavior, not an extra runtime part. Here execution means activating the admitted candidate; a later invocation of that capability is a separate operation. Related use cases: Task Automation and Change Control. These are compositions, not patterns 3.1 Decision-to-Effect Traceability or 3.2 Instance-Bound Controls. This bounded slice does not establish full composition conformance, authenticated approval, rollback or closure. Historical source identity 7: composition-7-agent-built-deterministic-capability.mjs. Historical source identity 8: composition-8-sandboxed-candidate-construction-with-controlled-promotion.mjs. These filenames identify sources, not the public titles or chapter numbers.",
+    "file": "pae.sysml",
+    "line": 1
+   },
+   {
+    "qname": "ASERequirements",
+    "doc": "Bounded design requirements from SystemRuntime.build and runTurn in src/application/system-runtime.ts. Satisfaction links assign design responsibilities; they are neither test results nor execution evidence. Runtime behavior and exact checks are governed by that host source.",
+    "file": "requirements.sysml",
+    "line": 1
+   },
+   {
+    "qname": "APESkills",
+    "doc": "Skills are versioned local instructions belonging to decision context. Installing text neither executes it nor activates its instructions. Explicit native exposures separately grant installation, listing, loading and unloading; this policy alone grants none of those operations. Classic executable tools retain their independent catalog and lifecycle.",
+    "file": "skills.sysml",
+    "line": 1
+   },
+   {
+    "qname": "ASEToolPublicationResult",
+    "doc": "Technical publication facts supplied by the allocated catalog reader. Verification criteria belong to the caller's WorkResultContract.",
+    "file": "tool-publication-result.sysml",
+    "line": 1
+   },
+   {
+    "qname": "APEVerifiedEffectClosure",
+    "doc": "APE 3.4: source-owned expected values, observed state type and native constraint. Work and observation remain separately admitted actions. The bounded runtime evaluates scalar items and native constraints; this library does not claim support for native verification-case execution.",
+    "file": "verified-effect-closure.sysml",
+    "line": 1
+   },
+   {
+    "qname": "APEWorkBudget",
+    "doc": "APE 3.6 - Budget-Bounded Loop. Bounded realization for cumulative agent invocations in one durable operator dossier; not tokens or cost. Definitions alone grant no permission and select no budget. Instantiate exactly one policy directly inside the concrete ConversationSystem. Only an admitted source revision can change this policy. Runtime counters live outside the model and cannot be written by the agent.",
+    "file": "work-budget.sysml",
+    "line": 1
+   },
+   {
+    "qname": "ASEWork",
+    "doc": "Generic technical entries into modeled operator runtimes and their artifact catalogs. A performed occurrence must be allocated to the exact operator or catalog in its owning ConversationSystem. BehaviorAccess separately fixes every authorized caller. These definitions grant no admission, network scope or access to another conversation.",
+    "file": "work-operators.sysml",
+    "line": 1
+   }
+  ],
+  "diagnostics": [
+   {
+    "code": "BRANCH_SOURCE_SUPPLEMENTED",
+    "severity": "info",
+    "context": {
+     "card": "ASELiveBuilder::liveBuilder::promotion",
+     "branches": 4
+    },
+    "recovery": "Toolkit leaves the source of decision branches empty (Open-MBEE/sysml-toolkit#13); the preceding decision node is used."
+   },
+   {
+    "code": "BRANCH_SOURCE_SUPPLEMENTED",
+    "severity": "info",
+    "context": {
+     "card": "ASELiveBuilder::liveBuilder::conversation",
+     "branches": 7
+    },
+    "recovery": "Toolkit leaves the source of decision branches empty (Open-MBEE/sysml-toolkit#13); the preceding decision node is used."
+   },
+   {
+    "code": "ANCHOR_UNRESOLVED",
+    "severity": "info",
+    "context": {
+     "anchors": [
+      {
+       "concept": "operator",
+       "anchor": "ASECore::Operator"
+      },
+      {
+       "concept": "operator",
+       "anchor": "ASECore::HumanOperator"
+      },
+      {
+       "concept": "human",
+       "anchor": "ASECore::HumanOperator"
+      },
+      {
+       "concept": "mandate",
+       "anchor": "ASEAuthority::Mandate"
+      },
+      {
+       "concept": "authority",
+       "anchor": "ASEAuthority::RootAuthority"
+      },
+      {
+       "concept": "authority",
+       "anchor": "ASEAuthority::RootGrant"
+      }
+     ]
+    },
+    "recovery": "Anchor definitions absent from this model are skipped (expected for a model without that part of the library)."
+   }
+  ],
+  "fieldSources": {
+   "id": "Session.elementId (UUIDv5, stable for the same qualified name); steps/ports/states are `<card id>#<SysML element id>`",
+   "element": "Session.elementId of the SysML element behind the item",
+   "keyword": "Session.metaclass mapped through the closed SysML keyword table",
+   "title": "derived(e,'name'); tool: value of the library attribute CapabilityContract::kind; access: BehaviorAccess::name (found by redefinition root)",
+   "summary": "firstSentence(Session.docs(e)); else a designated library attribute (access description, mandate scope, contract criteria); else docs of the typing definition",
+   "qname": "Session.qualifiedName",
+   "file:line:col": "Session.declarationSite (fallback memberExtent) + Session.units() byte offset to line",
+   "type": "Session.typings(e)[0]",
+   "ports": "PortUsage in ownedFeature + inheritedFeature; type via typings (ConjugatedPortDefinition -> originalPortDefinition)",
+   "steps": "members of the typing ActionDefinition: SuccessionAsUsage(sourceFeature,targetFeature), TransitionUsage(source,target,guardExpression), DecisionNode/MergeNode/ForkNode/JoinNode",
+   "guard": "text rebuilt from the guard expression tree (OperatorExpression.operator, FeatureChainExpression, FeatureReferenceExpression, Literal*), never from source text",
+   "track": "StateUsage/TransitionUsage among ownedFeature+inheritedFeature of the StateDefinition; entryAction + succession for the initial state; trigger = type of accept payload",
+   "clauses": "derived(requirement,'requiredConstraint') + expression tree",
+   "values": "AttributeUsage members evaluated (Session.evaluate), library feature found by redefinitionRoot",
+   "links": "AllocationUsage/ConnectionUsage/BindingConnectorAsUsage.relatedFeature (chainingFeature for paths), ExhibitStateUsage, SatisfyRequirementUsage, ownership"
+  },
+  "timingMs": {
+   "session": 72,
+   "index": 180.4,
+   "anchors": 1,
+   "cards": 242.2,
+   "links": 10.9,
+   "total": 510.2
+  },
+  "digest": "076b902fa920d9dc4f6aa9977b23fb49b635d4be3efe0b8686ee8eb4ad7a88a5"
+ },
+ "columns": [
+  {
+   "id": "team",
+   "title": "Team",
+   "rule": {
+    "select": "root PartUsage (owned by a package) whose subtree contains a PartUsage conforming to one of the operator anchors",
+    "anchors": [
+     "ASECore::Operator",
+     "ASECore::HumanOperator",
+     "ASECore::SoftwareOperator"
+    ],
+    "panels": "child PartUsage among ownedFeature + inheritedFeature, in source order; kept when it is an operator, typed, or contains a kept part; parts conforming to Rules / Can do anchors live in their own column",
+    "ports": "PortUsage among ownedFeature + inheritedFeature of the part; conjugated port types show their original definition"
+   },
+   "items": [
+    {
+     "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+     "element": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+     "keyword": "part",
+     "title": "liveBuilder",
+     "summary": "A conversational builder starts alone and proposes candidate capabilities.",
+     "summarySource": "package-doc",
+     "qname": "ASELiveBuilder::liveBuilder",
+     "file": "configuration.sysml",
+     "line": 136,
+     "col": 10,
+     "kind": "scope",
+     "type": {
+      "title": "ConversationSystem",
+      "qname": "ASELiveBuilder::ConversationSystem"
+     },
+     "depth": 0,
+     "open": true,
+     "children": [
+      {
+       "id": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+       "element": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+       "keyword": "part",
+       "title": "builder",
+       "summary": "Bounded software operator.",
+       "summarySource": "type-doc",
+       "qname": "ASELiveBuilder::liveBuilder::builder",
+       "file": "configuration.sysml",
+       "line": 285,
+       "col": 14,
+       "kind": "operator",
+       "type": {
+        "title": "ConversationBuilder",
+        "qname": "ASELiveBuilder::ConversationBuilder"
+       },
+       "depth": 1,
+       "open": true,
+       "operatorKind": "software",
+       "ports": [
+        {
+         "id": "8605dd44-e5bd-5972-8c31-a7e88130f911#47f11104-3a10-55a8-b6c1-875fe139dfe2",
+         "element": "47f11104-3a10-55a8-b6c1-875fe139dfe2",
+         "keyword": "port",
+         "title": "proposals",
+         "qname": "ASELiveBuilder::ConversationBuilder::proposals",
+         "file": "configuration.sysml",
+         "line": 34,
+         "col": 14,
+         "type": {
+          "title": "CandidatePort",
+          "qname": "ASECore::CandidatePort"
+         },
+         "conjugated": false,
+         "inherited": true,
+         "items": [
+          {
+           "dir": "out",
+           "title": "candidate",
+           "type": "CandidateIdentity"
+          }
+         ],
+         "linked": 1
+        }
+       ]
+      },
+      {
+       "id": "ea257ba6-f3af-5004-b938-d2592c52d673",
+       "element": "ea257ba6-f3af-5004-b938-d2592c52d673",
+       "keyword": "part",
+       "title": "testSandbox",
+       "summary": "The host tests the exact candidate in an isolated process.",
+       "summarySource": "type-doc",
+       "qname": "ASELiveBuilder::liveBuilder::testSandbox",
+       "file": "configuration.sysml",
+       "line": 286,
+       "col": 14,
+       "kind": "machine",
+       "type": {
+        "title": "CandidateTestSandbox",
+        "qname": "ASELiveBuilder::CandidateTestSandbox"
+       },
+       "depth": 1,
+       "open": true,
+       "ports": [
+        {
+         "id": "ea257ba6-f3af-5004-b938-d2592c52d673#ee889b87-aca8-53c4-abaf-35cecd5b03a5",
+         "element": "ee889b87-aca8-53c4-abaf-35cecd5b03a5",
+         "keyword": "port",
+         "title": "proposals",
+         "qname": "ASELiveBuilder::CandidateTestSandbox::proposals",
+         "file": "configuration.sysml",
+         "line": 69,
+         "col": 14,
+         "type": {
+          "title": "CandidatePort",
+          "qname": "ASECore::CandidatePort"
+         },
+         "conjugated": true,
+         "inherited": true,
+         "items": [
+          {
+           "dir": "in",
+           "title": "candidate",
+           "type": "CandidateIdentity"
+          }
+         ],
+         "linked": 1
+        },
+        {
+         "id": "ea257ba6-f3af-5004-b938-d2592c52d673#baaed5c1-88ab-5e5a-9114-f9cf00a8d6a1",
+         "element": "baaed5c1-88ab-5e5a-9114-f9cf00a8d6a1",
+         "keyword": "port",
+         "title": "testedCandidates",
+         "qname": "ASELiveBuilder::CandidateTestSandbox::testedCandidates",
+         "file": "configuration.sysml",
+         "line": 70,
+         "col": 14,
+         "type": {
+          "title": "CandidatePort",
+          "qname": "ASECore::CandidatePort"
+         },
+         "conjugated": false,
+         "inherited": true,
+         "items": [
+          {
+           "dir": "out",
+           "title": "candidate",
+           "type": "CandidateIdentity"
+          }
+         ],
+         "linked": 2
+        },
+        {
+         "id": "ea257ba6-f3af-5004-b938-d2592c52d673#d50ce02a-2992-5a39-84f8-0f32e1c8b918",
+         "element": "d50ce02a-2992-5a39-84f8-0f32e1c8b918",
+         "keyword": "port",
+         "title": "results",
+         "qname": "ASELiveBuilder::CandidateTestSandbox::results",
+         "file": "configuration.sysml",
+         "line": 71,
+         "col": 14,
+         "type": {
+          "title": "TestResultPort",
+          "qname": "ASECore::TestResultPort"
+         },
+         "conjugated": false,
+         "inherited": true,
+         "items": [
+          {
+           "dir": "out",
+           "title": "result",
+           "type": "TestResult"
+          }
+         ],
+         "linked": 1
+        }
+       ]
+      },
+      {
+       "id": "8446d0da-b9ab-51b4-b7eb-1610e83bf674",
+       "element": "8446d0da-b9ab-51b4-b7eb-1610e83bf674",
+       "keyword": "part",
+       "title": "catalog",
+       "summary": "Owns candidates and executes admitted activation.",
+       "summarySource": "type-doc",
+       "qname": "ASELiveBuilder::liveBuilder::catalog",
+       "file": "configuration.sysml",
+       "line": 287,
+       "col": 14,
+       "kind": "machine",
+       "type": {
+        "title": "ToolCatalog",
+        "qname": "ASELiveBuilder::ToolCatalog"
+       },
+       "depth": 1,
+       "open": true,
+       "ports": [
+        {
+         "id": "8446d0da-b9ab-51b4-b7eb-1610e83bf674#e5a9d76b-d4c5-583f-8dd4-dde6e9f7cce1",
+         "element": "e5a9d76b-d4c5-583f-8dd4-dde6e9f7cce1",
+         "keyword": "port",
+         "title": "candidates",
+         "qname": "ASELiveBuilder::ToolCatalog::candidates",
+         "file": "configuration.sysml",
+         "line": 85,
+         "col": 14,
+         "type": {
+          "title": "CandidatePort",
+          "qname": "ASECore::CandidatePort"
+         },
+         "conjugated": true,
+         "inherited": true,
+         "items": [
+          {
+           "dir": "in",
+           "title": "candidate",
+           "type": "CandidateIdentity"
+          }
+         ],
+         "linked": 1
+        },
+        {
+         "id": "8446d0da-b9ab-51b4-b7eb-1610e83bf674#229ed69a-2ab7-5734-9080-ab1eb3015ac6",
+         "element": "229ed69a-2ab7-5734-9080-ab1eb3015ac6",
+         "keyword": "port",
+         "title": "admissions",
+         "qname": "ASELiveBuilder::ToolCatalog::admissions",
+         "file": "configuration.sysml",
+         "line": 86,
+         "col": 14,
+         "type": {
+          "title": "AdmissionDecisionPort",
+          "qname": "ASECore::AdmissionDecisionPort"
+         },
+         "conjugated": true,
+         "inherited": true,
+         "items": [
+          {
+           "dir": "in",
+           "title": "decision",
+           "type": "AdmissionDecision"
+          }
+         ],
+         "linked": 1
+        }
+       ]
+      },
+      {
+       "id": "3e73ae05-ac20-577e-a602-a784cba376b7",
+       "element": "3e73ae05-ac20-577e-a602-a784cba376b7",
+       "keyword": "part",
+       "title": "admissionGate",
+       "summary": "Host admission gate.",
+       "summarySource": "type-doc",
+       "qname": "ASELiveBuilder::liveBuilder::admissionGate",
+       "file": "configuration.sysml",
+       "line": 299,
+       "col": 14,
+       "kind": "machine",
+       "type": {
+        "title": "CatalogAdmissionGate",
+        "qname": "ASELiveBuilder::CatalogAdmissionGate"
+       },
+       "depth": 1,
+       "open": true,
+       "ports": [
+        {
+         "id": "3e73ae05-ac20-577e-a602-a784cba376b7#14638343-16a2-5db3-b869-7117ccdfd306",
+         "element": "14638343-16a2-5db3-b869-7117ccdfd306",
+         "keyword": "port",
+         "title": "candidates",
+         "qname": "ASELiveBuilder::CatalogAdmissionGate::candidates",
+         "file": "configuration.sysml",
+         "line": 76,
+         "col": 14,
+         "type": {
+          "title": "CandidatePort",
+          "qname": "ASECore::CandidatePort"
+         },
+         "conjugated": true,
+         "inherited": true,
+         "items": [
+          {
+           "dir": "in",
+           "title": "candidate",
+           "type": "CandidateIdentity"
+          }
+         ],
+         "linked": 1
+        },
+        {
+         "id": "3e73ae05-ac20-577e-a602-a784cba376b7#f4f1f6dd-656a-5833-8e97-88e1d0f35bbb",
+         "element": "f4f1f6dd-656a-5833-8e97-88e1d0f35bbb",
+         "keyword": "port",
+         "title": "tests",
+         "qname": "ASELiveBuilder::CatalogAdmissionGate::tests",
+         "file": "configuration.sysml",
+         "line": 77,
+         "col": 14,
+         "type": {
+          "title": "TestResultPort",
+          "qname": "ASECore::TestResultPort"
+         },
+         "conjugated": true,
+         "inherited": true,
+         "items": [
+          {
+           "dir": "in",
+           "title": "result",
+           "type": "TestResult"
+          }
+         ],
+         "linked": 1
+        },
+        {
+         "id": "3e73ae05-ac20-577e-a602-a784cba376b7#f81d296f-1183-5228-afad-996ac6f42493",
+         "element": "f81d296f-1183-5228-afad-996ac6f42493",
+         "keyword": "port",
+         "title": "reviews",
+         "qname": "ASELiveBuilder::CatalogAdmissionGate::reviews",
+         "file": "configuration.sysml",
+         "line": 78,
+         "col": 14,
+         "type": {
+          "title": "ReviewDecisionPort",
+          "qname": "ASECore::ReviewDecisionPort"
+         },
+         "conjugated": true,
+         "inherited": true,
+         "items": [
+          {
+           "dir": "in",
+           "title": "decision",
+           "type": "ReviewDecision"
+          }
+         ]
+        },
+        {
+         "id": "3e73ae05-ac20-577e-a602-a784cba376b7#759d4f5a-5eac-5bf0-933b-400206dc8eb2",
+         "element": "759d4f5a-5eac-5bf0-933b-400206dc8eb2",
+         "keyword": "port",
+         "title": "decisions",
+         "qname": "ASELiveBuilder::CatalogAdmissionGate::decisions",
+         "file": "configuration.sysml",
+         "line": 79,
+         "col": 14,
+         "type": {
+          "title": "AdmissionDecisionPort",
+          "qname": "ASECore::AdmissionDecisionPort"
+         },
+         "conjugated": false,
+         "inherited": true,
+         "items": [
+          {
+           "dir": "out",
+           "title": "decision",
+           "type": "AdmissionDecision"
+          }
+         ],
+         "linked": 1
+        }
+       ]
+      }
+     ],
+     "values": [
+      {
+       "name": "envelopeKind",
+       "line": 278,
+       "defines": null,
+       "value": "conversational-case-management"
+      },
+      {
+       "name": "envelopePattern",
+       "line": 279,
+       "defines": null,
+       "value": "1.3"
+      },
+      {
+       "name": "envelopeRevision",
+       "line": 280,
+       "defines": null,
+       "value": "1"
+      },
+      {
+       "name": "configurationId",
+       "line": 281,
+       "defines": null,
+       "value": "live-builder-native"
+      },
+      {
+       "name": "configurationRevision",
+       "line": 282,
+       "defines": null,
+       "value": "0"
+      },
+      {
+       "name": "admissionMode",
+       "line": 283,
+       "defines": null,
+       "value": "human"
+      },
+      {
+       "name": "networkHosts",
+       "line": 284,
+       "defines": null,
+       "value": "[]"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "cando",
+   "title": "Can do",
+   "rule": {
+    "select": [
+     "PerformActionUsage (usage-level or inherited by a displayed part); steps from the typing ActionDefinition",
+     "ItemUsage conforming to ASEExecution::CapabilityContract",
+     "PartUsage conforming to APESkills::InitialSkill",
+     "PartDefinition conforming to ASECore::ExecutableCapability"
+    ]
+   },
+   "items": [
+    {
+     "id": "4cd0410a-a1b7-5b09-af50-f56b0bd9fd38",
+     "element": "4cd0410a-a1b7-5b09-af50-f56b0bd9fd38",
+     "keyword": "perform action",
+     "title": "evidence",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::context::evidence",
+     "file": "configuration.sysml",
+     "line": 148,
+     "col": 20,
+     "kind": "capability",
+     "type": {
+      "title": "ReadContextEvidence",
+      "qname": "APEContext::ReadContextEvidence"
+     },
+     "group": [
+      {
+       "element": "7ed7aa01-d84b-5a17-a9d2-9c590f336868",
+       "title": "context"
+      }
+     ],
+     "io": [
+      {
+       "dir": "in",
+       "title": "request",
+       "type": "ContextEvidenceRequest",
+       "element": "de1186f9-d138-5b73-964a-e132b54741ba"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+     "access": [
+      {
+       "access": "91d06b4e-3b30-5823-b22a-5fddf4fa3102",
+       "title": "ConsulterPreuve",
+       "caller": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+       "enabled": true
+      }
+     ]
+    },
+    {
+     "id": "9529e04d-0bd1-5254-bbd6-984c07124947",
+     "element": "9529e04d-0bd1-5254-bbd6-984c07124947",
+     "keyword": "part",
+     "title": "aseModeling",
+     "summary": "Source bundle:ase-modeling",
+     "summarySource": "attribute:APESkills::InitialSkill::source",
+     "qname": "ASELiveBuilder::liveBuilder::context::skills::aseModeling",
+     "file": "configuration.sysml",
+     "line": 165,
+     "col": 14,
+     "kind": "skill",
+     "type": {
+      "title": "InitialSkill",
+      "qname": "APESkills::InitialSkill"
+     },
+     "group": [
+      {
+       "element": "7ed7aa01-d84b-5a17-a9d2-9c590f336868",
+       "title": "context"
+      },
+      {
+       "element": "87db59ae-dd35-5fcf-a59a-1601eb60ee9d",
+       "title": "skills"
+      }
+     ],
+     "values": [
+      {
+       "name": "id",
+       "line": 166,
+       "defines": "APESkills::InitialSkill::id",
+       "value": "ase-modeling"
+      },
+      {
+       "name": "source",
+       "line": 167,
+       "defines": "APESkills::InitialSkill::source",
+       "value": "bundle:ase-modeling"
+      },
+      {
+       "name": "digest",
+       "line": 168,
+       "defines": "APESkills::InitialSkill::digest",
+       "value": "6284ee61155711dd3ddfb6d980c31093f1e8d19df39e3a7888fb97da829436a7"
+      },
+      {
+       "name": "loaded",
+       "line": 169,
+       "defines": "APESkills::InitialSkill::loaded",
+       "value": true
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "53717e8f-99be-5563-9410-d5d75ed5c575",
+     "element": "53717e8f-99be-5563-9410-d5d75ed5c575",
+     "keyword": "perform action",
+     "title": "install",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::context::skills::install",
+     "file": "configuration.sysml",
+     "line": 171,
+     "col": 24,
+     "kind": "capability",
+     "type": {
+      "title": "InstallSkill",
+      "qname": "APESkills::InstallSkill"
+     },
+     "group": [
+      {
+       "element": "7ed7aa01-d84b-5a17-a9d2-9c590f336868",
+       "title": "context"
+      },
+      {
+       "element": "87db59ae-dd35-5fcf-a59a-1601eb60ee9d",
+       "title": "skills"
+      }
+     ],
+     "io": [
+      {
+       "dir": "in",
+       "title": "request",
+       "type": "InstallSkillRequest",
+       "element": "403ed9bf-b6bf-5430-a204-c574913aaa7e"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+     "access": [
+      {
+       "access": "11b0d994-7093-5e2d-9831-b69776168730",
+       "title": "InstallerSkill",
+       "caller": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+       "enabled": true
+      }
+     ]
+    },
+    {
+     "id": "8d1defd9-824a-55bc-a098-5790bc441988",
+     "element": "8d1defd9-824a-55bc-a098-5790bc441988",
+     "keyword": "perform action",
+     "title": "list",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::context::skills::list",
+     "file": "configuration.sysml",
+     "line": 178,
+     "col": 24,
+     "kind": "capability",
+     "type": {
+      "title": "ListSkills",
+      "qname": "APESkills::ListSkills"
+     },
+     "group": [
+      {
+       "element": "7ed7aa01-d84b-5a17-a9d2-9c590f336868",
+       "title": "context"
+      },
+      {
+       "element": "87db59ae-dd35-5fcf-a59a-1601eb60ee9d",
+       "title": "skills"
+      }
+     ],
+     "io": [
+      {
+       "dir": "in",
+       "title": "request",
+       "type": "ListSkillsRequest",
+       "element": "1e6a46f4-d486-5afa-b364-5cf51253826b"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+     "access": [
+      {
+       "access": "2c05e6c6-bc0f-5287-a914-343f166a9582",
+       "title": "ListerSkills",
+       "caller": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+       "enabled": true
+      }
+     ]
+    },
+    {
+     "id": "68988e3c-c63c-5d42-98da-6456bbf842af",
+     "element": "68988e3c-c63c-5d42-98da-6456bbf842af",
+     "keyword": "perform action",
+     "title": "load",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::context::skills::load",
+     "file": "configuration.sysml",
+     "line": 185,
+     "col": 24,
+     "kind": "capability",
+     "type": {
+      "title": "LoadSkill",
+      "qname": "APESkills::LoadSkill"
+     },
+     "group": [
+      {
+       "element": "7ed7aa01-d84b-5a17-a9d2-9c590f336868",
+       "title": "context"
+      },
+      {
+       "element": "87db59ae-dd35-5fcf-a59a-1601eb60ee9d",
+       "title": "skills"
+      }
+     ],
+     "io": [
+      {
+       "dir": "in",
+       "title": "request",
+       "type": "LoadSkillRequest",
+       "element": "3ec55a6d-d5d5-5952-ad0a-3dead3c5638e"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+     "access": [
+      {
+       "access": "7288ac91-75e0-5ece-9fda-a7c1b48337dc",
+       "title": "ChargerSkill",
+       "caller": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+       "enabled": true
+      }
+     ]
+    },
+    {
+     "id": "db1f8419-9939-531a-ad7d-3b6949e8bd02",
+     "element": "db1f8419-9939-531a-ad7d-3b6949e8bd02",
+     "keyword": "perform action",
+     "title": "unload",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::context::skills::unload",
+     "file": "configuration.sysml",
+     "line": 192,
+     "col": 24,
+     "kind": "capability",
+     "type": {
+      "title": "UnloadSkill",
+      "qname": "APESkills::UnloadSkill"
+     },
+     "group": [
+      {
+       "element": "7ed7aa01-d84b-5a17-a9d2-9c590f336868",
+       "title": "context"
+      },
+      {
+       "element": "87db59ae-dd35-5fcf-a59a-1601eb60ee9d",
+       "title": "skills"
+      }
+     ],
+     "io": [
+      {
+       "dir": "in",
+       "title": "request",
+       "type": "UnloadSkillRequest",
+       "element": "48bd6d23-32d7-51ef-b452-4d61d3284467"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+     "access": [
+      {
+       "access": "b5e70605-2462-5f75-88ec-e6913d32a30f",
+       "title": "DechargerSkill",
+       "caller": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+       "enabled": true
+      }
+     ]
+    },
+    {
+     "id": "83146f1c-34f9-526f-a434-dfb9148ac91f",
+     "element": "83146f1c-34f9-526f-a434-dfb9148ac91f",
+     "keyword": "perform action",
+     "title": "capture",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::memory::capture",
+     "file": "configuration.sysml",
+     "line": 211,
+     "col": 20,
+     "kind": "capability",
+     "type": {
+      "title": "CaptureMemory",
+      "qname": "APEMemory::CaptureMemory"
+     },
+     "group": [
+      {
+       "element": "7af66f85-e064-5dd2-9f7c-5bfb1ce244ff",
+       "title": "memory"
+      }
+     ],
+     "io": [
+      {
+       "dir": "in",
+       "title": "request",
+       "type": "CaptureMemoryRequest",
+       "element": "62479923-8153-56d5-9fe3-a28b12cd0c67"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+     "access": [
+      {
+       "access": "ac6991ef-fb56-5b51-a3e2-ba5ce7166aa4",
+       "title": "CapturerMemoire",
+       "caller": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+       "enabled": true
+      }
+     ]
+    },
+    {
+     "id": "b398f81d-1522-516b-8762-481ccc07ecdd",
+     "element": "b398f81d-1522-516b-8762-481ccc07ecdd",
+     "keyword": "perform action",
+     "title": "recall",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::memory::recall",
+     "file": "configuration.sysml",
+     "line": 218,
+     "col": 20,
+     "kind": "capability",
+     "type": {
+      "title": "RecallMemory",
+      "qname": "APEMemory::RecallMemory"
+     },
+     "group": [
+      {
+       "element": "7af66f85-e064-5dd2-9f7c-5bfb1ce244ff",
+       "title": "memory"
+      }
+     ],
+     "io": [
+      {
+       "dir": "in",
+       "title": "request",
+       "type": "RecallMemoryRequest",
+       "element": "61e5a803-ee05-5f62-ba68-bc01a38c80f1"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+     "access": [
+      {
+       "access": "a966189c-119c-5250-807c-ded5e19fe6cf",
+       "title": "RappelerMemoire",
+       "caller": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+       "enabled": true
+      }
+     ]
+    },
+    {
+     "id": "d165f2af-788b-5ebe-b536-a9313b792faf",
+     "element": "d165f2af-788b-5ebe-b536-a9313b792faf",
+     "keyword": "perform action",
+     "title": "revise",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::memory::revise",
+     "file": "configuration.sysml",
+     "line": 225,
+     "col": 20,
+     "kind": "capability",
+     "type": {
+      "title": "ReviseMemory",
+      "qname": "APEMemory::ReviseMemory"
+     },
+     "group": [
+      {
+       "element": "7af66f85-e064-5dd2-9f7c-5bfb1ce244ff",
+       "title": "memory"
+      }
+     ],
+     "io": [
+      {
+       "dir": "in",
+       "title": "request",
+       "type": "ReviseMemoryRequest",
+       "element": "846c0887-57a4-537a-ac1e-e85c642b40a4"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+     "access": [
+      {
+       "access": "b86daeb2-ece0-5037-8abf-e2e7fe26b5fe",
+       "title": "ReviserMemoire",
+       "caller": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+       "enabled": true
+      }
+     ]
+    },
+    {
+     "id": "6f55468e-b732-5232-8fa0-2b4a0aa64263",
+     "element": "6f55468e-b732-5232-8fa0-2b4a0aa64263",
+     "keyword": "perform action",
+     "title": "review",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::memory::review",
+     "file": "configuration.sysml",
+     "line": 232,
+     "col": 20,
+     "kind": "capability",
+     "type": {
+      "title": "ReviewMemory",
+      "qname": "APEMemory::ReviewMemory"
+     },
+     "group": [
+      {
+       "element": "7af66f85-e064-5dd2-9f7c-5bfb1ce244ff",
+       "title": "memory"
+      }
+     ],
+     "io": [
+      {
+       "dir": "in",
+       "title": "request",
+       "type": "ReviewMemoryRequest",
+       "element": "7e3f75d3-343e-5f4b-9013-038c6d6fccf7"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+     "access": [
+      {
+       "access": "19eff524-806c-5a37-9084-12e6e3c38e8c",
+       "title": "RevoirMemoire",
+       "caller": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+       "enabled": true
+      }
+     ]
+    },
+    {
+     "id": "4f546b02-3349-565e-bac4-a77db02230eb",
+     "element": "4f546b02-3349-565e-bac4-a77db02230eb",
+     "keyword": "perform action",
+     "title": "withdraw",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::memory::withdraw",
+     "file": "configuration.sysml",
+     "line": 239,
+     "col": 20,
+     "kind": "capability",
+     "type": {
+      "title": "WithdrawMemory",
+      "qname": "APEMemory::WithdrawMemory"
+     },
+     "group": [
+      {
+       "element": "7af66f85-e064-5dd2-9f7c-5bfb1ce244ff",
+       "title": "memory"
+      }
+     ],
+     "io": [
+      {
+       "dir": "in",
+       "title": "request",
+       "type": "WithdrawMemoryRequest",
+       "element": "5855d7e7-9fcb-59d4-aae0-eb59fea312ab"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+     "access": [
+      {
+       "access": "6b5418c5-a1ef-5245-8c80-674436d41bc0",
+       "title": "RetirerMemoire",
+       "caller": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+       "enabled": true
+      }
+     ]
+    },
+    {
+     "id": "9c2c0640-a542-522c-9a73-9ec3b8d58b2d",
+     "element": "9c2c0640-a542-522c-9a73-9ec3b8d58b2d",
+     "keyword": "item",
+     "title": "read_web_page",
+     "summary": "Return the actual nonempty HTML document title and readable text, decoding HTML entities.",
+     "summarySource": "attribute:ASEExecution::CapabilityContract::acceptanceCriteria",
+     "qname": "ASELiveBuilder::liveBuilder::catalog::readWebPageContract",
+     "file": "configuration.sysml",
+     "line": 288,
+     "col": 18,
+     "kind": "tool",
+     "type": {
+      "title": "CapabilityContract",
+      "qname": "ASEExecution::CapabilityContract"
+     },
+     "titleSource": "ASEExecution::CapabilityContract::kind",
+     "values": [
+      {
+       "name": "module",
+       "line": 290,
+       "defines": "ASEExecution::CapabilityContract::module",
+       "value": "default({url,html}) => {title,text}"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "6711693e-7442-59bd-8600-0bf517257262",
+     "element": "6711693e-7442-59bd-8600-0bf517257262",
+     "keyword": "item",
+     "title": "read_web_page_outline",
+     "summary": "Return the actual nonempty HTML document title and readable text, decoding HTML entities.",
+     "summarySource": "attribute:ASEExecution::CapabilityContract::acceptanceCriteria",
+     "qname": "ASELiveBuilder::liveBuilder::catalog::readWebPageOutlineContract",
+     "file": "configuration.sysml",
+     "line": 293,
+     "col": 18,
+     "kind": "tool",
+     "type": {
+      "title": "CapabilityContract",
+      "qname": "ASEExecution::CapabilityContract"
+     },
+     "titleSource": "ASEExecution::CapabilityContract::kind",
+     "values": [
+      {
+       "name": "module",
+       "line": 295,
+       "defines": "ASEExecution::CapabilityContract::module",
+       "value": "default({url,html}) => {title,text}"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "ebfc4d07-e005-5e9a-ae94-11f9d71188f1",
+     "element": "ebfc4d07-e005-5e9a-ae94-11f9d71188f1",
+     "keyword": "perform action",
+     "title": "reply",
+     "summary": "The builder's ordinary reply branch produces response text.",
+     "summarySource": "type-doc",
+     "qname": "ASELiveBuilder::liveBuilder::reply",
+     "file": "configuration.sysml",
+     "line": 323,
+     "col": 24,
+     "kind": "capability",
+     "type": {
+      "title": "ReplyToConversation",
+      "qname": "ASELiveBuilder::ReplyToConversation"
+     },
+     "io": [
+      {
+       "dir": "out",
+       "title": "response",
+       "type": "ConversationResponse",
+       "element": "5603d3b5-f095-572a-8748-ab07c6bc5e5b"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "a5c2e8a1-7fb8-5d9b-a0d1-b2730b3eea1c",
+     "element": "a5c2e8a1-7fb8-5d9b-a0d1-b2730b3eea1c",
+     "keyword": "perform action",
+     "title": "invokeRequest",
+     "summary": "The builder requests invocation.",
+     "summarySource": "type-doc",
+     "qname": "ASELiveBuilder::liveBuilder::invokeRequest",
+     "file": "configuration.sysml",
+     "line": 324,
+     "col": 24,
+     "kind": "capability",
+     "type": {
+      "title": "RequestToolInvocation",
+      "qname": "ASELiveBuilder::RequestToolInvocation"
+     },
+     "io": [
+      {
+       "dir": "out",
+       "title": "request",
+       "type": "ToolInvocationRequest",
+       "element": "91c1078a-67a5-5274-8344-49d6501bf420"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e",
+     "element": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e",
+     "keyword": "perform action",
+     "title": "promotion",
+     "summary": "Native responsibilities for the evolving system.",
+     "summarySource": "type-doc",
+     "qname": "ASELiveBuilder::liveBuilder::promotion",
+     "file": "configuration.sysml",
+     "line": 327,
+     "col": 24,
+     "kind": "capability",
+     "type": {
+      "title": "CapabilityPromotion",
+      "qname": "ASELiveBuilder::CapabilityPromotion"
+     },
+     "steps": [
+      {
+       "id": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#355862a5-d236-5917-a607-5e08dd2b480a",
+       "element": "355862a5-d236-5917-a607-5e08dd2b480a",
+       "n": 1,
+       "kind": "action",
+       "keyword": "action",
+       "title": "propose",
+       "depth": 0,
+       "type": {
+        "title": "ProposeCandidate",
+        "qname": "APEPromotion::ProposeCandidate"
+       },
+       "qname": "ASELiveBuilder::CapabilityPromotion::propose",
+       "file": "configuration.sysml",
+       "line": 105,
+       "col": 16
+      },
+      {
+       "id": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#5fd70bef-f096-5483-b594-6fb367c55561",
+       "element": "5fd70bef-f096-5483-b594-6fb367c55561",
+       "n": 2,
+       "kind": "action",
+       "keyword": "action",
+       "title": "test",
+       "depth": 0,
+       "type": {
+        "title": "TestCandidate",
+        "qname": "APEPromotion::TestCandidate"
+       },
+       "qname": "ASELiveBuilder::CapabilityPromotion::test",
+       "file": "configuration.sysml",
+       "line": 106,
+       "col": 16
+      },
+      {
+       "id": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#d897be23-fc69-5975-80dc-b16cddef9ebb",
+       "element": "d897be23-fc69-5975-80dc-b16cddef9ebb",
+       "n": 3,
+       "kind": "decision",
+       "keyword": "decide",
+       "title": "testOutcome",
+       "depth": 0,
+       "qname": "ASELiveBuilder::CapabilityPromotion::testOutcome",
+       "file": "configuration.sysml",
+       "line": 119,
+       "col": 16
+      },
+      {
+       "id": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#aba4ae79-bab8-5697-9266-1597f1d216bd",
+       "element": "aba4ae79-bab8-5697-9266-1597f1d216bd",
+       "n": 4,
+       "kind": "action",
+       "keyword": "action",
+       "title": "admit",
+       "depth": 1,
+       "type": {
+        "title": "ConfiguredAdmission",
+        "qname": "ASELiveBuilder::ConfiguredAdmission"
+       },
+       "guard": "test.result.passed",
+       "branch": "if",
+       "qname": "ASELiveBuilder::CapabilityPromotion::admit",
+       "file": "configuration.sysml",
+       "line": 107,
+       "col": 16
+      },
+      {
+       "id": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#89b463df-ff3d-5912-b309-80ff8d6265cf",
+       "element": "89b463df-ff3d-5912-b309-80ff8d6265cf",
+       "n": 5,
+       "kind": "decision",
+       "keyword": "decide",
+       "title": "admissionOutcome",
+       "depth": 1,
+       "qname": "ASELiveBuilder::CapabilityPromotion::admissionOutcome",
+       "file": "configuration.sysml",
+       "line": 123,
+       "col": 16
+      },
+      {
+       "id": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#d240815b-1549-5401-818a-2059e176ad0f",
+       "element": "d240815b-1549-5401-818a-2059e176ad0f",
+       "n": 6,
+       "kind": "action",
+       "keyword": "action",
+       "title": "activate",
+       "depth": 2,
+       "type": {
+        "title": "ActivateCandidate",
+        "qname": "APEPromotion::ActivateCandidate"
+       },
+       "guard": "admit.decision.admitted",
+       "branch": "if",
+       "qname": "ASELiveBuilder::CapabilityPromotion::activate",
+       "file": "configuration.sysml",
+       "line": 108,
+       "col": 16
+      },
+      {
+       "id": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#goto:90f04731-dc80-556f-bbb2-10cdd9753043",
+       "element": "90f04731-dc80-556f-bbb2-10cdd9753043",
+       "kind": "goto",
+       "depth": 2,
+       "to": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#85d7327c-5f00-5462-b465-50e3ae773595",
+       "toTitle": "completion",
+       "forward": true
+      },
+      {
+       "id": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#goto:8dc5ad11-e196-51c7-a6fb-05b2021513a4",
+       "element": "8dc5ad11-e196-51c7-a6fb-05b2021513a4",
+       "kind": "goto",
+       "depth": 2,
+       "branch": "else",
+       "to": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#6b9032b4-ad8a-5afa-893b-4dc2d7cc62d9",
+       "toTitle": "refusal",
+       "forward": true
+      },
+      {
+       "id": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#goto:43443766-4828-5a1d-8fa1-bca1e6b3d501",
+       "element": "43443766-4828-5a1d-8fa1-bca1e6b3d501",
+       "kind": "goto",
+       "depth": 1,
+       "branch": "else",
+       "to": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#6b9032b4-ad8a-5afa-893b-4dc2d7cc62d9",
+       "toTitle": "refusal",
+       "forward": true
+      },
+      {
+       "id": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#6b9032b4-ad8a-5afa-893b-4dc2d7cc62d9",
+       "element": "6b9032b4-ad8a-5afa-893b-4dc2d7cc62d9",
+       "n": 7,
+       "kind": "merge",
+       "keyword": "merge",
+       "title": "refusal",
+       "depth": 0,
+       "qname": "ASELiveBuilder::CapabilityPromotion::refusal",
+       "file": "configuration.sysml",
+       "line": 126,
+       "col": 15
+      },
+      {
+       "id": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#72d98878-c44f-505a-9f38-48e06e9ba65b",
+       "element": "72d98878-c44f-505a-9f38-48e06e9ba65b",
+       "n": 8,
+       "kind": "action",
+       "keyword": "action",
+       "title": "refuse",
+       "depth": 0,
+       "type": {
+        "title": "RefuseCandidate",
+        "qname": "APEPromotion::RefuseCandidate"
+       },
+       "qname": "ASELiveBuilder::CapabilityPromotion::refuse",
+       "file": "configuration.sysml",
+       "line": 109,
+       "col": 16
+      },
+      {
+       "id": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#85d7327c-5f00-5462-b465-50e3ae773595",
+       "element": "85d7327c-5f00-5462-b465-50e3ae773595",
+       "n": 9,
+       "kind": "merge",
+       "keyword": "merge",
+       "title": "completion",
+       "depth": 0,
+       "qname": "ASELiveBuilder::CapabilityPromotion::completion",
+       "file": "configuration.sysml",
+       "line": 130,
+       "col": 15
+      },
+      {
+       "id": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#@done",
+       "element": null,
+       "kind": "end",
+       "keyword": "end",
+       "title": "done",
+       "depth": 0
+      }
+     ],
+     "flow": {
+      "nodes": 11,
+      "edges": 12,
+      "back": 0,
+      "supplemented": 4,
+      "unresolved": 0,
+      "sequential": true,
+      "summary": {
+       "steps": 5,
+       "decisions": 2,
+       "merges": 2,
+       "forks": 0,
+       "loops": 0,
+       "unreachable": 0
+      }
+     },
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7",
+     "element": "75409458-0bc6-5add-9d6e-da2bd31a13a7",
+     "keyword": "perform action",
+     "title": "conversation",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::conversation",
+     "file": "configuration.sysml",
+     "line": 333,
+     "col": 24,
+     "kind": "capability",
+     "type": {
+      "title": "ConversationCase",
+      "qname": "ASEConversation::ConversationCase"
+     },
+     "steps": [
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#9ea26b46-dfc6-57c4-a71c-c6a53300194f",
+       "element": "9ea26b46-dfc6-57c4-a71c-c6a53300194f",
+       "n": 1,
+       "kind": "merge",
+       "keyword": "merge",
+       "title": "resumeCase",
+       "depth": 0,
+       "qname": "ASEConversation::ConversationCase::resumeCase",
+       "file": "conversation.sysml",
+       "line": 115,
+       "col": 15
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#d2fb15d4-9612-59a9-bb99-d443396d367a",
+       "element": "d2fb15d4-9612-59a9-bb99-d443396d367a",
+       "n": 2,
+       "kind": "action",
+       "keyword": "action",
+       "title": "readCaseState",
+       "depth": 0,
+       "type": {
+        "title": "ReadCaseState",
+        "qname": "ASEConversation::ReadCaseState"
+       },
+       "qname": "ASEConversation::ConversationCase::readCaseState",
+       "file": "conversation.sysml",
+       "line": 96,
+       "col": 16
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#7507f2c2-02ed-5a05-83c2-bc2b63f04017",
+       "element": "7507f2c2-02ed-5a05-83c2-bc2b63f04017",
+       "n": 3,
+       "kind": "action",
+       "keyword": "action",
+       "title": "chooseNextMove",
+       "depth": 0,
+       "type": {
+        "title": "ChooseNextMove",
+        "qname": "ASEConversation::ChooseNextMove"
+       },
+       "qname": "ASEConversation::ConversationCase::chooseNextMove",
+       "file": "conversation.sysml",
+       "line": 97,
+       "col": 16
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#81069e0f-18e7-5a6a-9442-b908bbcaa3a6",
+       "element": "81069e0f-18e7-5a6a-9442-b908bbcaa3a6",
+       "n": 4,
+       "kind": "decision",
+       "keyword": "decide",
+       "title": "nextMove",
+       "depth": 0,
+       "qname": "ASEConversation::ConversationCase::nextMove",
+       "file": "conversation.sysml",
+       "line": 119,
+       "col": 16
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#9884c33b-310d-5675-9e22-89e5d84dcf6c",
+       "element": "9884c33b-310d-5675-9e22-89e5d84dcf6c",
+       "n": 5,
+       "kind": "action",
+       "keyword": "action",
+       "title": "replyOrClarify",
+       "depth": 1,
+       "type": {
+        "title": "ReplyOrClarify",
+        "qname": "ASEConversation::ReplyOrClarify"
+       },
+       "guard": "chooseNextMove.choice.kind == \"reply\"",
+       "branch": "if",
+       "qname": "ASEConversation::ConversationCase::replyOrClarify",
+       "file": "conversation.sysml",
+       "line": 98,
+       "col": 16
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#goto:e5c0b81c-dc54-5bb2-af8c-11499abcb6a2",
+       "element": "e5c0b81c-dc54-5bb2-af8c-11499abcb6a2",
+       "kind": "goto",
+       "depth": 1,
+       "to": "75409458-0bc6-5add-9d6e-da2bd31a13a7#8009c1f0-fcf0-518d-9b64-4de06124a620",
+       "toTitle": "awaitingContribution",
+       "forward": true
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#ab9120cf-5713-5b33-bcef-79bab0f73835",
+       "element": "ab9120cf-5713-5b33-bcef-79bab0f73835",
+       "n": 6,
+       "kind": "action",
+       "keyword": "action",
+       "title": "checkRequestedAction",
+       "depth": 1,
+       "type": {
+        "title": "CheckRequestedAction",
+        "qname": "ASEConversation::CheckRequestedAction"
+       },
+       "guard": "chooseNextMove.choice.kind == \"invoke_tool\" or chooseNextMove.choice.kind == \"invoke_behavior\"",
+       "branch": "if",
+       "qname": "ASEConversation::ConversationCase::checkRequestedAction",
+       "file": "conversation.sysml",
+       "line": 100,
+       "col": 16
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#6394881a-2b33-508b-be90-a976dc684485",
+       "element": "6394881a-2b33-508b-be90-a976dc684485",
+       "n": 7,
+       "kind": "decision",
+       "keyword": "decide",
+       "title": "admissionOutcome",
+       "depth": 1,
+       "qname": "ASEConversation::ConversationCase::admissionOutcome",
+       "file": "conversation.sysml",
+       "line": 126,
+       "col": 16
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#395da4e6-d78e-5309-9a29-b8fa9730ff4a",
+       "element": "395da4e6-d78e-5309-9a29-b8fa9730ff4a",
+       "n": 8,
+       "kind": "action",
+       "keyword": "action",
+       "title": "executeAction",
+       "depth": 2,
+       "type": {
+        "title": "ExecuteRequestedAction",
+        "qname": "ASEConversation::ExecuteRequestedAction"
+       },
+       "guard": "checkRequestedAction.decision.admitted",
+       "branch": "if",
+       "qname": "ASEConversation::ConversationCase::executeAction",
+       "file": "conversation.sysml",
+       "line": 101,
+       "col": 16
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#goto:9fd01787-7709-5e8f-9704-446bffad1b9c",
+       "element": "9fd01787-7709-5e8f-9704-446bffad1b9c",
+       "kind": "goto",
+       "depth": 2,
+       "to": "75409458-0bc6-5add-9d6e-da2bd31a13a7#9f589969-dc29-5ee2-855c-b3a1044ee8cc",
+       "toTitle": "reportedOutcome",
+       "forward": true
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#a3c42053-364a-5415-a179-64908e6c5665",
+       "element": "a3c42053-364a-5415-a179-64908e6c5665",
+       "n": 9,
+       "kind": "action",
+       "keyword": "action",
+       "title": "recordRefusal",
+       "depth": 2,
+       "type": {
+        "title": "RecordActionRefusal",
+        "qname": "ASEConversation::RecordActionRefusal"
+       },
+       "branch": "else",
+       "qname": "ASEConversation::ConversationCase::recordRefusal",
+       "file": "conversation.sysml",
+       "line": 102,
+       "col": 16
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#goto:194b869f-0d69-5b0f-951f-ed22caa2a6bb",
+       "element": "194b869f-0d69-5b0f-951f-ed22caa2a6bb",
+       "kind": "goto",
+       "depth": 2,
+       "to": "75409458-0bc6-5add-9d6e-da2bd31a13a7#9f589969-dc29-5ee2-855c-b3a1044ee8cc",
+       "toTitle": "reportedOutcome",
+       "forward": true
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#b9db9322-dd8c-5d63-9a26-1af6d14245ae",
+       "element": "b9db9322-dd8c-5d63-9a26-1af6d14245ae",
+       "n": 10,
+       "kind": "action",
+       "keyword": "action",
+       "title": "submitChangeProposal",
+       "depth": 1,
+       "type": {
+        "title": "SubmitChangeProposal",
+        "qname": "ASEConversation::SubmitChangeProposal"
+       },
+       "branch": "else",
+       "qname": "ASEConversation::ConversationCase::submitChangeProposal",
+       "file": "conversation.sysml",
+       "line": 103,
+       "col": 16
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#f48efc6a-4100-57ed-a5a9-3939c1f42873",
+       "element": "f48efc6a-4100-57ed-a5a9-3939c1f42873",
+       "n": 11,
+       "kind": "decision",
+       "keyword": "decide",
+       "title": "submissionOutcome",
+       "depth": 1,
+       "qname": "ASEConversation::ConversationCase::submissionOutcome",
+       "file": "conversation.sysml",
+       "line": 132,
+       "col": 16
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#goto:0455588c-ea9b-514d-84b2-606f73215b8a",
+       "element": "0455588c-ea9b-514d-84b2-606f73215b8a",
+       "kind": "goto",
+       "depth": 2,
+       "guard": "submitChangeProposal.submission.awaitingInput",
+       "branch": "if",
+       "to": "75409458-0bc6-5add-9d6e-da2bd31a13a7#8009c1f0-fcf0-518d-9b64-4de06124a620",
+       "toTitle": "awaitingContribution",
+       "forward": true
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#goto:acc4a739-887f-5adc-99e4-797473b7fa8e",
+       "element": "acc4a739-887f-5adc-99e4-797473b7fa8e",
+       "kind": "goto",
+       "depth": 2,
+       "branch": "else",
+       "to": "75409458-0bc6-5add-9d6e-da2bd31a13a7#9f589969-dc29-5ee2-855c-b3a1044ee8cc",
+       "toTitle": "reportedOutcome",
+       "forward": true
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#8009c1f0-fcf0-518d-9b64-4de06124a620",
+       "element": "8009c1f0-fcf0-518d-9b64-4de06124a620",
+       "n": 12,
+       "kind": "merge",
+       "keyword": "merge",
+       "title": "awaitingContribution",
+       "depth": 0,
+       "qname": "ASEConversation::ConversationCase::awaitingContribution",
+       "file": "conversation.sysml",
+       "line": 138,
+       "col": 15
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#e413ba39-a2b5-5b06-a766-1695bdcb9d40",
+       "element": "e413ba39-a2b5-5b06-a766-1695bdcb9d40",
+       "n": 13,
+       "kind": "action",
+       "keyword": "action",
+       "title": "waitForInput",
+       "depth": 0,
+       "type": {
+        "title": "AwaitCaseInput",
+        "qname": "ASEConversation::AwaitCaseInput"
+       },
+       "qname": "ASEConversation::ConversationCase::waitForInput",
+       "file": "conversation.sysml",
+       "line": 99,
+       "col": 16,
+       "loops": [
+        {
+         "to": "75409458-0bc6-5add-9d6e-da2bd31a13a7#9ea26b46-dfc6-57c4-a71c-c6a53300194f",
+         "toTitle": "resumeCase"
+        }
+       ]
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#9f589969-dc29-5ee2-855c-b3a1044ee8cc",
+       "element": "9f589969-dc29-5ee2-855c-b3a1044ee8cc",
+       "n": 14,
+       "kind": "merge",
+       "keyword": "merge",
+       "title": "reportedOutcome",
+       "depth": 0,
+       "qname": "ASEConversation::ConversationCase::reportedOutcome",
+       "file": "conversation.sysml",
+       "line": 135,
+       "col": 15
+      },
+      {
+       "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7#f4b0d718-27a3-576f-910a-4c996dd3516f",
+       "element": "f4b0d718-27a3-576f-910a-4c996dd3516f",
+       "n": 15,
+       "kind": "action",
+       "keyword": "action",
+       "title": "observeOutcome",
+       "depth": 0,
+       "type": {
+        "title": "ObserveOutcomeAndUpdateCase",
+        "qname": "ASEConversation::ObserveOutcomeAndUpdateCase"
+       },
+       "qname": "ASEConversation::ConversationCase::observeOutcome",
+       "file": "conversation.sysml",
+       "line": 104,
+       "col": 16,
+       "loops": [
+        {
+         "to": "75409458-0bc6-5add-9d6e-da2bd31a13a7#9ea26b46-dfc6-57c4-a71c-c6a53300194f",
+         "toTitle": "resumeCase"
+        }
+       ]
+      }
+     ],
+     "flow": {
+      "nodes": 16,
+      "edges": 20,
+      "back": 2,
+      "supplemented": 7,
+      "unresolved": 0,
+      "sequential": true,
+      "summary": {
+       "steps": 9,
+       "decisions": 3,
+       "merges": 3,
+       "forks": 0,
+       "loops": 2,
+       "unreachable": 0
+      }
+     },
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "6aa31f1c-6409-5fbf-9c73-690f67bbec06",
+     "element": "6aa31f1c-6409-5fbf-9c73-690f67bbec06",
+     "keyword": "part def",
+     "title": "ToolCandidate",
+     "summary": "Each occurrence owns its runtime name, digest, candidateId and status attributes.",
+     "summarySource": "doc",
+     "qname": "ASELiveBuilder::ToolCandidate",
+     "file": "configuration.sysml",
+     "line": 59,
+     "col": 14,
+     "kind": "capability-type",
+     "definition": true
+    }
+   ]
+  },
+  {
+   "id": "rules",
+   "title": "Rules",
+   "rule": {
+    "select": "PartUsage / ItemUsage conforming to the anchors below; a rule nested in a rule is its child",
+    "mandate": [
+     "ASECore::ConfiguredMandate",
+     "ASEAuthority::Mandate"
+    ],
+    "policy": [
+     "ASEExecution::ExecutionPolicy",
+     "ASEModelEditing::ModelEditPolicy",
+     "ASEModelAdministration::ModelAdministrationPolicy",
+     "APEContext::DecisionContextPolicy",
+     "APESkills::SkillPolicy",
+     "APEMemory::GovernedMemoryPolicy",
+     "APEWorkBudget::InvocationBudgetPolicy"
+    ],
+    "access": [
+     "ASEInvocations::BehaviorAccess"
+    ],
+    "authority": [
+     "ASEAuthority::RootAuthority",
+     "ASEAuthority::RootGrant"
+    ]
+   },
+   "items": [
+    {
+     "id": "5c233712-5162-5c47-8876-0ac6c821b7a0",
+     "element": "5c233712-5162-5c47-8876-0ac6c821b7a0",
+     "keyword": "part",
+     "title": "policy",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::context::policy",
+     "file": "configuration.sysml",
+     "line": 140,
+     "col": 10,
+     "kind": "policy",
+     "type": {
+      "title": "DecisionContextPolicy",
+      "qname": "APEContext::DecisionContextPolicy"
+     },
+     "values": [
+      {
+       "name": "id",
+       "line": 141,
+       "defines": "APEContext::DecisionContextPolicy::id",
+       "value": "decision-context-v1"
+      },
+      {
+       "name": "revision",
+       "line": 142,
+       "defines": "APEContext::DecisionContextPolicy::revision",
+       "value": 1
+      },
+      {
+       "name": "recentMessages",
+       "line": 143,
+       "defines": "APEContext::DecisionContextPolicy::recentMessages",
+       "value": 8
+      },
+      {
+       "name": "maxMessageCharacters",
+       "line": 144,
+       "defines": "APEContext::DecisionContextPolicy::maxMessageCharacters",
+       "value": 2000
+      },
+      {
+       "name": "maxCollectionItems",
+       "line": 145,
+       "defines": "APEContext::DecisionContextPolicy::maxCollectionItems",
+       "value": 12
+      },
+      {
+       "name": "maxContextCharacters",
+       "line": 146,
+       "defines": "APEContext::DecisionContextPolicy::maxContextCharacters",
+       "value": 250000
+      }
+     ],
+     "group": [
+      {
+       "element": "7ed7aa01-d84b-5a17-a9d2-9c590f336868",
+       "title": "context"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "91d06b4e-3b30-5823-b22a-5fddf4fa3102",
+     "element": "91d06b4e-3b30-5823-b22a-5fddf4fa3102",
+     "keyword": "part",
+     "title": "ConsulterPreuve",
+     "summary": "Read one exact local evidence message by verified id and digest.",
+     "summarySource": "attribute:ASEInvocations::BehaviorAccess::description",
+     "qname": "ASELiveBuilder::liveBuilder::context::evidenceAccess",
+     "file": "configuration.sysml",
+     "line": 149,
+     "col": 10,
+     "kind": "access",
+     "type": {
+      "title": "BehaviorAccess",
+      "qname": "ASEInvocations::BehaviorAccess"
+     },
+     "titleSource": "ASEInvocations::BehaviorAccess::name",
+     "values": [
+      {
+       "name": "enabled",
+       "line": 152,
+       "defines": "ASEInvocations::BehaviorAccess::enabled",
+       "value": true
+      }
+     ],
+     "group": [
+      {
+       "element": "7ed7aa01-d84b-5a17-a9d2-9c590f336868",
+       "title": "context"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "c82435f2-da9f-5497-9869-b42da65d2d58",
+     "element": "c82435f2-da9f-5497-9869-b42da65d2d58",
+     "keyword": "part",
+     "title": "policy",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::context::skills::policy",
+     "file": "configuration.sysml",
+     "line": 156,
+     "col": 14,
+     "kind": "policy",
+     "type": {
+      "title": "SkillPolicy",
+      "qname": "APESkills::SkillPolicy"
+     },
+     "values": [
+      {
+       "name": "id",
+       "line": 157,
+       "defines": "APESkills::SkillPolicy::id",
+       "value": "context-skills-v1"
+      },
+      {
+       "name": "revision",
+       "line": 158,
+       "defines": "APESkills::SkillPolicy::revision",
+       "value": 1
+      },
+      {
+       "name": "allowedHosts",
+       "line": 159,
+       "defines": "APESkills::SkillPolicy::allowedHosts",
+       "value": "[\"raw.githubusercontent.com\"]"
+      },
+      {
+       "name": "maxSkillBytes",
+       "line": 160,
+       "defines": "APESkills::SkillPolicy::maxSkillBytes",
+       "value": 65536
+      },
+      {
+       "name": "maxInstalledSkills",
+       "line": 161,
+       "defines": "APESkills::SkillPolicy::maxInstalledSkills",
+       "value": 32
+      },
+      {
+       "name": "maxLoadedSkills",
+       "line": 162,
+       "defines": "APESkills::SkillPolicy::maxLoadedSkills",
+       "value": 4
+      },
+      {
+       "name": "maxLoadedCharacters",
+       "line": 163,
+       "defines": "APESkills::SkillPolicy::maxLoadedCharacters",
+       "value": 48000
+      }
+     ],
+     "group": [
+      {
+       "element": "7ed7aa01-d84b-5a17-a9d2-9c590f336868",
+       "title": "context"
+      },
+      {
+       "element": "87db59ae-dd35-5fcf-a59a-1601eb60ee9d",
+       "title": "skills"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "11b0d994-7093-5e2d-9831-b69776168730",
+     "element": "11b0d994-7093-5e2d-9831-b69776168730",
+     "keyword": "part",
+     "title": "InstallerSkill",
+     "summary": "Download and install raw skill instructions from a source-admitted HTTPS host; do not load them.",
+     "summarySource": "attribute:ASEInvocations::BehaviorAccess::description",
+     "qname": "ASELiveBuilder::liveBuilder::context::skills::installAccess",
+     "file": "configuration.sysml",
+     "line": 172,
+     "col": 14,
+     "kind": "access",
+     "type": {
+      "title": "BehaviorAccess",
+      "qname": "ASEInvocations::BehaviorAccess"
+     },
+     "titleSource": "ASEInvocations::BehaviorAccess::name",
+     "values": [
+      {
+       "name": "enabled",
+       "line": 175,
+       "defines": "ASEInvocations::BehaviorAccess::enabled",
+       "value": true
+      }
+     ],
+     "group": [
+      {
+       "element": "7ed7aa01-d84b-5a17-a9d2-9c590f336868",
+       "title": "context"
+      },
+      {
+       "element": "87db59ae-dd35-5fcf-a59a-1601eb60ee9d",
+       "title": "skills"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "2c05e6c6-bc0f-5287-a914-343f166a9582",
+     "element": "2c05e6c6-bc0f-5287-a914-343f166a9582",
+     "keyword": "part",
+     "title": "ListerSkills",
+     "summary": "List local installed skills and their exact versions without their instruction contents.",
+     "summarySource": "attribute:ASEInvocations::BehaviorAccess::description",
+     "qname": "ASELiveBuilder::liveBuilder::context::skills::listAccess",
+     "file": "configuration.sysml",
+     "line": 179,
+     "col": 14,
+     "kind": "access",
+     "type": {
+      "title": "BehaviorAccess",
+      "qname": "ASEInvocations::BehaviorAccess"
+     },
+     "titleSource": "ASEInvocations::BehaviorAccess::name",
+     "values": [
+      {
+       "name": "enabled",
+       "line": 182,
+       "defines": "ASEInvocations::BehaviorAccess::enabled",
+       "value": true
+      }
+     ],
+     "group": [
+      {
+       "element": "7ed7aa01-d84b-5a17-a9d2-9c590f336868",
+       "title": "context"
+      },
+      {
+       "element": "87db59ae-dd35-5fcf-a59a-1601eb60ee9d",
+       "title": "skills"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "7288ac91-75e0-5ece-9fda-a7c1b48337dc",
+     "element": "7288ac91-75e0-5ece-9fda-a7c1b48337dc",
+     "keyword": "part",
+     "title": "ChargerSkill",
+     "summary": "Load an exact installed skill into subsequent decision contexts.",
+     "summarySource": "attribute:ASEInvocations::BehaviorAccess::description",
+     "qname": "ASELiveBuilder::liveBuilder::context::skills::loadAccess",
+     "file": "configuration.sysml",
+     "line": 186,
+     "col": 14,
+     "kind": "access",
+     "type": {
+      "title": "BehaviorAccess",
+      "qname": "ASEInvocations::BehaviorAccess"
+     },
+     "titleSource": "ASEInvocations::BehaviorAccess::name",
+     "values": [
+      {
+       "name": "enabled",
+       "line": 189,
+       "defines": "ASEInvocations::BehaviorAccess::enabled",
+       "value": true
+      }
+     ],
+     "group": [
+      {
+       "element": "7ed7aa01-d84b-5a17-a9d2-9c590f336868",
+       "title": "context"
+      },
+      {
+       "element": "87db59ae-dd35-5fcf-a59a-1601eb60ee9d",
+       "title": "skills"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "b5e70605-2462-5f75-88ec-e6913d32a30f",
+     "element": "b5e70605-2462-5f75-88ec-e6913d32a30f",
+     "keyword": "part",
+     "title": "DechargerSkill",
+     "summary": "Remove an exact installed skill from subsequent decision contexts without deleting its audit trail.",
+     "summarySource": "attribute:ASEInvocations::BehaviorAccess::description",
+     "qname": "ASELiveBuilder::liveBuilder::context::skills::unloadAccess",
+     "file": "configuration.sysml",
+     "line": 193,
+     "col": 14,
+     "kind": "access",
+     "type": {
+      "title": "BehaviorAccess",
+      "qname": "ASEInvocations::BehaviorAccess"
+     },
+     "titleSource": "ASEInvocations::BehaviorAccess::name",
+     "values": [
+      {
+       "name": "enabled",
+       "line": 196,
+       "defines": "ASEInvocations::BehaviorAccess::enabled",
+       "value": true
+      }
+     ],
+     "group": [
+      {
+       "element": "7ed7aa01-d84b-5a17-a9d2-9c590f336868",
+       "title": "context"
+      },
+      {
+       "element": "87db59ae-dd35-5fcf-a59a-1601eb60ee9d",
+       "title": "skills"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "29b9c08e-4880-5f2c-9ab8-3bc0b776f97d",
+     "element": "29b9c08e-4880-5f2c-9ab8-3bc0b776f97d",
+     "keyword": "part",
+     "title": "policy",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::memory::policy",
+     "file": "configuration.sysml",
+     "line": 202,
+     "col": 10,
+     "kind": "policy",
+     "type": {
+      "title": "GovernedMemoryPolicy",
+      "qname": "APEMemory::GovernedMemoryPolicy"
+     },
+     "values": [
+      {
+       "name": "id",
+       "line": 203,
+       "defines": "APEMemory::GovernedMemoryPolicy::id",
+       "value": "local-memory-v1"
+      },
+      {
+       "name": "revision",
+       "line": 204,
+       "defines": "APEMemory::GovernedMemoryPolicy::revision",
+       "value": 1
+      },
+      {
+       "name": "allowedScopes",
+       "line": 205,
+       "defines": "APEMemory::GovernedMemoryPolicy::allowedScopes",
+       "value": "[\"modeling\"]"
+      },
+      {
+       "name": "requireSourceRefs",
+       "line": 206,
+       "defines": "APEMemory::GovernedMemoryPolicy::requireSourceRefs",
+       "value": true
+      },
+      {
+       "name": "requireKnownOutcome",
+       "line": 207,
+       "defines": "APEMemory::GovernedMemoryPolicy::requireKnownOutcome",
+       "value": true
+      },
+      {
+       "name": "maxValidityMs",
+       "line": 208,
+       "defines": "APEMemory::GovernedMemoryPolicy::maxValidityMs",
+       "value": 86400000
+      },
+      {
+       "name": "allowSelfAdmission",
+       "line": 209,
+       "defines": "APEMemory::GovernedMemoryPolicy::allowSelfAdmission",
+       "value": false
+      }
+     ],
+     "group": [
+      {
+       "element": "7af66f85-e064-5dd2-9f7c-5bfb1ce244ff",
+       "title": "memory"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "ac6991ef-fb56-5b51-a3e2-ba5ce7166aa4",
+     "element": "ac6991ef-fb56-5b51-a3e2-ba5ce7166aa4",
+     "keyword": "part",
+     "title": "CapturerMemoire",
+     "summary": "Contribute a local candidate memory; capture does not admit its guidance.",
+     "summarySource": "attribute:ASEInvocations::BehaviorAccess::description",
+     "qname": "ASELiveBuilder::liveBuilder::memory::captureAccess",
+     "file": "configuration.sysml",
+     "line": 212,
+     "col": 10,
+     "kind": "access",
+     "type": {
+      "title": "BehaviorAccess",
+      "qname": "ASEInvocations::BehaviorAccess"
+     },
+     "titleSource": "ASEInvocations::BehaviorAccess::name",
+     "values": [
+      {
+       "name": "enabled",
+       "line": 215,
+       "defines": "ASEInvocations::BehaviorAccess::enabled",
+       "value": true
+      }
+     ],
+     "group": [
+      {
+       "element": "7af66f85-e064-5dd2-9f7c-5bfb1ce244ff",
+       "title": "memory"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "a966189c-119c-5250-807c-ded5e19fe6cf",
+     "element": "a966189c-119c-5250-807c-ded5e19fe6cf",
+     "keyword": "part",
+     "title": "RappelerMemoire",
+     "summary": "Read local memory statuses without admitting candidates.",
+     "summarySource": "attribute:ASEInvocations::BehaviorAccess::description",
+     "qname": "ASELiveBuilder::liveBuilder::memory::recallAccess",
+     "file": "configuration.sysml",
+     "line": 219,
+     "col": 10,
+     "kind": "access",
+     "type": {
+      "title": "BehaviorAccess",
+      "qname": "ASEInvocations::BehaviorAccess"
+     },
+     "titleSource": "ASEInvocations::BehaviorAccess::name",
+     "values": [
+      {
+       "name": "enabled",
+       "line": 222,
+       "defines": "ASEInvocations::BehaviorAccess::enabled",
+       "value": true
+      }
+     ],
+     "group": [
+      {
+       "element": "7af66f85-e064-5dd2-9f7c-5bfb1ce244ff",
+       "title": "memory"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "b86daeb2-ece0-5037-8abf-e2e7fe26b5fe",
+     "element": "b86daeb2-ece0-5037-8abf-e2e7fe26b5fe",
+     "keyword": "part",
+     "title": "ReviserMemoire",
+     "summary": "Revise an exact local candidate under revision and digest control.",
+     "summarySource": "attribute:ASEInvocations::BehaviorAccess::description",
+     "qname": "ASELiveBuilder::liveBuilder::memory::reviseAccess",
+     "file": "configuration.sysml",
+     "line": 226,
+     "col": 10,
+     "kind": "access",
+     "type": {
+      "title": "BehaviorAccess",
+      "qname": "ASEInvocations::BehaviorAccess"
+     },
+     "titleSource": "ASEInvocations::BehaviorAccess::name",
+     "values": [
+      {
+       "name": "enabled",
+       "line": 229,
+       "defines": "ASEInvocations::BehaviorAccess::enabled",
+       "value": true
+      }
+     ],
+     "group": [
+      {
+       "element": "7af66f85-e064-5dd2-9f7c-5bfb1ce244ff",
+       "title": "memory"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "19eff524-806c-5a37-9084-12e6e3c38e8c",
+     "element": "19eff524-806c-5a37-9084-12e6e3c38e8c",
+     "keyword": "part",
+     "title": "RevoirMemoire",
+     "summary": "Decide an exact local memory under the separately admitted memory policy.",
+     "summarySource": "attribute:ASEInvocations::BehaviorAccess::description",
+     "qname": "ASELiveBuilder::liveBuilder::memory::reviewAccess",
+     "file": "configuration.sysml",
+     "line": 233,
+     "col": 10,
+     "kind": "access",
+     "type": {
+      "title": "BehaviorAccess",
+      "qname": "ASEInvocations::BehaviorAccess"
+     },
+     "titleSource": "ASEInvocations::BehaviorAccess::name",
+     "values": [
+      {
+       "name": "enabled",
+       "line": 236,
+       "defines": "ASEInvocations::BehaviorAccess::enabled",
+       "value": true
+      }
+     ],
+     "group": [
+      {
+       "element": "7af66f85-e064-5dd2-9f7c-5bfb1ce244ff",
+       "title": "memory"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "6b5418c5-a1ef-5245-8c80-674436d41bc0",
+     "element": "6b5418c5-a1ef-5245-8c80-674436d41bc0",
+     "keyword": "part",
+     "title": "RetirerMemoire",
+     "summary": "Withdraw an exact local memory from current guidance without erasing its history.",
+     "summarySource": "attribute:ASEInvocations::BehaviorAccess::description",
+     "qname": "ASELiveBuilder::liveBuilder::memory::withdrawAccess",
+     "file": "configuration.sysml",
+     "line": 240,
+     "col": 10,
+     "kind": "access",
+     "type": {
+      "title": "BehaviorAccess",
+      "qname": "ASEInvocations::BehaviorAccess"
+     },
+     "titleSource": "ASEInvocations::BehaviorAccess::name",
+     "values": [
+      {
+       "name": "enabled",
+       "line": 243,
+       "defines": "ASEInvocations::BehaviorAccess::enabled",
+       "value": true
+      }
+     ],
+     "group": [
+      {
+       "element": "7af66f85-e064-5dd2-9f7c-5bfb1ce244ff",
+       "title": "memory"
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "4f4d06c6-85dd-588f-b246-bdc3ac9a6642",
+     "element": "4f4d06c6-85dd-588f-b246-bdc3ac9a6642",
+     "keyword": "item",
+     "title": "builderMandate",
+     "summary": "Propose read_web_page and read_web_page_outline; invoke active catalog tools",
+     "summarySource": "attribute:ASECore::ConfiguredMandate::scope",
+     "qname": "ASELiveBuilder::liveBuilder::builderMandate",
+     "file": "configuration.sysml",
+     "line": 300,
+     "col": 14,
+     "kind": "mandate",
+     "type": {
+      "title": "ConfiguredMandate",
+      "qname": "ASECore::ConfiguredMandate"
+     },
+     "values": [
+      {
+       "name": "id",
+       "line": 301,
+       "defines": "ASECore::ConfiguredMandate::id",
+       "value": "builder-v1"
+      },
+      {
+       "name": "version",
+       "line": 302,
+       "defines": "ASECore::ConfiguredMandate::version",
+       "value": "1"
+      },
+      {
+       "name": "scope",
+       "line": 303,
+       "defines": "ASECore::ConfiguredMandate::scope",
+       "value": "Propose read_web_page and read_web_page_outline; invoke active catalog tools"
+      },
+      {
+       "name": "source",
+       "line": 304,
+       "defines": "ASECore::ConfiguredMandate::source",
+       "value": "host configuration: src/domain/governance.ts; src/domain/mandates.ts; src/application/system-runtime.ts; src/adapters/agents.ts"
+      },
+      {
+       "name": "evidenceLevel",
+       "line": 305,
+       "defines": "ASECore::ConfiguredMandate::evidenceLevel",
+       "value": "configured"
+      },
+      {
+       "name": "grantingOperator",
+       "line": 306,
+       "defines": "ASECore::ConfiguredMandate::grantingOperator",
+       "value": "unknown"
+      },
+      {
+       "name": "mayProposeReadWebPage",
+       "line": 307,
+       "defines": "ASECore::ConfiguredMandate::mayProposeReadWebPage",
+       "value": true
+      },
+      {
+       "name": "mayProposeReadWebPageOutline",
+       "line": 308,
+       "defines": "ASECore::ConfiguredMandate::mayProposeReadWebPageOutline",
+       "value": true
+      },
+      {
+       "name": "mayInvokeActiveCatalog",
+       "line": 309,
+       "defines": "ASECore::ConfiguredMandate::mayInvokeActiveCatalog",
+       "value": true
+      },
+      {
+       "name": "mayReviewExactCandidate",
+       "line": 310,
+       "defines": "ASECore::ConfiguredMandate::mayReviewExactCandidate",
+       "value": false
+      },
+      {
+       "name": "mayAdmit",
+       "line": 311,
+       "defines": "ASECore::ConfiguredMandate::mayAdmit",
+       "value": false
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    },
+    {
+     "id": "817b1fe0-dea1-586d-8433-7249345d21c6",
+     "element": "817b1fe0-dea1-586d-8433-7249345d21c6",
+     "keyword": "item",
+     "title": "executionPolicy",
+     "summary": null,
+     "summarySource": null,
+     "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy",
+     "file": "configuration.sysml",
+     "line": 334,
+     "col": 18,
+     "kind": "policy",
+     "type": {
+      "title": "ExecutionPolicy",
+      "qname": "ASEExecution::ExecutionPolicy"
+     },
+     "values": [
+      {
+       "name": "maxAgentDecisions",
+       "line": 335,
+       "defines": "ASEExecution::ExecutionPolicy::maxAgentDecisions",
+       "value": 7
+      },
+      {
+       "name": "maxToolProposals",
+       "line": 336,
+       "defines": "ASEExecution::ExecutionPolicy::maxToolProposals",
+       "value": 2
+      },
+      {
+       "name": "maxFlowSteps",
+       "line": 337,
+       "defines": "ASEExecution::ExecutionPolicy::maxFlowSteps",
+       "value": 128
+      },
+      {
+       "name": "urlSelectionMode",
+       "line": 338,
+       "defines": "ASEExecution::ExecutionPolicy::urlSelectionMode",
+       "value": "user-provided"
+      },
+      {
+       "name": "mayAddNetworkHosts",
+       "line": 339,
+       "defines": "ASEExecution::ExecutionPolicy::mayAddNetworkHosts",
+       "value": true
+      },
+      {
+       "name": "mayDelegateOwnAdmission",
+       "line": 340,
+       "defines": "ASEExecution::ExecutionPolicy::mayDelegateOwnAdmission",
+       "value": true
+      },
+      {
+       "name": "mayCreateReviewer",
+       "line": 341,
+       "defines": "ASEExecution::ExecutionPolicy::mayCreateReviewer",
+       "value": true
+      },
+      {
+       "name": "mayChangeUrlSelection",
+       "line": 342,
+       "defines": "ASEExecution::ExecutionPolicy::mayChangeUrlSelection",
+       "value": true
+      },
+      {
+       "name": "mayProposeSysmlRevision",
+       "line": 343,
+       "defines": "ASEExecution::ExecutionPolicy::mayProposeSysmlRevision",
+       "value": true
+      }
+     ],
+     "scope": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+    }
+   ]
+  },
+  {
+   "id": "guarantees",
+   "title": "Guarantees",
+   "rule": {
+    "select": [
+     "RequirementDefinition (when no usage-level RequirementUsage is typed by it) and usage-level RequirementUsage; clauses = requiredConstraint",
+     "AssertConstraintUsage owned by an action/part definition or usage",
+     "StateDefinition that no other StateDefinition specializes (track includes inherited states)"
+    ]
+   },
+   "items": [
+    {
+     "id": "3acbf54c-3155-5052-a46b-ba06426b038d",
+     "element": "3acbf54c-3155-5052-a46b-ba06426b038d",
+     "keyword": "requirement def",
+     "title": "ExactReviewedCandidate",
+     "summary": "Activation requires approval for the same candidate digest.",
+     "summarySource": "doc",
+     "qname": "ASERequirements::ExactReviewedCandidate",
+     "file": "requirements.sysml",
+     "line": 10,
+     "col": 21,
+     "kind": "requirement",
+     "definition": true,
+     "clauses": [
+      {
+       "id": "3acbf54c-3155-5052-a46b-ba06426b038d#24b22dee-f260-53d9-b56b-ea11a15ec560",
+       "element": "24b22dee-f260-53d9-b56b-ea11a15ec560",
+       "keyword": "require constraint",
+       "title": "sameReviewedBytes",
+       "qname": "ASERequirements::ExactReviewedCandidate::sameReviewedBytes",
+       "file": "requirements.sysml",
+       "line": 14,
+       "col": 28,
+       "expression": "activationRequested implies review.approved and review.candidateDigest == candidate.digest"
+      }
+     ],
+     "satisfiedBy": 0
+    },
+    {
+     "id": "37f97f64-bdfa-5ed2-a02a-757c3ad4ee73",
+     "element": "37f97f64-bdfa-5ed2-a02a-757c3ad4ee73",
+     "keyword": "requirement def",
+     "title": "ActiveOnlyCallable",
+     "summary": "A later invocation resolves an active candidate by identifier and rechecks its digest.",
+     "summarySource": "doc",
+     "qname": "ASERequirements::ActiveOnlyCallable",
+     "file": "requirements.sysml",
+     "line": 22,
+     "col": 21,
+     "kind": "requirement",
+     "definition": true,
+     "clauses": [
+      {
+       "id": "37f97f64-bdfa-5ed2-a02a-757c3ad4ee73#678cd3ee-6459-5551-95d5-4665647c4632",
+       "element": "678cd3ee-6459-5551-95d5-4665647c4632",
+       "keyword": "require constraint",
+       "title": "invocationGate",
+       "qname": "ASERequirements::ActiveOnlyCallable::invocationGate",
+       "file": "requirements.sysml",
+       "line": 26,
+       "col": 28,
+       "expression": "invocationRequested implies candidateActive and bytesMatch"
+      }
+     ],
+     "satisfiedBy": 0
+    },
+    {
+     "id": "55c16d53-1944-54c1-b4a0-6fbc308df936",
+     "element": "55c16d53-1944-54c1-b4a0-6fbc308df936",
+     "keyword": "requirement def",
+     "title": "FailClosedPromotion",
+     "summary": "A refused or failed candidate remains outside the active catalog.",
+     "summarySource": "doc",
+     "qname": "ASERequirements::FailClosedPromotion",
+     "file": "requirements.sysml",
+     "line": 34,
+     "col": 21,
+     "kind": "requirement",
+     "definition": true,
+     "clauses": [
+      {
+       "id": "55c16d53-1944-54c1-b4a0-6fbc308df936#96e0c8b8-cbf5-5139-8f94-d15a6a606ebe",
+       "element": "96e0c8b8-cbf5-5139-8f94-d15a6a606ebe",
+       "keyword": "require constraint",
+       "title": "unavailableCannotActivate",
+       "qname": "ASERequirements::FailClosedPromotion::unavailableCannotActivate",
+       "file": "requirements.sysml",
+       "line": 38,
+       "col": 28,
+       "expression": "candidateRefused or candidateFailed implies not activationRequested"
+      }
+     ],
+     "satisfiedBy": 0
+    },
+    {
+     "id": "169001f5-058d-53d5-865c-404268f3331b",
+     "element": "169001f5-058d-53d5-865c-404268f3331b",
+     "keyword": "assert constraint",
+     "title": "testedAdmission",
+     "summary": "decision.admitted implies tests.passed and decision.candidateDigest == candidate.digest",
+     "summarySource": "expression",
+     "qname": "ASELiveBuilder::ConfiguredAdmission::testedAdmission",
+     "file": "configuration.sysml",
+     "line": 97,
+     "col": 27,
+     "kind": "constraint",
+     "type": {
+      "title": "ConfiguredAdmission",
+      "qname": "ASELiveBuilder::ConfiguredAdmission"
+     },
+     "expression": "decision.admitted implies tests.passed and decision.candidateDigest == candidate.digest",
+     "owner": {
+      "title": "ConfiguredAdmission",
+      "qname": "ASELiveBuilder::ConfiguredAdmission"
+     },
+     "inForce": true
+    },
+    {
+     "id": "8ff94fe2-4cb9-55ea-a0ca-372b97a7ca4b",
+     "element": "8ff94fe2-4cb9-55ea-a0ca-372b97a7ca4b",
+     "keyword": "assert constraint",
+     "title": "admittedAttempt",
+     "summary": "decision.admitted",
+     "summarySource": "expression",
+     "qname": "ASEConversation::ExecuteRequestedAction::admittedAttempt",
+     "file": "conversation.sysml",
+     "line": 72,
+     "col": 27,
+     "kind": "constraint",
+     "type": {
+      "title": "ExecuteRequestedAction",
+      "qname": "ASEConversation::ExecuteRequestedAction"
+     },
+     "expression": "decision.admitted",
+     "owner": {
+      "title": "ExecuteRequestedAction",
+      "qname": "ASEConversation::ExecuteRequestedAction"
+     },
+     "inForce": true
+    },
+    {
+     "id": "d2b4fe02-5214-5f51-bb5e-4556c9a23ddc",
+     "element": "d2b4fe02-5214-5f51-bb5e-4556c9a23ddc",
+     "keyword": "assert constraint",
+     "title": "exactAdmission",
+     "summary": "decision.admitted implies tests.passed and review.approved and review.candidateDigest == candidate.digest and decision.candidateDigest == candidate.digest and exactBytesUnchanged and nameAvailable and candidate.baseCatalogRevision == currentCatalogRevision",
+     "summarySource": "expression",
+     "qname": "APEPromotion::AdmitCandidate::exactAdmission",
+     "file": "pae.sysml",
+     "line": 40,
+     "col": 27,
+     "kind": "constraint",
+     "type": {
+      "title": "AdmitCandidate",
+      "qname": "APEPromotion::AdmitCandidate"
+     },
+     "expression": "decision.admitted implies tests.passed and review.approved and review.candidateDigest == candidate.digest and decision.candidateDigest == candidate.digest and exactBytesUnchanged and nameAvailable and candidate.baseCatalogRevision == currentCatalogRevision",
+     "owner": {
+      "title": "AdmitCandidate",
+      "qname": "APEPromotion::AdmitCandidate"
+     },
+     "inForce": false
+    },
+    {
+     "id": "13295941-a4dc-5244-b215-b015df07c915",
+     "element": "13295941-a4dc-5244-b215-b015df07c915",
+     "keyword": "assert constraint",
+     "title": "admittedExecution",
+     "summary": "admission.admitted and admission.candidateDigest == candidate.digest",
+     "summarySource": "expression",
+     "qname": "APEPromotion::ActivateCandidate::admittedExecution",
+     "file": "pae.sysml",
+     "line": 52,
+     "col": 27,
+     "kind": "constraint",
+     "type": {
+      "title": "ActivateCandidate",
+      "qname": "APEPromotion::ActivateCandidate"
+     },
+     "expression": "admission.admitted and admission.candidateDigest == candidate.digest",
+     "owner": {
+      "title": "ActivateCandidate",
+      "qname": "APEPromotion::ActivateCandidate"
+     },
+     "inForce": true
+    },
+    {
+     "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10",
+     "element": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10",
+     "keyword": "state def",
+     "title": "AdmissionCandidateLifecycle",
+     "summary": "Awaiting human admission survives host restart.",
+     "summarySource": "doc",
+     "qname": "ASELiveBuilder::AdmissionCandidateLifecycle",
+     "file": "configuration.sysml",
+     "line": 50,
+     "col": 15,
+     "kind": "lifecycle",
+     "definition": true,
+     "track": {
+      "initial": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#64805638-6a73-5d02-92c7-4d75d0324760",
+      "extends": {
+       "title": "CandidateLifecycle",
+       "qname": "ASELifecycle::CandidateLifecycle"
+      },
+      "states": [
+       {
+        "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#64805638-6a73-5d02-92c7-4d75d0324760",
+        "element": "64805638-6a73-5d02-92c7-4d75d0324760",
+        "keyword": "state",
+        "title": "proposed",
+        "qname": "ASELifecycle::CandidateLifecycle::proposed",
+        "file": "lifecycle.sysml",
+        "line": 18,
+        "col": 15,
+        "rank": 0,
+        "initial": true,
+        "terminal": false,
+        "inherited": true,
+        "out": [
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#817401e6-42e0-53de-92e4-8bf0bad880d1",
+          "element": "817401e6-42e0-53de-92e4-8bf0bad880d1",
+          "name": "startTesting",
+          "on": "TestingStarted",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#9e806082-c1b9-54f2-9945-8353d3e1d84a",
+          "toTitle": "testing",
+          "back": false,
+          "inherited": true,
+          "file": "lifecycle.sysml",
+          "line": 26
+         },
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#55779500-6a37-5030-af9b-85ade7b0cd2c",
+          "element": "55779500-6a37-5030-af9b-85ade7b0cd2c",
+          "name": "proposalFailure",
+          "on": "PromotionFailed",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#a8fcb6c5-4e99-5f9c-bcf3-cea1877f59d8",
+          "toTitle": "failed",
+          "back": false,
+          "inherited": true,
+          "file": "lifecycle.sysml",
+          "line": 33
+         },
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#cce8c32a-022b-5f0e-b92e-75f36efc0e41",
+          "element": "cce8c32a-022b-5f0e-b92e-75f36efc0e41",
+          "name": "restartProposed",
+          "on": "SessionRestarted",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#a8fcb6c5-4e99-5f9c-bcf3-cea1877f59d8",
+          "toTitle": "failed",
+          "back": false,
+          "inherited": true,
+          "file": "lifecycle.sysml",
+          "line": 37
+         }
+        ]
+       },
+       {
+        "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#9e806082-c1b9-54f2-9945-8353d3e1d84a",
+        "element": "9e806082-c1b9-54f2-9945-8353d3e1d84a",
+        "keyword": "state",
+        "title": "testing",
+        "qname": "ASELifecycle::CandidateLifecycle::testing",
+        "file": "lifecycle.sysml",
+        "line": 19,
+        "col": 15,
+        "rank": 1,
+        "initial": false,
+        "terminal": false,
+        "inherited": true,
+        "out": [
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#5e9a8cca-52f2-50f2-9db0-f72f3f3174bd",
+          "element": "5e9a8cca-52f2-50f2-9db0-f72f3f3174bd",
+          "name": "testsPass",
+          "on": "TestsPassed",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#38ebce5b-54e0-5a84-9e28-482b47cdad82",
+          "toTitle": "reviewing",
+          "back": false,
+          "inherited": true,
+          "file": "lifecycle.sysml",
+          "line": 27
+         },
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#50a9da95-6479-542f-ac64-3471d8201cbb",
+          "element": "50a9da95-6479-542f-ac64-3471d8201cbb",
+          "name": "testsReject",
+          "on": "TestsRefused",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#9640add0-53f8-5f72-be22-49e7e85798d2",
+          "toTitle": "refused",
+          "back": false,
+          "inherited": true,
+          "file": "lifecycle.sysml",
+          "line": 28
+         },
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#7d62ee65-842c-53c6-9038-89f2e1df2c9f",
+          "element": "7d62ee65-842c-53c6-9038-89f2e1df2c9f",
+          "name": "testFailure",
+          "on": "PromotionFailed",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#a8fcb6c5-4e99-5f9c-bcf3-cea1877f59d8",
+          "toTitle": "failed",
+          "back": false,
+          "inherited": true,
+          "file": "lifecycle.sysml",
+          "line": 34
+         },
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#766653e5-5b3b-5f78-b284-6ef4ce06dad0",
+          "element": "766653e5-5b3b-5f78-b284-6ef4ce06dad0",
+          "name": "restartTesting",
+          "on": "SessionRestarted",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#a8fcb6c5-4e99-5f9c-bcf3-cea1877f59d8",
+          "toTitle": "failed",
+          "back": false,
+          "inherited": true,
+          "file": "lifecycle.sysml",
+          "line": 38
+         },
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#a5aa1577-0dab-52cc-a3a9-927095d7b94b",
+          "element": "a5aa1577-0dab-52cc-a3a9-927095d7b94b",
+          "name": "awaitAdmission",
+          "on": "HumanAdmissionRequested",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#5a24727a-4ad7-53b4-b032-ab2d6e057077",
+          "toTitle": "awaiting-admission",
+          "back": false,
+          "inherited": false,
+          "file": "configuration.sysml",
+          "line": 52
+         }
+        ]
+       },
+       {
+        "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#38ebce5b-54e0-5a84-9e28-482b47cdad82",
+        "element": "38ebce5b-54e0-5a84-9e28-482b47cdad82",
+        "keyword": "state",
+        "title": "reviewing",
+        "qname": "ASELifecycle::CandidateLifecycle::reviewing",
+        "file": "lifecycle.sysml",
+        "line": 20,
+        "col": 15,
+        "rank": 2,
+        "initial": false,
+        "terminal": false,
+        "inherited": true,
+        "out": [
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#26aa4aad-f9ae-5d0d-93e1-fb48361b4081",
+          "element": "26aa4aad-f9ae-5d0d-93e1-fb48361b4081",
+          "name": "reviewReject",
+          "on": "ReviewRefused",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#9640add0-53f8-5f72-be22-49e7e85798d2",
+          "toTitle": "refused",
+          "back": false,
+          "inherited": true,
+          "file": "lifecycle.sysml",
+          "line": 29
+         },
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#21209295-4293-5202-bc9f-048856df19f0",
+          "element": "21209295-4293-5202-bc9f-048856df19f0",
+          "name": "admit",
+          "on": "AdmissionAccepted",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#95ccd039-ad02-5718-8397-f6f23b9469ac",
+          "toTitle": "activating",
+          "back": false,
+          "inherited": true,
+          "file": "lifecycle.sysml",
+          "line": 30
+         },
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#3d9bf9ed-fe61-5052-b4e9-15f5fca6e2a7",
+          "element": "3d9bf9ed-fe61-5052-b4e9-15f5fca6e2a7",
+          "name": "reviewFailure",
+          "on": "PromotionFailed",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#a8fcb6c5-4e99-5f9c-bcf3-cea1877f59d8",
+          "toTitle": "failed",
+          "back": false,
+          "inherited": true,
+          "file": "lifecycle.sysml",
+          "line": 35
+         },
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#c0e859da-f7c7-53c4-be7e-0a8a5130ac22",
+          "element": "c0e859da-f7c7-53c4-be7e-0a8a5130ac22",
+          "name": "restartReviewing",
+          "on": "SessionRestarted",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#a8fcb6c5-4e99-5f9c-bcf3-cea1877f59d8",
+          "toTitle": "failed",
+          "back": false,
+          "inherited": true,
+          "file": "lifecycle.sysml",
+          "line": 39
+         }
+        ]
+       },
+       {
+        "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#5a24727a-4ad7-53b4-b032-ab2d6e057077",
+        "element": "5a24727a-4ad7-53b4-b032-ab2d6e057077",
+        "keyword": "state",
+        "title": "awaiting-admission",
+        "qname": "ASELiveBuilder::AdmissionCandidateLifecycle::'awaiting-admission'",
+        "file": "configuration.sysml",
+        "line": 51,
+        "col": 15,
+        "rank": 2,
+        "initial": false,
+        "terminal": false,
+        "inherited": false,
+        "out": [
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#85f1fa14-7d79-5efe-b2bd-4d8faf6830d8",
+          "element": "85f1fa14-7d79-5efe-b2bd-4d8faf6830d8",
+          "name": "humanAdmits",
+          "on": "HumanAdmissionAccepted",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#95ccd039-ad02-5718-8397-f6f23b9469ac",
+          "toTitle": "activating",
+          "back": false,
+          "inherited": false,
+          "file": "configuration.sysml",
+          "line": 53
+         },
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#612f57da-d691-5975-bb77-f5825704e3e6",
+          "element": "612f57da-d691-5975-bb77-f5825704e3e6",
+          "name": "humanRefuses",
+          "on": "HumanAdmissionRefused",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#9640add0-53f8-5f72-be22-49e7e85798d2",
+          "toTitle": "refused",
+          "back": false,
+          "inherited": false,
+          "file": "configuration.sysml",
+          "line": 54
+         },
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#57c8c423-c049-5cb1-a468-a903e5095e82",
+          "element": "57c8c423-c049-5cb1-a468-a903e5095e82",
+          "name": "pendingFailure",
+          "on": "PromotionFailed",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#a8fcb6c5-4e99-5f9c-bcf3-cea1877f59d8",
+          "toTitle": "failed",
+          "back": false,
+          "inherited": false,
+          "file": "configuration.sysml",
+          "line": 55
+         }
+        ]
+       },
+       {
+        "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#95ccd039-ad02-5718-8397-f6f23b9469ac",
+        "element": "95ccd039-ad02-5718-8397-f6f23b9469ac",
+        "keyword": "state",
+        "title": "activating",
+        "qname": "ASELifecycle::CandidateLifecycle::activating",
+        "file": "lifecycle.sysml",
+        "line": 21,
+        "col": 15,
+        "rank": 3,
+        "initial": false,
+        "terminal": false,
+        "inherited": true,
+        "out": [
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#243eb6d4-9eaf-50ee-8020-4bc59a3b4720",
+          "element": "243eb6d4-9eaf-50ee-8020-4bc59a3b4720",
+          "name": "activate",
+          "on": "ActivationCompleted",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#cb8793e8-2649-532b-8ef4-0587d5035ae0",
+          "toTitle": "active",
+          "back": false,
+          "inherited": true,
+          "file": "lifecycle.sysml",
+          "line": 31
+         },
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#93990a6f-4862-5efb-a2cf-75972197bc8e",
+          "element": "93990a6f-4862-5efb-a2cf-75972197bc8e",
+          "name": "activationFailure",
+          "on": "PromotionFailed",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#a8fcb6c5-4e99-5f9c-bcf3-cea1877f59d8",
+          "toTitle": "failed",
+          "back": false,
+          "inherited": true,
+          "file": "lifecycle.sysml",
+          "line": 36
+         },
+         {
+          "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#ce0c983e-32fd-5858-87b5-43f2bc4161a9",
+          "element": "ce0c983e-32fd-5858-87b5-43f2bc4161a9",
+          "name": "restartActivating",
+          "on": "SessionRestarted",
+          "guard": null,
+          "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#a8fcb6c5-4e99-5f9c-bcf3-cea1877f59d8",
+          "toTitle": "failed",
+          "back": false,
+          "inherited": true,
+          "file": "lifecycle.sysml",
+          "line": 40
+         }
+        ]
+       },
+       {
+        "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#cb8793e8-2649-532b-8ef4-0587d5035ae0",
+        "element": "cb8793e8-2649-532b-8ef4-0587d5035ae0",
+        "keyword": "state",
+        "title": "active",
+        "qname": "ASELifecycle::CandidateLifecycle::active",
+        "file": "lifecycle.sysml",
+        "line": 22,
+        "col": 15,
+        "rank": 4,
+        "initial": false,
+        "terminal": true,
+        "inherited": true,
+        "out": []
+       },
+       {
+        "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#9640add0-53f8-5f72-be22-49e7e85798d2",
+        "element": "9640add0-53f8-5f72-be22-49e7e85798d2",
+        "keyword": "state",
+        "title": "refused",
+        "qname": "ASELifecycle::CandidateLifecycle::refused",
+        "file": "lifecycle.sysml",
+        "line": 23,
+        "col": 15,
+        "rank": 3,
+        "initial": false,
+        "terminal": true,
+        "inherited": true,
+        "out": []
+       },
+       {
+        "id": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#a8fcb6c5-4e99-5f9c-bcf3-cea1877f59d8",
+        "element": "a8fcb6c5-4e99-5f9c-bcf3-cea1877f59d8",
+        "keyword": "state",
+        "title": "failed",
+        "qname": "ASELifecycle::CandidateLifecycle::failed",
+        "file": "lifecycle.sysml",
+        "line": 24,
+        "col": 15,
+        "rank": 4,
+        "initial": false,
+        "terminal": true,
+        "inherited": true,
+        "out": []
+       }
+      ],
+      "mainCount": 5,
+      "transitions": 18
+     }
+    }
+   ]
+  },
+  {
+   "id": "information",
+   "title": "Information",
+   "rule": {
+    "select": "ItemUsage owned by a package that no other column claims (domain data); hidden by the interface when empty",
+    "optional": true
+   },
+   "items": []
+  }
+ ],
+ "links": [
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>4cd0410a-a1b7-5b09-af50-f56b0bd9fd38",
+   "kind": "perform",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "4cd0410a-a1b7-5b09-af50-f56b0bd9fd38",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 148,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>53717e8f-99be-5563-9410-d5d75ed5c575",
+   "kind": "perform",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "53717e8f-99be-5563-9410-d5d75ed5c575",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 171,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>8d1defd9-824a-55bc-a098-5790bc441988",
+   "kind": "perform",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "8d1defd9-824a-55bc-a098-5790bc441988",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 178,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>68988e3c-c63c-5d42-98da-6456bbf842af",
+   "kind": "perform",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "68988e3c-c63c-5d42-98da-6456bbf842af",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 185,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>db1f8419-9939-531a-ad7d-3b6949e8bd02",
+   "kind": "perform",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "db1f8419-9939-531a-ad7d-3b6949e8bd02",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 192,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>83146f1c-34f9-526f-a434-dfb9148ac91f",
+   "kind": "perform",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "83146f1c-34f9-526f-a434-dfb9148ac91f",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 211,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>b398f81d-1522-516b-8762-481ccc07ecdd",
+   "kind": "perform",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "b398f81d-1522-516b-8762-481ccc07ecdd",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 218,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>d165f2af-788b-5ebe-b536-a9313b792faf",
+   "kind": "perform",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "d165f2af-788b-5ebe-b536-a9313b792faf",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 225,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>6f55468e-b732-5232-8fa0-2b4a0aa64263",
+   "kind": "perform",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "6f55468e-b732-5232-8fa0-2b4a0aa64263",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 232,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>4f546b02-3349-565e-bac4-a77db02230eb",
+   "kind": "perform",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "4f546b02-3349-565e-bac4-a77db02230eb",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 239,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>ebfc4d07-e005-5e9a-ae94-11f9d71188f1",
+   "kind": "perform",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "ebfc4d07-e005-5e9a-ae94-11f9d71188f1",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 323,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>a5c2e8a1-7fb8-5d9b-a0d1-b2730b3eea1c",
+   "kind": "perform",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "a5c2e8a1-7fb8-5d9b-a0d1-b2730b3eea1c",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 324,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e",
+   "kind": "perform",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 327,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>75409458-0bc6-5add-9d6e-da2bd31a13a7",
+   "kind": "perform",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "75409458-0bc6-5add-9d6e-da2bd31a13a7",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 333,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>5c233712-5162-5c47-8876-0ac6c821b7a0",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "5c233712-5162-5c47-8876-0ac6c821b7a0",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 140,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>91d06b4e-3b30-5823-b22a-5fddf4fa3102",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "91d06b4e-3b30-5823-b22a-5fddf4fa3102",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 149,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>c82435f2-da9f-5497-9869-b42da65d2d58",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "c82435f2-da9f-5497-9869-b42da65d2d58",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 156,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>9529e04d-0bd1-5254-bbd6-984c07124947",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "9529e04d-0bd1-5254-bbd6-984c07124947",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 165,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>11b0d994-7093-5e2d-9831-b69776168730",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "11b0d994-7093-5e2d-9831-b69776168730",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 172,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>2c05e6c6-bc0f-5287-a914-343f166a9582",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "2c05e6c6-bc0f-5287-a914-343f166a9582",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 179,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>7288ac91-75e0-5ece-9fda-a7c1b48337dc",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "7288ac91-75e0-5ece-9fda-a7c1b48337dc",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 186,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>b5e70605-2462-5f75-88ec-e6913d32a30f",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "b5e70605-2462-5f75-88ec-e6913d32a30f",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 193,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>29b9c08e-4880-5f2c-9ab8-3bc0b776f97d",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "29b9c08e-4880-5f2c-9ab8-3bc0b776f97d",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 202,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>ac6991ef-fb56-5b51-a3e2-ba5ce7166aa4",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "ac6991ef-fb56-5b51-a3e2-ba5ce7166aa4",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 212,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>a966189c-119c-5250-807c-ded5e19fe6cf",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "a966189c-119c-5250-807c-ded5e19fe6cf",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 219,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>b86daeb2-ece0-5037-8abf-e2e7fe26b5fe",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "b86daeb2-ece0-5037-8abf-e2e7fe26b5fe",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 226,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>19eff524-806c-5a37-9084-12e6e3c38e8c",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "19eff524-806c-5a37-9084-12e6e3c38e8c",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 233,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>6b5418c5-a1ef-5245-8c80-674436d41bc0",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "6b5418c5-a1ef-5245-8c80-674436d41bc0",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 240,
+   "exact": true
+  },
+  {
+   "id": "8446d0da-b9ab-51b4-b7eb-1610e83bf674>9c2c0640-a542-522c-9a73-9ec3b8d58b2d",
+   "kind": "own",
+   "from": "8446d0da-b9ab-51b4-b7eb-1610e83bf674",
+   "to": "9c2c0640-a542-522c-9a73-9ec3b8d58b2d",
+   "via": null,
+   "strength": "direct",
+   "file": "configuration.sysml",
+   "line": 288,
+   "exact": true
+  },
+  {
+   "id": "8446d0da-b9ab-51b4-b7eb-1610e83bf674>6711693e-7442-59bd-8600-0bf517257262",
+   "kind": "own",
+   "from": "8446d0da-b9ab-51b4-b7eb-1610e83bf674",
+   "to": "6711693e-7442-59bd-8600-0bf517257262",
+   "via": null,
+   "strength": "direct",
+   "file": "configuration.sysml",
+   "line": 293,
+   "exact": true
+  },
+  {
+   "id": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94>4f4d06c6-85dd-588f-b246-bdc3ac9a6642",
+   "kind": "own",
+   "from": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94",
+   "to": "4f4d06c6-85dd-588f-b246-bdc3ac9a6642",
+   "via": null,
+   "strength": "scope",
+   "file": "configuration.sysml",
+   "line": 300,
+   "exact": true
+  },
+  {
+   "id": "75409458-0bc6-5add-9d6e-da2bd31a13a7>817b1fe0-dea1-586d-8433-7249345d21c6",
+   "kind": "own",
+   "from": "75409458-0bc6-5add-9d6e-da2bd31a13a7",
+   "to": "817b1fe0-dea1-586d-8433-7249345d21c6",
+   "via": null,
+   "strength": "direct",
+   "file": "configuration.sysml",
+   "line": 334,
+   "exact": true
+  },
+  {
+   "id": "50675a8e-31e4-57dc-9dc4-1dfcb8d68539",
+   "kind": "allocate",
+   "from": "4cd0410a-a1b7-5b09-af50-f56b0bd9fd38",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "50675a8e-31e4-57dc-9dc4-1dfcb8d68539",
+   "file": "configuration.sysml",
+   "line": 247,
+   "exact": true
+  },
+  {
+   "id": "4215a8cb-52ad-56aa-8a13-d7d3fe80322b",
+   "kind": "allocate",
+   "from": "53717e8f-99be-5563-9410-d5d75ed5c575",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "4215a8cb-52ad-56aa-8a13-d7d3fe80322b",
+   "file": "configuration.sysml",
+   "line": 250,
+   "exact": true
+  },
+  {
+   "id": "2457faee-9727-5ecc-9e92-d365957f350e",
+   "kind": "allocate",
+   "from": "8d1defd9-824a-55bc-a098-5790bc441988",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "2457faee-9727-5ecc-9e92-d365957f350e",
+   "file": "configuration.sysml",
+   "line": 253,
+   "exact": true
+  },
+  {
+   "id": "c1462298-2041-5c00-9e84-8b4dbb32d635",
+   "kind": "allocate",
+   "from": "68988e3c-c63c-5d42-98da-6456bbf842af",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "c1462298-2041-5c00-9e84-8b4dbb32d635",
+   "file": "configuration.sysml",
+   "line": 256,
+   "exact": true
+  },
+  {
+   "id": "31d89de6-117e-5fae-90ef-4dac2cbd40b6",
+   "kind": "allocate",
+   "from": "db1f8419-9939-531a-ad7d-3b6949e8bd02",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "31d89de6-117e-5fae-90ef-4dac2cbd40b6",
+   "file": "configuration.sysml",
+   "line": 259,
+   "exact": true
+  },
+  {
+   "id": "ca119263-4b56-583a-a73a-5bb252df3471",
+   "kind": "allocate",
+   "from": "83146f1c-34f9-526f-a434-dfb9148ac91f",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "ca119263-4b56-583a-a73a-5bb252df3471",
+   "file": "configuration.sysml",
+   "line": 262,
+   "exact": true
+  },
+  {
+   "id": "8aa48d2c-09bc-51c0-b86c-74f4c071f2f2",
+   "kind": "allocate",
+   "from": "b398f81d-1522-516b-8762-481ccc07ecdd",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "8aa48d2c-09bc-51c0-b86c-74f4c071f2f2",
+   "file": "configuration.sysml",
+   "line": 265,
+   "exact": true
+  },
+  {
+   "id": "a8bfdb9f-94de-5bc7-b359-5d3039ed83a8",
+   "kind": "allocate",
+   "from": "d165f2af-788b-5ebe-b536-a9313b792faf",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "a8bfdb9f-94de-5bc7-b359-5d3039ed83a8",
+   "file": "configuration.sysml",
+   "line": 268,
+   "exact": true
+  },
+  {
+   "id": "2296e114-83f0-5691-b22a-0263a706665f",
+   "kind": "allocate",
+   "from": "6f55468e-b732-5232-8fa0-2b4a0aa64263",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "2296e114-83f0-5691-b22a-0263a706665f",
+   "file": "configuration.sysml",
+   "line": 271,
+   "exact": true
+  },
+  {
+   "id": "28c6f7d8-6a66-55e9-bc4e-cb7883fc6bb4",
+   "kind": "allocate",
+   "from": "4f546b02-3349-565e-bac4-a77db02230eb",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "28c6f7d8-6a66-55e9-bc4e-cb7883fc6bb4",
+   "file": "configuration.sysml",
+   "line": 274,
+   "exact": true
+  },
+  {
+   "id": "644136d7-a79e-582a-9819-0690e37a152b",
+   "kind": "allocate",
+   "from": "ebfc4d07-e005-5e9a-ae94-11f9d71188f1",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "644136d7-a79e-582a-9819-0690e37a152b",
+   "file": "configuration.sysml",
+   "line": 325,
+   "exact": true
+  },
+  {
+   "id": "6c6696a5-4c41-5893-9b57-f101a965ec76",
+   "kind": "allocate",
+   "from": "a5c2e8a1-7fb8-5d9b-a0d1-b2730b3eea1c",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "6c6696a5-4c41-5893-9b57-f101a965ec76",
+   "file": "configuration.sysml",
+   "line": 326,
+   "exact": true
+  },
+  {
+   "id": "2cf53119-6b34-58ca-96a8-7309ec4cd992",
+   "kind": "allocate",
+   "from": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#355862a5-d236-5917-a607-5e08dd2b480a",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "2cf53119-6b34-58ca-96a8-7309ec4cd992",
+   "file": "configuration.sysml",
+   "line": 328,
+   "exact": true
+  },
+  {
+   "id": "b097a3c0-16da-5b4e-ba19-599009389205",
+   "kind": "allocate",
+   "from": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#5fd70bef-f096-5483-b594-6fb367c55561",
+   "to": "ea257ba6-f3af-5004-b938-d2592c52d673",
+   "via": "b097a3c0-16da-5b4e-ba19-599009389205",
+   "file": "configuration.sysml",
+   "line": 329,
+   "exact": true
+  },
+  {
+   "id": "5a8e5494-e5d3-5c9f-b4cf-dce293f78cc2",
+   "kind": "allocate",
+   "from": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#aba4ae79-bab8-5697-9266-1597f1d216bd",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "5a8e5494-e5d3-5c9f-b4cf-dce293f78cc2",
+   "file": "configuration.sysml",
+   "line": 330,
+   "exact": true
+  },
+  {
+   "id": "4af3ac0f-f250-5329-b9b7-65516c06dedd",
+   "kind": "allocate",
+   "from": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#d240815b-1549-5401-818a-2059e176ad0f",
+   "to": "8446d0da-b9ab-51b4-b7eb-1610e83bf674",
+   "via": "4af3ac0f-f250-5329-b9b7-65516c06dedd",
+   "file": "configuration.sysml",
+   "line": 331,
+   "exact": true
+  },
+  {
+   "id": "a899bf70-627e-5025-8a4a-4823912a8012",
+   "kind": "allocate",
+   "from": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#72d98878-c44f-505a-9f38-48e06e9ba65b",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "a899bf70-627e-5025-8a4a-4823912a8012",
+   "file": "configuration.sysml",
+   "line": 332,
+   "exact": true
+  },
+  {
+   "id": "50d7d2b0-20e3-59d7-b9e8-b04d3b4a026b",
+   "kind": "allocate",
+   "from": "75409458-0bc6-5add-9d6e-da2bd31a13a7#d2fb15d4-9612-59a9-bb99-d443396d367a",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "50d7d2b0-20e3-59d7-b9e8-b04d3b4a026b",
+   "file": "configuration.sysml",
+   "line": 346,
+   "exact": true
+  },
+  {
+   "id": "6c58ac72-83a1-5b9f-8c6d-bec8803d562b",
+   "kind": "allocate",
+   "from": "75409458-0bc6-5add-9d6e-da2bd31a13a7#7507f2c2-02ed-5a05-83c2-bc2b63f04017",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "6c58ac72-83a1-5b9f-8c6d-bec8803d562b",
+   "file": "configuration.sysml",
+   "line": 347,
+   "exact": true
+  },
+  {
+   "id": "d2adb18a-fc2b-50f0-a2d2-e3804ea06bf0",
+   "kind": "allocate",
+   "from": "75409458-0bc6-5add-9d6e-da2bd31a13a7#9884c33b-310d-5675-9e22-89e5d84dcf6c",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "d2adb18a-fc2b-50f0-a2d2-e3804ea06bf0",
+   "file": "configuration.sysml",
+   "line": 348,
+   "exact": true
+  },
+  {
+   "id": "12bade4a-1825-5fa1-b746-430860ab0717",
+   "kind": "allocate",
+   "from": "75409458-0bc6-5add-9d6e-da2bd31a13a7#e413ba39-a2b5-5b06-a766-1695bdcb9d40",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "12bade4a-1825-5fa1-b746-430860ab0717",
+   "file": "configuration.sysml",
+   "line": 349,
+   "exact": true
+  },
+  {
+   "id": "e1a443b7-62cb-5dde-8641-49a4731b1510",
+   "kind": "allocate",
+   "from": "75409458-0bc6-5add-9d6e-da2bd31a13a7#ab9120cf-5713-5b33-bcef-79bab0f73835",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "e1a443b7-62cb-5dde-8641-49a4731b1510",
+   "file": "configuration.sysml",
+   "line": 350,
+   "exact": true
+  },
+  {
+   "id": "f7be0f06-a88d-52b7-b6ce-401e4b56fb09",
+   "kind": "allocate",
+   "from": "75409458-0bc6-5add-9d6e-da2bd31a13a7#395da4e6-d78e-5309-9a29-b8fa9730ff4a",
+   "to": "8446d0da-b9ab-51b4-b7eb-1610e83bf674",
+   "via": "f7be0f06-a88d-52b7-b6ce-401e4b56fb09",
+   "file": "configuration.sysml",
+   "line": 351,
+   "exact": true
+  },
+  {
+   "id": "d390bc24-361f-538c-a786-1176ff73589e",
+   "kind": "allocate",
+   "from": "75409458-0bc6-5add-9d6e-da2bd31a13a7#a3c42053-364a-5415-a179-64908e6c5665",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "d390bc24-361f-538c-a786-1176ff73589e",
+   "file": "configuration.sysml",
+   "line": 352,
+   "exact": true
+  },
+  {
+   "id": "2b53f545-73db-5dd9-83df-4a8977183f32",
+   "kind": "allocate",
+   "from": "75409458-0bc6-5add-9d6e-da2bd31a13a7#b9db9322-dd8c-5d63-9a26-1af6d14245ae",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "2b53f545-73db-5dd9-83df-4a8977183f32",
+   "file": "configuration.sysml",
+   "line": 353,
+   "exact": true
+  },
+  {
+   "id": "b8eb0bc2-c40b-5290-8008-a57211f7b629",
+   "kind": "allocate",
+   "from": "75409458-0bc6-5add-9d6e-da2bd31a13a7#f4b0d718-27a3-576f-910a-4c996dd3516f",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7",
+   "via": "b8eb0bc2-c40b-5290-8008-a57211f7b629",
+   "file": "configuration.sysml",
+   "line": 354,
+   "exact": true
+  },
+  {
+   "id": "19c2449a-2f8e-5c5b-ab1b-4d93c5428b10",
+   "kind": "connect",
+   "from": "8605dd44-e5bd-5972-8c31-a7e88130f911#47f11104-3a10-55a8-b6c1-875fe139dfe2",
+   "to": "ea257ba6-f3af-5004-b938-d2592c52d673#ee889b87-aca8-53c4-abaf-35cecd5b03a5",
+   "via": "19c2449a-2f8e-5c5b-ab1b-4d93c5428b10",
+   "file": "configuration.sysml",
+   "line": 318,
+   "exact": true
+  },
+  {
+   "id": "a7957e54-4e13-5e07-a23e-051975a0b805",
+   "kind": "connect",
+   "from": "ea257ba6-f3af-5004-b938-d2592c52d673#baaed5c1-88ab-5e5a-9114-f9cf00a8d6a1",
+   "to": "8446d0da-b9ab-51b4-b7eb-1610e83bf674#e5a9d76b-d4c5-583f-8dd4-dde6e9f7cce1",
+   "via": "a7957e54-4e13-5e07-a23e-051975a0b805",
+   "file": "configuration.sysml",
+   "line": 319,
+   "exact": true
+  },
+  {
+   "id": "141939aa-6293-5aa8-a64f-7872a3de8a1d",
+   "kind": "connect",
+   "from": "ea257ba6-f3af-5004-b938-d2592c52d673#baaed5c1-88ab-5e5a-9114-f9cf00a8d6a1",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7#14638343-16a2-5db3-b869-7117ccdfd306",
+   "via": "141939aa-6293-5aa8-a64f-7872a3de8a1d",
+   "file": "configuration.sysml",
+   "line": 320,
+   "exact": true
+  },
+  {
+   "id": "3bd85894-3724-548f-94d0-301069a9d1aa",
+   "kind": "connect",
+   "from": "ea257ba6-f3af-5004-b938-d2592c52d673#d50ce02a-2992-5a39-84f8-0f32e1c8b918",
+   "to": "3e73ae05-ac20-577e-a602-a784cba376b7#f4f1f6dd-656a-5833-8e97-88e1d0f35bbb",
+   "via": "3bd85894-3724-548f-94d0-301069a9d1aa",
+   "file": "configuration.sysml",
+   "line": 321,
+   "exact": true
+  },
+  {
+   "id": "d331a952-09a7-5ea6-a208-8acb0f156ddc",
+   "kind": "connect",
+   "from": "3e73ae05-ac20-577e-a602-a784cba376b7#759d4f5a-5eac-5bf0-933b-400206dc8eb2",
+   "to": "8446d0da-b9ab-51b4-b7eb-1610e83bf674#229ed69a-2ab7-5734-9080-ab1eb3015ac6",
+   "via": "d331a952-09a7-5ea6-a208-8acb0f156ddc",
+   "file": "configuration.sysml",
+   "line": 322,
+   "exact": true
+  },
+  {
+   "id": "8262f1c6-b0c0-58ee-a9b6-06eed74e3bf9",
+   "kind": "bind",
+   "role": "caller",
+   "from": "91d06b4e-3b30-5823-b22a-5fddf4fa3102",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "8262f1c6-b0c0-58ee-a9b6-06eed74e3bf9",
+   "file": "configuration.sysml",
+   "line": 248,
+   "exact": true
+  },
+  {
+   "id": "9d6a0ea2-8a5b-5e4b-afe6-22e6ef0f4d07",
+   "kind": "bind",
+   "role": "target",
+   "from": "91d06b4e-3b30-5823-b22a-5fddf4fa3102",
+   "to": "4cd0410a-a1b7-5b09-af50-f56b0bd9fd38",
+   "via": "9d6a0ea2-8a5b-5e4b-afe6-22e6ef0f4d07",
+   "file": "configuration.sysml",
+   "line": 249,
+   "exact": true
+  },
+  {
+   "id": "c3166dc2-49ff-5a01-ae02-8a558e8907cb",
+   "kind": "bind",
+   "role": "caller",
+   "from": "11b0d994-7093-5e2d-9831-b69776168730",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "c3166dc2-49ff-5a01-ae02-8a558e8907cb",
+   "file": "configuration.sysml",
+   "line": 251,
+   "exact": true
+  },
+  {
+   "id": "38be39d6-bb00-5619-af06-e7399ce37dcd",
+   "kind": "bind",
+   "role": "target",
+   "from": "11b0d994-7093-5e2d-9831-b69776168730",
+   "to": "53717e8f-99be-5563-9410-d5d75ed5c575",
+   "via": "38be39d6-bb00-5619-af06-e7399ce37dcd",
+   "file": "configuration.sysml",
+   "line": 252,
+   "exact": true
+  },
+  {
+   "id": "233944a5-bb67-5be0-803c-2eb3ef5f9dc2",
+   "kind": "bind",
+   "role": "caller",
+   "from": "2c05e6c6-bc0f-5287-a914-343f166a9582",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "233944a5-bb67-5be0-803c-2eb3ef5f9dc2",
+   "file": "configuration.sysml",
+   "line": 254,
+   "exact": true
+  },
+  {
+   "id": "bc267472-0bfd-59c2-b18e-38743c44cba7",
+   "kind": "bind",
+   "role": "target",
+   "from": "2c05e6c6-bc0f-5287-a914-343f166a9582",
+   "to": "8d1defd9-824a-55bc-a098-5790bc441988",
+   "via": "bc267472-0bfd-59c2-b18e-38743c44cba7",
+   "file": "configuration.sysml",
+   "line": 255,
+   "exact": true
+  },
+  {
+   "id": "62c385d6-fb66-5b88-95ce-5ab337a8447b",
+   "kind": "bind",
+   "role": "caller",
+   "from": "7288ac91-75e0-5ece-9fda-a7c1b48337dc",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "62c385d6-fb66-5b88-95ce-5ab337a8447b",
+   "file": "configuration.sysml",
+   "line": 257,
+   "exact": true
+  },
+  {
+   "id": "f4720c63-44e3-5ad4-bd6c-d2b14d551626",
+   "kind": "bind",
+   "role": "target",
+   "from": "7288ac91-75e0-5ece-9fda-a7c1b48337dc",
+   "to": "68988e3c-c63c-5d42-98da-6456bbf842af",
+   "via": "f4720c63-44e3-5ad4-bd6c-d2b14d551626",
+   "file": "configuration.sysml",
+   "line": 258,
+   "exact": true
+  },
+  {
+   "id": "9b53e158-baa8-5371-9907-ae70e56fd6c8",
+   "kind": "bind",
+   "role": "caller",
+   "from": "b5e70605-2462-5f75-88ec-e6913d32a30f",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "9b53e158-baa8-5371-9907-ae70e56fd6c8",
+   "file": "configuration.sysml",
+   "line": 260,
+   "exact": true
+  },
+  {
+   "id": "dbac8c0e-07ca-5d15-980d-c8ae0be1e3b4",
+   "kind": "bind",
+   "role": "target",
+   "from": "b5e70605-2462-5f75-88ec-e6913d32a30f",
+   "to": "db1f8419-9939-531a-ad7d-3b6949e8bd02",
+   "via": "dbac8c0e-07ca-5d15-980d-c8ae0be1e3b4",
+   "file": "configuration.sysml",
+   "line": 261,
+   "exact": true
+  },
+  {
+   "id": "06671358-4222-591c-a7a0-8e0e534da77f",
+   "kind": "bind",
+   "role": "caller",
+   "from": "ac6991ef-fb56-5b51-a3e2-ba5ce7166aa4",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "06671358-4222-591c-a7a0-8e0e534da77f",
+   "file": "configuration.sysml",
+   "line": 263,
+   "exact": true
+  },
+  {
+   "id": "42da8ccd-829e-5d7a-9506-6540675a6c7c",
+   "kind": "bind",
+   "role": "target",
+   "from": "ac6991ef-fb56-5b51-a3e2-ba5ce7166aa4",
+   "to": "83146f1c-34f9-526f-a434-dfb9148ac91f",
+   "via": "42da8ccd-829e-5d7a-9506-6540675a6c7c",
+   "file": "configuration.sysml",
+   "line": 264,
+   "exact": true
+  },
+  {
+   "id": "9038d6e5-2542-5a6a-aed9-e0baccc82522",
+   "kind": "bind",
+   "role": "caller",
+   "from": "a966189c-119c-5250-807c-ded5e19fe6cf",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "9038d6e5-2542-5a6a-aed9-e0baccc82522",
+   "file": "configuration.sysml",
+   "line": 266,
+   "exact": true
+  },
+  {
+   "id": "dfd96c5b-4352-534d-926c-c56658f57146",
+   "kind": "bind",
+   "role": "target",
+   "from": "a966189c-119c-5250-807c-ded5e19fe6cf",
+   "to": "b398f81d-1522-516b-8762-481ccc07ecdd",
+   "via": "dfd96c5b-4352-534d-926c-c56658f57146",
+   "file": "configuration.sysml",
+   "line": 267,
+   "exact": true
+  },
+  {
+   "id": "29f6b672-503f-5946-84e5-fabd4f5b5cc0",
+   "kind": "bind",
+   "role": "caller",
+   "from": "b86daeb2-ece0-5037-8abf-e2e7fe26b5fe",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "29f6b672-503f-5946-84e5-fabd4f5b5cc0",
+   "file": "configuration.sysml",
+   "line": 269,
+   "exact": true
+  },
+  {
+   "id": "cf4094c6-5ca5-53e6-bd50-5f63265c18d7",
+   "kind": "bind",
+   "role": "target",
+   "from": "b86daeb2-ece0-5037-8abf-e2e7fe26b5fe",
+   "to": "d165f2af-788b-5ebe-b536-a9313b792faf",
+   "via": "cf4094c6-5ca5-53e6-bd50-5f63265c18d7",
+   "file": "configuration.sysml",
+   "line": 270,
+   "exact": true
+  },
+  {
+   "id": "52b43689-435a-55ef-9cdf-aeb634640541",
+   "kind": "bind",
+   "role": "caller",
+   "from": "19eff524-806c-5a37-9084-12e6e3c38e8c",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "52b43689-435a-55ef-9cdf-aeb634640541",
+   "file": "configuration.sysml",
+   "line": 272,
+   "exact": true
+  },
+  {
+   "id": "9faa6864-9240-5795-86a7-164885e0d96b",
+   "kind": "bind",
+   "role": "target",
+   "from": "19eff524-806c-5a37-9084-12e6e3c38e8c",
+   "to": "6f55468e-b732-5232-8fa0-2b4a0aa64263",
+   "via": "9faa6864-9240-5795-86a7-164885e0d96b",
+   "file": "configuration.sysml",
+   "line": 273,
+   "exact": true
+  },
+  {
+   "id": "799484d8-6940-5c7a-8b7c-7e18ccff931c",
+   "kind": "bind",
+   "role": "caller",
+   "from": "6b5418c5-a1ef-5245-8c80-674436d41bc0",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "799484d8-6940-5c7a-8b7c-7e18ccff931c",
+   "file": "configuration.sysml",
+   "line": 275,
+   "exact": true
+  },
+  {
+   "id": "aea192f7-c11a-545c-9d5f-318cc0f1ac2c",
+   "kind": "bind",
+   "role": "target",
+   "from": "6b5418c5-a1ef-5245-8c80-674436d41bc0",
+   "to": "4f546b02-3349-565e-bac4-a77db02230eb",
+   "via": "aea192f7-c11a-545c-9d5f-318cc0f1ac2c",
+   "file": "configuration.sysml",
+   "line": 276,
+   "exact": true
+  },
+  {
+   "id": "f358cea6-9aef-5a5d-a2e0-0a74949d715c",
+   "kind": "bind",
+   "role": "mandate",
+   "from": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "to": "4f4d06c6-85dd-588f-b246-bdc3ac9a6642",
+   "via": "f358cea6-9aef-5a5d-a2e0-0a74949d715c",
+   "file": "configuration.sysml",
+   "line": 316,
+   "exact": true
+  },
+  {
+   "id": "cc4d1456-0155-573c-bc14-03f124ca12e3",
+   "kind": "bind",
+   "role": "holder",
+   "from": "4f4d06c6-85dd-588f-b246-bdc3ac9a6642",
+   "to": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "via": "cc4d1456-0155-573c-bc14-03f124ca12e3",
+   "file": "configuration.sysml",
+   "line": 317,
+   "exact": true
+  },
+  {
+   "id": "91d06b4e-3b30-5823-b22a-5fddf4fa3102>can-call",
+   "kind": "can-call",
+   "derived": true,
+   "from": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "to": "4cd0410a-a1b7-5b09-af50-f56b0bd9fd38",
+   "via": "91d06b4e-3b30-5823-b22a-5fddf4fa3102",
+   "enabled": true,
+   "file": "configuration.sysml",
+   "line": 149,
+   "exact": true
+  },
+  {
+   "id": "11b0d994-7093-5e2d-9831-b69776168730>can-call",
+   "kind": "can-call",
+   "derived": true,
+   "from": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "to": "53717e8f-99be-5563-9410-d5d75ed5c575",
+   "via": "11b0d994-7093-5e2d-9831-b69776168730",
+   "enabled": true,
+   "file": "configuration.sysml",
+   "line": 172,
+   "exact": true
+  },
+  {
+   "id": "2c05e6c6-bc0f-5287-a914-343f166a9582>can-call",
+   "kind": "can-call",
+   "derived": true,
+   "from": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "to": "8d1defd9-824a-55bc-a098-5790bc441988",
+   "via": "2c05e6c6-bc0f-5287-a914-343f166a9582",
+   "enabled": true,
+   "file": "configuration.sysml",
+   "line": 179,
+   "exact": true
+  },
+  {
+   "id": "7288ac91-75e0-5ece-9fda-a7c1b48337dc>can-call",
+   "kind": "can-call",
+   "derived": true,
+   "from": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "to": "68988e3c-c63c-5d42-98da-6456bbf842af",
+   "via": "7288ac91-75e0-5ece-9fda-a7c1b48337dc",
+   "enabled": true,
+   "file": "configuration.sysml",
+   "line": 186,
+   "exact": true
+  },
+  {
+   "id": "b5e70605-2462-5f75-88ec-e6913d32a30f>can-call",
+   "kind": "can-call",
+   "derived": true,
+   "from": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "to": "db1f8419-9939-531a-ad7d-3b6949e8bd02",
+   "via": "b5e70605-2462-5f75-88ec-e6913d32a30f",
+   "enabled": true,
+   "file": "configuration.sysml",
+   "line": 193,
+   "exact": true
+  },
+  {
+   "id": "ac6991ef-fb56-5b51-a3e2-ba5ce7166aa4>can-call",
+   "kind": "can-call",
+   "derived": true,
+   "from": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "to": "83146f1c-34f9-526f-a434-dfb9148ac91f",
+   "via": "ac6991ef-fb56-5b51-a3e2-ba5ce7166aa4",
+   "enabled": true,
+   "file": "configuration.sysml",
+   "line": 212,
+   "exact": true
+  },
+  {
+   "id": "a966189c-119c-5250-807c-ded5e19fe6cf>can-call",
+   "kind": "can-call",
+   "derived": true,
+   "from": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "to": "b398f81d-1522-516b-8762-481ccc07ecdd",
+   "via": "a966189c-119c-5250-807c-ded5e19fe6cf",
+   "enabled": true,
+   "file": "configuration.sysml",
+   "line": 219,
+   "exact": true
+  },
+  {
+   "id": "b86daeb2-ece0-5037-8abf-e2e7fe26b5fe>can-call",
+   "kind": "can-call",
+   "derived": true,
+   "from": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "to": "d165f2af-788b-5ebe-b536-a9313b792faf",
+   "via": "b86daeb2-ece0-5037-8abf-e2e7fe26b5fe",
+   "enabled": true,
+   "file": "configuration.sysml",
+   "line": 226,
+   "exact": true
+  },
+  {
+   "id": "19eff524-806c-5a37-9084-12e6e3c38e8c>can-call",
+   "kind": "can-call",
+   "derived": true,
+   "from": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "to": "6f55468e-b732-5232-8fa0-2b4a0aa64263",
+   "via": "19eff524-806c-5a37-9084-12e6e3c38e8c",
+   "enabled": true,
+   "file": "configuration.sysml",
+   "line": 233,
+   "exact": true
+  },
+  {
+   "id": "6b5418c5-a1ef-5245-8c80-674436d41bc0>can-call",
+   "kind": "can-call",
+   "derived": true,
+   "from": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+   "to": "4f546b02-3349-565e-bac4-a77db02230eb",
+   "via": "6b5418c5-a1ef-5245-8c80-674436d41bc0",
+   "enabled": true,
+   "file": "configuration.sysml",
+   "line": 240,
+   "exact": true
+  },
+  {
+   "id": "e997774f-ecff-576c-92ab-3b1584d0efed",
+   "kind": "exhibit",
+   "from": "6aa31f1c-6409-5fbf-9c73-690f67bbec06",
+   "to": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10",
+   "via": "e997774f-ecff-576c-92ab-3b1584d0efed",
+   "file": "configuration.sysml",
+   "line": 61,
+   "exact": true
+  },
+  {
+   "id": "169001f5-058d-53d5-865c-404268f3331b>constrain>8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#aba4ae79-bab8-5697-9266-1597f1d216bd",
+   "kind": "constrain",
+   "from": "169001f5-058d-53d5-865c-404268f3331b",
+   "to": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#aba4ae79-bab8-5697-9266-1597f1d216bd",
+   "via": "169001f5-058d-53d5-865c-404268f3331b",
+   "file": "configuration.sysml",
+   "line": 97,
+   "exact": true
+  },
+  {
+   "id": "8ff94fe2-4cb9-55ea-a0ca-372b97a7ca4b>constrain>75409458-0bc6-5add-9d6e-da2bd31a13a7#395da4e6-d78e-5309-9a29-b8fa9730ff4a",
+   "kind": "constrain",
+   "from": "8ff94fe2-4cb9-55ea-a0ca-372b97a7ca4b",
+   "to": "75409458-0bc6-5add-9d6e-da2bd31a13a7#395da4e6-d78e-5309-9a29-b8fa9730ff4a",
+   "via": "8ff94fe2-4cb9-55ea-a0ca-372b97a7ca4b",
+   "file": "conversation.sysml",
+   "line": 72,
+   "exact": true
+  },
+  {
+   "id": "13295941-a4dc-5244-b215-b015df07c915>constrain>8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#d240815b-1549-5401-818a-2059e176ad0f",
+   "kind": "constrain",
+   "from": "13295941-a4dc-5244-b215-b015df07c915",
+   "to": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#d240815b-1549-5401-818a-2059e176ad0f",
+   "via": "13295941-a4dc-5244-b215-b015df07c915",
+   "file": "pae.sysml",
+   "line": 52,
+   "exact": true
+  }
+ ],
+ "index": {
+  "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "8605dd44-e5bd-5972-8c31-a7e88130f911": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "8605dd44-e5bd-5972-8c31-a7e88130f911#47f11104-3a10-55a8-b6c1-875fe139dfe2": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "ea257ba6-f3af-5004-b938-d2592c52d673": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "ea257ba6-f3af-5004-b938-d2592c52d673#ee889b87-aca8-53c4-abaf-35cecd5b03a5": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "ea257ba6-f3af-5004-b938-d2592c52d673#baaed5c1-88ab-5e5a-9114-f9cf00a8d6a1": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "ea257ba6-f3af-5004-b938-d2592c52d673#d50ce02a-2992-5a39-84f8-0f32e1c8b918": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "8446d0da-b9ab-51b4-b7eb-1610e83bf674": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "8446d0da-b9ab-51b4-b7eb-1610e83bf674#e5a9d76b-d4c5-583f-8dd4-dde6e9f7cce1": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "8446d0da-b9ab-51b4-b7eb-1610e83bf674#229ed69a-2ab7-5734-9080-ab1eb3015ac6": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "3e73ae05-ac20-577e-a602-a784cba376b7": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "3e73ae05-ac20-577e-a602-a784cba376b7#14638343-16a2-5db3-b869-7117ccdfd306": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "3e73ae05-ac20-577e-a602-a784cba376b7#f4f1f6dd-656a-5833-8e97-88e1d0f35bbb": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "3e73ae05-ac20-577e-a602-a784cba376b7#f81d296f-1183-5228-afad-996ac6f42493": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "3e73ae05-ac20-577e-a602-a784cba376b7#759d4f5a-5eac-5bf0-933b-400206dc8eb2": {
+   "column": "team",
+   "card": "8b3f8667-398d-5c87-9d4b-6a90fc2a4c94"
+  },
+  "4cd0410a-a1b7-5b09-af50-f56b0bd9fd38": {
+   "column": "cando",
+   "card": "4cd0410a-a1b7-5b09-af50-f56b0bd9fd38"
+  },
+  "9529e04d-0bd1-5254-bbd6-984c07124947": {
+   "column": "cando",
+   "card": "9529e04d-0bd1-5254-bbd6-984c07124947"
+  },
+  "53717e8f-99be-5563-9410-d5d75ed5c575": {
+   "column": "cando",
+   "card": "53717e8f-99be-5563-9410-d5d75ed5c575"
+  },
+  "8d1defd9-824a-55bc-a098-5790bc441988": {
+   "column": "cando",
+   "card": "8d1defd9-824a-55bc-a098-5790bc441988"
+  },
+  "68988e3c-c63c-5d42-98da-6456bbf842af": {
+   "column": "cando",
+   "card": "68988e3c-c63c-5d42-98da-6456bbf842af"
+  },
+  "db1f8419-9939-531a-ad7d-3b6949e8bd02": {
+   "column": "cando",
+   "card": "db1f8419-9939-531a-ad7d-3b6949e8bd02"
+  },
+  "83146f1c-34f9-526f-a434-dfb9148ac91f": {
+   "column": "cando",
+   "card": "83146f1c-34f9-526f-a434-dfb9148ac91f"
+  },
+  "b398f81d-1522-516b-8762-481ccc07ecdd": {
+   "column": "cando",
+   "card": "b398f81d-1522-516b-8762-481ccc07ecdd"
+  },
+  "d165f2af-788b-5ebe-b536-a9313b792faf": {
+   "column": "cando",
+   "card": "d165f2af-788b-5ebe-b536-a9313b792faf"
+  },
+  "6f55468e-b732-5232-8fa0-2b4a0aa64263": {
+   "column": "cando",
+   "card": "6f55468e-b732-5232-8fa0-2b4a0aa64263"
+  },
+  "4f546b02-3349-565e-bac4-a77db02230eb": {
+   "column": "cando",
+   "card": "4f546b02-3349-565e-bac4-a77db02230eb"
+  },
+  "9c2c0640-a542-522c-9a73-9ec3b8d58b2d": {
+   "column": "cando",
+   "card": "9c2c0640-a542-522c-9a73-9ec3b8d58b2d"
+  },
+  "6711693e-7442-59bd-8600-0bf517257262": {
+   "column": "cando",
+   "card": "6711693e-7442-59bd-8600-0bf517257262"
+  },
+  "ebfc4d07-e005-5e9a-ae94-11f9d71188f1": {
+   "column": "cando",
+   "card": "ebfc4d07-e005-5e9a-ae94-11f9d71188f1"
+  },
+  "a5c2e8a1-7fb8-5d9b-a0d1-b2730b3eea1c": {
+   "column": "cando",
+   "card": "a5c2e8a1-7fb8-5d9b-a0d1-b2730b3eea1c"
+  },
+  "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e": {
+   "column": "cando",
+   "card": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e"
+  },
+  "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#355862a5-d236-5917-a607-5e08dd2b480a": {
+   "column": "cando",
+   "card": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e"
+  },
+  "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#5fd70bef-f096-5483-b594-6fb367c55561": {
+   "column": "cando",
+   "card": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e"
+  },
+  "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#d897be23-fc69-5975-80dc-b16cddef9ebb": {
+   "column": "cando",
+   "card": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e"
+  },
+  "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#aba4ae79-bab8-5697-9266-1597f1d216bd": {
+   "column": "cando",
+   "card": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e"
+  },
+  "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#89b463df-ff3d-5912-b309-80ff8d6265cf": {
+   "column": "cando",
+   "card": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e"
+  },
+  "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#d240815b-1549-5401-818a-2059e176ad0f": {
+   "column": "cando",
+   "card": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e"
+  },
+  "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#goto:90f04731-dc80-556f-bbb2-10cdd9753043": {
+   "column": "cando",
+   "card": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e"
+  },
+  "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#goto:8dc5ad11-e196-51c7-a6fb-05b2021513a4": {
+   "column": "cando",
+   "card": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e"
+  },
+  "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#goto:43443766-4828-5a1d-8fa1-bca1e6b3d501": {
+   "column": "cando",
+   "card": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e"
+  },
+  "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#6b9032b4-ad8a-5afa-893b-4dc2d7cc62d9": {
+   "column": "cando",
+   "card": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e"
+  },
+  "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#72d98878-c44f-505a-9f38-48e06e9ba65b": {
+   "column": "cando",
+   "card": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e"
+  },
+  "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#85d7327c-5f00-5462-b465-50e3ae773595": {
+   "column": "cando",
+   "card": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e"
+  },
+  "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e#@done": {
+   "column": "cando",
+   "card": "8239b7b3-077d-5bfe-bf9c-2bbe6c6d861e"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#9ea26b46-dfc6-57c4-a71c-c6a53300194f": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#d2fb15d4-9612-59a9-bb99-d443396d367a": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#7507f2c2-02ed-5a05-83c2-bc2b63f04017": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#81069e0f-18e7-5a6a-9442-b908bbcaa3a6": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#9884c33b-310d-5675-9e22-89e5d84dcf6c": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#goto:e5c0b81c-dc54-5bb2-af8c-11499abcb6a2": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#ab9120cf-5713-5b33-bcef-79bab0f73835": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#6394881a-2b33-508b-be90-a976dc684485": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#395da4e6-d78e-5309-9a29-b8fa9730ff4a": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#goto:9fd01787-7709-5e8f-9704-446bffad1b9c": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#a3c42053-364a-5415-a179-64908e6c5665": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#goto:194b869f-0d69-5b0f-951f-ed22caa2a6bb": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#b9db9322-dd8c-5d63-9a26-1af6d14245ae": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#f48efc6a-4100-57ed-a5a9-3939c1f42873": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#goto:0455588c-ea9b-514d-84b2-606f73215b8a": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#goto:acc4a739-887f-5adc-99e4-797473b7fa8e": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#8009c1f0-fcf0-518d-9b64-4de06124a620": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#e413ba39-a2b5-5b06-a766-1695bdcb9d40": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#9f589969-dc29-5ee2-855c-b3a1044ee8cc": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "75409458-0bc6-5add-9d6e-da2bd31a13a7#f4b0d718-27a3-576f-910a-4c996dd3516f": {
+   "column": "cando",
+   "card": "75409458-0bc6-5add-9d6e-da2bd31a13a7"
+  },
+  "6aa31f1c-6409-5fbf-9c73-690f67bbec06": {
+   "column": "cando",
+   "card": "6aa31f1c-6409-5fbf-9c73-690f67bbec06"
+  },
+  "5c233712-5162-5c47-8876-0ac6c821b7a0": {
+   "column": "rules",
+   "card": "5c233712-5162-5c47-8876-0ac6c821b7a0"
+  },
+  "91d06b4e-3b30-5823-b22a-5fddf4fa3102": {
+   "column": "rules",
+   "card": "91d06b4e-3b30-5823-b22a-5fddf4fa3102"
+  },
+  "c82435f2-da9f-5497-9869-b42da65d2d58": {
+   "column": "rules",
+   "card": "c82435f2-da9f-5497-9869-b42da65d2d58"
+  },
+  "11b0d994-7093-5e2d-9831-b69776168730": {
+   "column": "rules",
+   "card": "11b0d994-7093-5e2d-9831-b69776168730"
+  },
+  "2c05e6c6-bc0f-5287-a914-343f166a9582": {
+   "column": "rules",
+   "card": "2c05e6c6-bc0f-5287-a914-343f166a9582"
+  },
+  "7288ac91-75e0-5ece-9fda-a7c1b48337dc": {
+   "column": "rules",
+   "card": "7288ac91-75e0-5ece-9fda-a7c1b48337dc"
+  },
+  "b5e70605-2462-5f75-88ec-e6913d32a30f": {
+   "column": "rules",
+   "card": "b5e70605-2462-5f75-88ec-e6913d32a30f"
+  },
+  "29b9c08e-4880-5f2c-9ab8-3bc0b776f97d": {
+   "column": "rules",
+   "card": "29b9c08e-4880-5f2c-9ab8-3bc0b776f97d"
+  },
+  "ac6991ef-fb56-5b51-a3e2-ba5ce7166aa4": {
+   "column": "rules",
+   "card": "ac6991ef-fb56-5b51-a3e2-ba5ce7166aa4"
+  },
+  "a966189c-119c-5250-807c-ded5e19fe6cf": {
+   "column": "rules",
+   "card": "a966189c-119c-5250-807c-ded5e19fe6cf"
+  },
+  "b86daeb2-ece0-5037-8abf-e2e7fe26b5fe": {
+   "column": "rules",
+   "card": "b86daeb2-ece0-5037-8abf-e2e7fe26b5fe"
+  },
+  "19eff524-806c-5a37-9084-12e6e3c38e8c": {
+   "column": "rules",
+   "card": "19eff524-806c-5a37-9084-12e6e3c38e8c"
+  },
+  "6b5418c5-a1ef-5245-8c80-674436d41bc0": {
+   "column": "rules",
+   "card": "6b5418c5-a1ef-5245-8c80-674436d41bc0"
+  },
+  "4f4d06c6-85dd-588f-b246-bdc3ac9a6642": {
+   "column": "rules",
+   "card": "4f4d06c6-85dd-588f-b246-bdc3ac9a6642"
+  },
+  "817b1fe0-dea1-586d-8433-7249345d21c6": {
+   "column": "rules",
+   "card": "817b1fe0-dea1-586d-8433-7249345d21c6"
+  },
+  "3acbf54c-3155-5052-a46b-ba06426b038d": {
+   "column": "guarantees",
+   "card": "3acbf54c-3155-5052-a46b-ba06426b038d"
+  },
+  "3acbf54c-3155-5052-a46b-ba06426b038d#24b22dee-f260-53d9-b56b-ea11a15ec560": {
+   "column": "guarantees",
+   "card": "3acbf54c-3155-5052-a46b-ba06426b038d"
+  },
+  "37f97f64-bdfa-5ed2-a02a-757c3ad4ee73": {
+   "column": "guarantees",
+   "card": "37f97f64-bdfa-5ed2-a02a-757c3ad4ee73"
+  },
+  "37f97f64-bdfa-5ed2-a02a-757c3ad4ee73#678cd3ee-6459-5551-95d5-4665647c4632": {
+   "column": "guarantees",
+   "card": "37f97f64-bdfa-5ed2-a02a-757c3ad4ee73"
+  },
+  "55c16d53-1944-54c1-b4a0-6fbc308df936": {
+   "column": "guarantees",
+   "card": "55c16d53-1944-54c1-b4a0-6fbc308df936"
+  },
+  "55c16d53-1944-54c1-b4a0-6fbc308df936#96e0c8b8-cbf5-5139-8f94-d15a6a606ebe": {
+   "column": "guarantees",
+   "card": "55c16d53-1944-54c1-b4a0-6fbc308df936"
+  },
+  "169001f5-058d-53d5-865c-404268f3331b": {
+   "column": "guarantees",
+   "card": "169001f5-058d-53d5-865c-404268f3331b"
+  },
+  "8ff94fe2-4cb9-55ea-a0ca-372b97a7ca4b": {
+   "column": "guarantees",
+   "card": "8ff94fe2-4cb9-55ea-a0ca-372b97a7ca4b"
+  },
+  "d2b4fe02-5214-5f51-bb5e-4556c9a23ddc": {
+   "column": "guarantees",
+   "card": "d2b4fe02-5214-5f51-bb5e-4556c9a23ddc"
+  },
+  "13295941-a4dc-5244-b215-b015df07c915": {
+   "column": "guarantees",
+   "card": "13295941-a4dc-5244-b215-b015df07c915"
+  },
+  "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10": {
+   "column": "guarantees",
+   "card": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10"
+  },
+  "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#64805638-6a73-5d02-92c7-4d75d0324760": {
+   "column": "guarantees",
+   "card": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10"
+  },
+  "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#9e806082-c1b9-54f2-9945-8353d3e1d84a": {
+   "column": "guarantees",
+   "card": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10"
+  },
+  "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#38ebce5b-54e0-5a84-9e28-482b47cdad82": {
+   "column": "guarantees",
+   "card": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10"
+  },
+  "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#5a24727a-4ad7-53b4-b032-ab2d6e057077": {
+   "column": "guarantees",
+   "card": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10"
+  },
+  "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#95ccd039-ad02-5718-8397-f6f23b9469ac": {
+   "column": "guarantees",
+   "card": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10"
+  },
+  "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#cb8793e8-2649-532b-8ef4-0587d5035ae0": {
+   "column": "guarantees",
+   "card": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10"
+  },
+  "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#9640add0-53f8-5f72-be22-49e7e85798d2": {
+   "column": "guarantees",
+   "card": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10"
+  },
+  "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10#a8fcb6c5-4e99-5f9c-bcf3-cea1877f59d8": {
+   "column": "guarantees",
+   "card": "a7a9bf7a-5086-5a1b-8abb-ccd99c1fad10"
+  }
+ }
+}

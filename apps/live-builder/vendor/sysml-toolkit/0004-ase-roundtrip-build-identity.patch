@@ -1,0 +1,142 @@
+From 8b541ae04beedde6f28f4a3966f8acd039584327 Mon Sep 17 00:00:00 2001
+From: Erwan Lee Pesle <erpesle@gmail.com>
+Date: Sun, 25 Oct 2026 17:45:30 +0800
+Subject: [PATCH] chore(build): identify the ASE roundtrip fix distribution
+
+---
+ Cargo.lock | 26 +++++++++++++-------------
+ Cargo.toml |  2 +-
+ 2 files changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/Cargo.lock b/Cargo.lock
+index c2d071b..dc27ecd 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -962,7 +962,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "sysmlv2-cbor"
+-version = "0.10.10+ase.1"
++version = "0.10.10+ase.2"
+ dependencies = [
+  "miniz_oxide",
+  "serde_json",
+@@ -974,7 +974,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "sysmlv2-cli"
+-version = "0.10.10+ase.1"
++version = "0.10.10+ase.2"
+ dependencies = [
+  "clap",
+  "miniz_oxide",
+@@ -994,7 +994,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "sysmlv2-lint"
+-version = "0.10.10+ase.1"
++version = "0.10.10+ase.2"
+ dependencies = [
+  "regex-lite",
+  "serde_json",
+@@ -1006,7 +1006,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "sysmlv2-lsp"
+-version = "0.10.10+ase.1"
++version = "0.10.10+ase.2"
+ dependencies = [
+  "crossbeam-channel",
+  "lsp-server",
+@@ -1022,7 +1022,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "sysmlv2-model"
+-version = "0.10.10+ase.1"
++version = "0.10.10+ase.2"
+ dependencies = [
+  "memmap2",
+  "num-bigint",
+@@ -1038,7 +1038,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "sysmlv2-parser"
+-version = "0.10.10+ase.1"
++version = "0.10.10+ase.2"
+ dependencies = [
+  "jsonschema",
+  "serde_json",
+@@ -1050,7 +1050,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "sysmlv2-py"
+-version = "0.10.10+ase.1"
++version = "0.10.10+ase.2"
+ dependencies = [
+  "pyo3",
+  "serde_json",
+@@ -1063,7 +1063,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "sysmlv2-solve"
+-version = "0.10.10+ase.1"
++version = "0.10.10+ase.2"
+ dependencies = [
+  "sysmlv2-model",
+  "sysmlv2-syntax",
+@@ -1072,18 +1072,18 @@ dependencies = [
+ 
+ [[package]]
+ name = "sysmlv2-syntax"
+-version = "0.10.10+ase.1"
++version = "0.10.10+ase.2"
+ dependencies = [
+  "serde",
+ ]
+ 
+ [[package]]
+ name = "sysmlv2-testkit"
+-version = "0.10.10+ase.1"
++version = "0.10.10+ase.2"
+ 
+ [[package]]
+ name = "sysmlv2-transform"
+-version = "0.10.10+ase.1"
++version = "0.10.10+ase.2"
+ dependencies = [
+  "serde_json",
+  "sysmlv2-cbor",
+@@ -1096,7 +1096,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "sysmlv2-viz"
+-version = "0.10.10+ase.1"
++version = "0.10.10+ase.2"
+ dependencies = [
+  "serde",
+  "serde_json",
+@@ -1107,7 +1107,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "sysmlv2-wasm"
+-version = "0.10.10+ase.1"
++version = "0.10.10+ase.2"
+ dependencies = [
+  "js-sys",
+  "miniz_oxide",
+diff --git a/Cargo.toml b/Cargo.toml
+index ceb9163..1e0c22e 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -44,7 +44,7 @@ default-members = [
+ ]
+ 
+ [workspace.package]
+-version = "0.10.10+ase.1"
++version = "0.10.10+ase.2"
+ edition = "2021"
+ rust-version = "1.97"
+ license = "Apache-2.0"
+-- 
+2.50.1 (Apple Git-155)
+

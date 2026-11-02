@@ -1,0 +1,68 @@
+{
+  "nodeModulesDir": "auto",
+  "imports": {
+    "@/": "./",
+    "fresh": "jsr:@fresh/core@2.3.3",
+    "fresh/runtime": "jsr:@fresh/core@2.3.3/runtime",
+    "happy-dom": "npm:happy-dom@21.0.4",
+    "@fresh/plugin-vite": "jsr:@fresh/plugin-vite@1.1.2",
+    "preact": "npm:preact@10.29.8",
+    "@preact/signals": "npm:@preact/signals@2.11.3",
+    "preact-render-to-string": "npm:preact-render-to-string@6.8.1",
+    "diff": "npm:diff@9.0.0",
+    "diff2html": "npm:diff2html@3.4.56/lib/diff2html.js",
+    "diff2html/css": "npm:diff2html@3.4.56/bundles/css/diff2html.min.css",
+    "cytoscape": "npm:cytoscape@3.34.4",
+    "d3-force": "npm:d3-force@3.0.0",
+    "vite": "npm:vite@7.3.7",
+    "elkjs/lib/elk-api.js": "npm:elkjs@0.9.3/lib/elk-api.js",
+    "elkjs/lib/elk-worker.min.js": "npm:elkjs@0.9.3/lib/elk-worker.min.js"
+  },
+  "compilerOptions": {
+    "strict": true,
+    "lib": [
+      "dom",
+      "dom.asynciterable",
+      "dom.iterable",
+      "deno.ns"
+    ],
+    "jsx": "precompile",
+    "jsxImportSource": "preact",
+    "jsxPrecompileSkipElements": [
+      "a",
+      "img",
+      "source",
+      "body",
+      "html",
+      "head",
+      "title",
+      "meta",
+      "script",
+      "link",
+      "style",
+      "base",
+      "noscript",
+      "template"
+    ],
+    "types": [
+      "vite/client"
+    ]
+  },
+  "tasks": {
+    "dev": "ASSEMBLY_ENV=development vite",
+    "build": "vite build",
+    "check": "deno check main.ts client.ts vite.config.ts routes islands components lib test",
+    "test": {
+      "description": "Frontend SSR and DOM tests on parallel workers (runner profile frontend)",
+      "command": "../.data/toolchains/deno-v2.9.7/deno run --no-prompt --allow-read --allow-write --allow-env --allow-run --allow-sys=uid,gid ../tools/test-runner.ts frontend"
+    },
+    "lint": "deno lint",
+    "fmt": "deno fmt",
+    "fmt:check": "deno fmt --check",
+    "quality": "deno task fmt:check && deno task lint && deno task check && deno task test",
+    "test:changed": "../.data/toolchains/deno-v2.9.7/deno run --no-prompt --allow-read --allow-write --allow-env --allow-run --allow-sys=uid,gid ../tools/test-runner.ts frontend-changed"
+  },
+  "exclude": [
+    "_fresh/"
+  ]
+}

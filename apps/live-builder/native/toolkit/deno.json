@@ -1,0 +1,8 @@
+{
+  "lint": {
+    "exclude": ["index.js"]
+  },
+  "fmt": {
+    "exclude": ["index.js", "index.d.ts"]
+  }
+}

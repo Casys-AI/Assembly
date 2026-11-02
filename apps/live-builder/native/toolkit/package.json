@@ -1,0 +1,20 @@
+{
+  "name": "ase-toolkit-napi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Addon N-API Deno vers le SysML Toolkit natif (transform/model/viz/lsp), sans WASM",
+  "license": "MIT",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "binaryName": "ase-toolkit-napi"
+  },
+  "scripts": {
+    "build": "napi build --release --platform --js index.js --dts index.d.ts",
+    "build:debug": "napi build --platform --js index.js --dts index.d.ts"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "3.10.9",
+    "@types/node": "26.6.5"
+  }
+}

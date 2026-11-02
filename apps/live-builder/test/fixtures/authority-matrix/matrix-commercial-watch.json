@@ -1,0 +1,3185 @@
+{
+  "schema": "ase.authority-matrix/1",
+  "model": {
+    "name": "commercial-watch",
+    "sourceDigest": "0f6df16e50b76d3f143dfda61e09d4aefab26b3694f5afa7b11a6950c6de75d5",
+    "toolkit": "0.10.10",
+    "authoritySchema": "legacy-v1",
+    "units": [
+      {
+        "system": "ASEAnalysis::analyst",
+        "executionDigest": "19c393d6711eab6de15e15aa2aac35c5a845a1c04525fd5e08ac3f3dbbf292f9"
+      },
+      {
+        "system": "ASECollect::collector",
+        "executionDigest": "a237452ba8a765a10b6ffa446cde803d695c3e38e4d4d4c3c800d04da116a90d"
+      },
+      {
+        "system": "ASELiveBuilder::liveBuilder",
+        "executionDigest": "dbf355eb364667d3685eadd719100c180de2656ef0e8e1dec4bd493e2d4b29d1"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "id": "tools",
+      "label": "Tools",
+      "order": 1
+    },
+    {
+      "id": "admission",
+      "label": "Admission",
+      "order": 2
+    },
+    {
+      "id": "mandate",
+      "label": "Mandate & operators",
+      "order": 3
+    },
+    {
+      "id": "model",
+      "label": "Model",
+      "order": 4
+    },
+    {
+      "id": "memory-skills",
+      "label": "Memory & skills",
+      "order": 5
+    },
+    {
+      "id": "behaviors",
+      "label": "Exposed behaviors",
+      "order": 6
+    }
+  ],
+  "rows": [
+    {
+      "id": "owner@ASEAnalysis::analyst",
+      "kind": "human",
+      "role": "owner",
+      "label": "Owner",
+      "unit": "ASEAnalysis::analyst",
+      "declared": false,
+      "element": null,
+      "principal": "local-owner"
+    },
+    {
+      "id": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "kind": "software",
+      "role": "builder",
+      "label": "ASEAnalysis::analyst::builder",
+      "unit": "ASEAnalysis::analyst",
+      "declared": true,
+      "element": {
+        "role": "holder",
+        "elementId": "3db8c038-42a3-5e40-9abb-5429803839a7",
+        "qname": "ASEAnalysis::analyst::builder",
+        "file": "analysis.sysml",
+        "line": 23,
+        "column": 9
+      },
+      "endpoint": {
+        "name": "Analyste",
+        "primary": false,
+        "humanInput": false
+      },
+      "limits": {
+        "maxAgentDecisions": 12,
+        "maxToolProposals": 2,
+        "maxFlowSteps": 256,
+        "urlSelectionMode": "authorized-host"
+      }
+    },
+    {
+      "id": "owner@ASECollect::collector",
+      "kind": "human",
+      "role": "owner",
+      "label": "Owner",
+      "unit": "ASECollect::collector",
+      "declared": false,
+      "element": null,
+      "principal": "local-owner"
+    },
+    {
+      "id": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "kind": "software",
+      "role": "builder",
+      "label": "ASECollect::collector::builder",
+      "unit": "ASECollect::collector",
+      "declared": true,
+      "element": {
+        "role": "holder",
+        "elementId": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+        "qname": "ASECollect::collector::builder",
+        "file": "collect.sysml",
+        "line": 23,
+        "column": 9
+      },
+      "endpoint": {
+        "name": "Collecteur",
+        "primary": false,
+        "humanInput": false
+      },
+      "limits": {
+        "maxAgentDecisions": 12,
+        "maxToolProposals": 2,
+        "maxFlowSteps": 256,
+        "urlSelectionMode": "authorized-host"
+      }
+    },
+    {
+      "id": "owner@ASELiveBuilder::liveBuilder",
+      "kind": "human",
+      "role": "owner",
+      "label": "Owner",
+      "unit": "ASELiveBuilder::liveBuilder",
+      "declared": false,
+      "element": null,
+      "principal": "local-owner"
+    },
+    {
+      "id": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "kind": "software",
+      "role": "builder",
+      "label": "ASELiveBuilder::liveBuilder::builder",
+      "unit": "ASELiveBuilder::liveBuilder",
+      "declared": true,
+      "element": {
+        "role": "holder",
+        "elementId": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+        "qname": "ASELiveBuilder::liveBuilder::builder",
+        "file": "configuration.sysml",
+        "line": 148,
+        "column": 9
+      },
+      "endpoint": {
+        "name": "Coordinateur veille",
+        "primary": true,
+        "humanInput": true
+      },
+      "limits": {
+        "maxAgentDecisions": 12,
+        "maxToolProposals": 2,
+        "maxFlowSteps": 256,
+        "urlSelectionMode": "authorized-host"
+      }
+    }
+  ],
+  "columns": [
+    {
+      "id": "tool.build:read_web_page",
+      "group": "tools",
+      "capability": "ProposeTool",
+      "inTypedPlan": true,
+      "label": "Build tool · read_web_page",
+      "mode": "propose",
+      "target": {
+        "kind": "tool-kind",
+        "ref": "read_web_page"
+      },
+      "tier": "core",
+      "doc": "Propose a candidate tool of this kind. A candidate is a proposal: it enters the catalog only after tests and an admission decision.",
+      "order": 0,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "tool.build:read_web_page_outline",
+      "group": "tools",
+      "capability": "ProposeTool",
+      "inTypedPlan": true,
+      "label": "Build tool · read_web_page_outline",
+      "mode": "propose",
+      "target": {
+        "kind": "tool-kind",
+        "ref": "read_web_page_outline"
+      },
+      "tier": "core",
+      "doc": "Propose a candidate tool of this kind. A candidate is a proposal: it enters the catalog only after tests and an admission decision.",
+      "order": 1,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "tool.invoke",
+      "group": "tools",
+      "capability": "InvokeTool",
+      "inTypedPlan": true,
+      "label": "Use active tools",
+      "mode": "execute",
+      "tier": "core",
+      "doc": "Invoke a tool of the active catalog. Bounded by the network scope and the URL selection mode.",
+      "order": 10,
+      "typedScope": "none"
+    },
+    {
+      "id": "network.reach",
+      "group": "tools",
+      "capability": "AccessNetwork",
+      "inTypedPlan": true,
+      "label": "Reach network hosts",
+      "mode": "execute",
+      "tier": "core",
+      "doc": "Exact DNS hosts the operator's tool invocations may contact.",
+      "order": 20,
+      "typedScope": "NetworkScope"
+    },
+    {
+      "id": "candidate.review",
+      "group": "admission",
+      "capability": "ReviewCandidate",
+      "inTypedPlan": true,
+      "label": "Review a tested tool",
+      "mode": "review",
+      "tier": "core",
+      "doc": "Give an approve/refuse opinion on the exact tested digest.",
+      "order": 30,
+      "typedScope": "none"
+    },
+    {
+      "id": "candidate.admit",
+      "group": "admission",
+      "capability": "AdmitCandidate",
+      "inTypedPlan": true,
+      "label": "Admit a tool",
+      "mode": "admit",
+      "tier": "core",
+      "doc": "Decide admission of the exact tested (and reviewed) candidate. Held by exactly one authority per unit (admissionMode).",
+      "order": 40,
+      "typedScope": "none"
+    },
+    {
+      "id": "candidate.activate",
+      "group": "admission",
+      "capability": "ActivateCandidate",
+      "inTypedPlan": false,
+      "label": "Activate an admitted tool",
+      "mode": "execute",
+      "tier": "detail",
+      "doc": "Reserved to the host mechanism that owns the catalog; no operator mandate may hold it (compile-time refusal).",
+      "order": 50,
+      "typedScope": "none"
+    },
+    {
+      "id": "mandate.change:network-hosts",
+      "group": "mandate",
+      "capability": "ChangeMandate",
+      "inTypedPlan": true,
+      "label": "Widen network scope",
+      "mode": "propose",
+      "target": {
+        "kind": "change",
+        "ref": "network-hosts"
+      },
+      "tier": "core",
+      "doc": "Operators propose this exact change; a human decision applies it. The model policy must allow it.",
+      "order": 60,
+      "typedScope": "MandateScope"
+    },
+    {
+      "id": "mandate.change:url-selection",
+      "group": "mandate",
+      "capability": "ChangeMandate",
+      "inTypedPlan": true,
+      "label": "Change URL selection",
+      "mode": "propose",
+      "target": {
+        "kind": "change",
+        "ref": "url-selection"
+      },
+      "tier": "core",
+      "doc": "Operators propose this exact change; a human decision applies it. The model policy must allow it.",
+      "order": 70,
+      "typedScope": "MandateScope"
+    },
+    {
+      "id": "mandate.change:self-admission",
+      "group": "mandate",
+      "capability": "ChangeMandate",
+      "inTypedPlan": true,
+      "label": "Delegate own admission",
+      "mode": "propose",
+      "target": {
+        "kind": "change",
+        "ref": "self-admission"
+      },
+      "tier": "core",
+      "doc": "Operators propose this exact change; a human decision applies it. The model policy must allow it.",
+      "order": 80,
+      "typedScope": "MandateScope"
+    },
+    {
+      "id": "operator.create:reviewer",
+      "group": "mandate",
+      "capability": "CreateOperator",
+      "inTypedPlan": true,
+      "label": "Create a reviewer",
+      "mode": "propose",
+      "target": {
+        "kind": "change",
+        "ref": "reviewer"
+      },
+      "tier": "core",
+      "doc": "Propose an independent reviewer with the exact review+admit mandate.",
+      "order": 90,
+      "typedScope": "MandateScope"
+    },
+    {
+      "id": "mandate.rewrite",
+      "group": "mandate",
+      "capability": "ChangeMandate",
+      "inTypedPlan": true,
+      "label": "Rewrite own mandate directly",
+      "mode": "execute",
+      "tier": "detail",
+      "doc": "mayChangeOwnMandate: always false (compile-time refusal).",
+      "order": 100,
+      "typedScope": "none"
+    },
+    {
+      "id": "operator.spawn",
+      "group": "mandate",
+      "capability": "CreateOperator",
+      "inTypedPlan": true,
+      "label": "Create operators directly",
+      "mode": "execute",
+      "tier": "detail",
+      "doc": "mayCreateAgents: always false (compile-time refusal).",
+      "order": 110,
+      "typedScope": "none"
+    },
+    {
+      "id": "model.consult",
+      "group": "model",
+      "capability": "ConsultModel",
+      "inTypedPlan": false,
+      "label": "Read the model sources",
+      "mode": "execute",
+      "tier": "core",
+      "doc": "Read model sources and selective model context. Unlocked by the same flag as source proposals (mayProposeSysmlRevision).",
+      "order": 120,
+      "typedScope": "ModelScope"
+    },
+    {
+      "id": "model.edit",
+      "group": "model",
+      "capability": "EditModel",
+      "inTypedPlan": true,
+      "label": "Propose model edits",
+      "mode": "propose",
+      "tier": "core",
+      "doc": "Propose source edits inside the (file, qualified roots) ceiling and the listed operations. Proposals are private until decided.",
+      "order": 130,
+      "typedScope": "ModelScope"
+    },
+    {
+      "id": "model.administer",
+      "group": "model",
+      "capability": "ChangeMandate",
+      "inTypedPlan": true,
+      "label": "Delegate edit rights",
+      "mode": "propose",
+      "tier": "core",
+      "doc": "Grant or revoke bounded model-edit rights to exact recipient systems (delegation ledger).",
+      "order": 140,
+      "typedScope": "MandateScope"
+    },
+    {
+      "id": "model.decide",
+      "group": "model",
+      "capability": "DecideModelRevision",
+      "inTypedPlan": false,
+      "label": "Accept a model revision",
+      "mode": "admit",
+      "tier": "core",
+      "doc": "Accept or refuse a proposed source revision. Owner HTTP path only.",
+      "order": 150,
+      "typedScope": "none"
+    },
+    {
+      "id": "model.adopt",
+      "group": "model",
+      "capability": "AdoptModelVersion",
+      "inTypedPlan": false,
+      "label": "Adopt a model version",
+      "mode": "admit",
+      "tier": "core",
+      "doc": "Make an accepted version the executable one. Owner HTTP path only.",
+      "order": 160,
+      "typedScope": "none"
+    },
+    {
+      "id": "behavior:work-plan@ASELiveBuilder::liveBuilder",
+      "group": "behaviors",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Run a work plan",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "work-plan",
+        "unit": "ASELiveBuilder::liveBuilder"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 2002,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:inbox@ASEAnalysis::analyst",
+      "group": "behaviors",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Hand over work · analyst",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "inbox",
+        "unit": "ASEAnalysis::analyst"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 2100,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:inbox@ASECollect::collector",
+      "group": "behaviors",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Hand over work · collector",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "inbox",
+        "unit": "ASECollect::collector"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 2101,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:reuse-tool@ASEAnalysis::analyst",
+      "group": "behaviors",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Reuse a published tool · analyst",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "reuse-tool",
+        "unit": "ASEAnalysis::analyst"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 2200,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:reuse-tool@ASECollect::collector",
+      "group": "behaviors",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "Reuse a published tool · collector",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "reuse-tool",
+        "unit": "ASECollect::collector"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 2201,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:published-tools@ASEAnalysis::analyst",
+      "group": "behaviors",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "List published tools · analyst",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "published-tools",
+        "unit": "ASEAnalysis::analyst"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 2300,
+      "typedScope": "missing-in-plan"
+    },
+    {
+      "id": "behavior:published-tools@ASECollect::collector",
+      "group": "behaviors",
+      "capability": "InvokeBehavior",
+      "inTypedPlan": false,
+      "label": "List published tools · collector",
+      "mode": "execute",
+      "target": {
+        "kind": "entry-kind",
+        "ref": "published-tools",
+        "unit": "ASECollect::collector"
+      },
+      "tier": "core",
+      "doc": "Call a native action exposed to this operator by a BehaviorAccess (caller, target, enabled). Allocation alone grants nothing.",
+      "order": 2301,
+      "typedScope": "missing-in-plan"
+    }
+  ],
+  "cells": [
+    {
+      "row": "owner@ASEAnalysis::analyst",
+      "column": "candidate.admit",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "condition",
+          "elementId": "406adaea-6cf9-5376-9d09-b28aef528031",
+          "qname": "ASEAnalysis::analyst::admissionMode",
+          "file": "analysis.sysml",
+          "line": 21,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-decides-candidate-admission-when-admissionMode-is-human",
+        "enforcedAt": "src/application/candidate-decisions.ts:78-81; src/domain/governance.ts:336-343"
+      },
+      "codes": [
+        "HUMAN_ADMISSION_NOT_REQUIRED"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASEAnalysis::analyst",
+      "column": "mandate.change:network-hosts",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "3b1fa0d5-5c4c-5302-bf58-7e3ce7463c35",
+          "qname": "ASEAnalysis::analyst::conversation::executionPolicy::mayAddNetworkHosts",
+          "file": "analysis.sysml",
+          "line": 85,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "MODEL_POLICY_FORBIDS"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASEAnalysis::analyst",
+      "column": "mandate.change:url-selection",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "bacbf7c0-ed03-5168-bc6f-741ef5d2c895",
+          "qname": "ASEAnalysis::analyst::conversation::executionPolicy::mayChangeUrlSelection",
+          "file": "analysis.sysml",
+          "line": 88,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "MODEL_POLICY_FORBIDS"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASEAnalysis::analyst",
+      "column": "mandate.change:self-admission",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "87736112-b0ea-5b6a-b344-8aae3281b101",
+          "qname": "ASEAnalysis::analyst::conversation::executionPolicy::mayDelegateOwnAdmission",
+          "file": "analysis.sysml",
+          "line": 86,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "MODEL_POLICY_FORBIDS"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASEAnalysis::analyst",
+      "column": "operator.create:reviewer",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "d2d2988e-65f4-5ed5-b279-8802633a8b3c",
+          "qname": "ASEAnalysis::analyst::conversation::executionPolicy::mayCreateReviewer",
+          "file": "analysis.sysml",
+          "line": 87,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "MODEL_POLICY_FORBIDS"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASEAnalysis::analyst",
+      "column": "model.consult",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "local-owner-bypasses-operator-edit-scope",
+        "enforcedAt": "src/adapters/model-source-authorization.ts:108-113"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "bounds": "none"
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASEAnalysis::analyst",
+      "column": "model.edit",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "local-owner-bypasses-operator-edit-scope",
+        "enforcedAt": "src/adapters/model-source-authorization.ts:108-113"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "bounds": "none"
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASEAnalysis::analyst",
+      "column": "model.administer",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "local-owner-bypasses-operator-edit-scope",
+        "enforcedAt": "src/adapters/model-source-authorization.ts:108-113"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "bounds": "none"
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASEAnalysis::analyst",
+      "column": "model.decide",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "only-local-owner-proposes-decides-and-adopts-through-http",
+        "enforcedAt": "src/adapters/model-revisions-http.ts:249-437"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASEAnalysis::analyst",
+      "column": "model.adopt",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "only-local-owner-proposes-decides-and-adopts-through-http",
+        "enforcedAt": "src/adapters/model-revisions-http.ts:249-437"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "display": "allowed"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "tool.build:read_web_page",
+      "state": "propose-only",
+      "mode": "propose",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "0443e555-e1b2-516e-af8b-feaa2b9e95b1",
+          "qname": "ASEAnalysis::analyst::builderMandate::mayProposeReadWebPage",
+          "file": "analysis.sysml",
+          "line": 45,
+          "column": 13
+        },
+        {
+          "role": "scope",
+          "elementId": "3ad9324f-fc8f-586a-825a-04f4a6e8e220",
+          "qname": "ASEAnalysis::analyst::catalog::readWebPageContract",
+          "file": "analysis.sysml",
+          "line": 26,
+          "column": 13
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "maxToolProposals": 2
+      },
+      "codes": [
+        "ADMISSION_BY_BUILDER"
+      ],
+      "origin": "compiler",
+      "display": "propose-only"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "tool.build:read_web_page_outline",
+      "state": "propose-only",
+      "mode": "propose",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "8550ba6a-2b67-583a-acb1-05e9907c65ec",
+          "qname": "ASEAnalysis::analyst::builderMandate::mayProposeReadWebPageOutline",
+          "file": "analysis.sysml",
+          "line": 46,
+          "column": 13
+        },
+        {
+          "role": "scope",
+          "elementId": "b118d3c0-ddfe-5c03-ada6-729743f8f062",
+          "qname": "ASEAnalysis::analyst::catalog::readWebPageOutlineContract",
+          "file": "analysis.sysml",
+          "line": 31,
+          "column": 13
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "maxToolProposals": 2
+      },
+      "codes": [
+        "ADMISSION_BY_BUILDER"
+      ],
+      "origin": "compiler",
+      "display": "propose-only"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "tool.invoke",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "b67b0065-9fa0-550b-b79d-60a3257d46ef",
+          "qname": "ASEAnalysis::analyst::builderMandate::mayInvokeActiveCatalog",
+          "file": "analysis.sysml",
+          "line": 47,
+          "column": 13
+        },
+        {
+          "role": "scope",
+          "elementId": "ab752a4c-744a-569b-b468-b3184c9a7d62",
+          "qname": "ASEAnalysis::analyst::conversation::executionPolicy::urlSelectionMode",
+          "file": "analysis.sysml",
+          "line": 84,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "catalog": "active-only",
+        "activeTools": [],
+        "urlSelectionMode": "authorized-host",
+        "hosts": [
+          "casys.ai",
+          "digital-skills-jobs.europa.eu",
+          "ted.europa.eu"
+        ]
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "network.reach",
+      "state": "inherited",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "scope",
+          "elementId": "3121c36c-7216-525f-95ab-af20d9ef9dd0",
+          "qname": "ASEAnalysis::analyst::networkHosts",
+          "file": "analysis.sysml",
+          "line": 22,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "unit-configuration",
+        "attribute": "networkHosts"
+      },
+      "scope": {
+        "hosts": [
+          "casys.ai",
+          "digital-skills-jobs.europa.eu",
+          "ted.europa.eu"
+        ],
+        "ceiling": 32
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "candidate.review",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "998e85b3-7d11-508c-8ba6-7f884cc8949a",
+          "qname": "ASEAnalysis::analyst::builderMandate::mayReviewExactCandidate",
+          "file": "analysis.sysml",
+          "line": 48,
+          "column": 13
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "candidate.admit",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "21f696c3-18a4-5de3-b4a8-1f9c085c46ad",
+          "qname": "ASEAnalysis::analyst::builderMandate::mayAdmit",
+          "file": "analysis.sysml",
+          "line": 49,
+          "column": 13
+        },
+        {
+          "role": "condition",
+          "elementId": "406adaea-6cf9-5376-9d09-b28aef528031",
+          "qname": "ASEAnalysis::analyst::admissionMode",
+          "file": "analysis.sysml",
+          "line": 21,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "subject": "own-candidates",
+        "requires": [
+          "tests-passed",
+          "exact-digest",
+          "current-catalog-revision"
+        ],
+        "performedBy": [
+          "ASEAnalysis::analyst::admissionGate"
+        ]
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "candidate.activate",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "5e9eb337-87d1-51ed-b3f9-2823fc3d2925",
+          "qname": "ASEAnalysis::analyst::builderMandate::mayActivate",
+          "file": "analysis.sysml",
+          "line": 50,
+          "column": 13
+        },
+        {
+          "role": "allocation",
+          "elementId": "325285d2-2c69-5dcd-8623-20c9ea90232e",
+          "qname": "ASEAnalysis::analyst::catalog",
+          "file": "analysis.sysml",
+          "line": 25,
+          "column": 9
+        }
+      ],
+      "codes": [
+        "HOST_RESERVED"
+      ],
+      "origin": "compiler",
+      "scope": {
+        "performedBy": [
+          "ASEAnalysis::analyst::catalog"
+        ]
+      },
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "mandate.change:network-hosts",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "3b1fa0d5-5c4c-5302-bf58-7e3ce7463c35",
+          "qname": "ASEAnalysis::analyst::conversation::executionPolicy::mayAddNetworkHosts",
+          "file": "analysis.sysml",
+          "line": 85,
+          "column": 17
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "mandate.change:url-selection",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "bacbf7c0-ed03-5168-bc6f-741ef5d2c895",
+          "qname": "ASEAnalysis::analyst::conversation::executionPolicy::mayChangeUrlSelection",
+          "file": "analysis.sysml",
+          "line": 88,
+          "column": 17
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "mandate.change:self-admission",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "87736112-b0ea-5b6a-b344-8aae3281b101",
+          "qname": "ASEAnalysis::analyst::conversation::executionPolicy::mayDelegateOwnAdmission",
+          "file": "analysis.sysml",
+          "line": 86,
+          "column": 17
+        },
+        {
+          "role": "condition",
+          "elementId": "406adaea-6cf9-5376-9d09-b28aef528031",
+          "qname": "ASEAnalysis::analyst::admissionMode",
+          "file": "analysis.sysml",
+          "line": 21,
+          "column": 9
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "operator.create:reviewer",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "d2d2988e-65f4-5ed5-b279-8802633a8b3c",
+          "qname": "ASEAnalysis::analyst::conversation::executionPolicy::mayCreateReviewer",
+          "file": "analysis.sysml",
+          "line": 87,
+          "column": 17
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "mandate.rewrite",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "2686d693-4045-555c-a06d-08f3d96c3444",
+          "qname": "ASEAnalysis::analyst::builderMandate::mayChangeOwnMandate",
+          "file": "analysis.sysml",
+          "line": 51,
+          "column": 13
+        }
+      ],
+      "codes": [
+        "HARD_DENIED"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "operator.spawn",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "392a0767-7b1c-581f-85e2-c1af0efa71d4",
+          "qname": "ASEAnalysis::analyst::builderMandate::mayCreateAgents",
+          "file": "analysis.sysml",
+          "line": 52,
+          "column": 13
+        }
+      ],
+      "codes": [
+        "HARD_DENIED"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "model.consult",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "178954a4-54f8-593a-b69f-8cde36c5f932",
+          "qname": "ASEAnalysis::analyst::conversation::executionPolicy::mayProposeSysmlRevision",
+          "file": "analysis.sysml",
+          "line": 89,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "model.edit",
+      "state": "propose-only",
+      "mode": "propose",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "grant",
+          "elementId": "815ff4d9-e615-574e-81bb-46d34e12261e",
+          "qname": "ASEAnalysis::analyst::modelEditing",
+          "file": "analysis.sysml",
+          "line": 54,
+          "column": 9
+        },
+        {
+          "role": "flag",
+          "elementId": "178954a4-54f8-593a-b69f-8cde36c5f932",
+          "qname": "ASEAnalysis::analyst::conversation::executionPolicy::mayProposeSysmlRevision",
+          "file": "analysis.sysml",
+          "line": 89,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "policy": "commercial-watch-analyst-editing-v1",
+        "revision": 1,
+        "operations": [
+          "set-value",
+          "rename",
+          "insert-member",
+          "remove",
+          "replace-source"
+        ],
+        "grants": [
+          {
+            "file": "mission.sysml",
+            "qualifiedRoots": [
+              "CommercialWatchMission::qualificationPolicy"
+            ]
+          }
+        ]
+      },
+      "codes": [
+        "PRIVATE_UNTIL_DECIDED"
+      ],
+      "origin": "compiler",
+      "display": "propose-only"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "model.administer",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [
+        "NO_ADMINISTRATION_POLICY"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "model.decide",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [
+        "OWNER_ONLY_PATH"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "model.adopt",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [
+        "OWNER_ONLY_PATH"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "behavior:work-plan@ASELiveBuilder::liveBuilder",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "behavior:inbox@ASEAnalysis::analyst",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "behavior:inbox@ASECollect::collector",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "behavior:reuse-tool@ASEAnalysis::analyst",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "92b9d640-f66a-50ce-8623-7f7c7e636001",
+          "qname": "ASEAnalysis::analyst::reuseAccess",
+          "file": "analysis.sysml",
+          "line": 107,
+          "column": 9
+        },
+        {
+          "role": "flag",
+          "elementId": "c692d972-13d9-5668-8ad5-c0dc711475ae",
+          "qname": "ASEAnalysis::analyst::reuseAccess::enabled",
+          "file": "analysis.sysml",
+          "line": 110,
+          "column": 13
+        },
+        {
+          "role": "target",
+          "elementId": "e408896e-0999-580c-9046-8cfc56e2aefd",
+          "qname": "ASEAnalysis::analyst::reuse",
+          "file": "analysis.sysml",
+          "line": 103,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "ReutiliserOutil",
+        "accessId": "92b9d640-f66a-50ce-8623-7f7c7e636001"
+      },
+      "scope": {
+        "exposureName": "ReutiliserOutil",
+        "targetUnit": "ASEAnalysis::analyst"
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "behavior:reuse-tool@ASECollect::collector",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "behavior:published-tools@ASEAnalysis::analyst",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "691f4860-eece-54b9-a96c-dd869f3df53c",
+          "qname": "ASEAnalysis::analyst::libraryAccess",
+          "file": "analysis.sysml",
+          "line": 115,
+          "column": 9
+        },
+        {
+          "role": "flag",
+          "elementId": "c62407f9-2665-55f5-8f22-59c7da6f5c60",
+          "qname": "ASEAnalysis::analyst::libraryAccess::enabled",
+          "file": "analysis.sysml",
+          "line": 118,
+          "column": 13
+        },
+        {
+          "role": "target",
+          "elementId": "3149139b-e5d6-5232-ba9d-b90646a2256e",
+          "qname": "ASEAnalysis::analyst::publishedTools",
+          "file": "analysis.sysml",
+          "line": 105,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "Bibliotheque",
+        "accessId": "691f4860-eece-54b9-a96c-dd869f3df53c"
+      },
+      "scope": {
+        "exposureName": "Bibliotheque",
+        "targetUnit": "ASEAnalysis::analyst"
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "3db8c038-42a3-5e40-9abb-5429803839a7",
+      "column": "behavior:published-tools@ASECollect::collector",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASECollect::collector",
+      "column": "candidate.admit",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "condition",
+          "elementId": "bd2e6487-c2a4-5c40-8306-a923daf8847f",
+          "qname": "ASECollect::collector::admissionMode",
+          "file": "collect.sysml",
+          "line": 21,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-decides-candidate-admission-when-admissionMode-is-human",
+        "enforcedAt": "src/application/candidate-decisions.ts:78-81; src/domain/governance.ts:336-343"
+      },
+      "codes": [
+        "HUMAN_ADMISSION_NOT_REQUIRED"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASECollect::collector",
+      "column": "mandate.change:network-hosts",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "4abdb8b3-ccd8-5a67-84ea-41064d6cc5c8",
+          "qname": "ASECollect::collector::conversation::executionPolicy::mayAddNetworkHosts",
+          "file": "collect.sysml",
+          "line": 85,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "MODEL_POLICY_FORBIDS"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASECollect::collector",
+      "column": "mandate.change:url-selection",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "09527f0c-c016-5c85-86e1-412cab11c919",
+          "qname": "ASECollect::collector::conversation::executionPolicy::mayChangeUrlSelection",
+          "file": "collect.sysml",
+          "line": 88,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "MODEL_POLICY_FORBIDS"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASECollect::collector",
+      "column": "mandate.change:self-admission",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "0129d987-ef8f-5ae7-81c2-1daf5a64e4d5",
+          "qname": "ASECollect::collector::conversation::executionPolicy::mayDelegateOwnAdmission",
+          "file": "collect.sysml",
+          "line": 86,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "MODEL_POLICY_FORBIDS"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASECollect::collector",
+      "column": "operator.create:reviewer",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "9e6d7f56-a7c4-5bb5-96ff-207688c2bdd6",
+          "qname": "ASECollect::collector::conversation::executionPolicy::mayCreateReviewer",
+          "file": "collect.sysml",
+          "line": 87,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "MODEL_POLICY_FORBIDS"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASECollect::collector",
+      "column": "model.consult",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "local-owner-bypasses-operator-edit-scope",
+        "enforcedAt": "src/adapters/model-source-authorization.ts:108-113"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "bounds": "none"
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASECollect::collector",
+      "column": "model.edit",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "local-owner-bypasses-operator-edit-scope",
+        "enforcedAt": "src/adapters/model-source-authorization.ts:108-113"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "bounds": "none"
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASECollect::collector",
+      "column": "model.administer",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "local-owner-bypasses-operator-edit-scope",
+        "enforcedAt": "src/adapters/model-source-authorization.ts:108-113"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "bounds": "none"
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASECollect::collector",
+      "column": "model.decide",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "only-local-owner-proposes-decides-and-adopts-through-http",
+        "enforcedAt": "src/adapters/model-revisions-http.ts:249-437"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASECollect::collector",
+      "column": "model.adopt",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "only-local-owner-proposes-decides-and-adopts-through-http",
+        "enforcedAt": "src/adapters/model-revisions-http.ts:249-437"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "display": "allowed"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "tool.build:read_web_page",
+      "state": "propose-only",
+      "mode": "propose",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "3e6aad5d-6b9e-5688-8d11-f90019593de6",
+          "qname": "ASECollect::collector::builderMandate::mayProposeReadWebPage",
+          "file": "collect.sysml",
+          "line": 45,
+          "column": 13
+        },
+        {
+          "role": "scope",
+          "elementId": "66877553-59fd-5a3d-843e-50e7984b796d",
+          "qname": "ASECollect::collector::catalog::readWebPageContract",
+          "file": "collect.sysml",
+          "line": 26,
+          "column": 13
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "maxToolProposals": 2
+      },
+      "codes": [
+        "ADMISSION_BY_BUILDER"
+      ],
+      "origin": "compiler",
+      "display": "propose-only"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "tool.build:read_web_page_outline",
+      "state": "propose-only",
+      "mode": "propose",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "a2e13a3c-e30f-54b8-bee8-36229a15dfac",
+          "qname": "ASECollect::collector::builderMandate::mayProposeReadWebPageOutline",
+          "file": "collect.sysml",
+          "line": 46,
+          "column": 13
+        },
+        {
+          "role": "scope",
+          "elementId": "0cc79abb-ce02-5ce7-9904-f7229a6876fb",
+          "qname": "ASECollect::collector::catalog::readWebPageOutlineContract",
+          "file": "collect.sysml",
+          "line": 31,
+          "column": 13
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "maxToolProposals": 2
+      },
+      "codes": [
+        "ADMISSION_BY_BUILDER"
+      ],
+      "origin": "compiler",
+      "display": "propose-only"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "tool.invoke",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "33929467-9318-58e2-b4b0-6b065c596270",
+          "qname": "ASECollect::collector::builderMandate::mayInvokeActiveCatalog",
+          "file": "collect.sysml",
+          "line": 47,
+          "column": 13
+        },
+        {
+          "role": "scope",
+          "elementId": "c91a1f31-b5bf-52e7-b89d-f9abb8dd0639",
+          "qname": "ASECollect::collector::conversation::executionPolicy::urlSelectionMode",
+          "file": "collect.sysml",
+          "line": 84,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "catalog": "active-only",
+        "activeTools": [],
+        "urlSelectionMode": "authorized-host",
+        "hosts": [
+          "casys.ai",
+          "digital-skills-jobs.europa.eu",
+          "ted.europa.eu"
+        ]
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "network.reach",
+      "state": "inherited",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "scope",
+          "elementId": "4f26ac05-6dcc-54a7-8ffe-f1ccf5bbfc8a",
+          "qname": "ASECollect::collector::networkHosts",
+          "file": "collect.sysml",
+          "line": 22,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "unit-configuration",
+        "attribute": "networkHosts"
+      },
+      "scope": {
+        "hosts": [
+          "casys.ai",
+          "digital-skills-jobs.europa.eu",
+          "ted.europa.eu"
+        ],
+        "ceiling": 32
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "candidate.review",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "e5898e66-fe27-515a-a066-5f3470929be0",
+          "qname": "ASECollect::collector::builderMandate::mayReviewExactCandidate",
+          "file": "collect.sysml",
+          "line": 48,
+          "column": 13
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "candidate.admit",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "3102b005-e9d1-57cd-9bf8-df1898e89ca1",
+          "qname": "ASECollect::collector::builderMandate::mayAdmit",
+          "file": "collect.sysml",
+          "line": 49,
+          "column": 13
+        },
+        {
+          "role": "condition",
+          "elementId": "bd2e6487-c2a4-5c40-8306-a923daf8847f",
+          "qname": "ASECollect::collector::admissionMode",
+          "file": "collect.sysml",
+          "line": 21,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "subject": "own-candidates",
+        "requires": [
+          "tests-passed",
+          "exact-digest",
+          "current-catalog-revision"
+        ],
+        "performedBy": [
+          "ASECollect::collector::admissionGate"
+        ]
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "candidate.activate",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "325ff8da-c941-5948-a617-4a9da1bc3141",
+          "qname": "ASECollect::collector::builderMandate::mayActivate",
+          "file": "collect.sysml",
+          "line": 50,
+          "column": 13
+        },
+        {
+          "role": "allocation",
+          "elementId": "975948e3-b48d-593f-9725-05f6049fbdca",
+          "qname": "ASECollect::collector::catalog",
+          "file": "collect.sysml",
+          "line": 25,
+          "column": 9
+        }
+      ],
+      "codes": [
+        "HOST_RESERVED"
+      ],
+      "origin": "compiler",
+      "scope": {
+        "performedBy": [
+          "ASECollect::collector::catalog"
+        ]
+      },
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "mandate.change:network-hosts",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "4abdb8b3-ccd8-5a67-84ea-41064d6cc5c8",
+          "qname": "ASECollect::collector::conversation::executionPolicy::mayAddNetworkHosts",
+          "file": "collect.sysml",
+          "line": 85,
+          "column": 17
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "mandate.change:url-selection",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "09527f0c-c016-5c85-86e1-412cab11c919",
+          "qname": "ASECollect::collector::conversation::executionPolicy::mayChangeUrlSelection",
+          "file": "collect.sysml",
+          "line": 88,
+          "column": 17
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "mandate.change:self-admission",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "0129d987-ef8f-5ae7-81c2-1daf5a64e4d5",
+          "qname": "ASECollect::collector::conversation::executionPolicy::mayDelegateOwnAdmission",
+          "file": "collect.sysml",
+          "line": 86,
+          "column": 17
+        },
+        {
+          "role": "condition",
+          "elementId": "bd2e6487-c2a4-5c40-8306-a923daf8847f",
+          "qname": "ASECollect::collector::admissionMode",
+          "file": "collect.sysml",
+          "line": 21,
+          "column": 9
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "operator.create:reviewer",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "9e6d7f56-a7c4-5bb5-96ff-207688c2bdd6",
+          "qname": "ASECollect::collector::conversation::executionPolicy::mayCreateReviewer",
+          "file": "collect.sysml",
+          "line": 87,
+          "column": 17
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "mandate.rewrite",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "a8dccfc5-1908-5e58-a9e6-6e469286b5a3",
+          "qname": "ASECollect::collector::builderMandate::mayChangeOwnMandate",
+          "file": "collect.sysml",
+          "line": 51,
+          "column": 13
+        }
+      ],
+      "codes": [
+        "HARD_DENIED"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "operator.spawn",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "1202e01d-2e28-537d-beaa-d70db995b49d",
+          "qname": "ASECollect::collector::builderMandate::mayCreateAgents",
+          "file": "collect.sysml",
+          "line": 52,
+          "column": 13
+        }
+      ],
+      "codes": [
+        "HARD_DENIED"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "model.consult",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "04824f3f-d102-5463-b683-34bf72342fd3",
+          "qname": "ASECollect::collector::conversation::executionPolicy::mayProposeSysmlRevision",
+          "file": "collect.sysml",
+          "line": 89,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "model.edit",
+      "state": "propose-only",
+      "mode": "propose",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "grant",
+          "elementId": "8ef3f809-8ec2-5039-8daa-909f747c3278",
+          "qname": "ASECollect::collector::modelEditing",
+          "file": "collect.sysml",
+          "line": 54,
+          "column": 9
+        },
+        {
+          "role": "flag",
+          "elementId": "04824f3f-d102-5463-b683-34bf72342fd3",
+          "qname": "ASECollect::collector::conversation::executionPolicy::mayProposeSysmlRevision",
+          "file": "collect.sysml",
+          "line": 89,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "policy": "commercial-watch-collector-editing-v1",
+        "revision": 1,
+        "operations": [
+          "set-value",
+          "rename",
+          "insert-member",
+          "remove",
+          "replace-source"
+        ],
+        "grants": [
+          {
+            "file": "mission.sysml",
+            "qualifiedRoots": [
+              "CommercialWatchMission::sourcePolicy"
+            ]
+          }
+        ]
+      },
+      "codes": [
+        "PRIVATE_UNTIL_DECIDED"
+      ],
+      "origin": "compiler",
+      "display": "propose-only"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "model.administer",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [
+        "NO_ADMINISTRATION_POLICY"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "model.decide",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [
+        "OWNER_ONLY_PATH"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "model.adopt",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [
+        "OWNER_ONLY_PATH"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "behavior:work-plan@ASELiveBuilder::liveBuilder",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "behavior:inbox@ASEAnalysis::analyst",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "behavior:inbox@ASECollect::collector",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "behavior:reuse-tool@ASEAnalysis::analyst",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "behavior:reuse-tool@ASECollect::collector",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "61a16b41-054f-55c4-97f6-d20cdd33ed65",
+          "qname": "ASECollect::collector::reuseAccess",
+          "file": "collect.sysml",
+          "line": 107,
+          "column": 9
+        },
+        {
+          "role": "flag",
+          "elementId": "f55d8b6e-b048-5e01-863c-595521c0402d",
+          "qname": "ASECollect::collector::reuseAccess::enabled",
+          "file": "collect.sysml",
+          "line": 110,
+          "column": 13
+        },
+        {
+          "role": "target",
+          "elementId": "3a6dbafb-c68b-5fcd-819f-f7db9c64b00c",
+          "qname": "ASECollect::collector::reuse",
+          "file": "collect.sysml",
+          "line": 103,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "ReutiliserOutil",
+        "accessId": "61a16b41-054f-55c4-97f6-d20cdd33ed65"
+      },
+      "scope": {
+        "exposureName": "ReutiliserOutil",
+        "targetUnit": "ASECollect::collector"
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "behavior:published-tools@ASEAnalysis::analyst",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "df2e2892-1e9b-5745-afae-f93be9fe786f",
+      "column": "behavior:published-tools@ASECollect::collector",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "6c6f1c75-f622-5ea9-add0-c120d04282cd",
+          "qname": "ASECollect::collector::libraryAccess",
+          "file": "collect.sysml",
+          "line": 115,
+          "column": 9
+        },
+        {
+          "role": "flag",
+          "elementId": "d3832427-65c8-5894-8312-0e3988c8eaa2",
+          "qname": "ASECollect::collector::libraryAccess::enabled",
+          "file": "collect.sysml",
+          "line": 118,
+          "column": 13
+        },
+        {
+          "role": "target",
+          "elementId": "fba0c268-81d8-5fab-b033-d4bc62618aa5",
+          "qname": "ASECollect::collector::publishedTools",
+          "file": "collect.sysml",
+          "line": 105,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "Bibliotheque",
+        "accessId": "6c6f1c75-f622-5ea9-add0-c120d04282cd"
+      },
+      "scope": {
+        "exposureName": "Bibliotheque",
+        "targetUnit": "ASECollect::collector"
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "candidate.admit",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "condition",
+          "elementId": "941130c4-35a8-5cd1-bab8-7aa9c75ad65c",
+          "qname": "ASELiveBuilder::liveBuilder::admissionMode",
+          "file": "configuration.sysml",
+          "line": 146,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-decides-candidate-admission-when-admissionMode-is-human",
+        "enforcedAt": "src/application/candidate-decisions.ts:78-81; src/domain/governance.ts:336-343"
+      },
+      "codes": [
+        "HUMAN_ADMISSION_NOT_REQUIRED"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "mandate.change:network-hosts",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "f107fbb0-18b0-5213-b08c-d9387c71c23f",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayAddNetworkHosts",
+          "file": "configuration.sysml",
+          "line": 202,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "MODEL_POLICY_FORBIDS"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "mandate.change:url-selection",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "8d49735b-5119-5acd-9c60-94e4f0a5c547",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayChangeUrlSelection",
+          "file": "configuration.sysml",
+          "line": 205,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "MODEL_POLICY_FORBIDS"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "mandate.change:self-admission",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "fd93b03b-9482-59d8-bbf6-4699fd6bfb61",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayDelegateOwnAdmission",
+          "file": "configuration.sysml",
+          "line": 203,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "MODEL_POLICY_FORBIDS"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "operator.create:reviewer",
+      "state": "denied",
+      "mode": null,
+      "basis": "host-rule",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "df7b9478-6e3f-54b9-a1d5-09ee0dcdcce0",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayCreateReviewer",
+          "file": "configuration.sysml",
+          "line": 204,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "host-rule",
+        "rule": "human-approves-mandate-change-the-model-policy-allows",
+        "enforcedAt": "src/domain/governance.ts:248-296; src/adapters/source-model.ts:1509-1590"
+      },
+      "codes": [
+        "MODEL_POLICY_FORBIDS"
+      ],
+      "origin": "host-rule",
+      "display": "denied"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "model.consult",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "local-owner-bypasses-operator-edit-scope",
+        "enforcedAt": "src/adapters/model-source-authorization.ts:108-113"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "bounds": "none"
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "model.edit",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "local-owner-bypasses-operator-edit-scope",
+        "enforcedAt": "src/adapters/model-source-authorization.ts:108-113"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "bounds": "none"
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "model.administer",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "local-owner-bypasses-operator-edit-scope",
+        "enforcedAt": "src/adapters/model-source-authorization.ts:108-113"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "scope": {
+        "bounds": "none"
+      },
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "model.decide",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "only-local-owner-proposes-decides-and-adopts-through-http",
+        "enforcedAt": "src/adapters/model-revisions-http.ts:249-437"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "display": "allowed"
+    },
+    {
+      "row": "owner@ASELiveBuilder::liveBuilder",
+      "column": "model.adopt",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "host-rule",
+      "sources": [],
+      "via": {
+        "kind": "host-rule",
+        "rule": "only-local-owner-proposes-decides-and-adopts-through-http",
+        "enforcedAt": "src/adapters/model-revisions-http.ts:249-437"
+      },
+      "codes": [
+        "OWNER_IMPLICIT"
+      ],
+      "origin": "host-rule",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "tool.build:read_web_page",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "d6e12bda-be69-5c5c-95ce-2406b94a6890",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayProposeReadWebPage",
+          "file": "configuration.sysml",
+          "line": 170,
+          "column": 13
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "tool.build:read_web_page_outline",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "d79e9c8d-7a4f-5e60-964b-7f8ae06f6081",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayProposeReadWebPageOutline",
+          "file": "configuration.sysml",
+          "line": 171,
+          "column": 13
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "tool.invoke",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "d257351e-ac52-5e32-beb4-b036e3e84eb2",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayInvokeActiveCatalog",
+          "file": "configuration.sysml",
+          "line": 172,
+          "column": 13
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "network.reach",
+      "state": "inherited",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "scope",
+          "elementId": "85060f2d-7f6f-5ca3-b0d6-bded1437ce74",
+          "qname": "ASELiveBuilder::liveBuilder::networkHosts",
+          "file": "configuration.sysml",
+          "line": 147,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "unit-configuration",
+        "attribute": "networkHosts"
+      },
+      "scope": {
+        "hosts": [
+          "casys.ai",
+          "digital-skills-jobs.europa.eu",
+          "ted.europa.eu"
+        ],
+        "ceiling": 32
+      },
+      "codes": [
+        "NETWORK_SCOPE_UNUSED"
+      ],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "candidate.review",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "2dc330e2-9956-5849-8b69-8167f38aeaee",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayReviewExactCandidate",
+          "file": "configuration.sysml",
+          "line": 173,
+          "column": 13
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "candidate.admit",
+      "state": "allowed",
+      "mode": "admit",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "61491a6d-7629-5f8e-bb1c-335f00e3ba36",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayAdmit",
+          "file": "configuration.sysml",
+          "line": 174,
+          "column": 13
+        },
+        {
+          "role": "condition",
+          "elementId": "941130c4-35a8-5cd1-bab8-7aa9c75ad65c",
+          "qname": "ASELiveBuilder::liveBuilder::admissionMode",
+          "file": "configuration.sysml",
+          "line": 146,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "scope": {
+        "subject": "own-candidates",
+        "requires": [
+          "tests-passed",
+          "exact-digest",
+          "current-catalog-revision"
+        ],
+        "performedBy": [
+          "ASELiveBuilder::liveBuilder::admissionGate"
+        ]
+      },
+      "codes": [
+        "RIGHT_WITHOUT_OBJECT"
+      ],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "candidate.activate",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "c0caf7f6-4a42-5033-8475-16786828b3a3",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayActivate",
+          "file": "configuration.sysml",
+          "line": 175,
+          "column": 13
+        },
+        {
+          "role": "allocation",
+          "elementId": "8446d0da-b9ab-51b4-b7eb-1610e83bf674",
+          "qname": "ASELiveBuilder::liveBuilder::catalog",
+          "file": "configuration.sysml",
+          "line": 150,
+          "column": 9
+        }
+      ],
+      "codes": [
+        "HOST_RESERVED"
+      ],
+      "origin": "compiler",
+      "scope": {
+        "performedBy": [
+          "ASELiveBuilder::liveBuilder::catalog"
+        ]
+      },
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "mandate.change:network-hosts",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "f107fbb0-18b0-5213-b08c-d9387c71c23f",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayAddNetworkHosts",
+          "file": "configuration.sysml",
+          "line": 202,
+          "column": 17
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "mandate.change:url-selection",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "8d49735b-5119-5acd-9c60-94e4f0a5c547",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayChangeUrlSelection",
+          "file": "configuration.sysml",
+          "line": 205,
+          "column": 17
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "mandate.change:self-admission",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "fd93b03b-9482-59d8-bbf6-4699fd6bfb61",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayDelegateOwnAdmission",
+          "file": "configuration.sysml",
+          "line": 203,
+          "column": 17
+        },
+        {
+          "role": "condition",
+          "elementId": "941130c4-35a8-5cd1-bab8-7aa9c75ad65c",
+          "qname": "ASELiveBuilder::liveBuilder::admissionMode",
+          "file": "configuration.sysml",
+          "line": 146,
+          "column": 9
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "operator.create:reviewer",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "df7b9478-6e3f-54b9-a1d5-09ee0dcdcce0",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayCreateReviewer",
+          "file": "configuration.sysml",
+          "line": 204,
+          "column": 17
+        }
+      ],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "mandate.rewrite",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "a88775d6-863a-553a-a4ad-7ebcd125ac34",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayChangeOwnMandate",
+          "file": "configuration.sysml",
+          "line": 176,
+          "column": 13
+        }
+      ],
+      "codes": [
+        "HARD_DENIED"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "operator.spawn",
+      "state": "denied",
+      "mode": null,
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "fb31c59d-e024-55a4-a903-9a431620e82d",
+          "qname": "ASELiveBuilder::liveBuilder::builderMandate::mayCreateAgents",
+          "file": "configuration.sysml",
+          "line": 177,
+          "column": 13
+        }
+      ],
+      "codes": [
+        "HARD_DENIED"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "model.consult",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "d4fcce09-68cc-5912-ba83-fde47dc3f9b7",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayProposeSysmlRevision",
+          "file": "configuration.sysml",
+          "line": 206,
+          "column": 17
+        }
+      ],
+      "via": {
+        "kind": "own-declaration"
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "model.edit",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [
+        {
+          "role": "flag",
+          "elementId": "d4fcce09-68cc-5912-ba83-fde47dc3f9b7",
+          "qname": "ASELiveBuilder::liveBuilder::conversation::executionPolicy::mayProposeSysmlRevision",
+          "file": "configuration.sysml",
+          "line": 206,
+          "column": 17
+        }
+      ],
+      "codes": [
+        "NO_EDIT_POLICY"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "model.administer",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [
+        "NO_ADMINISTRATION_POLICY"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "model.decide",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [
+        "OWNER_ONLY_PATH"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "model.adopt",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [
+        "OWNER_ONLY_PATH"
+      ],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:work-plan@ASELiveBuilder::liveBuilder",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "8d86b61a-1155-5a70-8217-4b5b53a3a269",
+          "qname": "ASELiveBuilder::liveBuilder::planAccess",
+          "file": "configuration.sysml",
+          "line": 220,
+          "column": 9
+        },
+        {
+          "role": "flag",
+          "elementId": "ac599d3d-ab2d-531b-b245-20e68f882998",
+          "qname": "ASELiveBuilder::liveBuilder::planAccess::enabled",
+          "file": "configuration.sysml",
+          "line": 223,
+          "column": 13
+        },
+        {
+          "role": "target",
+          "elementId": "f73267b5-79d3-5f40-8284-c811141700bb",
+          "qname": "ASELiveBuilder::liveBuilder::executePlan",
+          "file": "configuration.sysml",
+          "line": 218,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "PlanifierTravail",
+        "accessId": "8d86b61a-1155-5a70-8217-4b5b53a3a269"
+      },
+      "scope": {
+        "exposureName": "PlanifierTravail",
+        "targetUnit": "ASELiveBuilder::liveBuilder"
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:inbox@ASEAnalysis::analyst",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "728d1962-21fa-537e-8589-291ce387662e",
+          "qname": "ASELiveBuilder::liveBuilder::analystAccess",
+          "file": "configuration.sysml",
+          "line": 236,
+          "column": 9
+        },
+        {
+          "role": "flag",
+          "elementId": "28360f13-8fa3-574b-bea5-5f3722e3bde2",
+          "qname": "ASELiveBuilder::liveBuilder::analystAccess::enabled",
+          "file": "configuration.sysml",
+          "line": 239,
+          "column": 13
+        },
+        {
+          "role": "target",
+          "elementId": "b6656ee5-3cf1-5572-b8d8-4d6f61e6b102",
+          "qname": "ASEAnalysis::analyst::inbox",
+          "file": "analysis.sysml",
+          "line": 101,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "ConfierAnalyse",
+        "accessId": "728d1962-21fa-537e-8589-291ce387662e"
+      },
+      "scope": {
+        "exposureName": "ConfierAnalyse",
+        "targetUnit": "ASEAnalysis::analyst"
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:inbox@ASECollect::collector",
+      "state": "allowed",
+      "mode": "execute",
+      "basis": "declared",
+      "sources": [
+        {
+          "role": "exposure",
+          "elementId": "5ef33b5f-70af-5afa-bbff-898d4e03c47a",
+          "qname": "ASELiveBuilder::liveBuilder::collectorAccess",
+          "file": "configuration.sysml",
+          "line": 228,
+          "column": 9
+        },
+        {
+          "role": "flag",
+          "elementId": "dcbd9d6e-bb07-5472-b2e5-0a02ff04c8ff",
+          "qname": "ASELiveBuilder::liveBuilder::collectorAccess::enabled",
+          "file": "configuration.sysml",
+          "line": 231,
+          "column": 13
+        },
+        {
+          "role": "target",
+          "elementId": "a90c0e29-a59e-5ac0-813e-5be3895372de",
+          "qname": "ASECollect::collector::inbox",
+          "file": "collect.sysml",
+          "line": 101,
+          "column": 9
+        }
+      ],
+      "via": {
+        "kind": "exposure",
+        "accessName": "ConfierCollecte",
+        "accessId": "5ef33b5f-70af-5afa-bbff-898d4e03c47a"
+      },
+      "scope": {
+        "exposureName": "ConfierCollecte",
+        "targetUnit": "ASECollect::collector"
+      },
+      "codes": [],
+      "origin": "compiler",
+      "display": "allowed"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:reuse-tool@ASEAnalysis::analyst",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:reuse-tool@ASECollect::collector",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:published-tools@ASEAnalysis::analyst",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    },
+    {
+      "row": "8605dd44-e5bd-5972-8c31-a7e88130f911",
+      "column": "behavior:published-tools@ASECollect::collector",
+      "state": "denied",
+      "mode": null,
+      "basis": "closed-world",
+      "sources": [],
+      "codes": [],
+      "origin": "compiler",
+      "display": "denied"
+    }
+  ],
+  "delegations": [],
+  "diagnostics": [
+    {
+      "code": "OWNER_IMPLICIT",
+      "severity": "info",
+      "context": {
+        "units": [
+          "ASEAnalysis::analyst",
+          "ASECollect::collector",
+          "ASELiveBuilder::liveBuilder"
+        ]
+      },
+      "recovery": "authority lot 1 models the owner (HumanOperator + RootAuthority + RootGrant); until then owner cells are host rules, not declarations"
+    },
+    {
+      "code": "REVISION_FLAG_WITHOUT_EDIT_POLICY",
+      "severity": "info",
+      "context": {
+        "unit": "ASELiveBuilder::liveBuilder",
+        "effect": "builder may read the model but has no edit scope (src/adapters/model-source-authorization.ts:34-37)"
+      }
+    },
+    {
+      "code": "RIGHT_WITHOUT_OBJECT",
+      "severity": "info",
+      "context": {
+        "unit": "ASELiveBuilder::liveBuilder",
+        "right": "candidate.admit",
+        "reason": "builder may admit own candidates but may propose none"
+      }
+    }
+  ],
+  "caveats": [
+    "ALLOWED_IS_DECLARED_NOT_EXECUTED: a cell states declared authority; execution still passes the host checks at call time (digest, catalog revision, executor registration: src/application/behavior-call-admission.ts:57-66).",
+    "ABSENT_CELL_IS_NOT_APPLICABLE: a missing (row, column) pair means no declaration or host rule concerns that pair.",
+    "OWNER_CELLS_ARE_HOST_RULES_BEFORE_LOT_3: the owner is not a declared operator in main; its cells cite the TS enforcement point.",
+    "ADOPTED_VERSION_ONLY: the matrix describes the compiled source version, not pending proposals."
+  ],
+  "summary": {
+    "byState": {
+      "allowed": 30,
+      "propose-only": 6,
+      "denied": 66,
+      "delegated": 0,
+      "inherited": 3
+    },
+    "uncertain": 0,
+    "hostRule": 30,
+    "byRow": {
+      "owner@ASEAnalysis::analyst": {
+        "allowed": 5,
+        "propose-only": 0,
+        "denied": 5,
+        "delegated": 0,
+        "inherited": 0
+      },
+      "3db8c038-42a3-5e40-9abb-5429803839a7": {
+        "allowed": 5,
+        "propose-only": 3,
+        "denied": 16,
+        "delegated": 0,
+        "inherited": 1
+      },
+      "owner@ASECollect::collector": {
+        "allowed": 5,
+        "propose-only": 0,
+        "denied": 5,
+        "delegated": 0,
+        "inherited": 0
+      },
+      "df2e2892-1e9b-5745-afae-f93be9fe786f": {
+        "allowed": 5,
+        "propose-only": 3,
+        "denied": 16,
+        "delegated": 0,
+        "inherited": 1
+      },
+      "owner@ASELiveBuilder::liveBuilder": {
+        "allowed": 5,
+        "propose-only": 0,
+        "denied": 5,
+        "delegated": 0,
+        "inherited": 0
+      },
+      "8605dd44-e5bd-5972-8c31-a7e88130f911": {
+        "allowed": 5,
+        "propose-only": 0,
+        "denied": 19,
+        "delegated": 0,
+        "inherited": 1
+      }
+    },
+    "coordinates": {
+      "checked": 101,
+      "mismatches": 0
+    }
+  },
+  "digest": "a217196edc350bdd14bccba1e25abb90d3ef4211e6ef12267187a5b5cb1ff4d2"
+}

@@ -1,0 +1,2315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>System</title>
+<style>
+:root {
+  /* The app's tokens (frontend/assets/styles.css and desk.css): neutral greys, only the logo has colour. */
+  --desk: #f3f2ef; --paper: #faf9f7; --card: #ffffff; --ink: #1d1d1f; --muted: #636368; --faint: #9a9a9f;
+  --line: #e4e1da; --line-strong: #d6d2c9; --hover: rgb(0 0 0 / 4%); --select: #1d1d1f; --chip: rgb(0 0 0 / 5%);
+  --warn: #8a642a; --warn-bg: #f6eedd; --bad: #8f3a30; --bad-bg: #f8e4e1; --good: #3d6b4f;
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", sans-serif;
+  --serif: var(--sans);
+  --casys: #a48ea4;
+  --dock-height: 64px; --dock-bottom: 8px; --dock-tile: 50px; --dock-gap: 14px;
+  --stage-bottom: calc(var(--dock-height) + var(--dock-bottom) + 12px);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { font: 13.5px/1.5 var(--sans); color: var(--ink); background: var(--desk); display: flex; flex-direction: column; position: relative; overflow: hidden; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+/* Title bar: the ASE menu, then the system and its model, centred and discreet. */
+.titlebar { flex: none; display: grid; grid-template-columns: 1fr minmax(0, auto) 1fr; align-items: center; gap: 16px; height: 44px; padding: 0 18px; position: relative; z-index: 30; }
+.identity { display: flex; align-items: baseline; gap: 8px; justify-content: center; min-width: 0; }
+.identity b { font-size: 13px; font-weight: 600; color: #3a3a3c; letter-spacing: -.01em; white-space: nowrap; }
+.identity .ver { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.identity .ver::before { content: "·"; margin-right: 8px; }
+.app-menu { position: relative; }
+.app-menu > button { all: unset; cursor: pointer; padding: 3px 9px; border-radius: 7px; font-weight: 700; font-size: 13px; letter-spacing: .02em; }
+.app-menu > button:hover, .app-menu.open > button { background: var(--hover); }
+.app-menu .list { position: absolute; top: 30px; left: 0; min-width: 230px; padding: 5px; background: rgb(255 255 255 / 97%); border: 1px solid rgb(0 0 0 / 7%); border-radius: 12px; box-shadow: 0 14px 40px rgb(0 0 0 / 12%); display: none; }
+.app-menu.open .list { display: block; }
+.app-menu .list h6 { margin: 6px 10px 4px; font-size: 11px; font-weight: 600; color: var(--faint); }
+.app-menu .list button { all: unset; box-sizing: border-box; display: flex; justify-content: space-between; width: 100%; padding: 5px 10px; border-radius: 7px; cursor: pointer; }
+.app-menu .list button:hover { background: var(--hover); }
+.app-menu .list hr { border: 0; border-top: 1px solid var(--line); margin: 5px 4px; }
+.search { position: relative; }
+.search input { width: 220px; font: inherit; font-size: 12.5px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); outline: none; }
+.search input:focus { border-color: var(--line-strong); }
+.results { position: absolute; right: 0; top: 34px; width: 380px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 14px 40px rgb(0 0 0 / 12%); padding: 4px; z-index: 8; display: none; max-height: 60vh; overflow: auto; }
+.results.open { display: block; }
+.results button { all: unset; display: flex; gap: 8px; width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
+.results button:hover, .results button.on { background: var(--hover); }
+.results .where { margin-left: auto; color: var(--faint); font-size: 11.5px; }
+
+/* The stage stops above the Dock. A content window fills it edge to edge; beside it, the
+   conversation that rose from the logo becomes a pane split by a hairline. */
+.stage { flex: 1 1 0; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; padding: 0 0 var(--stage-bottom); }
+.stage.talking { grid-template-columns: minmax(340px, 440px) minmax(0, 1fr); }
+/* Alone, the conversation rises from the logo as in the app: a floating card with a small pointer.
+   Beside a window it stays a pane split by a hairline. */
+.stage { position: relative; }
+.stage.talking:not(.has-window) { grid-template-columns: minmax(0, 640px); justify-content: center; padding: 8px 24px var(--stage-bottom); }
+.stage.talking:not(.has-window) .conversation { align-self: end; height: min(620px, calc(100% - 8px)); margin-bottom: 8px; overflow: hidden; border: 1px solid rgb(0 0 0 / 6%); border-radius: 28px; background: rgb(255 255 255 / 94%); box-shadow: 0 24px 60px rgb(0 0 0 / 10%), 0 2px 6px rgb(0 0 0 / 4%); -webkit-backdrop-filter: blur(30px) saturate(1.3); backdrop-filter: blur(30px) saturate(1.3); }
+.stage.talking:not(.has-window)::after { content: ""; position: absolute; left: 50%; bottom: calc(var(--stage-bottom) - 5px); margin-left: -12px; border: 12px solid transparent; border-bottom: 0; border-top-color: rgb(255 255 255 / 94%); }
+.stage.closed:not(.talking) { visibility: hidden; }
+.conversation { display: none; flex-direction: column; min-height: 0; background: rgb(255 255 255 / 92%); border-block: 1px solid var(--line); border-right: 1px solid var(--line); }
+.stage.talking .conversation { display: flex; }
+.conversation .agent { display: flex; align-items: baseline; gap: 8px; padding: 14px 16px; }
+.conversation .agent b { font-size: 14px; }
+.conversation .agent span { color: var(--muted); font-size: 12px; }
+.conversation .thread { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 16px; color: var(--ink); font-size: 14px; }
+.conversation .thread p { margin: 0; }
+.conversation .thread > :first-child { margin-top: auto; }
+.conversation .thread .me { align-self: flex-end; max-width: 85%; margin: 8px 0 0; padding: 7px 12px; border-radius: 16px; background: rgb(0 0 0 / 5.5%); overflow-wrap: anywhere; }
+.conversation .composer { display: block; font: inherit; font-size: 14px; color: var(--ink); margin: 0 12px 12px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 18px; background: #fff; outline: none; }
+.conversation .composer::placeholder { color: var(--faint); }
+.conversation .composer:focus { border-color: var(--line-strong); }
+.window { container: win / inline-size; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: #fff; border-block: 1px solid var(--line); position: relative; }
+.stage:not(.has-window) .window { display: none; }
+.win-head { flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 56px 10px 16px; }
+.win-head .title { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+.win-head .spacer { flex: 1; }
+.win-close { all: unset; position: absolute; top: 10px; right: 12px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: rgb(0 0 0 / 5%); color: #5a5a5f; cursor: pointer; font-size: 16px; }
+.win-close:hover { background: rgb(0 0 0 / 9%); color: var(--ink); }
+.win-body { flex: 1 1 0; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
+
+/* The Dock: the Casys logo at the centre, places and "To decide" on its right. */
+.dock { position: absolute; left: 0; right: 0; bottom: var(--dock-bottom); height: var(--dock-height); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--dock-gap); padding: 0 16px; pointer-events: none; z-index: 25; }
+.dock > * { pointer-events: auto; }
+.dock .rest { display: flex; align-items: center; gap: var(--dock-gap); justify-self: start; }
+.dock .work { display: flex; align-items: center; gap: var(--dock-gap); justify-self: end; }
+.dock-tile b { font-size: 16px; font-weight: 600; letter-spacing: -.01em; color: #3a3a3c; }
+/* Jobs and Watches are stacks, as in the app: two cards behind the tile, a small list above it. */
+.dock-item.pile .dock-tile { box-shadow: 3px -3px 0 -1px #e6e3dd, 6px -6px 0 -2px #d8d5ce, 0 8px 22px rgb(0 0 0 / 9%), 0 1px 3px rgb(0 0 0 / 7%); }
+.dock-stack-list { position: absolute; bottom: calc(100% + 16px); right: 0; min-width: 260px; padding: 8px 6px; border: 1px solid rgb(0 0 0 / 6%); border-radius: 14px; background: rgb(255 255 255 / 97%); box-shadow: 0 14px 40px rgb(0 0 0 / 12%); text-align: left; cursor: default; }
+.dock-stack-title { margin: 4px 10px 6px; color: #6b6b70; font-size: 12px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.dock-stack-empty { margin: 4px 10px 8px; color: #6b6b70; font-size: 14px; line-height: 1.4; }
+.dock-item.pile.open .dock-label { opacity: 0; }
+.dock-item { all: unset; position: relative; width: var(--dock-tile); height: var(--dock-tile); border-radius: 15px; cursor: pointer; transition: transform .15s ease; }
+.dock-item:hover { transform: translateY(-3px); }
+.dock-item[aria-disabled="true"] { cursor: default; opacity: .55; }
+.dock-item[aria-disabled="true"]:hover { transform: none; }
+.dock-tile { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 15px; background: rgb(255 255 255 / 94%); box-shadow: 0 8px 22px rgb(0 0 0 / 9%), 0 1px 3px rgb(0 0 0 / 7%); }
+.dock-tile svg { width: 24px; height: 24px; fill: none; stroke: #48484a; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.dock-item.active .dock-tile { background: #e2e2e5; }
+.dock-item.active::after { content: ""; position: absolute; left: 50%; bottom: -9px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--ink); }
+.dock-logo { all: unset; width: 64px; height: 64px; border-radius: 50%; background: var(--casys); cursor: pointer; box-shadow: 0 8px 22px rgb(0 0 0 / 9%); transition: transform .15s ease; }
+.dock-logo:hover { transform: translateY(-3px); }
+.dock-sep { width: 1px; height: 36px; background: rgb(0 0 0 / 14%); }
+.dock-count { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; display: grid; place-items: center; border: 2px solid #fff; border-radius: 10px; background: var(--ink); color: #fff; font-size: 11px; font-variant-numeric: tabular-nums; }
+.dock-label { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); padding: 3px 9px; border-radius: 7px; background: rgb(255 255 255 / 96%); box-shadow: 0 4px 14px rgb(0 0 0 / 10%); font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .12s; }
+.dock-item:hover .dock-label, .dock-logo:hover + .dock-label { opacity: 1; }
+nav.tabs { display: flex; gap: 2px; }
+nav.tabs button { all: unset; cursor: pointer; padding: 4px 10px; border-radius: 8px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+nav.tabs button:hover { color: var(--ink); }
+nav.tabs button[aria-current="page"] { color: var(--ink); background: rgb(0 0 0 / 5.5%); }
+.search { display: flex; align-items: center; }
+.search[hidden] { display: none; }
+.search-btn { all: unset; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); }
+.search-btn:hover { background: rgb(0 0 0 / 5%); color: var(--ink); }
+.search-btn .ic { width: 17px; height: 17px; }
+.search:not(.open) input { display: none; }
+.search.open .search-btn { display: none; }
+.more { position: relative; }
+.more .menu { position: absolute; top: 34px; left: 0; background: var(--card); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 30px rgb(0 0 0 / 8%); padding: 4px; display: none; z-index: 6; min-width: 190px; }
+.more.open .menu { display: block; }
+.more .menu button { display: block; width: 100%; box-sizing: border-box; }
+.more > button { all: unset; cursor: pointer; padding: 4px 10px; border-radius: 8px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.more > button:hover, .more.open > button { color: var(--ink); }
+.more > button[aria-current="page"] { color: var(--ink); background: rgb(0 0 0 / 5.5%); }
+.more .menu { z-index: 40; }
+.more .menu button { all: unset; display: block; width: 100%; box-sizing: border-box; padding: 6px 10px; border-radius: 7px; cursor: pointer; font-size: 13px; }
+.more .menu button:hover, .more .menu button[aria-current="page"] { background: var(--hover); }
+.toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; user-select: none; }
+.toggle input { accent-color: var(--ink); }
+.sysml-frame { width: 100%; height: calc(100dvh - 44px - var(--stage-bottom) - 170px); min-height: 460px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+.graph { position: relative; height: calc(100dvh - 44px - var(--stage-bottom) - 170px); min-height: 420px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.graph svg { width: 100%; height: 100%; display: block; cursor: grab; }
+.graph .gl { stroke: var(--line-strong); stroke-width: 1; }
+.graph .gl.contains { stroke-dasharray: 2 3; }
+.graph .gl.lit { stroke: var(--ink); stroke-width: 1.6; }
+.graph .gn circle { stroke: var(--card); stroke-width: 1.5; cursor: pointer; }
+.graph .gn text { font: 11px var(--sans); fill: var(--ink); paint-order: stroke; stroke: var(--card); stroke-width: 3px; pointer-events: none; }
+.graph.focus .gn:not(.lit):not(.sel) { opacity: .18; }
+.graph.focus .gl:not(.lit) { opacity: .1; }
+.graph .gn.sel circle { stroke: var(--ink); stroke-width: 2.5; }
+.glegend { position: absolute; left: 12px; bottom: 10px; display: flex; gap: 12px; font-size: 11.5px; color: var(--muted); background: rgb(255 255 255 / 85%); padding: 4px 8px; border-radius: 8px; }
+.glegend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+nav.side { border-right: 1px solid var(--line); background: var(--paper); padding: 12px 8px; overflow: auto; }
+nav.side h4 { margin: 14px 10px 4px; font-size: 10.5px; font-weight: 500; letter-spacing: .06em; color: var(--faint); text-transform: uppercase; }
+nav.side button { all: unset; box-sizing: border-box; display: flex; align-items: center; width: 100%; padding: 5px 10px; border-radius: 7px; cursor: pointer; font-size: 13px; }
+nav.side button:hover { background: var(--hover); }
+nav.side button[aria-current="page"] { background: var(--ink); color: var(--paper); }
+nav.side button .n { margin-left: auto; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+nav.side button[aria-current="page"] .n { color: #bdbab3; }
+main { overflow: auto; scrollbar-gutter: stable; min-width: 0; min-height: 0; padding: 0 28px; container: page / inline-size; }
+main h1 { font: 600 20px/1.3 var(--sans); letter-spacing: -.015em; margin: 0 0 4px; }
+/* The frame: every page is a centred column, its title at the same place, content on the same edge. */
+.page { max-width: 1080px; margin: 0 auto; padding: 36px 12px 56px; }
+/* SysML takes the whole window width; its title stays where every page title is. */
+main:has(> .page-sysml:not([hidden])) { overflow: hidden; padding: 0 16px; } /* same gutter as other pages, so the title lines up */
+.page.page-sysml { max-width: none; padding: 36px 0 16px; }
+.page.page-sysml > h1 { box-sizing: border-box; max-width: 1104px; padding: 0 24px; margin-left: auto; margin-right: auto; }
+.page.page-sysml .sysml-frame { height: calc(100dvh - 44px - var(--stage-bottom) - 166px); }
+.page > h1, .zen-head h1 { font: 600 22px/1.25 var(--sans); letter-spacing: -.02em; margin: 0 0 28px; }
+main .lead { color: var(--muted); margin: 0 0 20px; max-width: 72ch; }
+.empty { color: var(--muted); padding: 40px 0; text-align: center; }
+.empty b { display: block; color: var(--ink); font-weight: 500; margin-bottom: 4px; }
+
+/* shared element styles */
+.kw { font: 500 10.5px var(--mono); color: var(--faint); letter-spacing: .01em; }
+.ty { color: var(--muted); }
+.qn { font: 11.5px var(--mono); color: var(--muted); word-break: break-all; }
+.sum { color: var(--muted); font-size: 12px; margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 999px; background: var(--chip); font-size: 11.5px; white-space: nowrap; }
+.chip.warn { background: var(--warn-bg); color: var(--warn); }
+.chip.bad { background: var(--bad-bg); color: var(--bad); }
+.chip.ghost { background: transparent; border: 1px solid var(--line); }
+.el { cursor: pointer; transition: opacity .15s ease, box-shadow .15s ease, background .15s ease; }
+.el:hover { box-shadow: 0 0 0 1px var(--line-strong); }
+.el.sel { box-shadow: 0 0 0 2px var(--select) !important; }
+.dimmed .el:not(.lit):not(.sel):not(.rel-ctx) { opacity: .32; }
+.el.lit { box-shadow: 0 0 0 1px var(--ink); }
+.why { display: none; margin-top: 6px; }
+.el.lit > .why, .el.lit > .head > .why { display: flex; flex-wrap: wrap; gap: 4px; }
+.why .chip { background: var(--ink); color: var(--paper); }
+
+/* home */
+.home { display: grid; gap: 16px; max-width: 1180px; }
+/* Home states facts: nothing on it is cut short. */
+.home .sum { display: block; -webkit-line-clamp: unset; overflow: visible; }
+.band { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px 18px; }
+.eyebrow { display: flex; align-items: baseline; gap: 10px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin-bottom: 10px; }
+.eyebrow .qn, .eyebrow .chip { text-transform: none; letter-spacing: 0; }
+.linkish { all: unset; cursor: pointer; margin-left: auto; text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--muted); }
+.linkish:hover { color: var(--ink); }
+.statement { font: 600 22px/1.3 var(--sans); letter-spacing: -.015em; margin: 0; max-width: 60ch; }
+.statement-more { color: var(--muted); margin: 6px 0 0; max-width: 84ch; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; margin-top: 14px; }
+.fact { border: 1px solid var(--line); border-radius: 11px; padding: 9px 12px; background: var(--paper); font-size: 12.5px; }
+.fact .fl { font-size: 11px; color: var(--faint); margin-bottom: 4px; }
+.fact.slot { border-style: dashed; background: transparent; }
+.fact a { color: var(--ink); text-decoration-color: var(--line-strong); text-underline-offset: 2px; }
+.clamp { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+ul.plain { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.missing, .warn-text { color: var(--warn); }
+.faint { color: var(--faint); }
+.crew-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.member { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--paper); }
+.member.you { background: var(--card); border-color: var(--line-strong); }
+.member .t { font-weight: 600; font-size: 14px; margin-top: 6px; }
+.member .who { display: flex; gap: 4px; flex-wrap: wrap; }
+.platform-line { margin: 12px 0 0; color: var(--muted); font-size: 12.5px; }
+.contract { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.contract h4 { margin: 0 0 8px; font-size: 12.5px; font-weight: 600; }
+.contract li { font-size: 12.5px; padding-left: 10px; border-left: 2px solid var(--line); }
+.contract li.alert { border-left-color: var(--warn); }
+.journey { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.journey .st { padding: 3px 11px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); font-size: 12.5px; }
+.journey .st.end { background: var(--paper); border-style: dashed; }
+.journey .arrow { color: var(--faint); }
+.verdicts li { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 4px 10px; align-items: baseline; padding: 6px 4px; border-radius: 8px; cursor: pointer; }
+.verdicts li .sum { grid-column: 2; }
+.verdicts .chip { justify-self: start; }
+.chip.good { background: #e3efe6; color: var(--good); }
+.chip.ink { background: var(--ink); color: var(--paper); }
+.identity .health { cursor: pointer; border: 0; margin-left: 4px; font-size: 11.5px; }
+.identity .health[hidden] { display: none; }
+.band.attention { border-color: #ead9b4; background: #fdf9f0; }
+.attention li { display: flex; gap: 12px; align-items: baseline; font-size: 13px; padding-left: 10px; border-left: 2px solid var(--line-strong); }
+.attention li.alert { border-left-color: var(--warn); }
+.attention li .linkish { flex: none; }
+.limits { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.limits .fl { font-size: 11px; color: var(--faint); margin-right: 4px; }
+
+/* home: emptiness first — the name, what it is for, who works */
+.home.zen { max-width: none; display: block; }
+.zen-head h1 { margin-bottom: 8px; }
+.zen-head p { margin: 0; max-width: 60ch; color: var(--muted); font-size: 15px; line-height: 1.5; }
+.zen .tiles { margin-top: 56px; max-width: 860px; }
+.zen .tile { border-color: var(--line); }
+.zen .sources { margin-top: 14px; }
+.zen .team { gap: 112px; grid-auto-columns: auto; justify-content: start; margin-top: 56px; padding-left: 0; }
+.zen .team .col { gap: 40px; }
+.zen .avatar { width: 64px; height: 64px; box-shadow: none; }
+.zen .avatar .ic { width: 28px; height: 28px; }
+.zen .nm { font-weight: 500; font-size: 14px; color: #3a3a3c; }
+
+/* home, drawn rather than told */
+.home { max-width: 1120px; display: grid; gap: 18px; }
+.ic { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; vertical-align: -3px; }
+.ic.faint { color: var(--faint); }
+.hero { display: flex; justify-content: space-between; align-items: flex-start; gap: 28px; padding: 4px 2px 2px; }
+.hero h1 { font: 600 24px/1.2 var(--sans); letter-spacing: -.02em; margin: 0; }
+.tagline { margin: 6px 0 0; color: var(--muted); font-size: 14px; max-width: 72ch; }
+.sources { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.source { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px 3px 8px; border-radius: 999px; background: var(--chip); color: #4a4a4f; font-size: 12px; text-decoration: none; }
+.source:hover { background: rgb(0 0 0 / 9%); color: var(--ink); }
+.alerts { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
+.alert { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px 4px 9px; border-radius: 999px; background: var(--chip); color: #4a4a4f; font-size: 12.5px; }
+.alert:hover { background: rgb(0 0 0 / 9%); }
+.alert.risk { background: var(--warn-bg); color: var(--warn); }
+.alert.ok { cursor: default; }
+.team { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(150px, 210px); justify-content: start; align-items: center; gap: 84px; padding: 10px 4px 6px; }
+.team .col { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 22px; }
+.node { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 8px; border-radius: 14px; text-align: center; cursor: pointer; }
+.avatar { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: #fff; border: 1px solid var(--line); box-shadow: 0 6px 16px rgb(0 0 0 / 6%); color: #48484a; }
+.avatar .ic { width: 24px; height: 24px; }
+.avatar.you { background: var(--ink); border-color: var(--ink); color: #fff; }
+.nm { font-weight: 600; font-size: 13px; }
+.badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; min-height: 20px; }
+.badge { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px 1px 5px; border-radius: 999px; background: var(--chip); color: #4a4a4f; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.badge .ic { width: 13px; height: 13px; vertical-align: 0; }
+.badge.warn { background: var(--warn-bg); color: var(--warn); }
+svg.wires { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
+.wire { fill: none; stroke: #c9c5bc; stroke-width: 1.5; }
+.wire.talk { stroke: var(--ink); }
+.wire.unknown { stroke-dasharray: 3 5; }
+.wire-tag { position: absolute; z-index: 2; transform: translate(-50%, -50%); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: #fff; border: 1px solid var(--line); color: var(--ink); font-size: 12px; font-weight: 600; }
+.wire-tag.unknown { color: var(--faint); border-style: dashed; }
+.floor { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; padding: 8px 12px; border-radius: 12px; border: 1px dashed var(--line-strong); background: var(--paper); }
+.floor .fl { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin-right: 4px; }
+.pchip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px 2px 7px; border-radius: 999px; background: #fff; border: 1px solid var(--line); color: #4a4a4f; font-size: 12px; cursor: pointer; }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.tile { border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; background: #fff; cursor: pointer; }
+.tile.blank { border-style: dashed; background: transparent; color: var(--faint); cursor: default; }
+.tile .th { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.tile .th .linkish { margin-left: auto; }
+.tile .none { font-size: 22px; margin-top: 10px; }
+.stats { display: flex; gap: 22px; margin-top: 12px; }
+.stat b { display: block; font-size: 22px; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; }
+.stat span { font-size: 11.5px; color: var(--muted); }
+.glance table { border-collapse: collapse; }
+.glance th, .glance td { padding: 7px 14px; text-align: center; font-weight: 400; }
+.glance thead th { color: var(--muted); font-size: 11px; }
+.glance thead th .ic { display: block; margin: 0 auto 3px; width: 18px; height: 18px; color: #48484a; }
+.glance tbody th { text-align: left; white-space: nowrap; font-weight: 500; }
+.glance tbody tr + tr td, .glance tbody tr + tr th { border-top: 1px solid var(--line); }
+.glance td { position: relative; }
+.glance td.act { cursor: pointer; }
+.glance td.act:hover { background: var(--hover); }
+.mini { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); margin-right: 8px; color: #48484a; vertical-align: middle; }
+.mini .ic { width: 13px; height: 13px; vertical-align: 0; }
+.mini.you { background: var(--ink); border-color: var(--ink); color: #fff; }
+.sym { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: middle; }
+.sym.s-full { background: var(--ink); }
+.sym.s-half { background: linear-gradient(90deg, var(--ink) 50%, transparent 50%); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.sym.s-empty { box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.flag { position: absolute; top: 7px; right: calc(50% - 13px); width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
+.glance .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.glance .legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.glance .legend .spacer { flex: 1; }
+.lim { color: var(--muted); font-size: 12px; }
+.lim b { color: var(--ink); font-weight: 600; margin-right: 3px; }
+
+/* fluid: the Model window shares the desk with the conversation, whose width may change */
+nav.tabs { overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+.win-head { min-width: 0; min-height: 50px; }
+
+.kicon { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; background: var(--chip); color: #48484a; }
+.kicon .ic { width: 14px; height: 14px; vertical-align: 0; }
+.card .head { align-items: center; margin-bottom: 6px; }
+.col h3 .ic { width: 15px; height: 15px; }
+
+/* explore: a quiet list per concept */
+.board { gap: 28px; }
+.card.row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0 0 2px; padding: 7px 8px; border: 0; border-radius: 10px; background: transparent; }
+.card.row:hover { background: var(--hover); box-shadow: none; }
+.card.row .t { font-weight: 500; }
+.card.row .kicon { background: transparent; color: var(--faint); width: 18px; }
+.card.row .times { margin-left: auto; color: var(--faint); font-size: 12px; }
+.card.row .why { flex-basis: 100%; }
+.col h3 { margin-bottom: 10px; }
+.col .group { margin: 14px 8px 4px; }
+
+/* flows in page elements: cards on a thread, branches side by side */
+.vflow { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
+.vflow > li { position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 18px; }
+.vflow > li::before { content: ""; position: absolute; top: 0; left: 50%; height: 18px; border-left: 1.5px solid #cfcac0; }
+.vflow.root > li:first-child { padding-top: 0; }
+.vflow.root > li:first-child::before { display: none; }
+.vstart::after, .vend::after { content: ""; display: block; width: 10px; height: 10px; border-radius: 50%; background: var(--ink); }
+.vend::after { width: 8px; height: 8px; box-shadow: 0 0 0 2.5px #fff, 0 0 0 4px var(--ink); }
+.vcard { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 150px; padding: 9px 16px; border: 1px solid #d9d5cc; border-radius: 12px; background: #fff; }
+.vcard b { font-weight: 500; font-size: 13.5px; }
+.vcard .who { font-size: 11.5px; }
+.vloop { margin-top: 4px; font-size: 11.5px; color: var(--faint); }
+.vdiamond { width: 14px; height: 14px; transform: rotate(45deg); border: 1.5px solid #8f8a80; background: #fff; border-radius: 2px; }
+.vbranches { display: flex; align-items: flex-start; margin-top: 18px; position: relative; }
+.vbranches::before { content: ""; position: absolute; top: -18px; left: 50%; height: 18px; border-left: 1.5px solid #cfcac0; }
+.vbranch { position: relative; display: flex; flex-direction: column; align-items: center; padding: 18px 14px 0; }
+.vbranch::before { content: ""; position: absolute; top: 0; left: 0; right: 0; border-top: 1.5px solid #cfcac0; }
+.vbranch:first-child::before { left: 50%; }
+.vbranch:last-child::before { right: 50%; }
+.vbranch:only-child::before { display: none; }
+.vbranch::after { content: ""; position: absolute; top: 0; left: 50%; height: 18px; border-left: 1.5px solid #cfcac0; }
+.vlabel { position: relative; z-index: 1; margin-top: -9px; padding: 0 7px; background: #fff; color: var(--faint); font-size: 11.5px; font-style: italic; }
+.vbranch > .vflow > li:first-child { padding-top: 10px; }
+.vbranch > .vflow > li:first-child::before { height: 10px; }
+.vgoto { color: var(--muted); font-size: 12.5px; }
+.vgoto::after { content: ""; }
+.vmerge { color: var(--faint); font-size: 12px; letter-spacing: .02em; }
+.life { display: flex; gap: 14px; align-items: flex-start; overflow-x: auto; padding: 6px 2px; }
+.life-col { display: flex; flex-direction: column; gap: 10px; }
+.life-state { padding: 8px 16px; border: 1px solid #d9d5cc; border-radius: 999px; background: #fff; font-size: 13px; white-space: nowrap; }
+.life-state.initial { border-color: var(--ink); }
+.life-state.terminal { border-style: dashed; background: var(--paper); }
+
+/* team map, force layout */
+.tmap.force { display: block; width: 100%; margin-bottom: 24px; }
+.tmap .fnode-abs { position: absolute; left: 0; top: 0; z-index: 1; cursor: grab; user-select: none; }
+.tmap line.wire.uses { stroke: #dcd8cf; stroke-width: 1.2; }
+.tmap line.wire.handoff { stroke: #8f8a80; stroke-width: 1.5; }
+.tmap line.wire.talk { stroke: var(--ink); stroke-width: 1.5; }
+.tmap { position: relative; display: flex; flex-direction: column; align-items: center; gap: 72px; padding: 18px 0 30px; margin-bottom: 28px; }
+.tband { position: relative; z-index: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 18px; }
+.tband.agents { gap: 18px 56px; }
+.tband.agents .node { cursor: pointer; }
+.tband.agents .node.picked .avatar { border-color: var(--ink); box-shadow: 0 0 0 3px rgb(0 0 0 / 6%); }
+.tres .anchor { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px 4px 9px; border-radius: 999px; background: #fff; border: 1px solid var(--line); color: #4a4a4f; font-size: 12.5px; }
+.tres.shared .anchor { border-color: #bdb8ad; color: var(--ink); font-weight: 500; }
+.tres .times { margin-left: 2px; }
+.tmap svg.wires { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
+.tmap .wire.uses { stroke: #dcd8cf; stroke-width: 1.2; }
+.tmap .wire.handoff { stroke: #8f8a80; stroke-width: 1.5; }
+.tmap .wire.talk { stroke: var(--ink); stroke-width: 1.5; }
+.home-attention { margin-top: 40px; max-width: 520px; gap: 2px; }
+.home-attention li { display: flex; align-items: center; gap: 12px; padding: 9px 8px; border-radius: 9px; cursor: pointer; font-size: 14px; }
+.home-attention li:hover { background: var(--hover); }
+.home-attention li .faint { margin-left: auto; }
+.home-attention li > span:nth-child(2) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-attention.flash { border-radius: 9px; animation: flash 1.1s ease-out; }
+.page-decide .home-attention { margin-top: 0; }
+@keyframes flash { from { background: var(--warn-bg); } to { background: transparent; } }
+
+/* team: one agent at a time */
+.split.team-page { grid-template-columns: 200px minmax(0, 1fr); gap: 36px; }
+.team-page .picker button { display: flex; align-items: center; gap: 8px; padding: 6px 10px; }
+.team-page .picker button[aria-current="true"] { background: rgb(0 0 0 / 5.5%); box-shadow: none; font-weight: 500; }
+.team-page .picker .mini { margin-right: 0; }
+.profile { max-width: 820px; }
+.profile-head { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+.profile-head .avatar { width: 56px; height: 56px; }
+.profile-head h2 { margin: 0 0 2px; font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+.profile-head .faint { font-size: 13px; }
+.mandate { margin: 10px 0 0; color: #4a4a4f; font-size: 13.5px; max-width: 70ch; }
+
+/* evolution: versions, proposals, diffs */
+.feed-group { margin: 18px 8px 4px; font-size: 12px; color: var(--faint); }
+.feed-group:first-of-type { margin-top: 0; }
+.mount { display: flex; gap: 14px; align-items: flex-start; max-width: 640px; padding: 22px 24px; border: 1px dashed var(--line-strong); border-radius: 16px; }
+.mount .ic { width: 20px; height: 20px; color: var(--faint); }
+.mount b { font-weight: 600; }
+.mount a { display: inline-block; margin-top: 10px; color: var(--ink); font-size: 13px; }
+.timeline { max-width: 900px; }
+.cases { max-width: 680px; display: grid; gap: 2px; }
+.case-row { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 14px minmax(0, 1fr); column-gap: 10px; width: 100%; padding: 8px 8px; border-radius: 10px; }
+.case-row:hover { background: var(--hover); }
+.case-row.current { background: rgb(0 0 0 / 5.5%); }
+.case-dot { grid-row: 1 / span 2; width: 7px; height: 7px; margin-top: 6px; border-radius: 50%; border: 1.5px solid var(--faint); box-sizing: border-box; justify-self: center; }
+.case-dot.done { background: var(--faint); }
+.case-title { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.case-ago { grid-column: 2; font-size: 11.5px; color: var(--faint); }
+.page.page-cases { min-height: 100%; display: flex; flex-direction: column; padding-bottom: 16px; }
+.page.page-cases > .case-composer { margin-top: auto; position: sticky; bottom: 16px; box-shadow: 0 0 0 16px var(--card); }
+.case-composer { display: block; box-sizing: border-box; width: 100%; max-width: 680px; font: inherit; font-size: 14px; padding: 11px 16px; border: 1px solid var(--line); border-radius: 22px; background: #fff; outline: none; }
+.case-composer:focus { border-color: var(--line-strong); }
+.change { border-bottom: 1px solid var(--line); }
+.change-row { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 12px; width: 100%; padding: 12px 8px; border-radius: 10px; }
+.change-row:hover { background: var(--hover); }
+.cmark { grid-row: span 2; width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; box-shadow: inset 0 0 0 1.5px var(--ink); }
+.cmark.head { background: var(--ink); }
+.cmark.merged { background: #8f8a80; box-shadow: none; }
+.cmark.pending { box-shadow: inset 0 0 0 1.5px var(--warn); }
+.cmark.declined { box-shadow: inset 0 0 0 1.5px var(--faint); }
+.change.declined .ctitle { color: var(--muted); }
+.decide { display: flex; gap: 6px; padding: 0 8px 12px 34px; }
+.decide button { all: unset; cursor: pointer; padding: 3px 12px; border-radius: 999px; background: var(--chip); font-size: 12px; color: #4a4a4f; }
+.decide button:hover { background: rgb(0 0 0 / 9%); color: var(--ink); }
+.ctitle { font-weight: 500; }
+.cmeta { grid-column: 2; font-size: 12px; color: var(--muted); }
+.cmeta code { font: 11.5px var(--mono); color: var(--faint); }
+.change-row .faint { grid-row: 1 / span 2; grid-column: 3; align-self: center; font-size: 12px; }
+.diffs { display: grid; gap: 10px; padding: 4px 8px 16px 34px; }
+.dfile { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.dhead { display: flex; align-items: center; gap: 10px; padding: 7px 12px; background: var(--paper); font-size: 12.5px; }
+.dhead .faint { margin-left: auto; font-size: 12px; }
+.dstat { font-size: 11px; padding: 0 7px; border-radius: 999px; background: var(--chip); }
+.dstat.s-A { color: var(--good); } .dstat.s-D { color: var(--bad); }
+.dbody { margin: 0; font: 12px/1.55 var(--mono); overflow-x: auto; }
+.dbody div { padding: 0 12px; white-space: pre; }
+.dbody .add { background: #edf6ef; color: #1f5133; }
+.dbody .del { background: #fbeceb; color: #7d2a24; }
+.dbody .hunk { color: var(--faint); background: #f7f6f3; }
+
+/* drawn flows: lanes per performer, nodes, diamonds, arrows */
+.flowchart { overflow-x: auto; min-width: 0; }
+.flowchart svg.chart { border-radius: 14px; }
+svg.chart { display: block; font-family: var(--sans); max-width: 100%; height: auto; }
+svg.chart .lane { fill: #fcfbf9; }
+svg.chart .lane.alt { fill: #f7f6f3; }
+svg.chart .lane-label { font-size: 12px; font-weight: 500; fill: #4a4a4f; }
+svg.chart .edge { fill: none; stroke: #b9b5ac; stroke-width: 1.4; }
+svg.chart .edge.loop { stroke-dasharray: 4 4; }
+svg.chart .edge-label { font-size: 11px; font-style: italic; fill: var(--faint); }
+svg.chart .box { fill: #fff; stroke: #cfcac0; stroke-width: 1.2; }
+svg.chart .box.state { fill: #fff; }
+svg.chart .box.terminal { fill: #faf9f7; stroke-dasharray: 3 3; }
+svg.chart .box-label { font-size: 12.5px; font-weight: 500; fill: var(--ink); pointer-events: none; }
+svg.chart .diamond { fill: #fff; stroke: #8f8a80; stroke-width: 1.3; }
+svg.chart .diamond.merge { fill: #e7e4dd; stroke: #b9b5ac; }
+svg.chart .start { fill: var(--ink); }
+svg.chart .end-ring { fill: #fff; stroke: var(--ink); stroke-width: 1.4; }
+svg.chart .end-dot { fill: var(--ink); }
+svg.chart .fnode { cursor: pointer; }
+svg.chart .fnode:hover .box { stroke: #8f8a80; }
+svg.chart .fnode.sel .box { stroke: var(--ink); stroke-width: 2; }
+svg.chart .fnode.lit .box { stroke: var(--ink); }
+.dimmed svg.chart .fnode.el:not(.lit):not(.sel):not(.rel-ctx) { opacity: .35; }
+/* context: what the AI sees, uses and keeps */
+.ctx { display: grid; gap: 14px; max-width: 900px; }
+.ctx-sec { border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; }
+.ctx-sec.blank { border-style: dashed; }
+.ctx-head { display: flex; align-items: center; gap: 10px; }
+.ctx-head h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.ctx-head .faint { font-size: 12px; }
+.ctx-head + .faint { margin-top: 8px; font-size: 13px; }
+.ctx .stats { margin-top: 14px; flex-wrap: wrap; }
+.ctx .stat { padding: 2px 4px; border-radius: 8px; }
+.ctx-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px; }
+.ctx-row .fl { width: 64px; font-size: 11.5px; color: var(--faint); }
+.ctx-row .rule { font-size: 12.5px; color: #4a4a4f; padding: 1px 8px; border-radius: 999px; background: var(--chip); }
+.qsub { margin-top: 2px; font-size: 12px; color: var(--faint); }
+.qsub .fl { color: var(--muted); }
+.qon { margin-left: 8px; font-size: 12px; color: var(--faint); }
+.roster { display: flex; flex-wrap: wrap; gap: 18px 10px; margin-top: 48px; }
+.roster .node { width: 104px; }
+.roster .avatar { width: 46px; height: 46px; }
+
+/* flows look like flows: each step is a node on a thread; decisions are diamonds; branches step aside */
+.zen-steps .step { position: relative; }
+.zen-steps .body { position: relative; }
+.zen-steps .rail i { border-left-color: var(--line-strong); }
+.node-mark { position: relative; flex: none; width: 18px; height: 22px; display: grid; place-items: center; }
+.node-mark::before { content: ""; position: absolute; left: 50%; top: -12px; bottom: -12px; border-left: 1.5px solid var(--line-strong); }
+.node-mark::after { content: ""; position: relative; width: 9px; height: 9px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 1.5px var(--ink); }
+.node-mark.decision::after, .node-mark.merge::after { border-radius: 2px; transform: rotate(45deg); width: 8px; height: 8px; }
+.node-mark.merge::after { background: var(--ink); }
+.node-mark.start::after { background: var(--ink); width: 8px; height: 8px; }
+.node-mark.done::after { box-shadow: inset 0 0 0 1.5px var(--ink), 0 0 0 2.5px #fff, 0 0 0 4px var(--ink); width: 7px; height: 7px; }
+.node-mark.goto::after { background: transparent; box-shadow: none; }
+.zen-steps .step:first-child .node-mark::before { top: 50%; }
+.zen-steps .step:last-child .node-mark::before { bottom: 50%; }
+.zen-steps .step.control .name { color: var(--muted); }
+.zen-steps .step:not(.control) .name { font-weight: 500; }
+
+/* flows, requirements, rights: lists and marks, nothing around them */
+.split.flows { grid-template-columns: 180px minmax(0, 1fr); gap: 28px; }
+.flows .picker button { display: flex; align-items: center; gap: 8px; padding: 6px 10px; }
+.flows .picker button[aria-current="true"] { background: rgb(0 0 0 / 5.5%); box-shadow: none; font-weight: 500; }
+.times { margin-left: auto; color: var(--faint); font-size: 12px; font-weight: 400; white-space: nowrap; }
+.zen-steps { padding: 0; }
+.zen-steps .step { grid-template-columns: minmax(0, 1fr) auto; padding: 6px 8px; border-radius: 9px; }
+.zen-steps .step:hover { background: var(--hover); box-shadow: none; }
+.zen-steps .glyph { color: var(--faint); }
+.zen-steps .step .guard { background: transparent; padding: 0; color: var(--faint); font: italic 12.5px var(--sans); max-width: none; }
+.zen-steps .loop { color: var(--faint); }
+.zen-steps .name { font-size: 13.5px; }
+.who { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+.who i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink); }
+.who.platform i { background: transparent; box-shadow: inset 0 0 0 1.5px var(--faint); }
+.flag-inline { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
+.zen-list { max-width: 760px; }
+.zen-list h3 { display: flex; align-items: center; gap: 8px; margin: 22px 0 6px; color: var(--muted); font-size: 12px; font-weight: 500; }
+.zen-list h3:first-child { margin-top: 4px; }
+.qrow { display: flex; align-items: baseline; gap: 14px; padding: 9px 8px; border-radius: 9px; font-size: 14px; cursor: pointer; }
+.qrow:hover { background: var(--hover); }
+.qtext { min-width: 0; }
+.mark { flex: none; width: 10px; height: 10px; border-radius: 50%; transform: translateY(1px); }
+.mark.on { background: var(--ink); }
+.mark.off { box-shadow: inset 0 0 0 1.5px var(--warn); }
+.mark.idle { box-shadow: inset 0 0 0 1.5px var(--faint); }
+.rights-zen { display: block; }
+.rights-zen .glance { display: inline-block; }
+.rights-zen .glance table { margin-left: -20px; }
+.rights-zen .glance table th, .rights-zen .glance table td { padding: 12px 20px; }
+.rights-zen .glance td.on { background: rgb(0 0 0 / 5.5%); }
+.sym.warn { box-shadow: inset 0 0 0 1.5px var(--warn); }
+aside .fam { margin-top: 10px; gap: 7px; }
+aside .fam li { display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
+aside .fam li span.faint { margin-left: auto; font-size: 11.5px; }
+
+/* overview board */
+.board { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; align-items: start; }
+.col h3 { margin: 0 0 8px; font-size: 12px; font-weight: 500; color: var(--muted); display: flex; gap: 6px; }
+.col h3 .n { color: var(--faint); }
+.col .group { margin: 12px 0 6px; font-size: 11px; color: var(--faint); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; margin-bottom: 8px; }
+.card .t { font-weight: 600; }
+.card .crew { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+
+/* structure */
+.scope { background: var(--paper); border: 1px solid var(--line-strong); border-radius: 14px; padding: 14px 16px 16px; margin-bottom: 22px; }
+.scope > .head .t { font-size: 15px; font-weight: 600; }
+.panels { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 12px; }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 11px; padding: 10px 12px; }
+.panel .panels { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 8px; }
+.panel .panel { background: var(--paper); }
+.panels.platform > .panel { background: var(--paper); border-style: dashed; }
+.head { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.head .t { font-weight: 600; }
+.ports { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.port { display: grid; grid-template-columns: 10px minmax(0, 1fr); column-gap: 7px; align-items: center; font-size: 12px; padding: 4px 7px; border-radius: 6px; background: var(--paper); border: 1px solid var(--line); }
+.port .sq { width: 9px; height: 9px; border: 1.5px solid var(--ink); background: var(--ink); border-radius: 1.5px; }
+.port.conj .sq { background: var(--card); }
+.port .pn { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.port .pf { grid-column: 2; color: var(--muted); font-size: 11.5px; }
+.port .open { color: var(--warn); }
+table.list { width: 100%; border-collapse: collapse; margin-top: 10px; }
+table.list th { text-align: left; font-weight: 500; font-size: 11px; color: var(--faint); padding: 4px 8px; border-bottom: 1px solid var(--line); }
+table.list td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.list tr.el:hover td { background: var(--hover); }
+
+/* behavior */
+.split { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 18px; align-items: start; }
+.picker { position: sticky; top: 0; }
+.picker .group { margin: 10px 0 4px; font-size: 11px; color: var(--faint); }
+.picker button { all: unset; box-sizing: border-box; display: block; width: 100%; padding: 5px 9px; border-radius: 7px; cursor: pointer; }
+.picker button:hover { background: var(--hover); }
+.picker button[aria-current="true"] { background: var(--card); box-shadow: 0 0 0 1px var(--line-strong); font-weight: 500; }
+.picker button .sub { display: block; font-size: 11.5px; color: var(--faint); font-weight: 400; }
+.flow { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.flow .fhead { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.steps { list-style: none; margin: 0; padding: 6px 0; }
+.step { display: grid; grid-template-columns: 34px minmax(0, 1fr) 190px; align-items: center; gap: 10px; padding: 5px 14px; }
+.step .no { color: var(--faint); font-variant-numeric: tabular-nums; text-align: right; font-size: 12px; }
+.step .body { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.step .rail { display: flex; flex: none; }
+.step .rail i { width: 16px; height: 22px; border-left: 1px solid var(--line-strong); }
+.step .glyph { width: 18px; text-align: center; flex: none; color: var(--muted); }
+.step.decision .glyph, .step.merge .glyph { font-size: 11px; }
+.step .guard { font: 11.5px var(--mono); color: var(--ink); background: var(--chip); border-radius: 5px; padding: 0 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 360px; }
+.step .by { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.step.control .body .name { color: var(--muted); }
+.step .loop { color: var(--muted); font-size: 11.5px; }
+
+/* states */
+.track { display: grid; gap: 12px; align-items: start; margin-top: 12px; overflow-x: auto; padding-bottom: 6px; }
+.rank { display: flex; flex-direction: column; gap: 10px; min-width: 190px; }
+.rank .rh { font-size: 11px; color: var(--faint); }
+.state { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 9px 12px; }
+.state .t { font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.state.terminal { background: var(--paper); }
+.state ul { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.state li { font-size: 11.5px; color: var(--muted); }
+.state li b { color: var(--ink); font-weight: 500; }
+
+/* matrices */
+.matrix { border-collapse: separate; border-spacing: 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.matrix th, .matrix td { padding: 6px 8px; border-bottom: 1px solid var(--line); font-weight: 400; }
+.matrix thead th { font-size: 11px; color: var(--muted); vertical-align: bottom; text-align: center; }
+.matrix thead th.vert { height: 150px; white-space: nowrap; }
+.matrix thead th.vert span { display: inline-block; writing-mode: vertical-rl; transform: rotate(180deg); max-height: 140px; overflow: hidden; text-overflow: ellipsis; }
+.matrix thead tr.groups th { text-align: left; color: var(--ink); font-weight: 500; border-left: 1px solid var(--line); }
+.matrix tbody th { text-align: left; white-space: nowrap; position: sticky; left: 0; background: var(--card); }
+.matrix td { text-align: center; border-left: 1px solid transparent; }
+.matrix td.g0 { border-left-color: var(--line); }
+.matrix tbody tr:hover td, .matrix tbody tr:hover th { background: var(--paper); }
+.dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; vertical-align: middle; }
+.dot.allowed { background: var(--ink); }
+.dot.propose { background: linear-gradient(90deg, var(--ink) 50%, transparent 50%); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.dot.denied { box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.dot.inherited { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.cell { cursor: pointer; }
+.cell.sel { outline: 2px solid var(--ink); outline-offset: -3px; border-radius: 6px; }
+.legend { display: flex; gap: 14px; margin: 10px 0 0; color: var(--muted); font-size: 12px; align-items: center; flex-wrap: wrap; }
+.scroll-x { overflow-x: auto; }
+
+/* requirements, definitions, views */
+.reqs { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.req { background: var(--card); border: 1px solid var(--line); border-radius: 11px; padding: 11px 13px; }
+.clause { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.expr { font: 11.5px/1.5 var(--mono); background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; margin-top: 4px; white-space: pre-wrap; word-break: break-word; }
+.defs { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.def { background: var(--card); border: 1px solid var(--line); border-radius: 3px; padding: 9px 11px; }
+.def.usage { border-radius: 11px; }
+.compartment { margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--line); }
+.compartment .ct { font-size: 10.5px; color: var(--faint); font-style: italic; }
+.compartment div { font-size: 12px; }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.filters button { all: unset; cursor: pointer; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.filters button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+/* sources */
+.src { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 14px; }
+/* Revisions */
+.rev { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 28px; align-items: start; }
+.rev-list { position: sticky; top: 12px; display: grid; gap: 10px; }
+.seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--chip); justify-self: start; }
+.seg button { all: unset; cursor: pointer; padding: 4px 12px; border-radius: 7px; font-size: 12.5px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / 8%); }
+.seg.small button { padding: 2px 9px; font-size: 12px; }
+.seg .count { display: inline-block; min-width: 16px; padding: 0 4px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); font-size: 11px; text-align: center; }
+.rev-list ol { display: grid; gap: 1px; list-style: none; margin: 0; padding: 0; }
+.rev-row { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 14px minmax(0, 1fr); column-gap: 10px; row-gap: 3px; width: 100%; padding: 9px 10px; border-radius: 10px; }
+.rev-row:hover { background: var(--hover); }
+.rev-row[aria-current="true"] { background: rgb(0 0 0 / 5.5%); }
+.rev-row > :first-child { grid-row: 1 / span 2; align-self: start; margin-top: 5px; }
+.rev-dot { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--faint); box-sizing: border-box; justify-self: center; }
+.rev-row[aria-current="true"] .rev-dot { border-color: var(--ink); background: var(--ink); }
+.rev-title { font-size: 13px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rev-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 11.5px; color: var(--faint); }
+.rev-meta code { font: 11.5px var(--mono); color: var(--muted); }
+.rev-meta .chip { font-size: 11px; padding: 0 6px; color: var(--muted); }
+.chip.run { background: #e8f3ec; color: #1f6b3a; }
+.rev-row.is-declined .rev-title { color: var(--faint); text-decoration: line-through; text-decoration-color: rgb(0 0 0 / 20%); }
+.rev-detail { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.rev-head h2 { font: 600 16px/1.35 var(--sans); margin: 0 0 4px; }
+.rev-head .faint { font-size: 12.5px; }
+.rev-head code { font: 12px var(--mono); }
+.linkish.inline { margin: 0; padding: 0; font-size: inherit; }
+.rev-bar { display: flex; align-items: center; gap: 14px; }
+.rev-bar .decide { padding: 0; }
+.decide button.primary { background: var(--ink); color: #fff; }
+.decide button.primary:hover { background: #000; color: #fff; }
+.rev-stats { display: flex; gap: 8px; font: 12px var(--mono); }
+.rev-stats .plus { color: #1f6b3a; } .rev-stats .minus { color: #a1342b; }
+.rev-stats .faint { font-family: var(--sans); }
+.rev-bar .seg { margin-left: auto; }
+.chip.st-accepted { background: #e8f3ec; color: #1f6b3a; } .chip.st-declined { color: var(--faint); }
+/* Diff2Html, toned to the window */
+.d2h-host .d2h-wrapper { font-family: var(--mono); }
+.d2h-host .d2h-file-wrapper { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+.d2h-host .d2h-file-header { background: var(--paper); border-bottom: 1px solid var(--line); padding: 7px 12px; height: auto; font-family: var(--sans); font-size: 12.5px; }
+.d2h-host .d2h-file-name.go { cursor: pointer; } .d2h-host .d2h-file-name.go:hover { text-decoration: underline; }
+.d2h-host .d2h-tag { border-radius: 999px; font-size: 10.5px; }
+.d2h-host { min-width: 0; }
+.d2h-host .d2h-code-line, .d2h-host .d2h-code-side-line { font-size: 12px; }
+.d2h-host .d2h-info { color: var(--faint); background: #f7f6f3; border-color: var(--line); }
+.d2h-host .d2h-code-linenumber, .d2h-host .d2h-code-side-linenumber { color: var(--faint); border-color: var(--line); }
+.change .d2h-host { padding: 4px 8px 16px 34px; }
+.dlist { display: grid; gap: 2px; border: 1px solid var(--line); border-radius: 10px; padding: 6px; }
+.dlist .linkish { margin: 0; display: flex; align-items: center; gap: 10px; width: 100%; padding: 5px 8px; border-radius: 7px; font: 12.5px var(--mono); color: var(--ink); text-align: left; }
+.dlist .linkish:hover { background: var(--hover); text-decoration: none; }
+/* Files */
+.repo { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 24px; align-items: start; }
+.tree { position: sticky; top: 12px; display: grid; gap: 1px; }
+.tree-dir { font-size: 11.5px; color: var(--faint); padding: 0 10px 6px; }
+.tree-file { all: unset; box-sizing: border-box; cursor: pointer; padding: 5px 10px; border-radius: 8px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree-file:hover { background: var(--hover); }
+.tree-file[aria-current="true"] { background: rgb(0 0 0 / 5.5%); font-weight: 500; }
+.blob { border: 1px solid var(--line); border-radius: 12px; background: var(--card); overflow: hidden; min-width: 0; }
+.blob-head { display: flex; align-items: center; gap: 16px; padding: 9px 14px; border-bottom: 1px solid var(--line); background: var(--paper); font-size: 13px; }
+.crumbs .sep { margin: 0 6px; }
+.blob-head .last { margin: 0 0 0 auto; display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; color: var(--muted); }
+.blob-head .last .msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 420px; }
+.blob-head .last code { font: 11.5px var(--mono); }
+.blob .code { border: 0; border-radius: 0; padding: 8px 0; }
+.code.sysml div { white-space: pre-wrap; overflow-wrap: anywhere; }
+.code.sysml .ln { cursor: pointer; }
+.code.sysml .ln:hover { color: var(--ink); }
+.code .t-k { color: #8a3a6e; font-weight: 500; }
+.code .t-c { color: var(--faint); font-style: italic; }
+.code .t-s { color: #2a6a49; }
+.code .t-n { color: #1d5fa6; }
+.code { background: var(--card); border: 1px solid var(--line); border-radius: 10px; font: 12px/1.6 var(--mono); overflow: auto; }
+.code div { display: grid; grid-template-columns: 44px 1fr; white-space: pre; }
+.code > div > span:first-child { color: var(--faint); text-align: right; padding-right: 12px; user-select: none; }
+.code div.hl { background: #fff5d6; }
+
+/* inspector */
+/* Peek: details float beside what was clicked, like a Mac popover; nothing is pinned. */
+aside.inspector { display: none; position: relative; margin: 6px 0 14px; padding: 12px 14px 12px; max-width: 560px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; animation: peek-in .14s ease-out; }
+aside.inspector.open { display: block; }
+aside.inspector.narrow .rel, aside.inspector.narrow dl, aside.inspector.narrow > .kw, aside.inspector.narrow > h2, aside.inspector.narrow > .ty { display: none; }
+aside.inspector.narrow { padding: 8px 10px; margin: 2px 0 8px; }
+aside.inspector.narrow .actions { margin-top: 0; padding-top: 0; border-top: 0; padding-right: 26px; }
+aside.inspector.narrow .peek-sum { margin: 0 26px 8px 0; }
+li > aside.inspector, ol > aside.inspector { list-style: none; }
+/* A table row's detail does not widen the table: its slot has no width and the detail overhangs it. */
+tr.detail-row > td { padding: 0; text-align: left; border-bottom: 1px solid var(--line); }
+.detail-slot { position: sticky; left: 12px; width: 0; }
+.detail-slot aside.inspector { width: min(560px, calc(100cqw - 24px)); max-width: none; }
+.matrix:has(.detail-row) { overflow: visible; }
+.matrix tbody tr.detail-row:hover td { background: var(--card); }
+@keyframes peek-in { from { opacity: 0; transform: translateY(4px) scale(.98); } to { opacity: 1; transform: none; } }
+aside .x { all: unset; cursor: pointer; position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: rgb(0 0 0 / 5%); color: #5a5a5f; font-size: 14px; }
+aside .x:hover { background: rgb(0 0 0 / 9%); }
+aside h2 { margin: 2px 32px 0 0; font-size: 15px; font-weight: 600; letter-spacing: -.01em; word-break: break-word; }
+aside .peek-sum { margin: 6px 0 0; color: var(--muted); font-size: 12.5px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+aside dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 12px 0 0; font-size: 12px; }
+aside dt { color: var(--faint); white-space: nowrap; }
+aside dd { margin: 0; word-break: break-word; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+aside .rel { margin-top: 12px; display: grid; gap: 8px; }
+aside .rel h5 { margin: 0 0 4px; font-size: 11px; font-weight: 500; color: var(--faint); }
+aside .rel .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+aside .rel .chips button { all: unset; cursor: pointer; padding: 1px 8px; border-radius: 999px; background: var(--chip); color: #4a4a4f; font-size: 12px; }
+aside .rel .chips button:hover { background: rgb(0 0 0 / 9%); color: var(--ink); }
+aside .actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
+aside .actions button { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px 3px 8px; border-radius: 999px; background: var(--chip); font-size: 12px; color: #4a4a4f; }
+aside .actions button:hover { background: rgb(0 0 0 / 9%); color: var(--ink); }
+
+/* fluid: container rules come last so they override the base rules above */
+@container win (max-width: 980px) { .win-head .title { display: none; } .search input { width: 150px; } }
+@container win (max-width: 760px) { .win-head .toggle { display: none; } }
+@container page (max-width: 900px) {
+  .hero { flex-direction: column; gap: 12px; }
+  .alerts { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .tiles { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .team { gap: 44px; grid-auto-columns: minmax(110px, 170px); }
+  .split, .split.flows, .split.team-page { grid-template-columns: minmax(0, 1fr); }
+  .picker { position: static; display: flex; flex-wrap: wrap; gap: 4px; }
+  .picker .group { width: 100%; }
+  .picker button { width: auto; }
+}
+@container page (max-width: 600px) {
+  .team { grid-auto-flow: row; justify-content: stretch; justify-items: center; gap: 34px; }
+  .team .col { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 18px; }
+  .glance { overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+<header class="titlebar">
+  <div><div class="app-menu" id="appmenu"><button id="menubutton" aria-haspopup="menu">ASE</button><div class="list" id="menulist" role="menu"></div></div></div>
+  <div class="identity"><b id="sysname"></b><span class="ver" id="modelver"></span><button class="chip health" id="health" title="Facts of the model that ask for a decision"></button></div>
+  <div></div>
+  <select id="system" aria-label="System" hidden></select>
+</header>
+<div class="stage has-window" id="stage">
+  <section class="conversation" id="conversation" aria-label="Conversation"></section>
+  <section class="window" aria-label="System">
+    <div class="win-head">
+      <nav class="tabs" id="nav" aria-label="Pages"></nav>
+      <div id="morewrap"></div>
+      <span class="spacer"></span>
+      <input type="checkbox" id="sysml" hidden>
+      <div class="search" id="search">
+        <button class="search-btn" id="searchbtn" aria-label="Search the model" title="Search  /"><svg viewBox="0 0 24 24" class="ic"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5 20 20"/></svg></button>
+        <input id="q" placeholder="Search…" autocomplete="off" aria-label="Search the model">
+        <div class="results" id="results"></div>
+      </div>
+    </div>
+    <button class="win-close" id="winclose" title="Close" aria-label="Close">×</button>
+    <div class="win-body">
+      <main id="main"></main>
+    </div>
+  </section>
+</div>
+<nav class="dock" aria-label="Dock">
+  <div class="work" id="dockwork"></div>
+  <div style="position:relative"><button class="dock-logo" id="logo" aria-label="Talk to Concepteur"></button><span class="dock-label">Concepteur</span></div>
+  <div class="rest">
+    <button class="dock-item pile" id="dockjobs" aria-label="Jobs"><span class="dock-tile"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span><span class="dock-label">Jobs</span></button>
+    <button class="dock-item pile" id="dockwatches" aria-label="Watches"><span class="dock-tile"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/></svg></span><span class="dock-label">Watches</span></button>
+    <span class="dock-sep"></span>
+    <button class="dock-item active" id="dockmodel" aria-label="System"><span class="dock-tile"><svg viewBox="0 0 24 24"><rect x="8.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="3" y="15.5" width="7" height="5" rx="1.5"/><rect x="14" y="15.5" width="7" height="5" rx="1.5"/><path d="M12 8.5v3.5H6.5v3.5M12 12h5.5v3.5"/></svg></span><span class="dock-label">System</span></button>
+    <button class="dock-item" id="dockevo" aria-label="Model"><span class="dock-tile"><svg viewBox="0 0 24 24"><circle cx="7" cy="5.5" r="2.3"/><circle cx="7" cy="18.5" r="2.3"/><circle cx="17" cy="8.5" r="2.3"/><path d="M7 7.8v8.4M17 10.8v.7a5 5 0 0 1-5 5H7.2"/></svg></span><span class="dock-label">Model</span></button>
+    <button class="dock-item" id="dockdecide" aria-label="To decide"><span class="dock-tile"><svg viewBox="0 0 24 24"><path d="M4 13.5 6.5 5h11l2.5 8.5V19H4v-5.5Z"/><path d="M4 13.5h4.5l1 2h5l1-2H20"/></svg></span><span class="dock-label">To decide</span></button>
+  </div>
+</nav>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/diff2html@3.4.56/bundles/css/diff2html.min.css">
+<script src="https://cdn.jsdelivr.net/npm/diff2html@3.4.56/bundles/js/diff2html.min.js"></script>
+<script id="data" type="application/json">__DATA__</script>
+<script id="repo" type="application/json">__REPO__</script>
+<script>
+const ALL = JSON.parse(document.getElementById("data").textContent);
+// The model repository shown in Evolution (sketch: one real repository, whatever the system).
+const REPO = JSON.parse(document.getElementById("repo").textContent);
+const $ = (s) => document.querySelector(s);
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "class") e.className = v;
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat(Infinity)) if (kid != null && kid !== false) e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  return e;
+}
+
+// ---------- model index ----------
+let M; // current system
+function build(data) {
+  const b = data.board, reg = new Map(), parent = new Map();
+  const add = (x, page, extra = {}) => { if (x && x.id && !reg.has(x.id)) reg.set(x.id, { ...x, page, ...extra }); };
+  const cols = Object.fromEntries(b.columns.map((c) => [c.id, c]));
+  const walkPanel = (p, scope, up) => {
+    add(p, "structure", { scope });
+    if (up) parent.set(p.id, up);
+    for (const port of p.ports || []) { add(port, "structure", { scope, owner: p.id }); parent.set(port.id, p.id); }
+    for (const c of p.children || []) walkPanel(c, scope, p.id);
+  };
+  for (const s of cols.team?.items || []) walkPanel(s, s.id, null);
+  for (const it of cols.cando?.items || []) {
+    add(it, it.steps ? "behavior" : "explore");
+    for (const st of it.steps || []) { add(st, "behavior", { flow: it.id }); parent.set(st.id, it.id); }
+  }
+  for (const it of cols.rules?.items || []) { add(it, "explore"); for (const c of it.children || []) { add(c, "explore"); parent.set(c.id, it.id); } }
+  for (const it of cols.guarantees?.items || []) {
+    add(it, it.track ? "behavior" : "requirements");
+    for (const c of it.clauses || []) { add(c, "requirements"); parent.set(c.id, it.id); }
+    for (const s of it.track?.states || []) { add(s, "behavior", { machine: it.id }); parent.set(s.id, it.id); }
+  }
+  for (const it of cols.information?.items || []) add(it, "explore");
+  // Elements reachable by their native id as well as their composite display id.
+  const byElement = new Map();
+  for (const [id, x] of reg) if (x.element && !byElement.has(x.element)) byElement.set(x.element, id);
+  const resolve = (id) => reg.has(id) ? id : byElement.get(id) ?? (b.index?.[id]?.card) ?? null;
+  const links = b.links.map((l) => ({ ...l, from: resolve(l.from) ?? l.from, to: resolve(l.to) ?? l.to }));
+  return { data, b, cols, reg, parent, links, resolve, labels: b.meta.linkLabels || {} };
+}
+const within = (id, root) => { for (let at = id; at; at = M.parent.get(at)) if (at === root) return true; return false; };
+function relations(id) {
+  const out = [];
+  for (const l of M.links) {
+    if (l.strength === "scope" || l.kind === "own") continue;
+    const f = within(l.from, id), t = within(l.to, id);
+    if (f === t) continue;
+    const other = f ? l.to : l.from;
+    const key = l.role ? `${l.kind}:${l.role}` : l.kind;
+    const label = M.labels[key]?.[f ? "forward" : "reverse"] ?? key;
+    out.push({ link: l, other, label });
+  }
+  return out;
+}
+const title = (id) => { const x = M.reg.get(id); return x ? x.title : id; };
+const SYSML_NAME = { structure: "Structure", behavior: "Behavior", states: "States", requirements: "Requirements", authority: "Authority", allocations: "Allocations", definitions: "Definitions", sources: "Sources" };
+const heading = (page) => h("h1", {}, pageName[page], S.sysml && SYSML_NAME[page] && SYSML_NAME[page] !== pageName[page] ? h("span", { class: "kw", style: "margin-left:10px;font-size:12px" }, SYSML_NAME[page].toLowerCase()) : null);
+const pageName = { decide: "To decide", cases: "Cases", jobs: "Jobs", watches: "Watches", team: "Team", activity: "Activity", revisions: "Revisions", proposals: "Proposals", files: "Files", sysml: "SysML", overview: "Home", explore: "Explore", graph: "Graph", structure: "Parts", behavior: "Flows", states: "Lifecycles", requirements: "Requirements", authority: "Rights", allocations: "Allocations", definitions: "Building blocks", sources: "Sources", interactions: "Interactions" };
+
+// ---------- state ----------
+const S = { talkTo: null, space: "model", evoPage: "activity", change: null, decided: {}, rev: null, revTab: "commits", diffMode: "line", chat: {}, talking: false, window: true, sysml: false, page: "team", selected: null, flow: null, defPkg: null, defKind: "all", file: null, line: null, cell: null };
+function select(id, { go = false } = {}) {
+  S.peekAll = false; S.fam = null;
+  S.selected = id; S.cell = null;
+  if (go && id) { const x = M.reg.get(id); if (x) { S.space = "model"; S.window = true; S.page = x.page; if (x.flow) S.flow = x.flow; if (x.machine) S.flow = x.machine; if (x.page === "behavior" && !x.flow && !x.machine) S.flow = id; } }
+  render();
+}
+
+// ---------- shared bits ----------
+const FRIENDLY = { scope: "system", operator: "operator", machine: "component", capability: "flow", tool: "tool", "capability-type": "tool type", access: "access", mandate: "mandate", policy: "policy", requirement: "guarantee", constraint: "check", lifecycle: "lifecycle", information: "information", action: "step", decision: "decision", merge: "merge", goto: "", fork: "fork", join: "join" };
+const friendly = (x) => FRIENDLY[x.kind] ?? (x.keyword === "port" ? "port" : x.keyword === "state" ? "state" : x.keyword?.includes("constraint") ? "check" : "");
+const kw = (x) => h("span", { class: "kw" }, S.sysml ? x.keyword || "" : friendly(x));
+// Outside SysML mode an element's kind is a small icon; its name is the tooltip.
+const KIND_ICON = { scope: "spark", operator: "spark", machine: "cube", capability: "arrows", tool: "wrench", "capability-type": "wrench", skill: "book", access: "open", mandate: "key", policy: "file", requirement: "shield", constraint: "check", lifecycle: "ring", information: "book" };
+const kindMark = (x) => S.sysml ? kw(x) : h("span", { class: "kicon", title: friendly(x) || x.keyword || "" }, icon(KIND_ICON[x.kind] || (x.keyword === "port" ? "dot" : "dot")));
+const typeOf = (x) => x.type?.title ? h("span", { class: "ty" }, `: ${x.type.title}`) : null;
+function why(id) {
+  if (!S.selected || id === S.selected) return null;
+  const rel = relations(S.selected).filter((r) => within(r.other, id) || within(id, r.other));
+  if (!rel.length) return null;
+  return h("div", { class: "why" }, [...new Set(rel.map((r) => r.label))].map((l) => h("span", { class: "chip" }, l)));
+}
+function elClass(id, base) {
+  let c = `${base} el`;
+  if (S.selected === id) c += " sel";
+  else if (S.selected) {
+    const rel = relations(S.selected);
+    if (rel.some((r) => within(r.other, id) || within(id, r.other))) c += " lit";
+    else if (within(S.selected, id) || within(id, S.selected)) c += " rel-ctx";
+  }
+  return c;
+}
+const pick = (id) => (e) => { e.stopPropagation(); S.anchor = { rect: e.currentTarget.getBoundingClientRect(), scroll: $("#main").scrollTop }; select(S.selected === id ? null : id); };
+
+// ---------- flows drawn as flows ----------
+// A flow is laid out by rule, not by a layout engine: each node's column is its longest
+// path from the start (loops set aside), each performer gets a lane, and nodes that share
+// a column and a lane stack. Edges go left to right; loops arc above.
+const NS = "http://www.w3.org/2000/svg";
+const svgEl = (tag, attrs = {}, ...kids) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) if (v != null) e.setAttribute(k, v); e.append(...kids.filter(Boolean)); return e; };
+const textWidth = (() => { const c = document.createElement("canvas").getContext("2d"); return (t, font = "500 12.5px -apple-system, system-ui, sans-serif") => { c.font = font; return c.measureText(t).width; }; })();
+
+/** graph: { nodes: [{ id, label, kind: "action"|"state"|"decision"|"merge"|"start"|"end", lane?, title? }], edges: [{ source, target, label?, title? }] } */
+function flowchart(graph, { lanes = true } = {}) {
+  const nodes = new Map(graph.nodes.map((n) => [n.id, { ...n }]));
+  const out = new Map(), into = new Map();
+  for (const e of graph.edges) { if (!nodes.has(e.source) || !nodes.has(e.target)) continue; (out.get(e.source) || out.set(e.source, []).get(e.source)).push(e); (into.get(e.target) || into.set(e.target, []).get(e.target)).push(e); }
+  // Loops: edges that return to a node still on the depth-first path.
+  const starts = [...nodes.values()].filter((n) => n.kind === "start" || !(into.get(n.id) || []).length).map((n) => n.id);
+  const state = new Map(), back = new Set(), order = [];
+  const visit = (id) => { state.set(id, 1); order.push(id); for (const e of out.get(id) || []) { const s = state.get(e.target); if (s === 1) back.add(e); else if (!s) visit(e.target); } state.set(id, 2); };
+  for (const s of starts) if (!state.get(s)) visit(s);
+  for (const id of nodes.keys()) if (!state.get(id)) visit(id);
+  // Column: longest forward path from a start.
+  const rank = new Map(order.map((id) => [id, 0]));
+  for (let changed = true, guard = 0; changed && guard < nodes.size + 2; guard++) {
+    changed = false;
+    for (const e of graph.edges) if (!back.has(e) && rank.has(e.source) && rank.get(e.target) < rank.get(e.source) + 1) { rank.set(e.target, rank.get(e.source) + 1); changed = true; }
+  }
+  // Lanes: a node without a performer takes its predecessor's lane (the start takes its successor's).
+  for (const id of order) { const n = nodes.get(id); if (!n.lane) n.lane = nodes.get((into.get(id) || []).find((e) => !back.has(e))?.source)?.lane; }
+  for (const id of [...order].reverse()) { const n = nodes.get(id); if (!n.lane) n.lane = nodes.get((out.get(id) || [])[0]?.target)?.lane; }
+  const laneNames = lanes ? [...new Set(order.map((id) => nodes.get(id).lane || ""))] : [""];
+  const laneOf = (n) => lanes ? (n.lane || "") : "";
+  // Geometry, top to bottom: each rank is a row, each performer a column (a lane), siblings side by side.
+  const H = { action: 34, state: 34, decision: 18, merge: 14, start: 12, end: 16 };
+  const width = (n) => n.kind === "action" || n.kind === "state" ? Math.ceil(textWidth(n.label)) + 28 : H[n.kind] + 4;
+  const height = (n) => n.kind === "action" || n.kind === "state" ? 34 : H[n.kind];
+  const ranks = Math.max(0, ...rank.values()) + 1, ROW = 64, GAP = 24, HEAD = lanes && laneNames.length > 1 ? 38 : 8, PAD = 16;
+  const cell = new Map();
+  for (const id of order) { const n = nodes.get(id), key = `${laneOf(n)}|${rank.get(id)}`; if (!cell.has(key)) cell.set(key, []); cell.get(key).push(n); }
+  const laneW = laneNames.map((l) => Math.max(150, ...[...cell].filter(([k]) => k.startsWith(`${l}|`)).map(([, ns]) => ns.reduce((sum, n) => sum + width(n), 0) + GAP * (ns.length - 1) + 40)));
+  const laneX = []; let x = PAD; laneW.forEach((w) => { laneX.push(x); x += w; });
+  for (const [key, ns] of cell) {
+    const [lane, r] = [key.slice(0, key.lastIndexOf("|")), +key.slice(key.lastIndexOf("|") + 1)];
+    const li = laneNames.indexOf(lane), total = ns.reduce((sum, n) => sum + width(n), 0) + GAP * (ns.length - 1);
+    let cx = laneX[li] + (laneW[li] - total) / 2;
+    for (const n of ns) { n.w = width(n); n.h = height(n); n.cx = cx + n.w / 2; n.cy = HEAD + PAD + r * ROW + ROW / 2; cx += n.w + GAP; }
+  }
+  const W = x + PAD, HH = HEAD + PAD * 2 + ranks * ROW;
+  const svg = svgEl("svg", { class: "chart", width: W, height: HH, viewBox: `0 0 ${W} ${HH}` },
+    svgEl("defs", {}, svgEl("marker", { id: "flow-arrow", viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "7", markerHeight: "7", orient: "auto-start-reverse" }, svgEl("path", { d: "M0 1 9 5 0 9z", fill: "#a9a59c" }))));
+  if (lanes && laneNames.length > 1) laneNames.forEach((l, i) => {
+    svg.append(svgEl("rect", { class: `lane${i % 2 ? " alt" : ""}`, x: laneX[i], y: 0, width: laneW[i], height: HH, rx: 0 }));
+    svg.append(svgEl("text", { class: "lane-label", x: laneX[i] + laneW[i] / 2, y: 22, "text-anchor": "middle" }, l || "—"));
+  });
+  // Edges under nodes: down from the bottom of a node to the top of the next; loops go round on the right.
+  for (const e of graph.edges) {
+    const a = nodes.get(e.source), b = nodes.get(e.target);
+    if (!a || !b) continue;
+    let d, lx, ly;
+    if (back.has(e)) {
+      const side = Math.max(a.cx + a.w / 2, b.cx + b.w / 2) + 26;
+      d = `M${a.cx + a.w / 2},${a.cy} C${side},${a.cy} ${side},${b.cy} ${b.cx + b.w / 2 + 3},${b.cy}`;
+      lx = side + 4; ly = (a.cy + b.cy) / 2;
+    } else {
+      const p = { x: a.cx, y: a.cy + a.h / 2 }, q = { x: b.cx, y: b.cy - b.h / 2 }, my = (p.y + q.y) / 2;
+      d = `M${p.x},${p.y} C${p.x},${my} ${q.x},${my} ${q.x},${q.y - 3}`;
+      lx = p.x + (q.x >= p.x ? 6 : -6); ly = p.y + 13;
+    }
+    const path = svgEl("path", { class: `edge${back.has(e) ? " loop" : ""}`, d, "marker-end": "url(#flow-arrow)" });
+    if (e.title) path.append(svgEl("title", {}, e.title));
+    svg.append(path);
+    if (e.label) svg.append(svgEl("text", { class: "edge-label", x: lx, y: ly, "text-anchor": back.has(e) ? "start" : (b.cx >= a.cx ? "start" : "end") }, e.label, e.title ? svgEl("title", {}, e.title) : null));
+  }
+  for (const n of nodes.values()) {
+    const g = svgEl("g", { class: n.cls || "fnode", transform: `translate(${n.cx},${n.cy})`, "data-id": n.ref || "" });
+    if (n.kind === "action" || n.kind === "state") {
+      g.append(svgEl("rect", { class: `box ${n.kind}${n.terminal ? " terminal" : ""}`, x: -n.w / 2, y: -17, width: n.w, height: 34, rx: n.kind === "state" ? 17 : 9 }),
+        svgEl("text", { class: "box-label", "text-anchor": "middle", y: 4 }, n.label));
+    } else if (n.kind === "decision" || n.kind === "merge") {
+      const r = H[n.kind] / 2;
+      g.append(svgEl("path", { class: `diamond ${n.kind}`, d: `M0,${-r} L${r},0 L0,${r} L${-r},0 Z` }));
+    } else if (n.kind === "start") g.append(svgEl("circle", { class: "start", r: 6 }));
+    else g.append(svgEl("circle", { class: "end-ring", r: 8 }), svgEl("circle", { class: "end-dot", r: 4.5 }));
+    g.append(svgEl("title", {}, n.title || n.label));
+    if (n.onclick) g.addEventListener("click", n.onclick);
+    svg.append(g);
+  }
+  return svg;
+}
+
+// ---------- pages ----------
+const pages = {};
+// The same element declared in several systems is one card, marked with how many.
+const groupTitle = (it) => Array.isArray(it.group) ? it.group.map((g) => g.title).join(" · ") : it.group || "";
+const twinKey = (it) => JSON.stringify([it.kind, it.keyword, it.title, it.type?.qname || "", groupTitle(it), it.summary || "", (it.values || []).map((v) => [v.name, v.value]), (it.steps || []).map((st) => [st.kind, st.title]), (it.access || []).map((a) => a.title)]);
+function elClassAny(ids, base) { const cs = ids.map((id) => elClass(id, base)); return cs.find((c) => / sel\b/.test(c)) || cs.find((c) => / lit\b/.test(c)) || cs.find((c) => / rel-ctx\b/.test(c)) || cs[0]; }
+function whyAny(ids) { const labels = [...new Set(ids.map(why).filter(Boolean).flatMap((w) => [...w.children].map((c) => c.textContent)))]; return labels.length ? h("div", { class: "why" }, labels.map((l) => h("span", { class: "chip" }, l))) : null; }
+pages.explore = () => {
+  const cols = M.b.columns.filter((c) => (c.items || []).length);
+  const many = units().length;
+  return [
+    h("h1", {}, "Explore"),
+    h("div", { class: "board" }, cols.map((c) => {
+      const twins = c.id === "team" ? c.items.map((it) => [it.id, [it]]) : groupBy(c.items, twinKey);
+      return h("section", { class: "col" },
+      h("h3", { title: twins.length !== c.items.length ? `${c.items.length} across ${many} systems` : null }, icon({ team: "spark", cando: "wrench", rules: "key", guarantees: "shield", information: "book" }[c.id] || "dot"), c.title, h("span", { class: "n" }, twins.length)),
+      groupBy(twins, ([, its]) => groupTitle(its[0]) || (its.length > 1 && its.length === many ? "In every system" : its.length > 1 ? `in ${listing(its.map((x) => nameOfUnit(M.reg.get(x.scope))))}` : its[0].scope ? scopeTitle(its[0].scope) : c.id === "team" ? "" : "Shared definitions")).map(([g, group]) => [
+        g && cols.length > 1 ? h("div", { class: "group" }, g) : null,
+        group.map(([, its]) => { const it = its[0], ids = its.map((x) => x.id); return h("article", { class: elClassAny(ids, "card row"), onclick: pick(it.id), title: it.summary || "" },
+          kindMark(it), h("span", { class: "t" }, c.id === "team" && !S.sysml ? nameOfUnit(it) : it.title, S.sysml ? [" ", typeOf(it)] : null),
+          its.length > 1 ? h("span", { class: "times", title: `one per system: ${listing(its.map((x) => nameOfUnit(M.reg.get(x.scope))))}` }, `×${its.length}`) : null,
+          whyAny(ids)); }),
+      ]));
+    })),
+  ];
+};
+const scopeTitle = (id) => id && M.reg.get(id)?.title ? `in ${nameOfUnit(M.reg.get(id))}` : "";
+function groupBy(items, key) { const m = new Map(); for (const it of items) { const k = key(it) || ""; if (!m.has(k)) m.set(k, []); m.get(k).push(it); } return [...m]; }
+function flatPanels(p) { return [p, ...(p.children || []).flatMap(flatPanels)]; }
+
+function portEl(p) {
+  const items = (p.items || []).map((i) => `${i.dir === "in" ? "←" : "→"} ${i.title}${i.type ? " : " + i.type : ""}`).join(" · ");
+  return h("div", { class: elClass(p.id, `port${p.conjugated ? " conj" : ""}`), onclick: pick(p.id), title: p.qname },
+    h("span", { class: "sq" }), h("span", { class: "pn" }, p.title, h("span", { class: "ty" }, ` : ${p.conjugated ? "~" : ""}${p.type?.title || ""}`)),
+    items || !p.linked ? h("span", { class: "pf" }, items, !p.linked ? h("span", { class: "open" }, items ? " · not connected" : "not connected") : null) : null);
+}
+function panelEl(p) {
+  return h("section", { class: elClass(p.id, "panel"), onclick: pick(p.id) },
+    h("div", { class: "head" }, kw(p), h("span", { class: "t" }, p.title), typeOf(p), p.operatorKind === "operator" || p.kind === "operator" ? h("span", { class: "chip ghost" }, "operator") : null),
+    p.summary ? h("div", { class: "sum" }, p.summary) : null,
+    (p.ports || []).length ? h("div", { class: "ports" }, p.ports.map(portEl)) : null,
+    (p.children || []).length ? h("div", { class: "panels" }, p.children.map(panelEl)) : null,
+    why(p.id));
+}
+pages.structure = () => {
+  const scopes = M.cols.team?.items || [];
+  if (!scopes.length) return [heading("structure"), empty("No system structure yet", "Declare a part that contains operators to see it here.")];
+  return [
+    heading("structure"),
+    scopes.map((s) => {
+      const conns = M.links.filter((l) => l.kind === "connect" && within(l.from, s.id));
+      return h("section", { class: elClass(s.id, "scope"), onclick: pick(s.id) },
+        h("div", { class: "head" }, kw(s), h("span", { class: "t" }, s.title), typeOf(s)),
+        s.summary ? h("div", { class: "sum" }, s.summary) : null,
+        h("div", { class: "kw", style: "margin-top:14px" }, "Operators"),
+        h("div", { class: "panels", style: "margin-top:6px" }, (s.children || []).filter((p) => p.kind === "operator").map(panelEl)),
+        (s.children || []).some((p) => p.kind !== "operator") ? [
+          h("div", { class: "kw", style: "margin-top:16px" }, "Platform · environments, catalogs and gates the operators rely on"),
+          h("div", { class: "panels platform", style: "margin-top:6px" }, (s.children || []).filter((p) => p.kind !== "operator").map(panelEl)),
+        ] : null,
+        conns.length ? h("table", { class: "list" },
+          h("thead", {}, h("tr", {}, h("th", {}, "Connection"), h("th", {}, "From"), h("th", {}, "To"))),
+          h("tbody", {}, conns.map((l) => h("tr", { class: elClass(l.from, ""), onclick: pick(l.from) },
+            h("td", {}, h("span", { class: "kw" }, "connect")),
+            h("td", {}, endpoint(l.from)), h("td", {}, endpoint(l.to)))))) : null);
+    }),
+  ];
+};
+function endpoint(id) {
+  const x = M.reg.get(id); if (!x) return id;
+  const owner = M.parent.get(id);
+  return owner && x.keyword === "port" ? `${title(owner)}.${x.title}` : x.title;
+}
+
+function flows() { return (M.cols.cando?.items || []).filter((it) => it.steps?.length); }
+pages.behavior = () => {
+  const machines = (M.cols.guarantees?.items || []).filter((it) => it.track);
+  const entries = [...groupBy(flows(), twinKey).map(([, its]) => ({ kind: "flow", its })), ...machines.map((m) => ({ kind: "life", its: [m] }))];
+  if (!entries.length) return [heading("behavior"), empty("No flows yet", "")];
+  if (!S.flow || !entries.some((e) => e.its.some((x) => x.id === S.flow))) S.flow = entries[0].its[0].id;
+  const cur = entries.find((e) => e.its.some((x) => x.id === S.flow)), f = cur.its.find((x) => x.id === S.flow) || cur.its[0];
+  const button = (e) => { const x = e.its.find((y) => y.id === S.flow) || e.its[0];
+    return h("button", { "aria-current": e === cur ? "true" : "false", title: x.summary || "", onclick: () => { S.flow = x.id; S.selected = null; render(); } },
+      humanize(x.title), e.its.length > 1 ? h("span", { class: "times" }, `×${e.its.length}`) : null); };
+  return [
+    heading("behavior"),
+    h("div", { class: "split flows" },
+      h("div", { class: "picker" }, entries.some((e) => e.kind === "flow") ? h("div", { class: "group" }, "Flows") : null, entries.filter((e) => e.kind === "flow").map(button),
+        machines.length ? [h("div", { class: "group" }, "Lifecycles"), entries.filter((e) => e.kind === "life").map(button)] : null),
+      h("div", { class: "flowchart" }, cur.kind === "flow" ? htmlFlow(f) : lifecycleTrack(f))),
+  ];
+};
+// A flow as a flow, in plain page elements: steps are cards on a thread, a decision splits
+// the thread into side-by-side branches, a jump names where it goes. Built from the board's
+// ordered steps (depth and branch marks), so the shape is the model's own order.
+function htmlFlow(f) {
+  const allocated = (id) => M.links.filter((l) => l.kind === "allocate" && (!f.scope || within(l.to, f.scope)) &&
+    (l.from === id || (M.reg.get(id)?.element && M.reg.get(id).element === M.reg.get(l.from)?.element))).map((l) => M.reg.get(l.to)).filter(Boolean);
+  const steps = f.steps;
+  // Parse the ordered steps into a tree: a decision at depth d owns the branches that start at depth d + 1.
+  const parse = (i, depth) => {
+    const out = [];
+    while (i < steps.length && steps[i].depth >= depth) {
+      const st = steps[i];
+      if (st.depth > depth) { i++; continue; }
+      if (out.length && st.branch && depth > 0) break; // the next branch of the enclosing decision
+      if (st.kind === "decision") {
+        const branches = []; i++;
+        while (i < steps.length && steps[i].depth === depth + 1 && steps[i].branch) {
+          const label = steps[i].branch, guard = steps[i].guard;
+          const [body, next] = parse(i, depth + 1);
+          branches.push({ label, guard, body }); i = next;
+        }
+        out.push({ kind: "decision", st, branches });
+      } else { out.push({ kind: st.kind, st }); i++; }
+    }
+    return [out, i];
+  };
+  const [tree] = parse(0, 0);
+  const performer = (st) => { const p = allocated(st.id).concat(allocated(st.element))[0]; return p ? { name: p.kind === "operator" ? nameOfUnit(M.reg.get(p.scope)) || p.title : p.title, ai: p.kind === "operator" } : null; };
+  const item = (n) => {
+    const st = n.st;
+    if (n.kind === "decision") return h("li", { class: "vdecision", title: humanize(st.title) },
+      h("span", { class: "vdiamond" }),
+      h("div", { class: "vbranches" }, n.branches.map((b) => h("div", { class: "vbranch" },
+        h("span", { class: "vlabel", title: b.guard || b.label }, b.label === "if" ? "if" : b.label),
+        h("ol", { class: "vflow" }, b.body.map(item))))));
+    if (st.kind === "goto") return h("li", { class: "vgoto" }, `→ ${humanize(st.toTitle)}`);
+    if (st.kind === "merge") return h("li", { class: "vmerge" }, humanize(st.title));
+    if (st.kind === "end" || st.kind === "done") return h("li", { class: "vend", title: "done" });
+    if (st.kind === "start") return h("li", { class: "vstart" });
+    const who = performer(st);
+    return h("li", { class: "vstep", title: S.sysml ? `${st.title}${st.type?.title ? " : " + st.type.title : ""}` : st.type?.title || "" },
+      h("div", { class: "vcard" }, h("b", {}, humanize(st.title)),
+        who ? h("span", { class: `who${who.ai ? "" : " platform"}` }, h("i"), who.name) : null),
+      (st.loops || []).length ? h("span", { class: "vloop" }, `↺ back to ${humanize(st.loops[0].toTitle)}`) : null);
+  };
+  return h("ol", { class: "vflow root" }, h("li", { class: "vstart" }), tree.map(item));
+}
+// A lifecycle as a track: states by rank, left to right, transitions on hover.
+function lifecycleTrack(m) {
+  const ranks = new Map();
+  for (const s of m.track.states) { const r = s.terminal ? "end" : s.rank; if (!ranks.has(r)) ranks.set(r, []); ranks.get(r).push(s); }
+  const order = [...ranks.keys()].filter((k) => k !== "end").sort((a, b) => a - b).concat(ranks.has("end") ? ["end"] : []);
+  return h("div", { class: "life" }, order.map((r) => h("div", { class: "life-col" },
+    ranks.get(r).map((s) => h("div", { class: `life-state${s.terminal ? " terminal" : ""}${s.initial ? " initial" : ""}`, title: (s.out || []).map((t) => `${humanize(t.on || t.name)} → ${t.toTitle}`).join("\n") || s.title }, s.title)))));
+}
+// A flow's diagram: the Toolkit's action graph, one lane per performer of this system.
+function flowFor(f) {
+  const view = M.data.diagrams?.[f.type?.qname];
+  if (!view) return empty("No diagram for this flow", "");
+  const g = view.graph;
+  const performer = (id) => M.links.filter((l) => l.kind === "allocate" && (!f.scope || within(l.to, f.scope)) && (l.from === id || M.reg.get(l.from)?.element === id)).map((l) => M.reg.get(l.to)).find(Boolean);
+  const laneName = (p) => !p ? "" : p.kind === "operator" ? nameOfUnit(M.reg.get(p.scope)) || p.title : p.title;
+  const outs = (id) => g.edges.filter((e) => e.source === id).length;
+  const nodes = g.nodes.filter((n) => !(n.nodeKind === "def" && !n.parent)).map((n) => {
+    const ref = M.resolve(n.id), name = n.label.split(" : ")[0];
+    const kind = n.kind === "pseudo" ? (n.stereo === "final" ? "end" : "start") : n.kind === "control" ? (outs(n.id) > 1 ? "decision" : "merge") : "action";
+    return { id: n.id, kind, label: humanize(name), title: S.sysml ? n.label : name, lane: kind === "action" ? laneName(performer(n.id)) : null, ref, cls: ref ? elClass(ref, "fnode") : "fnode", onclick: ref ? pick(ref) : null };
+  });
+  const edges = g.edges.filter((e) => e.source && e.target).map((e) => ({ source: e.source, target: e.target, label: e.label ? (e.label === "else" ? "else" : "if") : null, title: e.label || null }));
+  return flowchart({ nodes, edges });
+}
+// A lifecycle's diagram: states from the board track, transitions merged per pair.
+function lifecycleFor(m) {
+  const states = m.track.states, byTitle = new Map(states.map((s) => [s.title, s]));
+  const nodes = [{ id: "start", kind: "start", label: "start" }, ...states.map((s) => ({ id: s.id, kind: "state", label: s.title, terminal: !(s.out || []).length, ref: s.id, cls: elClass(s.id, "fnode"), onclick: pick(s.id), title: (s.out || []).map((t) => `${t.on || t.name} → ${t.toTitle}`).join("\n") || s.title }))];
+  const pairs = new Map();
+  for (const s of states) for (const t of s.out || []) { const to = byTitle.get(t.toTitle); if (!to) continue; const k = `${s.id}|${to.id}`; (pairs.get(k) || pairs.set(k, { source: s.id, target: to.id, names: [] }).get(k)).names.push(t.on || t.name); }
+  const first = states.find((s) => s.initial) || states[0];
+  const edges = [...(first ? [{ source: "start", target: first.id }] : []), ...[...pairs.values()].map((p) => ({ source: p.source, target: p.target, title: [...new Set(p.names)].map(humanize).join(", ") }))];
+  return flowchart({ nodes, edges }, { lanes: false });
+}
+
+pages.states = () => {
+  const machines = (M.cols.guarantees?.items || []).filter((it) => it.track);
+  if (!machines.length) return [heading("states"), empty("No state machines yet", "State definitions appear here as tracks.")];
+  return [
+    heading("states"),
+    machines.map((m) => {
+      const ranks = new Map();
+      for (const s of m.track.states) { const r = s.terminal ? "end" : s.rank; if (!ranks.has(r)) ranks.set(r, []); ranks.get(r).push(s); }
+      const order = [...ranks.keys()].filter((k) => k !== "end").sort((a, b) => a - b).concat(ranks.has("end") ? ["end"] : []);
+      return h("section", { class: elClass(m.id, "scope"), onclick: pick(m.id) },
+        h("div", { class: "head" }, kw(m), h("span", { class: "t" }, m.title), m.track.extends ? h("span", { class: "ty" }, `extends ${m.track.extends.title}`) : null),
+        m.summary ? h("div", { class: "sum" }, m.summary) : null,
+        h("div", { class: "track", style: `grid-template-columns: repeat(${order.length}, minmax(190px, 1fr))` }, order.map((r) => h("div", { class: "rank" },
+          h("div", { class: "rh" }, r === "end" ? "Final" : r === 0 ? "Start" : `Step ${r}`),
+          ranks.get(r).map((s) => h("div", { class: elClass(s.id, `state${s.terminal ? " terminal" : ""}`), onclick: pick(s.id) },
+            h("div", { class: "t" }, s.initial ? "● " : "", s.title, S.sysml && s.inherited ? h("span", { class: "chip ghost" }, "inherited") : null),
+            h("ul", {}, groupBy(s.out || [], (t) => t.toTitle).map(([to, ts]) => h("li", {}, "→ ", h("b", {}, to), ` on ${[...new Set(ts.map((t) => t.on || t.name))].join(", ")}`, ts.some((t) => t.guard) ? ` [${ts.map((t) => t.guard).filter(Boolean).join(", ")}]` : "")))))))));
+    }),
+  ];
+};
+
+pages.interactions = () => [h("h1", {}, "Interactions"), empty("No interactions modeled in this system", "Occurrence definitions with messages between parts (proposal → admission → execution) will read here as an ordered exchange, one row per message.")];
+
+pages.requirements = () => {
+  const items = (M.cols.guarantees?.items || []).filter((it) => !it.track);
+  const reqs = items.filter((it) => it.kind === "requirement"), cons = items.filter((it) => it.kind === "constraint");
+  const owners = (r) => Array.isArray(r.satisfiedBy) ? r.satisfiedBy.length : +r.satisfiedBy || 0;
+  const row = (x, mark, text, tip, extra) => h("li", { class: elClass(x.id, "qrow"), onclick: pick(x.id), title: tip },
+    h("span", { class: `mark ${mark}` }), h("span", { class: "qtext" }, text, extra), why(x.id));
+  return [
+    heading("requirements"),
+    h("div", { class: "zen-list" },
+      reqs.length ? [h("h3", {}, icon("shield"), "Requirements"),
+        h("ul", { class: "plain" }, reqs.map((r) => row(r, r.satisfiedBy ? "on" : "off", r.summary || humanize(r.title),
+          `${r.title} — ${owners(r) ? `${owners(r)} owner${owners(r) > 1 ? "s" : ""}, not tested` : "no owner: nothing is declared to satisfy it"}`,
+          [(r.clauses || []).length ? h("div", { class: "qsub" }, h("span", { class: "fl" }, humanize(r.title)), " · ", (r.clauses || []).map((c) => humanize(c.title)).join(" · ")) : null,
+            S.sysml ? (r.clauses || []).map((c) => c.expression ? h("div", { class: "expr" }, c.expression) : null) : null])))] : null,
+      cons.length ? [h("h3", {}, icon("check"), "Constraints"),
+        h("ul", { class: "plain" }, cons.map((c) => row(c, c.inForce ? "on" : "idle", humanize(c.title),
+          `${c.title} — ${c.inForce ? "used by a performed step" : "used by no performed step"}`,
+          [h("span", { class: "qon" }, c.owner?.title || c.type?.title ? `on ${humanize(c.owner?.title || c.type?.title)}` : null, c.inForce ? null : " · not performed"),
+            S.sysml && c.expression ? h("div", { class: "expr" }, c.expression) : null])))] : null),
+  ];
+};
+
+pages.allocations = () => {
+  const alloc = M.links.filter((l) => l.kind === "allocate");
+  if (!alloc.length) return [heading("allocations"), empty("No allocations yet", "allocate statements appear here as a matrix.")];
+  const roots = new Set((M.cols.team?.items || []).map((s) => s.id));
+  const scopeOf = (id) => { for (let at = id; at; at = M.parent.get(at)) { if (roots.has(at)) return at; const x = M.reg.get(at); if (x?.scope && roots.has(x.scope)) return x.scope; } return null; };
+  const colsBy = [...roots].map((sc) => ({ sc, cols: [...new Set(alloc.map((l) => l.to))].filter((c) => scopeOf(c) === sc) })).filter((g) => g.cols.length);
+  const cols = colsBy.flatMap((g) => g.cols);
+  const rows = [...new Set(alloc.map((l) => l.from))];
+  const groupOf = (id) => { const x = M.reg.get(id); const sc = scopeOf(x?.flow || id); return x?.flow ? `${title(x.flow)} · in ${title(sc) || "?"}` : `Actions · in ${title(sc) || "?"}`; };
+  return [
+    heading("allocations"),
+    h("div", { class: "scroll-x" }, h("table", { class: "matrix" },
+      h("thead", {},
+        h("tr", { class: "groups" }, h("th", {}), colsBy.map((g) => h("th", { colspan: g.cols.length }, title(g.sc)))),
+        h("tr", {}, h("th", {}), colsBy.flatMap((g) => g.cols.map((c) => h("th", { class: "vert" }, h("span", {}, title(c))))))),
+      h("tbody", {}, groupBy(rows, groupOf).map(([g, rs]) => [
+        h("tr", {}, h("th", { colspan: cols.length + 1, style: "color:var(--faint);font-size:11px;padding-top:12px" }, g)),
+        rs.map((r) => h("tr", { class: elClass(r, ""), onclick: pick(r) }, h("th", {}, title(r)),
+          colsBy.flatMap((g) => g.cols.map((c, i) => h("td", { class: i === 0 ? "g0" : "" }, alloc.some((l) => l.from === r && l.to === c) ? h("span", { class: "dot allowed" }) : null))))),
+      ])))),
+  ];
+};
+
+pages.authority = () => S.sysml ? fullMatrix() : [heading("authority"), h("div", { class: "rights-zen" }, glance())];
+function fullMatrix() {
+  const m = M.data.matrix;
+  const groups = [...m.groups].sort((a, b) => a.order - b.order);
+  const columns = groups.flatMap((g) => m.columns.filter((c) => c.group === g.id).sort((a, b) => a.order - b.order));
+  const cell = new Map(m.cells.map((c) => [`${c.row}|${c.column}`, c]));
+  const glyph = (c) => !c ? null : h("span", { class: `dot ${c.display === "allowed" ? (c.state === "inherited" ? "inherited" : "allowed") : c.display === "propose-only" ? "propose" : "denied"}` });
+  const unitByQname = new Map(units().map((u) => [u.qname, u]));
+  const rowLabel = (r) => r.kind === "human" ? `You · in ${nameOfUnit(unitByQname.get(r.unit)) || unitName(r.unit)}` : S.sysml ? `${r.role || r.label.split("::").pop()} · ${unitName(r.unit)}` : nameOfUnit(unitByQname.get(r.unit)) || unitName(r.unit);
+  return [
+    heading("authority"),
+    h("div", { class: "scroll-x" }, h("table", { class: "matrix" },
+      h("thead", {},
+        h("tr", { class: "groups" }, h("th", {}), groups.map((g) => h("th", { colspan: m.columns.filter((c) => c.group === g.id).length }, g.label))),
+        h("tr", {}, h("th", {}), columns.map((c) => h("th", { class: "vert", title: c.doc }, h("span", {}, c.label))))),
+      h("tbody", {}, m.rows.map((r) => h("tr", {},
+        h("th", { title: r.label }, rowLabel(r)),
+        columns.map((c, i) => { const k = `${r.id}|${c.id}`, v = cell.get(k); return h("td", { class: `${v ? "cell" : ""}${S.cell === k ? " sel" : ""}${i === 0 || columns[i - 1].group !== c.group ? " g0" : ""}`, onclick: v ? (e) => { S.anchor = { rect: e.currentTarget.getBoundingClientRect(), scroll: $("#main").scrollTop }; S.cell = S.cell === k ? null : k; S.selected = null; render(); } : null }, glyph(v)); })))))),
+    h("div", { class: "legend" }, h("span", {}, h("span", { class: "dot allowed" }), " allowed"), h("span", {}, h("span", { class: "dot propose" }), " can propose — a decision follows"), h("span", {}, h("span", { class: "dot inherited" }), " inherited"), h("span", {}, h("span", { class: "dot denied" }), " not allowed")),
+  ];
+}
+
+function defKinds(v) { return [...new Set(v.diagram.nodes.filter((n) => n.nodeKind === "def").map((n) => n.stereo))]; }
+pages.definitions = () => {
+  const pkgs = M.data.definitions || [];
+  if (!S.defPkg || !pkgs.some((p) => p.id === S.defPkg)) S.defPkg = pkgs[0]?.id;
+  const v = pkgs.find((p) => p.id === S.defPkg);
+  if (!v) return [heading("definitions"), empty("No definitions", "")];
+  const nodes = v.diagram.nodes, byId = new Map(nodes.map((n) => [n.id, n]));
+  const general = new Map();
+  for (const e of v.diagram.edges) if (e.kind === "specialization" || e.kind === "subclassification") (general.get(e.source) || general.set(e.source, []).get(e.source)).push(byId.get(e.target)?.label || "");
+  const defs = nodes.filter((n) => n.kind !== "package" && n.kind !== "note" && (!n.parent || byId.get(n.parent)?.kind === "package"));
+  const shown = defs.filter((n) => S.defKind === "all" || n.stereo === S.defKind);
+  const kinds = ["all", ...new Set(defs.map((n) => n.stereo))];
+  return [
+    heading("definitions"),
+    h("div", { class: "split" },
+      h("div", { class: "picker" }, pkgs.map((p) => h("button", { "aria-current": p.id === S.defPkg ? "true" : "false", onclick: () => { S.defPkg = p.id; S.defKind = "all"; render(); } }, p.title, h("span", { class: "sub" }, `${p.nodes - 1} elements`)))),
+      h("div", {},
+        h("div", { class: "filters" }, kinds.map((k) => h("button", { "aria-pressed": S.defKind === k ? "true" : "false", onclick: () => { S.defKind = k; render(); } }, k))),
+        h("div", { class: "defs" }, shown.map((n) => {
+          const [name, type] = n.label.split(" : ");
+          const secs = groupBy(n.rows || [], (r) => r.section);
+          return h("article", { class: `def${n.nodeKind === "def" ? "" : " usage"}` },
+            h("div", { class: "kw" }, n.stereo), h("div", { style: "font-weight:600" }, name, type ? h("span", { class: "ty" }, ` : ${type}`) : null),
+            general.get(n.id) ? h("div", { class: "ty", style: "font-size:12px" }, `specializes ${general.get(n.id).join(", ")}`) : null,
+            secs.map(([s, rows]) => h("div", { class: "compartment" }, h("div", { class: "ct" }, s), rows.map((r) => h("div", {}, r.label)))));
+        })))),
+  ];
+};
+
+// Context, tools and skills, memory belong to each agent: the Team page shows one agent at a time.
+const talksWithYou = (u) => valueOf(u, "primaryContact") === true && valueOf(u, "humanInputEnabled") === true;
+pages.team = () => {
+  const us = units();
+  if (!us.length) return [h("h1", {}, "Team"), empty("No agent declared", "")];
+  if (!S.agent || !us.some((u) => u.id === S.agent)) S.agent = (us.find(talksWithYou) || us[0]).id;
+  const u = us.find((x) => x.id === S.agent);
+  // Up to a dozen agents the team reads as a map; beyond, as a list beside the profile.
+  if (us.length <= 12) return [h("h1", {}, "Team"), teamMap(us), agentProfile(u)];
+  return [
+    h("h1", {}, "Team"),
+    h("div", { class: "split team-page" },
+      h("div", { class: "picker" }, us.map((x) => h("button", { "aria-current": x.id === S.agent ? "true" : "false", onclick: () => { S.agent = x.id; S.selected = null; render(); } },
+        h("span", { class: "mini" }, icon(talksWithYou(x) ? "chat" : "spark")), nameOfUnit(x)))),
+      agentProfile(u)),
+  ];
+};
+// The team as a network, not an org chart: agents in the middle, what they work with above,
+// what they keep or may change below; lines say who uses what, arrows who hands work to whom.
+function teamMap(us) {
+  const R = rights(), resources = new Map();
+  const add = (key, label, iconName, band, u, how) => {
+    if (!resources.has(key)) resources.set(key, { key, label, icon: iconName, band, agents: new Map() });
+    resources.get(key).agents.set(u.id, how);
+  };
+  const grants = (it) => { try { return JSON.parse(valueOf(it, "grants") || "[]").flatMap((g) => g.qualifiedRoots || []); } catch { return []; } };
+  for (const u of us) {
+    const r = R.ai.find((x) => x.unit === u.qname);
+    if (r) for (const c of R.columns.filter((c) => c.group === "tools" && c.target?.kind === "tool-kind")) {
+      const cell = R.at(r, c.id);
+      if (cell && (cell.state === "propose-only" || R.usable(cell))) add(`tool:${c.target.ref}`, c.target.ref, "wrench", "top", u, "builds");
+    }
+    for (const it of [...(M.cols.cando?.items || []), ...(M.cols.rules?.items || [])].filter((x) => x.scope === u.id)) {
+      const pkg = it.type?.qname?.split("::")[0], name = valueOf(it, "id") || humanize(it.type?.title || it.title);
+      if (it.kind === "skill") add(`skill:${it.title}`, it.title, "book", "top", u, "has");
+      else if (it.kind === "policy" && pkg === "APEContext") add(`ctx:${name}`, name, "eye", "top", u, "sees");
+      else if (it.kind === "policy" && pkg === "APESkills") add(`skills:${name}`, name, "book", "top", u, "loads");
+      else if (it.kind === "policy" && pkg === "APEMemory") add(`mem:${name}`, name, "archive", "bottom", u, "keeps");
+      if (it.kind === "policy") for (const root of grants(it)) add(`info:${root}`, unitName(root), "file", "bottom", u, "may propose edits");
+    }
+  }
+  const inbox = (v) => R.columns.filter((c) => c.id.startsWith("behavior:inbox@") && c.id.endsWith(`@${v.qname}`));
+  const sendsTo = (x) => us.filter((v) => v !== x && inbox(v).some((c) => R.holders(c.id, R.ai).some((row) => row.unit === x.qname)));
+  const ordered = [...us.filter(talksWithYou), ...us.filter((x) => !talksWithYou(x))];
+  const edges = [
+    ...us.filter(talksWithYou).map((x) => ({ from: "you", to: x.id, kind: "talk" })),
+    ...us.flatMap((x) => sendsTo(x).map((v) => ({ from: x.id, to: v.id, kind: "handoff" }))),
+    ...[...resources.values()].flatMap((res) => [...res.agents].map(([id, how]) => ({ from: res.band === "top" ? res.key : id, to: res.band === "top" ? id : res.key, kind: "uses", title: how }))),
+  ];
+  // The same elements as before (avatars, pills), placed by a force simulation: links pull,
+  // nodes repel, nothing overlaps. The start and the number of steps are fixed, so the same
+  // team always settles the same way; nodes can be dragged.
+  const box = h("div", { class: "tmap force" });
+  const nodes = [
+    { id: "you", kind: "you", el: h("div", { class: "node", title: "You" }, h("div", { class: "avatar you" }, icon("person")), h("div", { class: "nm" }, "You")) },
+    ...ordered.map((x) => ({ id: x.id, kind: "agent", pickable: true, el: h("div", { class: `node${x.id === S.agent ? " picked" : ""}` },
+      h("div", { class: "avatar" }, icon(talksWithYou(x) ? "chat" : "spark")), h("div", { class: "nm" }, nameOfUnit(x))) })),
+    ...[...resources.values()].map((res) => ({ id: res.key, kind: "res", el: h("div", { class: `tres${res.agents.size > 1 ? " shared" : ""}`, title: [...res.agents].map(([id, how]) => `${nameOfUnit(us.find((x) => x.id === id))} ${how}`).join("\n") },
+      h("span", { class: "anchor" }, icon(res.icon), res.label, res.agents.size > 1 ? h("span", { class: "times" }, `×${res.agents.size}`) : null)) })),
+  ];
+  const links = edges.map((e) => ({ source: e.from, target: e.to, kind: e.kind, title: e.title }));
+  const svg = d3.select(box).append("svg").attr("class", "wires");
+  svg.append("defs").html('<marker id="tarr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 9 5 0 9z" fill="#8f8a80"/></marker>');
+  for (const n of nodes) { n.el.classList.add("fnode-abs"); box.append(n.el); }
+  requestAnimationFrame(() => {
+    if (!box.isConnected) return;
+    const width = box.clientWidth, pad = 18;
+    for (const n of nodes) {
+      const r = n.el.getBoundingClientRect(), a = n.el.querySelector(".avatar")?.getBoundingClientRect();
+      n.w = r.width; n.h = r.height; n.r = Math.max(r.width, r.height) / 2 + 10;
+      n.ay = a ? a.top + a.height / 2 - (r.top + r.height / 2) : 0; // wires meet the avatar, not the label
+    }
+    nodes.forEach((n, i) => { const a = i * 2.39996, d = 18 * Math.sqrt(i + 1); n.x = d * Math.cos(a); n.y = d * Math.sin(a); });
+    const sim = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).id((d) => d.id).distance((l) => l.kind === "uses" ? 105 : 175).strength((l) => l.kind === "uses" ? 0.5 : 0.8))
+      .force("charge", d3.forceManyBody().strength((d) => d.kind === "res" ? -320 : -900))
+      .force("collide", d3.forceCollide((d) => d.r).iterations(2))
+      .force("x", d3.forceX(0).strength(0.05)).force("y", d3.forceY(0).strength(0.09))
+      .stop();
+    for (let i = 0; i < 320; i++) sim.tick();
+    // The settled network is centered; the frame takes its height, and it is narrowed only if wider than the page.
+    const x0 = d3.min(nodes, (n) => n.x - n.w / 2), x1 = d3.max(nodes, (n) => n.x + n.w / 2);
+    const y0 = d3.min(nodes, (n) => n.y - n.h / 2), y1 = d3.max(nodes, (n) => n.y + n.h / 2);
+    const k = Math.min(1, (width - 2 * pad) / (x1 - x0)), height = y1 - y0 + 2 * pad;
+    for (const n of nodes) { n.x = width / 2 + (n.x - (x0 + x1) / 2) * k; n.y = pad + n.y - y0; }
+    box.style.height = `${height}px`;
+    const line = svg.selectAll("line").data(links).join("line").attr("class", (l) => `wire ${l.kind}`).attr("marker-end", (l) => l.kind === "handoff" ? "url(#tarr)" : null);
+    line.append("title").text((l) => l.title || "");
+    const clamp = (n) => { n.x = Math.max(n.w / 2 + 6, Math.min(width - n.w / 2 - 6, n.x)); n.y = Math.max(n.h / 2 + 6, Math.min(height - n.h / 2 - 6, n.y)); };
+    const draw = () => {
+      for (const n of nodes) { clamp(n); n.el.style.transform = `translate(${n.x - n.w / 2}px, ${n.y - n.h / 2}px)`; }
+      line.each(function (l) {
+        const sy = l.source.y + l.source.ay, ty = l.target.y + l.target.ay;
+        const dx = l.target.x - l.source.x, dy = ty - sy, len = Math.hypot(dx, dy) || 1, cut = l.kind === "handoff" ? 30 : 0;
+        d3.select(this).attr("x1", l.source.x).attr("y1", sy).attr("x2", l.target.x - (dx / len) * cut).attr("y2", ty - (dy / len) * cut);
+      });
+    };
+    draw();
+    // Drag to rearrange; a click without moving opens the agent.
+    d3.selectAll(nodes.map((n) => n.el)).data(nodes).call(d3.drag()
+      .on("start", (e, d) => { d.moved = false; })
+      .on("drag", (e, d) => { d.moved = true; d.x = e.x; d.y = e.y; draw(); })
+      .on("end", (e, d) => { if (!d.moved && d.pickable) { S.agent = d.id; render(); } }));
+  });
+  return box;
+}
+addEventListener("resize", () => { if (S.page === "team" && document.querySelector(".tmap")) render(); });
+function agentProfile(u) {
+  const R = rights(), r = R.ai.find((x) => x.unit === u.qname);
+  const mine = [...(M.cols.cando?.items || []), ...(M.cols.rules?.items || [])].filter((it) => it.scope === u.id);
+  const inbox = (v) => R.columns.filter((c) => c.id.startsWith("behavior:inbox@") && c.id.endsWith(`@${v.qname}`));
+  const sendsTo = (x) => units().filter((v) => v !== x && inbox(v).some((c) => R.holders(c.id, R.ai).some((row) => row.unit === x.qname)));
+  const to = sendsTo(u), from = units().filter((v) => v !== u && sendsTo(v).includes(u));
+  const SECTIONS = [
+    { title: "Context", pkg: "APEContext", icon: "eye", family: "context", none: "No context policy declared" },
+    { title: "Tools & skills", pkg: "APESkills", tools: true, icon: "wrench", family: "skill", none: "No tool or skill declared" },
+    { title: "Memory", pkg: "APEMemory", icon: "archive", family: "memory", none: "No memory declared" },
+  ];
+  const section = (sec) => {
+    const items = mine.filter((it) => it.type?.qname?.startsWith(`${sec.pkg}::`) || (sec.tools && it.kind === "tool"));
+    const head = h("div", { class: "ctx-head" }, icon(sec.icon), h("h3", {}, sec.title));
+    if (!items.length) return h("section", { class: "ctx-sec blank" }, head, h("div", { class: "faint" }, sec.none));
+    const numbers = [], rules = [];
+    for (const pl of items.filter((it) => it.kind === "policy")) for (const v of pl.values || []) {
+      if (["id", "revision"].includes(v.name)) continue;
+      if (typeof v.value === "number") numbers.push({ n: /Ms$/.test(v.name) ? duration(v.value).replace(" ", "") : compact(v.value), label: humanize(v.name.replace(/^max/, "").replace(/Ms$/, "")).toLowerCase(), id: pl.id });
+      else rules.push({ text: policyPhrase(v), id: pl.id });
+    }
+    const things = items.filter((it) => it.kind === "skill" || it.kind === "tool"), verbs = items.filter((it) => it.kind === "capability");
+    const active = sec.tools && r ? R.at(r, "tool.invoke")?.scope?.activeTools || [] : [];
+    return h("section", { class: "ctx-sec" }, head,
+      numbers.length ? h("div", { class: "stats" }, numbers.slice(0, 6).map((x) => h("div", { class: elClass(x.id, "stat"), onclick: pick(x.id), title: x.label }, h("b", {}, x.n), h("span", {}, x.label)))) : null,
+      things.length ? h("div", { class: "ctx-row" }, h("span", { class: "fl" }, sec.tools ? "Catalog" : "Has"), things.map((t) => h("span", { class: elClass(t.id, "chip"), onclick: pick(t.id), title: t.summary || "" }, t.title)),
+        sec.tools ? h("span", { class: "faint" }, active.length ? `${active.length} active` : "none active yet") : null) : null,
+      verbs.length ? h("div", { class: "ctx-row" }, h("span", { class: "fl" }, "Can"), verbs.map((t) => h("span", { class: elClass(t.id, "chip ghost"), onclick: pick(t.id) }, t.title))) : null,
+      rules.length ? h("div", { class: "ctx-row" }, h("span", { class: "fl" }, "Rules"), rules.map((x) => h("span", { class: elClass(x.id, "rule"), onclick: pick(x.id) }, x.text))) : null);
+  };
+  const mandate = mine.find((it) => it.kind === "mandate");
+  const limitsOf = mine.filter((it) => it.kind === "policy" && !SECTIONS.some((sec) => it.type?.qname?.startsWith(`${sec.pkg}::`))).flatMap((pl) => (pl.values || []).filter((v) => /^max[A-Z]/.test(v.name) && typeof v.value === "number").map((v) => ({ n: compact(v.value), label: humanize(v.name.slice(3)).toLowerCase() })));
+  const work = mine.filter((it) => it.steps?.length);
+  const talk = talksWithYou(u) ? "Talks with you" : valueOf(u, "primaryContact") === false ? "Not in direct contact with you" : null;
+  return h("div", { class: "profile" },
+    h("div", { class: "profile-head" }, h("div", { class: "avatar" }, icon(talksWithYou(u) ? "chat" : "spark")),
+      h("div", {}, h("h2", {}, nameOfUnit(u)), h("div", { class: "faint" }, [talk, to.length ? `hands work to ${listing(to.map(nameOfUnit))}` : null, from.length ? `receives work from ${listing(from.map(nameOfUnit))}` : null].filter(Boolean).join(" · ")))),
+    h("div", { class: "ctx" }, SECTIONS.map(section),
+      h("section", { class: "ctx-sec" }, h("div", { class: "ctx-head" }, icon("key"), h("h3", {}, "Mandate")),
+        mandate?.summary ? h("p", { class: "mandate", title: mandate.title }, mandate.summary) : h("div", { class: "faint" }, "No mandate declared"),
+        limitsOf.length ? h("div", { class: "stats" }, limitsOf.map((x) => h("div", { class: "stat" }, h("b", {}, x.n), h("span", {}, x.label)))) : null,
+        h("div", { class: "ctx-row" }, h("span", { class: "fl" }, "Rights"), h("button", { class: "linkish", style: "margin:0", onclick: () => { S.page = "authority"; render(); } }, "See what it may do →"))),
+      work.length ? h("section", { class: "ctx-sec" }, h("div", { class: "ctx-head" }, icon("arrows"), h("h3", {}, "Works on")),
+        h("div", { class: "ctx-row" }, work.map((f) => h("button", { class: "chip", style: "border:0;cursor:pointer", onclick: () => { S.page = "behavior"; S.flow = f.id; render(); } }, humanize(f.title))))) : null));
+}
+
+// ---------- Model: the SysML model is versioned in Git; this is where its history, sources and diagrams live ----------
+const when = (iso) => new Date(iso).toLocaleString("en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+function whoWrote(author) {
+  if (!author || author === "local-control") return "You";
+  if (author === "ase") return "ASE";
+  const id = author.replace(/^agent:/, "");
+  for (const data of Object.values(ALL)) {
+    const hit = data.board.columns.flatMap((c) => c.items || []).flatMap(flatPanels).find((x) => x.element === id || x.id === id);
+    if (hit) { const unit = data.board.columns.find((c) => c.id === "team")?.items.find((u) => flatPanels(u).includes(hit)); return (unit?.values || []).find((v) => v.name === "operatorName")?.value || hit.title; }
+  }
+  return `agent ${id.slice(0, 8)}`;
+}
+function unifiedPatch(files) {
+  return files.filter((f) => f.diff).map((f) => {
+    const a = f.status[0] === "A" ? "/dev/null" : `a/${f.path}`, b = f.status[0] === "D" ? "/dev/null" : `b/${f.path}`;
+    return `diff --git a/${f.path} b/${f.path}\n--- ${a}\n+++ ${b}\n${f.diff.endsWith("\n") ? f.diff : `${f.diff}\n`}`;
+  }).join("");
+}
+function diffView(files, mode = "line") {
+  if (window.Diff2Html) {
+    const box = h("div", { class: "d2h-host" });
+    box.innerHTML = Diff2Html.html(unifiedPatch(files), { outputFormat: mode === "side" ? "side-by-side" : "line-by-line", drawFileList: false, matching: "lines", colorScheme: "light" });
+    // A file name opens the file as it is on main.
+    box.querySelectorAll(".d2h-file-name").forEach((el) => { const path = el.textContent.trim(); if (REPO.files[path]) { el.classList.add("go"); el.onclick = (e) => { e.stopPropagation(); openFile(path); }; } });
+    // Files recorded without a diff (the initial admission) are listed, each opening the file.
+    const bare = files.filter((f) => !f.diff);
+    if (bare.length) box.append(h("ul", { class: "plain dlist" }, bare.map((f) => h("li", {},
+      h("button", { class: "linkish", disabled: !REPO.files[f.path], onclick: (e) => { e.stopPropagation(); openFile(f.path); } },
+        h("span", { class: `dstat s-${f.status[0]}` }, { A: "added", M: "changed", D: "removed" }[f.status[0]] || f.status), f.path)))));
+    return box;
+  }
+  return h("div", { class: "diffs" }, files.map((f) => h("div", { class: "dfile" },
+    h("div", { class: "dhead" }, h("span", { class: `dstat s-${f.status[0]}` }, { A: "added", M: "changed", D: "removed" }[f.status[0]] || f.status), h("b", {}, f.path),
+      h("span", { class: "faint" }, f.added || f.removed ? `+${f.added} −${f.removed}` : "")),
+    f.diff ? h("pre", { class: "dbody" }, f.diff.split("\n").filter((l) => l !== "").map((l) => h("div", { class: l.startsWith("@@") ? "hunk" : l[0] === "+" ? "add" : l[0] === "-" ? "del" : "dctx" }, l))) : null)));
+}
+function changeRow(x, kind, extra) {
+  const open = S.change === x.sha;
+  return h("li", { class: `change${open ? " open" : ""}${kind === "declined" ? " declined" : ""}` },
+    h("button", { class: "change-row", onclick: () => { S.change = open ? null : x.sha; render(); } },
+      h("span", { class: `cmark ${kind}` }),
+      h("span", { class: "ctitle" }, x.message),
+      h("span", { class: "cmeta" }, x.byline || whoWrote(x.author), " · ", when(x.date), " · ", h("code", {}, x.short)),
+      h("span", { class: "faint" }, x.files?.length ? `${x.files.length} file${x.files.length > 1 ? "s" : ""}` : "")),
+    extra || null,
+    open ? diffView(x.files || []) : null);
+}
+// A proposal waits for you until it is accepted or declined; here the choice only lives in this page.
+const pendingProposals = () => REPO.proposals.filter((p) => !p.accepted && !S.decided[p.id]);
+const decide = (p, choice) => () => { S.decided[p.id] = choice; render(); };
+// One feed, like GitHub notifications: what waits for you first, then what was accepted.
+pages.activity = () => {
+  const proposalOf = (v) => REPO.proposals.find((p) => p.id === v.proposal);
+  const pending = pendingProposals(), taken = REPO.proposals.filter((p) => S.decided[p.id] === "accepted"), turned = REPO.proposals.filter((p) => S.decided[p.id] === "declined");
+  return [
+    h("h1", {}, "Activity"),
+    pending.length ? [h("div", { class: "feed-group" }, "Waiting for you"),
+      h("ul", { class: "plain timeline" }, pending.map((p) => changeRow({ ...p, byline: `proposed by ${whoWrote(p.author)}` }, "pending",
+        h("div", { class: "decide" }, h("button", { onclick: decide(p, "accepted") }, "Accept"), h("button", { onclick: decide(p, "declined") }, "Decline")))))] : null,
+    h("div", { class: "feed-group" }, "Accepted"),
+    h("ul", { class: "plain timeline" }, taken.map((p) => changeRow({ ...p, byline: `proposed by ${whoWrote(p.author)}, accepted by You` }, "merged")),
+      REPO.versions.map((v, i) => { const p = proposalOf(v);
+      return changeRow({ ...v, byline: p ? `proposed by ${whoWrote(p.author)}, accepted by ${whoWrote(v.author)}` : `admitted by ${whoWrote(v.author)}` }, i === 0 && !taken.length ? "head" : p ? "merged" : "base"); })),
+    turned.length ? [h("div", { class: "feed-group" }, "Declined"),
+      h("ul", { class: "plain timeline" }, turned.map((p) => changeRow({ ...p, byline: `proposed by ${whoWrote(p.author)}` }, "declined")))] : null,
+  ];
+};
+// The existing Revisions view of the app (commits, proposals, text and semantic diffs) mounts here.
+// Pages that hold a live frame are built once and only hidden when left: moving an iframe reloads it.
+const FRAMES = {
+  sysml: () => `sysml-${$("#system").value}.html${S.sysmlAt ? `?select=${encodeURIComponent(S.sysmlAt.qname)}#${encodeURIComponent(S.sysmlAt.view)}` : ""}`,
+};
+const framed = new Map();
+function framePage(name) {
+  const src = FRAMES[name]();
+  let f = framed.get(name);
+  if (!f) framed.set(name, f = { el: h("div", { class: `page page-${name}`, "data-keep": "" }, h("h1", {}, pageName[name])) });
+  if (f.src !== src) { f.src = src; f.el.querySelector("iframe")?.remove(); f.el.append(h("iframe", { class: "sysml-frame", title: pageName[name], src })); }
+  return f.el;
+}
+// ---------- Revisions: the app's RevisionsView, in the window's own frame ----------
+// The same parts as the app: commits and proposals on the left, the selected one and its diff on the right.
+// The app's three overview cards are gone: main and running are badges on their commit, the open
+// proposals count sits on their tab, and Accept / Decline sit on the proposal itself.
+const RUNNING = () => REPO.head; // in this sketch, main's head is the adopted version
+const proposalState = (p) => S.decided[p.id] || (p.accepted ? "accepted" : "pending");
+const changeStats = (files) => files.reduce((t, f) => ({ added: t.added + (f.added || 0), removed: t.removed + (f.removed || 0) }), { added: 0, removed: 0 });
+function openRevision(sha) { S.space = "evolution"; S.evoPage = "revisions"; S.window = true; S.revTab = REPO.proposals.some((p) => p.sha === sha) ? "proposals" : "commits"; S.rev = sha; render(); }
+pages.revisions = () => {
+  const order = { pending: 0, accepted: 1, declined: 2 };
+  const proposals = [...REPO.proposals].sort((a, b) => order[proposalState(a)] - order[proposalState(b)]);
+  const items = S.revTab === "proposals" ? proposals : REPO.versions;
+  const open = pendingProposals().length;
+  if (!items.some((x) => x.sha === S.rev)) S.rev = (S.revTab === "proposals" ? pendingProposals()[0] || proposals[0] : REPO.versions[0])?.sha;
+  const sel = items.find((x) => x.sha === S.rev);
+  const tab = (id, label) => h("button", { "aria-pressed": S.revTab === id ? "true" : "false", onclick: () => { S.revTab = id; S.rev = null; render(); } }, label);
+  const row = (x) => {
+    const state = S.revTab === "proposals" ? proposalState(x) : null;
+    return h("li", {}, h("button", { class: `rev-row${state ? ` is-${state}` : ""}`, "aria-current": x.sha === S.rev ? "true" : "false", onclick: () => { S.rev = x.sha; render(); } },
+      state ? h("span", { class: `cmark ${state === "pending" ? "pending" : state === "accepted" ? "merged" : "declined"}` }) : h("span", { class: "rev-dot" }),
+      h("span", { class: "rev-title" }, x.message),
+      h("span", { class: "rev-meta" }, h("code", {}, x.short), when(x.date),
+        x.sha.startsWith(REPO.head) ? h("span", { class: "chip" }, "main") : null,
+        x.sha.startsWith(RUNNING()) ? h("span", { class: "chip run" }, "running") : null)));
+  };
+  return [
+    h("h1", {}, "Revisions"),
+    h("div", { class: "rev" },
+      h("aside", { class: "rev-list" },
+        h("div", { class: "seg" }, tab("commits", "Commits"), tab("proposals", open ? h("span", {}, "Proposals ", h("span", { class: "count" }, open)) : "Proposals")),
+        h("ol", { class: "plain" }, items.map(row))),
+      sel ? revisionDetail(sel) : null),
+  ];
+};
+function revisionDetail(x) {
+  const isProposal = S.revTab === "proposals", state = isProposal ? proposalState(x) : null;
+  const t = changeStats(x.files || []);
+  const mode = (id, label) => h("button", { "aria-pressed": S.diffMode === id ? "true" : "false", onclick: () => { S.diffMode = id; render(); } }, label);
+  const merged = isProposal && x.accepted ? REPO.versions.find((v) => v.short === x.accepted) : null;
+  return h("section", { class: "rev-detail" },
+    h("div", { class: "rev-head" },
+      h("h2", {}, x.message),
+      h("div", { class: "faint" }, isProposal ? `proposed by ${whoWrote(x.author)}` : whoWrote(x.author), " · ", when(x.date), " · ", h("code", {}, x.short),
+        merged ? [" · ", h("button", { class: "linkish inline", onclick: () => openRevision(merged.sha) }, `merged as ${merged.short}`)] : null)),
+    h("div", { class: "rev-bar" },
+      state === "pending" ? h("div", { class: "decide" }, h("button", { class: "primary", onclick: decide(x, "accepted") }, "Accept"), h("button", { onclick: decide(x, "declined") }, "Decline"))
+        : state ? h("span", { class: `chip st-${state}` }, state) : null,
+      h("span", { class: "rev-stats" }, h("span", { class: "plus" }, `+${t.added}`), h("span", { class: "minus" }, `−${t.removed}`), h("span", { class: "faint" }, `${(x.files || []).length} file${(x.files || []).length > 1 ? "s" : ""}`)),
+      h("div", { class: "seg small" }, mode("line", "Unified"), mode("side", "Split"))),
+    diffView(x.files || [], S.diffMode));
+}
+pages.proposals = () => [
+  h("h1", {}, "Proposals"),
+  h("ul", { class: "plain timeline" }, REPO.proposals.map((p) => changeRow(p, p.accepted ? "merged" : "pending"))),
+];
+// ---------- Files: the sources as they are on main, read like a repository ----------
+function openFile(path, line = null) { S.space = "evolution"; S.evoPage = "files"; S.window = true; S.file = path; S.line = line; render(); }
+const SYSML_KEYWORDS = new Set(("about abstract accept action actor alias all allocate allocation analysis and as assert assign assume attribute bind binding by calc case comment concern connect connection constraint decide def default dependency derived do doc else end entry enum event exhibit exit expose false filter first flow for fork frame from hastype if implies import in individual inout interface istype item join library loop merge message metadata new nonunique not null objective occurrence of or ordered out package parallel part perform port private protected public readonly redefines ref render rendering require requirement return satisfy send snapshot specializes stakeholder standard state subject subsets succession terminate then timeslice to transition true until use variant variation verification verify via view viewpoint when while xor").split(" "));
+// Splits a SysML text into lines of [class, text] tokens: keywords, comments, strings, numbers.
+function sysmlLines(text) {
+  const lines = [[]];
+  const push = (cls, chunk) => chunk.split("\n").forEach((part, i) => { if (i) lines.push([]); if (part) lines[lines.length - 1].push([cls, part]); });
+  for (const m of text.matchAll(/(\/\*[\s\S]*?\*\/|\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*")|('(?:[^'\\\n]|\\.)*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)|([\s\S])/g)) {
+    if (m[1]) push("c", m[1]); else if (m[2]) push("s", m[2]); else if (m[4]) push("n", m[4]);
+    else if (m[5]) push(SYSML_KEYWORDS.has(m[5]) ? "k" : "", m[5]); else push("", m[0]);
+  }
+  return lines;
+}
+pages.files = () => {
+  const files = Object.keys(REPO.files).sort();
+  if (!S.file || !files.includes(S.file)) { S.file = files[0]; S.line = null; }
+  const dirs = Map.groupBy(files, (f) => f.includes("/") ? f.slice(0, f.lastIndexOf("/")) : "");
+  const last = REPO.versions.find((v) => (v.files || []).some((f) => f.path === S.file));
+  const lines = sysmlLines(REPO.files[S.file] || "");
+  if (lines.length > 1 && !lines[lines.length - 1].length) lines.pop();
+  setTimeout(() => { if (S.line) document.getElementById(`L${S.line}`)?.scrollIntoView({ block: "center" }); }, 0);
+  return [
+    h("h1", {}, "Files"),
+    h("div", { class: "repo" },
+      h("nav", { class: "tree" }, [...dirs].map(([dir, list]) => [
+        dir ? h("div", { class: "tree-dir" }, dir) : null,
+        list.map((f) => h("button", { class: "tree-file", title: f, "aria-current": f === S.file ? "true" : "false", onclick: () => openFile(f) }, f.slice(dir ? dir.length + 1 : 0).replace(/\.sysml$/, "")))])),
+      h("div", { class: "blob" },
+        h("div", { class: "blob-head" },
+          h("span", { class: "crumbs" }, S.file.split("/").map((part, i, all) => i < all.length - 1 ? [h("span", { class: "faint" }, part), h("span", { class: "faint sep" }, "/")] : h("b", {}, part))),
+          last ? h("button", { class: "linkish last", title: "Last change to this file", onclick: () => openRevision(last.sha) }, h("span", { class: "msg" }, last.message), h("code", {}, last.short), h("span", { class: "faint" }, when(last.date))) : null),
+        h("div", { class: "code sysml" }, lines.map((toks, i) => h("div", { class: i + 1 === S.line ? "hl" : "", id: `L${i + 1}` },
+          h("span", { class: "ln", onclick: () => { S.line = S.line === i + 1 ? null : i + 1; render(); } }, i + 1),
+          h("span", {}, toks.length ? toks.map(([cls, txt]) => cls ? h("span", { class: `t-${cls}` }, txt) : txt) : " ")))))),
+  ];
+};
+pages.sources = () => sourcesPage(M.data.sources, "sources");
+function sourcesPage(sources, page, note) {
+  const files = Object.keys(sources || {}).sort();
+  if (!S.file || !files.includes(S.file)) { S.file = files[0]; S.line = null; }
+  const lines = (sources?.[S.file] || "").split("\n");
+  const code = h("div", { class: "code" }, lines.map((l, i) => h("div", { class: i + 1 === S.line ? "hl" : "", id: `L${i + 1}` }, h("span", {}, i + 1), h("span", {}, l || " "))));
+  setTimeout(() => { if (S.line) document.getElementById(`L${S.line}`)?.scrollIntoView({ block: "center" }); }, 0);
+  return [
+    h("h1", {}, pageName[page], note ? h("span", { class: "faint", style: "font-size:13px;font-weight:400;margin-left:10px" }, note) : null),
+    h("div", { class: "src" }, h("div", { class: "picker" }, files.map((f) => h("button", { "aria-current": f === S.file ? "true" : "false", onclick: () => { S.file = f; S.line = null; render(); } }, f))), code),
+  ];
+}
+pages.sources_old = () => {
+  const files = Object.keys(M.data.sources).sort();
+  if (!S.file || !files.includes(S.file)) S.file = files[0];
+  const lines = M.data.sources[S.file].split("\n");
+  const code = h("div", { class: "code" }, lines.map((l, i) => h("div", { class: i + 1 === S.line ? "hl" : "", id: `L${i + 1}` }, h("span", {}, i + 1), h("span", {}, l || " "))));
+  setTimeout(() => { if (S.line) document.getElementById(`L${S.line}`)?.scrollIntoView({ block: "center" }); }, 0);
+  return [
+    heading("sources"),
+    h("div", { class: "src" }, h("div", { class: "picker" }, files.map((f) => h("button", { "aria-current": f === S.file ? "true" : "false", onclick: () => { S.file = f; S.line = null; render(); } }, f))), code),
+  ];
+};
+function empty(title, text) { return h("div", { class: "empty" }, h("b", {}, title), text); }
+
+// ---------- home: what the system is for, who acts, what it may do alone ----------
+// Every sentence below is computed by a fixed rule from the board and the rights matrix
+// (including each cell's codes); a missing fact is said to be missing, never assumed.
+const valueOf = (x, name) => (x?.values || []).find((v) => v.name === name)?.value;
+const sentences = (text) => (text || "").match(/[^.!?]+[.!?]+(?=\s|$)|[^.!?]+$/g)?.map((s) => s.trim()).filter(Boolean) || [];
+const humanize = (id) => id.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase()).replace(/ ([A-Z])(?=[a-z])/g, (_, c) => ` ${c.toLowerCase()}`);
+const units = () => M.cols.team?.items || [];
+const unitName = (qname) => qname?.split("::").pop() || "";
+const operatorsOf = (u) => flatPanels(u).slice(1).filter((p) => p.kind === "operator");
+const nameOfUnit = (u) => valueOf(u, "operatorName") || u?.title || "";
+const listing = (names) => names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+function duration(ms) { return ms >= 3600000 ? `${+(ms / 3600000).toFixed(2)} h` : ms >= 60000 ? `${+(ms / 60000).toFixed(2)} min` : `${+(ms / 1000).toFixed(2)} s`; }
+
+// Cell codes from the matrix that change what a granted right means.
+const UNUSABLE = { RIGHT_WITHOUT_OBJECT: "nothing to act on", EFFECTIVELY_UNREACHABLE: "unreachable under the current policy", NO_REACHABLE_HOST: "no host declared for tool calls", NETWORK_SCOPE_UNUSED: "its mandate may not call tools" };
+const HARD = new Set(["HARD_DENIED", "HOST_RESERVED"]);
+const OWNER_ONLY = "OWNER_ONLY_PATH";
+const BY_HUMAN = new Set(["NEEDS_HUMAN_DECISION", "ADMISSION_BY_HUMAN", "PRIVATE_UNTIL_DECIDED"]);
+const LABEL = { "network.reach": "Reach hosts with its tools" };
+// Per-system columns carry the system after "@": name it by its operator.
+function colLabel(c) {
+  if (LABEL[c.id]) return LABEL[c.id];
+  const at = c.id.split("@")[1];
+  if (!at) return c.label;
+  const name = nameOfUnit(units().find((u) => u.qname === at)) || unitName(at);
+  if (c.id.startsWith("behavior:inbox@")) return `Hand work to ${name}`;
+  const parts = c.label.split(" · ");
+  return parts.length > 1 && parts.at(-1) === unitName(at) ? `${parts.slice(0, -1).join(" · ")} of ${name}` : c.label;
+}
+const ownLabel = (c) => { const parts = c.label.split(" · "), at = c.id.split("@")[1]; return at && parts.length > 1 && parts.at(-1) === unitName(at) ? parts.slice(0, -1).join(" · ") : c.label; };
+
+function rights() {
+  const m = M.data.matrix || { cells: [], groups: [], columns: [], rows: [], diagnostics: [] };
+  const cell = new Map(m.cells.map((c) => [`${c.row}|${c.column}`, c]));
+  const order = new Map(m.groups.map((g) => [g.id, g.order]));
+  const columns = [...m.columns].sort((a, b) => (order.get(a.group) - order.get(b.group)) || a.order - b.order);
+  const ai = m.rows.filter((r) => r.kind !== "human"), people = m.rows.filter((r) => r.kind === "human");
+  const unitOf = new Map(units().map((u) => [u.qname, u]));
+  const label = (r) => r.kind === "human" ? "you" : nameOfUnit(unitOf.get(r.unit)) || unitName(r.unit);
+  const at = (r, column) => cell.get(`${r.id}|${column}`);
+  const usable = (c) => c && ["allowed", "inherited"].includes(c.state) && !(c.codes || []).some((k) => UNUSABLE[k]);
+  const holders = (column, rows = m.rows) => rows.filter((r) => usable(at(r, column)));
+  // Operators whose tool proposals are admitted by themselves: the build cells say who admits.
+  const selfAdmit = ai.filter((r) => columns.some((c) => c.group === "tools" && (at(r, c.id)?.codes || []).includes("ADMISSION_BY_BUILDER")) && usable(at(r, "candidate.admit")));
+  return { m, cell, at, usable, columns, ai, people, label, holders, unitOf, selfAdmit };
+}
+
+function health() {
+  const g = M.cols.guarantees?.items || [];
+  const reqs = g.filter((x) => !x.track && x.kind === "requirement");
+  const cons = g.filter((x) => !x.track && x.kind === "constraint");
+  return { reqs, cons, owned: reqs.filter((r) => r.satisfiedBy).length, idle: cons.filter((c) => !c.inForce) };
+}
+
+/** The facts that ask for a decision, each with where to act. */
+function attention() {
+  const R = rights(), H = health(), out = [];
+  if (R.selfAdmit.length && !R.holders("candidate.review").length) {
+    out.push({ risk: true, icon: "shield", short: "Self-approved tools", text: `${listing(R.selfAdmit.map(R.label))} build and approve ${R.selfAdmit.length > 1 ? "their" : "its"} own tools — no operator in the model may review them.`, page: "authority", cta: "Rights" });
+  }
+  for (const d of (R.m.diagnostics || []).filter((x) => x.severity === "warning" || x.severity === "error")) {
+    out.push({ risk: d.severity === "error", icon: "alert", short: humanize(d.code.toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase())), text: `${humanize(d.code.toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase()))}. To fix: ${d.recovery}.`, page: "authority", cta: "Rights" });
+  }
+  if (H.reqs.length && H.owned < H.reqs.length) out.push({ icon: "ring", short: `${H.owned}/${H.reqs.length} requirements owned`, text: `${H.reqs.length - H.owned} of ${H.reqs.length} requirements have no owner in the model: nothing is declared to satisfy them.`, page: "requirements", cta: "Requirements" });
+  if (H.idle.length) out.push({ icon: "dot", short: `${H.idle.length} idle constraint${H.idle.length > 1 ? "s" : ""}`, text: `Constraint ${listing(H.idle.map((c) => c.title))} ${H.idle.length > 1 ? "are" : "is"} used by no performed step.`, page: "requirements", cta: "Requirements" });
+  for (const p of pendingProposals()) out.push({ icon: "pencil", short: p.message, text: `proposed by ${whoWrote(p.author)}`,
+    go: () => { Object.assign(S, { space: "evolution", evoPage: "activity", window: true, change: p.sha, selected: null, fam: null, cell: null }); render(); } });
+  return out;
+}
+// Context, tools and skills, memory: the facets every operator works with, read from the
+// ASE library packages that type them (APEContext, APESkills, APEMemory) and from tool contracts.
+const FACETS = [
+  { title: "Knows", pkg: "APEContext", what: "context", none: "No context policy declared." },
+  { title: "Uses", pkg: "APESkills", tools: true, what: "tools and skills", none: "No tool or skill declared." },
+  { title: "Remembers", pkg: "APEMemory", what: "memory", none: "No governed memory declared." },
+];
+function policyPhrase(v) {
+  if (["id", "revision"].includes(v.name)) return null;
+  let value = v.value;
+  if (typeof value === "string" && /^\[.*\]$/.test(value)) { try { value = JSON.parse(value).join(", "); } catch { /* shown as written */ } }
+  if (/^max[A-Z]/.test(v.name) && typeof value === "number") {
+    const ms = /Ms$/.test(v.name), name = humanize(v.name.slice(3).replace(/Ms$/, "")).toLowerCase();
+    return ms ? `${name} ${duration(value)} max` : `${value.toLocaleString("en")} ${name} max`;
+  }
+  return `${humanize(v.name).toLowerCase()}: ${value === true ? "yes" : value === false ? "no" : value}`;
+}
+// Limits: every numeric max* value of the execution policies, said once when every system shares it.
+function limits() {
+  const out = new Map();
+  for (const it of (M.cols.rules?.items || []).filter((x) => x.kind === "policy" && !FACETS.some((f) => x.type?.qname?.startsWith(`${f.pkg}::`)))) {
+    for (const v of it.values || []) {
+      if (!/^max[A-Z]/.test(v.name) || typeof v.value !== "number") continue;
+      const text = policyPhrase(v);
+      if (!out.has(text)) out.set(text, { text, ids: [] });
+      out.get(text).ids.push(it.id);
+    }
+  }
+  return [...out.values()];
+}
+
+
+// Show, don't tell: the home draws the system. Every mark is computed from the model;
+// the exact sentence behind it is its tooltip, and the inspector has the rest.
+const ICONS = {
+  person: '<circle cx="12" cy="8" r="3.6"/><path d="M5 20c1.2-3.7 4-5.6 7-5.6s5.8 1.9 7 5.6"/>',
+  spark: '<path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1-5.1-1.9 5.1-1.9z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>',
+  chat: '<path d="M5 6.5h14v9H10l-4 3v-3H5z"/>',
+  wrench: '<path d="M14.6 5.2a4 4 0 0 0-5 5.1L4.5 15.4l4.1 4.1 5.1-5.1a4 4 0 0 0 5.1-5l-2.6 2.6-2.4-.6-.6-2.4z"/>',
+  globe: '<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.6 2.6 2.6 13.4 0 16M12 4c-2.6 2.6-2.6 13.4 0 16"/>',
+  pencil: '<path d="M5 19l1-4L15.5 5.5l3 3L9 18z"/>',
+  shield: '<path d="M12 3.5l7 2.8v5c0 4.3-2.9 7.6-7 9.2-4.1-1.6-7-4.9-7-9.2v-5z"/><path d="M12 8.5v4M12 15.5v.3"/>',
+  alert: '<path d="M12 4l9 15.5H3z"/><path d="M12 10v4M12 16.8v.2"/>',
+  ring: '<circle cx="12" cy="12" r="7.5"/><path d="M12 4.5a7.5 7.5 0 0 1 7.5 7.5"/>',
+  dot: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="1.5"/>',
+  check: '<circle cx="12" cy="12" r="8"/><path d="M8.5 12.5l2.4 2.4 4.6-5"/>',
+  eye: '<path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/>',
+  archive: '<rect x="4" y="4.5" width="16" height="4.5" rx="1"/><path d="M5.5 9v10.5h13V9M10 13h4"/>',
+  book: '<path d="M5 5.5h10.5a3 3 0 0 1 3 3V19H8a3 3 0 0 1-3-3z"/><path d="M5 16a3 3 0 0 1 3-3h10.5"/>',
+  cube: '<path d="M12 3.8l7.5 4.1v8.2L12 20.2l-7.5-4.1V7.9z"/><path d="M4.5 7.9L12 12l7.5-4.1M12 12v8.2"/>',
+  key: '<circle cx="8" cy="12" r="3.5"/><path d="M11.5 12H20M17 12v3M20 12v2"/>',
+  file: '<path d="M6.5 3.5h7l4 4v13h-11z"/><path d="M13.5 3.5v4h4M9 13h6M9 16.5h4"/>',
+  arrows: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  lock: '<rect x="5.5" y="10.5" width="13" height="9" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>',
+  open: '<path d="M9 5H5v14h14v-4M13 5h6v6M19 5l-8 8"/>',
+};
+function icon(name, cls = "ic") {
+  const t = document.createElement("template");
+  t.innerHTML = `<svg viewBox="0 0 24 24" class="${cls}" aria-hidden="true">${ICONS[name] || ""}</svg>`;
+  return t.content.firstChild;
+}
+const compact = (n) => n >= 1e6 ? `${+(n / 1e6).toFixed(1)}M` : n >= 1e4 ? `${Math.round(n / 1e3)}k` : n.toLocaleString("en");
+const hostOf = (url) => { try { return new URL(url).host.replace(/^www\./, ""); } catch { return url; } };
+
+function hero() {
+  const packages = new Map((M.b.meta.packages || []).map((p) => [p.qname, p]));
+  const info = M.cols.information?.items || [];
+  const pkg = [...new Set(info.map((x) => x.qname?.split("::")[0]))].map((q) => packages.get(q)).find((p) => p?.doc);
+  const [statement] = sentences(pkg?.doc);
+  const sources = info.filter((x) => typeof valueOf(x, "url") === "string");
+  const A = attention();
+  return h("section", { class: "hero" },
+    h("div", { class: "hero-text" },
+      h("h1", {}, M.data.name),
+      statement ? h("p", { class: "tagline", title: pkg.doc }, statement)
+        : h("p", { class: "tagline faint", title: "Say what the system is for in the doc comment of the package that holds its information." }, "No mission stated"),
+      sources.length ? h("div", { class: "sources" }, sources.map((s) => h("a", { class: "source", href: valueOf(s, "url"), target: "_blank", rel: "noopener", title: valueOf(s, "url") }, icon("globe"), hostOf(valueOf(s, "url"))))) : null),
+    h("div", { class: "alerts" }, A.length
+      ? A.map((a) => h("button", { class: `alert${a.risk ? " risk" : ""}`, title: a.text, onclick: () => { S.page = a.page; render(); } }, icon(a.icon), a.short))
+      : h("span", { class: "alert ok" }, icon("check"), "Nothing needs you")));
+}
+
+// The team, laid out by rule: you, then whoever talks with you, then whoever they hand work to.
+function team() {
+  const R = rights(), us = units();
+  if (us.length > 6) return roster(R, us);
+  const rowOf = (u) => R.ai.find((r) => r.unit === u.qname);
+  const inbox = (u) => R.columns.filter((c) => c.id.startsWith("behavior:inbox@") && c.id.endsWith(`@${u.qname}`));
+  const sendsTo = (u) => us.filter((v) => v !== u && inbox(v).some((c) => R.holders(c.id, R.ai).some((r) => r.unit === u.qname)));
+  const talks = (u) => valueOf(u, "primaryContact") === true && valueOf(u, "humanInputEnabled") === true;
+  const contacts = us.filter(talks), first = contacts.length ? contacts : us, rest = us.filter((u) => !first.includes(u));
+  const edges = [
+    ...(contacts.length ? contacts.map((c) => ({ from: "you", to: c.id, kind: "talk" })) : first.map((u) => ({ from: "you", to: u.id, kind: "unknown" }))),
+    ...us.flatMap((u) => sendsTo(u).map((v) => ({ from: u.id, to: v.id, kind: "handoff" }))),
+  ];
+  const decides = R.columns.filter((c) => R.holders(c.id, R.people).length && (c.mode === "admit" || R.ai.some((r) => (R.at(r, c.id)?.codes || []).includes("NEEDS_HUMAN_DECISION"))));
+  const you = h("div", { class: "node", "data-node": "you", title: `You decide: ${[...new Set(decides.map((c) => colLabel(c).toLowerCase()))].join(", ") || "nothing"}.${R.people.some((r) => r.declared) ? "" : "\nNot modelled as an operator: your rights come from host rules."}` },
+    h("div", { class: "avatar you" }, icon("person")), h("div", { class: "nm" }, "You"),
+);
+  const node = (u) => h("div", { class: elClass(u.id, "node"), "data-node": u.id, onclick: () => { S.page = "team"; S.agent = u.id; render(); } },
+    h("div", { class: "avatar" }, icon("spark")), h("div", { class: "nm" }, nameOfUnit(u)));
+  const platform = us.map((u) => flatPanels(u).slice(1).filter((p) => p.kind !== "operator" && p.depth <= 1));
+  const shared = platform.length && platform.every((ps) => ps.map((p) => p.title).join() === platform[0].map((p) => p.title).join()) ? platform[0] : [];
+  const box = h("div", { class: "team" }, h("div", { class: "col" }, you), h("div", { class: "col" }, first.map(node)), rest.length ? h("div", { class: "col" }, rest.map(node)) : null);
+  box.edges = edges;
+  requestAnimationFrame(() => wires(box, edges));
+  return box;
+}
+// Beyond six operators the team is a roster: who talks with you first, then everyone else.
+function roster(R, us) {
+  const talks = (u) => valueOf(u, "primaryContact") === true && valueOf(u, "humanInputEnabled") === true;
+  const sorted = [...us.filter(talks), ...us.filter((u) => !talks(u))];
+  return h("div", { class: "roster" }, h("div", { class: "node", title: "You" }, h("div", { class: "avatar you" }, icon("person")), h("div", { class: "nm" }, "You")),
+    sorted.map((u) => h("div", { class: elClass(u.id, "node"), onclick: () => { S.page = "team"; S.agent = u.id; render(); } }, h("div", { class: "avatar" }, icon(talks(u) ? "chat" : "spark")), h("div", { class: "nm" }, nameOfUnit(u)))));
+}
+function badges(u, r, R) {
+  if (!r) return [];
+  const out = [], badge = (name, n, title, warn) => out.push(h("span", { class: `badge${warn ? " warn" : ""}`, title }, icon(name), n ?? null));
+  const kinds = R.columns.filter((c) => c.group === "tools" && R.at(r, c.id)?.state === "propose-only").map((c) => c.target?.ref || c.label);
+  const self = R.selfAdmit.includes(r), reviewer = R.holders("candidate.review").length > 0;
+  if (kinds.length) badge("wrench", kinds.length, `Builds ${listing(kinds)}${self ? " and approves them itself" : ", a decision follows"}.`, self && !reviewer);
+  const web = R.at(r, "network.reach");
+  if (R.usable(web) && web.scope?.hosts?.length) badge("globe", web.scope.hosts.length, `Its tools may reach ${listing(web.scope.hosts)}.`);
+  const edit = R.at(r, "model.edit");
+  if (edit && (R.usable(edit) || edit.state === "propose-only")) badge("pencil", null, R.usable(edit) ? "May edit the model." : "May propose model edits; you decide.");
+  const family = (prefix) => R.columns.filter((c) => c.id.startsWith(`behavior:${prefix}-`) && R.usable(R.at(r, c.id)));
+  if (family("context").length) badge("eye", null, "Reads context evidence.");
+  if (family("memory").length) badge("archive", family("memory").length, `Memory: ${family("memory").map(ownLabel).map((l) => l.split(" · ").at(-1)).join(", ")}.`);
+  if (family("skill").length) badge("book", family("skill").length, `Skills: ${family("skill").map(ownLabel).map((l) => l.split(" · ").at(-1)).join(", ")}.`);
+  return out;
+}
+function wires(box, edges) {
+  if (!box?.isConnected) return;
+  box.querySelectorAll("svg.wires, .wire-tag").forEach((e) => e.remove());
+  const NS = "http://www.w3.org/2000/svg", b = box.getBoundingClientRect();
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("class", "wires");
+  svg.innerHTML = '<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 9 5 0 9z" fill="#b9b5ac"/></marker></defs>';
+  for (const e of edges) {
+    const a = box.querySelector(`[data-node="${CSS.escape(e.from)}"] .avatar`), z = box.querySelector(`[data-node="${CSS.escape(e.to)}"] .avatar`);
+    if (!a || !z) continue;
+    const ra = a.getBoundingClientRect(), rz = z.getBoundingClientRect(), across = rz.left - ra.right > 16;
+    const x1 = across ? ra.right - b.left + 4 : ra.left + ra.width / 2 - b.left, y1 = across ? ra.top + ra.height / 2 - b.top : ra.bottom - b.top + 4;
+    const x2 = across ? rz.left - b.left - 6 : rz.left + rz.width / 2 - b.left, y2 = across ? rz.top + rz.height / 2 - b.top : rz.top - b.top - 6;
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    const path = document.createElementNS(NS, "path");
+    path.setAttribute("d", across ? `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}` : `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`);
+    path.setAttribute("class", `wire ${e.kind}`);
+    if (e.kind === "handoff") path.setAttribute("marker-end", "url(#arr)");
+    svg.append(path);
+    if (e.kind !== "handoff") box.append(h("span", { class: `wire-tag ${e.kind}`, style: `left:${mx}px;top:${my}px`, title: e.kind === "talk" ? "Talks with you" : "No operator is flagged as your contact" }, e.kind === "talk" ? icon("chat") : "?"));
+  }
+  box.prepend(svg);
+}
+
+// Context, tools and skills, memory: three tiles, a few numbers each.
+function facetTiles() {
+  const items = [...(M.cols.cando?.items || []), ...(M.cols.rules?.items || [])];
+  const views = new Map((M.data.declared || []).map((v) => [v.title, new Set(v.diagram.nodes.map((n) => n.qname))]));
+  const R = rights();
+  const ICON = { APEContext: "eye", APESkills: "wrench", APEMemory: "archive" };
+  return h("section", { class: "tiles" }, FACETS.map((f) => {
+    const mine = items.filter((it) => it.type?.qname?.startsWith(`${f.pkg}::`) || (f.tools && it.kind === "tool"));
+    if (!mine.length) return h("div", { class: "tile blank", title: f.none }, h("div", { class: "th" }, icon(ICON[f.pkg]), f.title), h("div", { class: "none" }, "—"));
+    const stats = [];
+    if (f.tools) {
+      const kinds = new Set(mine.filter((it) => it.kind === "tool").map((it) => it.title));
+      const active = new Set(R.ai.flatMap((r) => R.at(r, "tool.invoke")?.scope?.activeTools || []));
+      if (kinds.size) stats.push([kinds.size, "tool kinds", [...kinds].join(", ")], [active.size, "active", active.size ? [...active].join(", ") : "No tool is active yet"]);
+    }
+    for (const pl of mine.filter((it) => it.kind === "policy")) for (const v of pl.values || []) {
+      if (stats.length >= 3 || typeof v.value !== "number" || ["revision"].includes(v.name)) continue;
+      const ms = /Ms$/.test(v.name);
+      stats.push([ms ? duration(v.value).replace(" ", "") : compact(v.value), humanize(v.name.replace(/^max/, "").replace(/Ms$/, "")).toLowerCase(), policyPhrase(v)]);
+    }
+    const shown = [...views].filter(([, qs]) => mine.some((it) => qs.has(it.qname))).map(([t]) => t);
+    return h("div", { class: elClassAny(mine.map((x) => x.id), "tile"), onclick: pick(mine[0].id) },
+      h("div", { class: "th" }, icon(ICON[f.pkg]), f.title,
+        shown.length ? h("button", { class: "linkish", title: `Shown in view ${shown.join(", ")}`, onclick: (e) => { e.stopPropagation(); const owner = units().find((u) => u.id === mine[0].scope); S.page = "team"; if (owner) S.agent = owner.id; render(); } }, icon("open")) : null),
+      h("div", { class: "stats" }, stats.map(([n, label, title]) => h("div", { class: "stat", title }, h("b", {}, n), h("span", {}, label)))));
+  }));
+}
+
+// Rights at a glance: one row per actor, one column per family, one mark per cell.
+const FAMILIES = { tools: ["wrench", "Tools"], admission: ["shield", "Approve"], mandate: ["key", "Mandate"], model: ["file", "Model"], "memory-skills": ["archive", "Memory"], behaviors: ["arrows", "Work"] };
+function glance() {
+  const R = rights();
+  // A family with no right declared for anyone is not shown.
+  const groups = [...R.m.groups].sort((a, b) => a.order - b.order).filter((g) => FAMILIES[g.id] && R.columns.some((c) => c.group === g.id && R.m.rows.some((r) => R.at(r, c.id))));
+  const mark = (rows, g) => {
+    const cells = R.columns.filter((c) => c.group === g.id).flatMap((c) => rows.map((r) => ({ c, cell: R.at(r, c.id) })).filter((x) => x.cell));
+    if (!cells.length) return null;
+    const alone = cells.filter((x) => R.usable(x.cell)), propose = cells.filter((x) => x.cell.state === "propose-only");
+    const kind = alone.length ? "full" : propose.length ? "half" : cells.every((x) => (x.cell.codes || []).some((k) => HARD.has(k))) ? "lock" : "empty";
+    const said = (x) => R.usable(x.cell) ? "yes" : x.cell.state === "propose-only" ? "proposes" : (x.cell.codes || []).some((k) => HARD.has(k)) ? "never" : (x.cell.codes || []).some((k) => UNUSABLE[k]) ? "granted, unusable" : "no";
+    return { kind, title: [...new Set(cells.map((x) => `${colLabel(x.c)}: ${said(x)}`))].join("\n") };
+  };
+  const rows = [{ label: "You", you: true, rows: R.people }, ...R.ai.map((r) => ({ label: R.label(r), rows: [r], self: R.selfAdmit.includes(r) }))];
+  return h("section", { class: "glance" },
+    h("table", {},
+      h("thead", {}, h("tr", {}, h("th"), groups.map((g) => h("th", { title: g.label }, icon(FAMILIES[g.id][0]), h("span", {}, FAMILIES[g.id][1]))))),
+      h("tbody", {}, rows.map((row) => h("tr", {},
+        h("th", {}, h("span", { class: `mini${row.you ? " you" : ""}` }, icon(row.you ? "person" : "spark")), row.label),
+        groups.map((g) => { const m = mark(row.rows, g), open = Boolean(S.fam && S.fam.group === g.id && S.fam.who === row.label); return h("td", { class: `${m ? "act" : ""}${open ? " on" : ""}`.trim(), onclick: m ? (e) => { e.stopPropagation(); S.anchor = { rect: e.currentTarget.getBoundingClientRect(), scroll: $("#main").scrollTop }; S.selected = null; S.cell = null; S.fam = open ? null : { group: g.id, rows: row.rows.map((r) => r.id), who: row.label }; render(); } : null },
+          !m ? "" : m.kind === "lock" ? icon("lock", "ic faint") : h("span", { class: `sym s-${m.kind}` }),
+          row.self && ["tools", "admission"].includes(g.id) && !R.holders("candidate.review").length ? h("i", { class: "flag", title: "Approves its own tools; no operator may review them" }) : null); }))))),
+    h("div", { class: "legend" }, h("span", {}, h("span", { class: "sym s-full" }), "alone"), h("span", {}, h("span", { class: "sym s-half" }), "proposes"), h("span", {}, h("span", { class: "sym s-empty" }), "no"), h("span", {}, icon("lock", "ic faint"), "never"),
+));
+}
+function limitStats() {
+  return limits().map((l) => { const [n, ...rest] = l.text.split(" "); return h("span", { class: "lim", title: `${l.text} (each AI operator)` }, h("b", {}, n), rest.join(" ").replace(/ max$/, "")); });
+}
+
+function missionLine() {
+  const packages = new Map((M.b.meta.packages || []).map((p) => [p.qname, p]));
+  const pkg = [...new Set((M.cols.information?.items || []).map((x) => x.qname?.split("::")[0]))].map((q) => packages.get(q)).find((p) => p?.doc);
+  return sentences(pkg?.doc)[0] || null;
+}
+pages.overview = () => {
+  const sources = (M.cols.information?.items || []).filter((x) => typeof valueOf(x, "url") === "string");
+  return h("div", { class: "home zen" },
+    h("div", { class: "zen-head" }, h("h1", {}, M.data.name), missionLine() ? h("p", {}, missionLine()) : null,
+      sources.length ? h("div", { class: "sources" }, sources.map((s) => h("a", { class: "source", href: valueOf(s, "url"), target: "_blank", rel: "noopener", title: valueOf(s, "url") }, icon("globe"), hostOf(valueOf(s, "url"))))) : null),
+    attentionList());
+};
+// What asks for a decision, quietly: one line each, a mark for risk.
+function attentionList() {
+  const A = attention();
+  if (!A.length) return null;
+  return h("ul", { class: "plain home-attention" }, A.map((a) => h("li", { class: a.risk ? "risk" : "", onclick: () => { if (a.go) a.go(); else { S.space = "model"; S.page = a.page; render(); } }, title: a.text },
+    h("span", { class: `mark ${a.risk ? "off" : "idle"}` }), h("span", {}, a.short), h("span", { class: "faint" }, "→"))));
+}
+// Only the wires depend on the window size.
+addEventListener("resize", () => { const box = document.querySelector(".team"); if (box?.edges) wires(box, box.edges); });
+
+// ---------- inspector ----------
+// The detail opens in the page, right under what was clicked, so nothing is covered; the
+// relations stay lit around it. Under a table row it is a row of its own; under an item of a
+// row of tiles, chips or panels it follows the whole row; under nothing (the element is not on
+// this page) it follows the page title. Model only: the repository has no detail.
+const DETAIL_ROWS = ".tiles, .panels, .ctx-row, .stats, .tband, .reqs, .defs, .crew-row, .facts";
+function inspector() {
+  document.querySelectorAll("#main tr.detail-row").forEach((e) => e.remove());
+  $("#detail")?.remove();
+  if (S.space !== "model") return;
+  const box = h("aside", { class: "inspector", id: "detail", "aria-label": "Detail" });
+  box.addEventListener("click", (e) => e.stopPropagation());
+  fillDetail(box);
+  if (!box.classList.contains("open")) return;
+  const main = $("#main"), sel = main.querySelector(".sel, td.on"), tr = sel && !sel.closest(".glance") ? sel.closest("tr") : null;
+  if (tr) {
+    const span = [...tr.cells].reduce((n, c) => n + c.colSpan, 0) || 1;
+    tr.after(h("tr", { class: "detail-row" }, h("td", { colspan: span }, h("div", { class: "detail-slot" }, box))));
+  } else if (sel) {
+    const lane = sel.closest(".glance, .flowchart") || (sel.parentElement?.matches(DETAIL_ROWS) ? sel.parentElement : null);
+    (lane || sel).after(box);
+  } else {
+    const page = main.querySelector(".page:not([hidden])"), title = page?.querySelector("h1");
+    if (title) (title.closest(".zen-head") || title).after(box); else page?.prepend(box);
+  }
+  if (box.closest(".col")) box.classList.add("narrow");
+}
+function fillDetail(box) {
+  if (S.fam) {
+    const R = rights(), rows = R.m.rows.filter((r) => S.fam.rows.includes(r.id));
+    const state = (cells) => cells.some((c) => R.usable(c)) ? "full" : cells.some((c) => c.state === "propose-only") ? "half"
+      : cells.some((c) => (c.codes || []).some((k) => UNUSABLE[k])) ? "unusable" : cells.every((c) => (c.codes || []).some((k) => HARD.has(k))) ? "lock" : "empty";
+    const lines = R.columns.filter((c) => c.group === S.fam.group).map((c) => ({ c, cells: rows.map((r) => R.at(r, c.id)).filter(Boolean) })).filter((x) => x.cells.length);
+    box.classList.add("open");
+    append(box, h("button", { class: "x", onclick: () => { S.fam = null; render(); }, "aria-label": "Close" }, "×"),
+      h("div", { class: "kw" }, FAMILIES[S.fam.group]?.[1] || S.fam.group), h("h2", {}, S.fam.who === "You" ? "You" : S.fam.who),
+      h("ul", { class: "plain fam" }, lines.map(({ c, cells }) => { const k = state(cells);
+        return h("li", { title: c.doc || "" }, k === "lock" ? icon("lock", "ic faint") : h("span", { class: `sym s-${k === "unusable" ? "empty warn" : k}` }), h("span", {}, colLabel(c)),
+          k === "unusable" ? h("span", { class: "faint" }, [...new Set(cells.flatMap((x) => (x.codes || []).filter((code) => UNUSABLE[code]).map((code) => UNUSABLE[code])))].join(", ")) : null); })));
+    return;
+  }
+  if (S.cell) {
+    const [row, col] = S.cell.split("|"), m = M.data.matrix;
+    const c = m.cells.find((x) => x.row === row && x.column === col), r = m.rows.find((x) => x.id === row), k = m.columns.find((x) => x.id === col);
+    box.classList.add("open");
+    append(box, h("button", { class: "x", onclick: () => { S.cell = null; render(); } }, "×"),
+      h("div", { class: "kw" }, "authority"), h("h2", {}, k?.label || col),
+      h("div", { class: "ty" }, r?.label),
+      h("dl", {}, h("dt", {}, "State"), h("dd", {}, c?.display || "—"), h("dt", {}, "Basis"), h("dd", {}, c?.basis || "—"),
+        c?.via ? [h("dt", {}, "Rule"), h("dd", {}, c.via.rule || c.via.kind), c.via.enforcedAt ? [h("dt", {}, "Enforced"), h("dd", { class: "qn" }, c.via.enforcedAt)] : null] : null,
+        c?.codes?.length ? [h("dt", {}, "Codes"), h("dd", { class: "qn" }, c.codes.join(", "))] : null),
+      k?.doc ? h("p", { class: "ty", style: "font-size:12px" }, k.doc) : null,
+      (c?.sources || []).some((s) => repoFile(s.file)) ? h("div", { class: "rel" }, h("h5", {}, "Declared by"), c.sources.filter((s) => repoFile(s.file)).map((s) => h("button", { onclick: () => openSource(s.file, s.line) }, h("span", {}, s.qname.split("::").slice(-2).join("::")), h("span", { class: "pg" }, `${s.file}:${s.line}`)))) : null);
+    return;
+  }
+  const x = S.selected && M.reg.get(S.selected);
+  if (!x) { box.classList.remove("open"); return; }
+  box.classList.add("open");
+  const rel = groupBy(relations(x.id), (r) => r.label).map(([label, rs]) => [label, [...new Map(rs.map((r) => [endpoint(r.other), r])).values()]]);
+  append(box,
+    h("button", { class: "x", onclick: () => select(null), "aria-label": "Close" }, "×"),
+    kw(x), h("h2", {}, x.title), S.sysml && x.type?.title ? h("div", { class: "ty" }, `: ${x.type.title}`) : null,
+    x.summary && x.summarySource !== "package-doc" ? h("p", { class: "peek-sum", title: x.summary }, x.summary) : null,
+    h("dl", {},
+      S.sysml && x.qname ? [h("dt", {}, "Name"), h("dd", { class: "qn" }, x.qname)] : null,
+      S.sysml && x.file ? [h("dt", {}, "Source"), h("dd", { class: "qn" }, `${x.file}:${x.line}`)] : null,
+      x.guard ? [h("dt", {}, "Guard"), h("dd", { class: "qn" }, x.guard)] : null,
+      ...(Array.isArray(x.values) ? x.values : Object.entries(x.values || {}).map(([name, value]) => ({ name, value })))
+        .filter((v) => S.sysml || !/^(id|version|revision|configurationId|configurationRevision|envelope[A-Z]\w*|evidenceLevel|source|operatorName)$/.test(v.name)).slice(0, S.sysml ? 14 : 6)
+        .map((v) => [h("dt", {}, S.sysml ? v.name : humanize(v.name)), h("dd", { class: S.sysml ? "qn" : "" }, v.value === true && !S.sysml ? "yes" : v.value === false && !S.sysml ? "no" : typeof v.value === "object" ? JSON.stringify(v.value) : String(v.value), v.truncated && !String(v.value).endsWith("…") ? "…" : "")])),
+    rel.length ? h("div", { class: "rel" }, rel.slice(0, S.peekAll ? rel.length : 3).map(([label, rs]) => h("div", {}, h("h5", {}, label),
+      h("div", { class: "chips" }, rs.slice(0, 8).map((r) => h("button", { title: pageName[M.reg.get(r.other)?.page] || "", onclick: () => { S.anchor = null; select(r.other, { go: true }); } }, endpoint(r.other))), rs.length > 8 ? h("span", { class: "faint" }, `+${rs.length - 8}`) : null))),
+      rel.length > 3 && !S.peekAll ? h("div", { class: "chips" }, h("button", { onclick: (e) => { e.stopPropagation(); S.peekAll = true; inspector(); } }, `${rel.length - 3} more`)) : null) : null,
+    S.sysml && x.qname && sysmlViewsOf(x.qname).length ? h("div", { class: "rel" }, h("div", {}, h("h5", {}, "In SysML views"),
+      h("div", { class: "chips" }, sysmlViewsOf(x.qname).map((v) => h("button", { title: SYSML_GROUP[v.group] || v.group, onclick: () => openSysml(v.id, x.qname) }, v.title))))) : null,
+    h("div", { class: "actions" },
+      x.page !== S.page && MAIN_TABS.includes(x.page) && !["overview", "explore"].includes(x.page) ? h("button", { onclick: () => { S.anchor = null; select(x.id, { go: true }); } }, icon("open"), pageName[x.page]) : null,
+      x.file && repoFile(x.file) ? h("button", { onclick: () => openSource(x.file, x.line) }, icon("file"), "Source") : null));
+}
+
+const plural = (w) => /(s|x|ch|sh)$/.test(w) ? `${w}es` : /[^aeiou]y$/.test(w) ? `${w.slice(0, -1)}ies` : `${w}s`;
+function append(box, ...kids) { box.append(...kids.flat(Infinity).filter((k) => k != null && k !== false)); }
+// Sources belong to the repository: they open in Model (the versioned SysML), not in System.
+const repoFile = (file) => [`sources/${file}`, file].find((key) => Object.hasOwn(REPO.files, key)) ?? null;
+function openSource(file, line) { const key = repoFile(file); if (!key) return; S.space = "evolution"; S.evoPage = "files"; S.window = true; S.file = key; S.line = line; render(); }
+
+// ---------- chrome ----------
+function counts() {
+  const g = M.cols.guarantees?.items || [];
+  return {
+    explore: M.b.columns.reduce((n, c) => n + (c.items || []).length, 0),
+    structure: (M.cols.team?.items || []).reduce((n, s) => n + flatPanels(s).length, 0),
+    behavior: flows().length, states: g.filter((x) => x.track).length, interactions: 0,
+    requirements: g.filter((x) => !x.track).length, allocations: M.links.filter((l) => l.kind === "allocate").length,
+    authority: M.data.matrix?.rows.length ?? 0, definitions: M.data.definitions?.length ?? 0, views: M.data.declared?.length ?? 0,
+    sources: Object.keys(M.data.sources || {}).length,
+  };
+}
+const EVO_TABS = ["activity", "revisions", "files", "sysml"];
+const MAIN_TABS = ["team", "explore", "behavior", "requirements", "authority"];
+const MORE_TABS = ["structure", "allocations", "definitions"];
+const WORK_SPACES = ["decide", "cases", "jobs", "watches"];
+function render() {
+  const work = WORK_SPACES.includes(S.space);
+  const tab = (p) => h("button", { "aria-current": p === (S.space === "evolution" ? S.evoPage : S.page) ? "page" : "false", onclick: () => { if (S.space === "evolution") { S.evoPage = p; render(); return; } S.page = p; S.sysmlAt = null; S.fam = null; S.cell = null; S.selected = null; $(".more")?.classList.remove("open"); render(); } }, pageName[p]);
+  // The secondary pages sit in a menu outside the tab strip, whose overflow would clip it.
+  const more = S.space !== "model" ? null : h("div", { class: "more" },
+    h("button", { "aria-current": MORE_TABS.includes(S.page) ? "page" : "false", onclick: (e) => { e.stopPropagation(); e.currentTarget.parentElement.classList.toggle("open"); } }, MORE_TABS.includes(S.page) ? `${pageName[S.page]} ▾` : "More ▾"),
+    h("div", { class: "menu" }, MORE_TABS.map(tab)));
+  $("#nav").replaceChildren(...(work ? [] : S.space === "evolution" ? EVO_TABS : MAIN_TABS).map(tab));
+  $("#morewrap").replaceChildren(...(more ? [more] : []));
+  const A = attention(), chip = $("#health");
+  chip.hidden = !A.length;
+  chip.textContent = A.length ? `${A.length} point${A.length > 1 ? "s" : ""} need${A.length > 1 ? "" : "s"} attention` : "";
+  chip.className = `chip health${A.some((x) => x.risk) ? " warn" : ""}`;
+  chip.onclick = goDecide;
+  // The search is the model's: the repository (Model) has none.
+  $("#search").hidden = S.space !== "model";
+  if ($("#search").hidden) { $("#results").classList.remove("open"); $("#search").classList.remove("open"); $("#q").value = ""; }
+  shell(A);
+  const main = $("#main");
+  main.className = S.space === "model" && S.selected && S.page !== "graph" ? "dimmed" : "";
+  const page = S.space === "evolution" ? S.evoPage : work ? S.space : S.page;
+  let body;
+  try { body = [(pages[page] || pages.team)()].flat(Infinity).filter(Boolean); }
+  catch (err) { console.error(err); body = [h("h1", {}, pageName[page] || ""), empty("Nothing to show", "")]; }
+  // A page that holds a live frame stays in the document (hidden when left); every other page is rebuilt.
+  main.querySelectorAll(":scope > .page").forEach((e) => { if (e.hasAttribute("data-keep")) e.hidden = true; else e.remove(); });
+  if (body.length === 1 && body[0].hasAttribute?.("data-keep")) { body[0].hidden = false; if (!body[0].isConnected) main.append(body[0]); }
+  else main.prepend(h("div", { class: `page page-${page}` }, ...body));
+  main.onclick = (e) => { if (e.target === main || e.target.classList.contains("page")) select(null); };
+  inspector();
+  if (S.page === "graph") graphFocus();
+}
+document.addEventListener("click", () => $(".more")?.classList.remove("open"));
+$("#sysml").addEventListener("change", (e) => { S.sysml = e.target.checked; render(); });
+
+// ---------- shell: title bar, conversation pane, Model window, Dock ----------
+function shell(A) {
+  $("#sysname").textContent = M.data.name;
+  $("#sysname").title = missionLine() || "";
+  $("#modelver").textContent = `version ${(M.b.meta.sourceDigest || "").slice(0, 8)} · adopted`;
+  $("#stage").className = `stage${S.window ? " has-window" : " closed"}${S.talking ? " talking" : ""}`;
+  $("#dockmodel").classList.toggle("active", S.window && S.space === "model");
+  $("#dockevo").classList.toggle("active", S.window && S.space === "evolution");
+  $("#dockdecide").classList.toggle("active", S.window && S.space === "decide");
+  $("#logo").classList.toggle("active", S.talking && !S.talkTo);
+  dockWork();
+  $("#dockdecide").querySelector(".dock-count")?.remove();
+  if (A.length) $("#dockdecide").append(h("span", { class: "dock-count" }, A.length));
+  conversation();
+  $("#menulist").replaceChildren(
+    h("h6", {}, "System"),
+    ...Object.keys(ALL).map((n) => h("button", { role: "menuitemradio", "aria-checked": n === $("#system").value ? "true" : "false", onclick: () => { $("#appmenu").classList.remove("open"); const sel = $("#system"); sel.value = n; sel.dispatchEvent(new Event("change")); } }, n, n === $("#system").value ? "✓" : "")),
+    h("hr"),
+    h("button", { role: "menuitemcheckbox", "aria-checked": S.sysml ? "true" : "false", onclick: () => { $("#appmenu").classList.remove("open"); $("#sysml").click(); } }, "Show SysML", S.sysml ? "✓" : ""));
+}
+// ---------- Cases: one conversation per Case, as in the app ----------
+// A sketch: Cases live only in this page. The Dock shows open Cases by their initials, as the app does.
+const CASES = [
+  { id: "c7", title: "Create a specialist agent that collects public AI training offers from the web", open: true, ago: "3 hours ago" },
+  { id: "c6", title: "List three uses of a digital twin in manufacturing", open: true, ago: "4 hours ago" },
+  { id: "c5", title: "Suggest a name for a small bakery", open: true, ago: "5 hours ago" },
+  { id: "c4", title: "What is SysML v2 in one sentence", open: true, ago: "5 hours ago" },
+  { id: "c3", title: "Give me a one-line definition of a digital twin", open: false, ago: "5 hours ago" },
+  { id: "c2", title: "Write a two-sentence welcome text for the homepage of a bike repair shop", open: false, ago: "6 hours ago" },
+];
+const svgOf = (paths) => { const t = document.createElement("template"); t.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`; return t.content.firstChild; };
+const initials = (title) => title.split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase();
+const caseById = (id) => CASES.find((c) => c.id === id);
+function talkTo(id) {
+  const same = S.talking && S.talkTo === id;
+  S.talking = !same; S.talkTo = same ? S.talkTo : id;
+  render();
+}
+function newCase(text) {
+  const c = { id: `n${CASES.length + 1}`, title: text, open: true, ago: "now" };
+  CASES.unshift(c);
+  S.chat[`case:${c.id}`] = [text];
+  S.talking = true; S.talkTo = c.id;
+  render();
+}
+function dockWork() {
+  const tile = (c) => h("button", { class: `dock-item${S.talking && S.talkTo === c.id ? " active" : ""}`, "aria-label": `Case · ${c.title}`, onclick: () => talkTo(c.id) },
+    h("span", { class: "dock-tile" }, h("b", {}, initials(c.title))), h("span", { class: "dock-label" }, c.title.length > 48 ? `${c.title.slice(0, 47)}…` : c.title));
+  $("#dockwork").replaceChildren(
+    ...CASES.filter((c) => c.open).slice(0, 4).map(tile),
+    h("button", { class: `dock-item${S.window && S.space === "cases" ? " active" : ""}`, "aria-label": "Cases", onclick: () => { S.window = !(S.window && S.space === "cases"); S.space = "cases"; forgetSelection(); render(); } },
+      h("span", { class: "dock-tile" }, svgOf('<path d="M5 7h14M5 12h14M5 17h9"/>')), h("span", { class: "dock-label" }, "Cases")));
+}
+// The conversation pinned on the left: the Concepteur from the logo, or the open Case from its tile.
+// What you write stays in this page; the frame is rebuilt only when its content changes.
+function conversation() {
+  const c = S.talkTo && caseById(S.talkTo);
+  const key = c ? `case:${c.id}` : `${$("#system").value}|concepteur`;
+  const msgs = (S.chat[key] ||= c ? [c.title] : []), box = $("#conversation"), sig = `${key}|${msgs.length}`;
+  if (box.dataset.sig === sig) return;
+  box.dataset.sig = sig;
+  const input = h("input", { class: "composer", placeholder: "What do you need?", "aria-label": c ? `Write in ${c.title}` : "Write to Concepteur", autocomplete: "off",
+    onkeydown: (e) => { const text = input.value.trim(); if (e.key !== "Enter" || e.isComposing || !text) return; msgs.push(text); conversation(); $("#conversation .composer").focus(); } });
+  box.replaceChildren(
+    h("div", { class: "agent" }, h("b", { title: c ? c.title : "" }, c ? (c.title.length > 38 ? `${c.title.slice(0, 37)}…` : c.title) : "Concepteur"), h("span", {}, c ? (c.open ? "Open" : "Done") : "Idle")),
+    h("div", { class: "thread" }, c ? null : h("p", {}, "Hi! What can I do for you?"), msgs.map((m) => h("p", { class: "me" }, m))),
+    input);
+  const thread = box.querySelector(".thread"); thread.scrollTop = thread.scrollHeight;
+}
+pages.cases = () => {
+  const row = (c) => h("li", {}, h("button", { class: `case-row${S.talking && S.talkTo === c.id ? " current" : ""}`, onclick: () => { S.talking = true; S.talkTo = c.id; render(); } },
+    h("span", { class: `case-dot${c.open ? "" : " done"}` }), h("span", { class: "case-title" }, c.title), h("span", { class: "case-ago" }, c.ago)));
+  const input = h("input", { class: "case-composer", placeholder: "What do you need?", "aria-label": "Start a Case", autocomplete: "off",
+    onkeydown: (e) => { const text = input.value.trim(); if (e.key !== "Enter" || e.isComposing || !text) return; newCase(text); } });
+  return [
+    h("h1", {}, "Cases"),
+    h("div", { class: "feed-group" }, "Open"), h("ul", { class: "plain cases" }, CASES.filter((c) => c.open).map(row)),
+    CASES.some((c) => !c.open) ? [h("div", { class: "feed-group" }, "Done"), h("ul", { class: "plain cases" }, CASES.filter((c) => !c.open).map(row))] : null,
+    input,
+  ];
+};
+pages.jobs = () => [h("h1", {}, "Jobs"), empty("No job scheduled", "")];
+pages.watches = () => [h("h1", {}, "Watches"), empty("Nothing watched", "")];
+// To decide: what waits for you, one line each, in a place of its own.
+pages.decide = () => [h("h1", {}, "To decide"), attentionList() || empty("Nothing to decide", "")];
+function goDecide() {
+  Object.assign(S, { space: "decide", window: true, selected: null, fam: null, cell: null });
+  render();
+  const list = $("#main .home-attention");
+  if (!list) return;
+  list.scrollIntoView({ block: "nearest" });
+  list.classList.add("flash");
+}
+$("#menubutton").addEventListener("click", (e) => { e.stopPropagation(); $("#appmenu").classList.toggle("open"); });
+document.addEventListener("click", (e) => { if (!e.target.closest("#appmenu")) $("#appmenu").classList.remove("open"); });
+$("#logo").addEventListener("click", () => talkTo(null));
+const forgetSelection = () => Object.assign(S, { selected: null, fam: null, cell: null });
+$("#dockmodel").addEventListener("click", () => { S.window = !(S.window && S.space === "model"); if (S.space !== "model") forgetSelection(); S.space = "model"; render(); });
+$("#dockevo").addEventListener("click", () => { S.window = !(S.window && S.space === "evolution"); if (S.space !== "evolution") forgetSelection(); S.space = "evolution"; render(); });
+$("#winclose").addEventListener("click", () => { S.window = false; render(); });
+const STACKS = { "#dockjobs": { title: "Jobs", empty: "No job scheduled yet." }, "#dockwatches": { title: "Watches", empty: "Nothing is watched yet." } };
+for (const [id, stack] of Object.entries(STACKS)) $(id).addEventListener("click", (e) => {
+  if (e.target.closest(".dock-stack-list")) return;
+  e.stopPropagation();
+  const tile = $(id), open = tile.classList.contains("open");
+  document.querySelectorAll(".dock-item.pile.open").forEach((t) => { t.classList.remove("open"); t.querySelector(".dock-stack-list")?.remove(); });
+  if (open) return;
+  tile.classList.add("open");
+  tile.append(h("div", { class: "dock-stack-list", role: "dialog", "aria-label": stack.title }, h("div", { class: "dock-stack-title" }, stack.title), h("div", { class: "dock-stack-empty" }, stack.empty)));
+});
+document.addEventListener("click", (e) => { if (!e.target.closest(".dock-item.pile")) document.querySelectorAll(".dock-item.pile.open").forEach((t) => { t.classList.remove("open"); t.querySelector(".dock-stack-list")?.remove(); }); });
+$("#dockdecide").addEventListener("click", () => { if (S.window && S.space === "decide") { S.window = false; render(); } else goDecide(); });
+
+// ---------- force-directed graph ----------
+const HUES = { platform: "#9aa3ad", team: "#5d6f8e", cando: "#5f8a6b", rules: "#a07a3e", guarantees: "#8d5d73", information: "#7a7a7a" };
+const COLUMN_TITLE = { team: "Team", platform: "Platform", cando: "Can do", rules: "Rules", guarantees: "Guarantees", information: "Information" };
+let G = null;
+function graphModel() {
+  const nodes = [], ids = new Set();
+  const add = (x, column) => { if (!ids.has(x.id)) { ids.add(x.id); nodes.push({ id: x.id, column, title: x.title, x0: x }); } };
+  for (const c of M.b.columns) for (const it of c.items || []) {
+    if (c.id === "team") for (const p of flatPanels(it)) add(p, p.kind === "machine" ? "platform" : "team"); else add(it, c.id);
+  }
+  // A link lands on the nearest element shown as a node (a port on its part, a step on its flow).
+  const nodeOf = (id) => { for (let at = id; at; at = M.parent.get(at)) if (ids.has(at)) return at; return null; };
+  const seen = new Map();
+  for (const l of M.links) {
+    if (l.kind === "own" || l.strength === "scope") continue;
+    const a = nodeOf(l.from), b = nodeOf(l.to);
+    if (!a || !b || a === b) continue;
+    const key = [a, b].sort().join("|") + l.kind;
+    if (!seen.has(key)) seen.set(key, { source: a, target: b, kind: l.kind });
+  }
+  for (const n of nodes) { const up = M.parent.get(n.id); if (up && ids.has(up)) seen.set(`${n.id}|contains`, { source: up, target: n.id, kind: "contains" }); }
+  const links = [...seen.values()];
+  const degree = new Map(); for (const l of links) for (const e of [l.source, l.target]) degree.set(e, (degree.get(e) || 0) + 1);
+  for (const n of nodes) n.r = 4 + Math.sqrt(degree.get(n.id) || 0) * 2.2;
+  const counts = new Map(); for (const n of nodes) counts.set(n.title, (counts.get(n.title) || 0) + 1);
+  for (const n of nodes) { const sc = M.reg.get(n.id)?.scope; if (counts.get(n.title) > 1 && sc && sc !== n.id) n.title = `${n.title} · ${title(sc)}`; }
+  return { nodes, links, degree };
+}
+// The pure SysML mode: standard diagrams in SysML v2 notation, with their exports.
+const SYSML_GROUP = { structure: "interconnection", behavior: "action flow", state: "state machine", declared: "declared view", definitions: "general" };
+const sysmlViewsOf = (qname) => (M.data.sysmlViews || []).filter((v) => v.qnames.includes(qname)).sort((a, b) => a.qnames.length - b.qnames.length).slice(0, 4);
+function openSysml(view, qname) { S.space = "evolution"; S.window = true; S.evoPage = "sysml"; S.sysmlAt = { view, qname }; render(); }
+pages.sysml = () => framePage("sysml");
+pages.graph = () => {
+  if (!G || G.system !== M) G = makeGraph();
+  requestAnimationFrame(() => G.center());
+  return [h("h1", {}, "Graph"), G.el];
+};
+function makeGraph() {
+  const { nodes, links, degree } = graphModel();
+  const el = h("div", { class: "graph" });
+  const svg = d3.select(el).append("svg");
+  const g = svg.append("g");
+  svg.call(d3.zoom().scaleExtent([0.2, 4]).on("zoom", (e) => g.attr("transform", e.transform)));
+  const line = g.append("g").selectAll("line").data(links).join("line").attr("class", (d) => `gl ${d.kind}`);
+  const node = g.append("g").selectAll("g").data(nodes).join("g").attr("class", "gn")
+    .on("click", (e, d) => { e.stopPropagation(); select(S.selected === d.id ? null : d.id); })
+    .on("dblclick", (e, d) => { e.stopPropagation(); select(d.id, { go: true }); })
+    .call(d3.drag().on("start", (e, d) => { if (!e.active) sim.alphaTarget(0.25).restart(); d.fx = d.x; d.fy = d.y; })
+      .on("drag", (e, d) => { d.fx = e.x; d.fy = e.y; }).on("end", (e, d) => { if (!e.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
+  node.append("circle").attr("r", (d) => d.r).attr("fill", (d) => HUES[d.column] || "#888");
+  node.append("text").attr("x", (d) => d.r + 3).attr("y", 4).text((d) => d.title);
+  const sim = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id((d) => d.id).distance((l) => l.kind === "contains" ? 46 : 110).strength((l) => l.kind === "contains" ? 0.8 : 0.18))
+    .force("charge", d3.forceManyBody().strength(-340).distanceMax(600))
+    .force("collide", d3.forceCollide().radius((d) => d.r + 12))
+    .force("x", d3.forceX().strength(0.03)).force("y", d3.forceY().strength(0.04))
+    .on("tick", () => {
+      line.attr("x1", (d) => d.source.x).attr("y1", (d) => d.source.y).attr("x2", (d) => d.target.x).attr("y2", (d) => d.target.y);
+      node.attr("transform", (d) => `translate(${d.x},${d.y})`);
+    });
+  svg.on("click", () => select(null));
+  const legend = h("div", { class: "glegend" }, Object.entries(COLUMN_TITLE).filter(([k]) => nodes.some((n) => n.column === k)).map(([k, t]) => h("span", {}, h("i", { style: `background:${HUES[k]}` }), t)));
+  el.append(legend);
+  // Centre once the graph is on screen: a detached SVG has no size to resolve.
+  const center = () => { if (!el.isConnected || G?.centered) return; const r = el.getBoundingClientRect(); svg.call(d3.zoom().transform, d3.zoomIdentity.translate(r.width / 2, r.height / 2)); g.attr("transform", `translate(${r.width / 2},${r.height / 2})`); G.centered = true; };
+  // Labels stay for well-connected elements; the rest appear on focus.
+  node.select("text").style("display", (d) => (degree.get(d.id) || 0) >= 5 ? null : "none");
+  return { system: M, el, node, line, degree, center, centered: false };
+}
+function graphFocus() {
+  if (!G) return;
+  const id = S.selected;
+  const lit = new Set();
+  if (id) { lit.add(id); G.line.each((d) => { if (d.source.id === id || d.target.id === id) { lit.add(d.source.id); lit.add(d.target.id); } }); }
+  G.el.classList.toggle("focus", Boolean(id));
+  G.node.classed("sel", (d) => d.id === id).classed("lit", (d) => lit.has(d.id))
+    .select("text").style("display", (d) => lit.has(d.id) || (G.degree.get(d.id) || 0) >= 5 ? null : "none");
+  G.line.classed("lit", (d) => id && (d.source.id === id || d.target.id === id));
+}
+
+// ---------- search ----------
+function search(q) {
+  const box = $("#results");
+  q = q.trim().toLowerCase();
+  if (!q) { box.classList.remove("open"); return; }
+  const hits = [...M.reg.values()].filter((x) => x.title && (x.title.toLowerCase().includes(q) || (x.qname || "").toLowerCase().includes(q))).slice(0, 12);
+  box.replaceChildren(...(hits.length ? hits.map((x) => h("button", { onclick: () => { box.classList.remove("open"); $("#q").value = ""; select(x.id, { go: true }); } }, h("span", { class: "kw" }, x.keyword), h("span", {}, x.title), h("span", { class: "where" }, pageName[x.page]))) : [h("div", { class: "empty", style: "padding:10px" }, "No match")]));
+  box.classList.add("open");
+}
+$("#q").addEventListener("input", (e) => search(e.target.value));
+const searchVisible = () => $("#search").getClientRects().length > 0;
+const openSearch = () => { if (!searchVisible()) return; $("#search").classList.add("open"); $("#q").focus(); };
+$("#searchbtn").addEventListener("click", (e) => { e.stopPropagation(); openSearch(); });
+$("#q").addEventListener("blur", () => setTimeout(() => { if (!$("#q").value) $("#search").classList.remove("open"); }, 150));
+addEventListener("keydown", (e) => { if (e.key === "/" && searchVisible() && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName)) { e.preventDefault(); openSearch(); } if (e.key === "Escape") { $("#results").classList.remove("open"); select(null); } });
+
+// ---------- boot ----------
+const systems = Object.keys(ALL);
+$("#system").replaceChildren(...systems.map((n) => h("option", { value: n }, n)));
+$("#system").onchange = (e) => { M = build(ALL[e.target.value]); G = null; Object.assign(S, { selected: null, flow: null, defPkg: null, cell: null, file: null, line: null, fam: null, defKind: "all", sysmlAt: null, change: null, peekAll: false, agent: null }); render(); };
+M = build(ALL[systems[0]]);
+const hashPage = location.hash.slice(1);
+if (EVO_TABS.includes(hashPage)) { S.space = "evolution"; S.evoPage = hashPage; }
+else if (Object.hasOwn(pages, hashPage) && typeof pages[hashPage] === "function") S.page = hashPage;
+render();
+</script>
+</body>
+</html>

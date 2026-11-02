@@ -1,0 +1,358 @@
+name: Runtimes natifs
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "build : construire et qualifier ; promote : publier un candidat déjà qualifié"
+        type: choice
+        options: [build, promote]
+        default: build
+      run_id:
+        description: "Run id d'un build candidat réussi (promote uniquement)"
+        type: string
+        required: false
+      tag:
+        description: "Tag de Release existant visé par les bundles"
+        type: string
+        default: native-runtimes-v1
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.action }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: inputs.action == 'build'
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - { os: macos-15, platform: darwin-arm64 }
+          - { os: macos-15-intel, platform: darwin-x64 }
+          - { os: ubuntu-24.04, platform: linux-x64-gnu }
+          - { os: ubuntu-24.04-arm, platform: linux-arm64-gnu }
+    env:
+      DENO_NO_UPDATE_CHECK: "1"
+      ASSEMBLY_RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Préparer les chemins temporaires du runner
+        shell: bash
+        run: |
+          printf 'ASSEMBLY_PACKAGE_PATHS=%s\n' "$RUNNER_TEMP/packages.json" >> "$GITHUB_ENV"
+          printf 'ASSEMBLY_CANDIDATE_DIR=%s\n' "$RUNNER_TEMP/candidate" >> "$GITHUB_ENV"
+
+      - name: Récupérer les sources
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Installer la version Deno du dépôt
+        uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282 # v2.0.4
+        with:
+          deno-version-file: .deno-version
+
+      - name: Installer Node et npm pour les addons N-API
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Installer la toolchain Rust épinglée
+        shell: bash
+        run: |
+          rustup toolchain install 1.98.1 --profile minimal
+          rust_bin_dir="$(dirname "$(rustup which --toolchain 1.98.1 rustc)")"
+          printf 'ASSEMBLY_RUST_BIN_DIR=%s\n' "$rust_bin_dir" >> "$GITHUB_ENV"
+          "$rust_bin_dir/rustc" --version
+          "$rust_bin_dir/cargo" --version
+          node --version
+          npm --version
+
+      - name: Installer les dépendances de l'atelier depuis le lockfile
+        working-directory: apps/live-builder
+        run: deno ci
+
+      - name: Construire les deux addons en mode source explicite
+        working-directory: apps/live-builder
+        run: >-
+          nice -n 15 deno eval --allow-all
+          "import { installToolkit } from './tools/setup-sysml-toolkit.ts';
+          import { installSemanticIndex } from './tools/setup-semantic-index.ts';
+          const toolkit = await installToolkit({ mode: 'source' });
+          const semantic = await installSemanticIndex({ mode: 'source' });
+          await Deno.writeTextFile(Deno.env.get('ASSEMBLY_PACKAGE_PATHS'),
+          JSON.stringify({ toolkit, semantic }));
+          console.log(JSON.stringify({ toolkit, semantic }));"
+
+      - name: Produire les archives et le catalogue candidat
+        working-directory: apps/live-builder
+        run: |
+          deno run --no-prompt --allow-all tools/package-native-runtimes.ts \
+            --toolkit-package "$(python3 -c 'import json,os;print(json.load(open(os.environ["ASSEMBLY_PACKAGE_PATHS"]))["toolkit"])')" \
+            --semantic-package "$(python3 -c 'import json,os;print(json.load(open(os.environ["ASSEMBLY_PACKAGE_PATHS"]))["semantic"])')" \
+            --output-dir "$ASSEMBLY_CANDIDATE_DIR" \
+            --platform "${{ matrix.platform }}" \
+            --repository "${{ github.repository }}" \
+            --tag "$ASSEMBLY_RELEASE_TAG"
+
+      - name: Téléverser le candidat de cette plateforme
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-candidate-${{ matrix.platform }}
+          path: ${{ env.ASSEMBLY_CANDIDATE_DIR }}
+          if-no-files-found: error
+          retention-days: 14
+
+  qualify:
+    if: inputs.action == 'build'
+    name: Qualification ${{ matrix.platform }}
+    needs: build
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - { os: macos-15, platform: darwin-arm64 }
+          - { os: macos-15-intel, platform: darwin-x64 }
+          - { os: ubuntu-24.04, platform: linux-x64-gnu }
+          - { os: ubuntu-24.04-arm, platform: linux-arm64-gnu }
+    env:
+      DENO_NO_UPDATE_CHECK: "1"
+    steps:
+      - name: Préparer les chemins temporaires du runner
+        shell: bash
+        run: |
+          printf 'ASSEMBLY_CANDIDATE_DIR=%s\n' "$RUNNER_TEMP/candidate" >> "$GITHUB_ENV"
+          printf 'ASSEMBLY_QUALIFY_DIR=%s\n' "$RUNNER_TEMP/qualified" >> "$GITHUB_ENV"
+          printf 'ASSEMBLY_QUALIFIED_ARTIFACT_DIR=%s\n' "$RUNNER_TEMP/qualified-artifact" >> "$GITHUB_ENV"
+
+      - name: Récupérer les sources
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Installer la version Deno du dépôt
+        uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282 # v2.0.4
+        with:
+          deno-version-file: .deno-version
+
+      - name: Télécharger le candidat de cette plateforme
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: native-candidate-${{ matrix.platform }}
+          path: ${{ env.ASSEMBLY_CANDIDATE_DIR }}
+
+      - name: Installer les dépendances de l'atelier depuis le lockfile
+        working-directory: apps/live-builder
+        run: deno ci
+
+      - name: Réinstaller les bundles et lire nativement les deux runtimes
+        working-directory: apps/live-builder
+        run: |
+          mkdir -p "$ASSEMBLY_QUALIFY_DIR/toolchains"
+          nice -n 15 deno run --no-prompt --allow-read --allow-write --allow-env --allow-run=deno --allow-ffi tools/qualify-native-runtimes.ts \
+            --catalog "$ASSEMBLY_CANDIDATE_DIR/catalog.json" \
+            --bundle-dir "$ASSEMBLY_CANDIDATE_DIR" \
+            --toolchains-dir "$ASSEMBLY_QUALIFY_DIR/toolchains" \
+            --output "$ASSEMBLY_QUALIFY_DIR/qualification-report.json" \
+            --platform "${{ matrix.platform }}"
+
+      - name: Contrats natifs Toolkit sur l'addon réinstallé exact
+        working-directory: apps/live-builder
+        run: |
+          report="$ASSEMBLY_QUALIFY_DIR/qualification-report.json"
+          package_dir="$(python3 -c 'import json,sys;print([b["packageDir"] for b in json.load(open(sys.argv[1]))["bundles"] if b["runtime"]=="toolkit"][0])' "$report")"
+          addon="$(echo "$package_dir"/native/*.node)"
+          test -f "$addon"
+          deno check native/toolkit/tests/typecheck.ts
+          for contract in lifecycle reads edits lsp-tokens; do
+            nice -n 15 deno run --no-prompt --allow-all "native/toolkit/tests/$contract.ts" --addon "$addon"
+          done
+
+      - name: Contrat natif Oxigraph sur le package réinstallé réel
+        working-directory: apps/live-builder
+        env:
+          ASSEMBLY_SEMANTIC_INTEGRATION: "1"
+        run: |
+          report="$ASSEMBLY_QUALIFY_DIR/qualification-report.json"
+          package_dir="$(python3 -c 'import json,sys;print([b["packageDir"] for b in json.load(open(sys.argv[1]))["bundles"] if b["runtime"]=="semantic-index"][0])' "$report")"
+          export ASSEMBLY_SEMANTIC_INDEX_ADDON="$package_dir/native/ase-semantic-index-napi.node"
+          test -f "$ASSEMBLY_SEMANTIC_INDEX_ADDON"
+          nice -n 15 deno test --no-prompt --allow-all \
+            test/integration/semantic-index_test.ts
+
+      - name: Préparer le rapport lié aux contrats terminés
+        run: |
+          mkdir "$ASSEMBLY_QUALIFIED_ARTIFACT_DIR"
+          cp "$ASSEMBLY_CANDIDATE_DIR/catalog.json" "$ASSEMBLY_QUALIFIED_ARTIFACT_DIR/"
+          cp "$ASSEMBLY_QUALIFY_DIR/qualification-report.json" "$ASSEMBLY_QUALIFIED_ARTIFACT_DIR/"
+
+      - name: Téléverser le catalogue candidat qualifié
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-qualified-${{ matrix.platform }}
+          path: ${{ env.ASSEMBLY_QUALIFIED_ARTIFACT_DIR }}
+          if-no-files-found: error
+          retention-days: 14
+
+  assemble:
+    if: inputs.action == 'build'
+    name: Préparation du catalogue qualifié
+    needs: qualify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      ASSEMBLY_RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Préparer les chemins temporaires du runner
+        shell: bash
+        run: |
+          printf 'ASSEMBLY_PREPARED_DIR=%s\n' "$RUNNER_TEMP/prepared" >> "$GITHUB_ENV"
+          printf 'ASSEMBLY_RELEASE_DIR=%s\n' "$RUNNER_TEMP/native-release" >> "$GITHUB_ENV"
+
+      - name: Récupérer les sources
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Installer la version Deno du dépôt
+        uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282 # v2.0.4
+        with:
+          deno-version-file: .deno-version
+
+      - name: Télécharger les candidats
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: native-candidate-*
+          path: ${{ env.ASSEMBLY_PREPARED_DIR }}/candidates
+
+      - name: Télécharger leurs rapports de qualification
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: native-qualified-*
+          path: ${{ env.ASSEMBLY_PREPARED_DIR }}/qualified
+
+      - name: Assembler uniquement les huit archives qualifiées
+        working-directory: apps/live-builder
+        run: |
+          deno run --no-prompt --allow-read --allow-write tools/package-native-runtimes.ts \
+            --assemble-release --input-dir "$ASSEMBLY_PREPARED_DIR" \
+            --output-dir "$ASSEMBLY_RELEASE_DIR" --repository "$GITHUB_REPOSITORY" \
+            --tag "$ASSEMBLY_RELEASE_TAG"
+
+      - name: Conserver le catalogue à revoir et ses assets préparés
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-qualified-release
+          path: ${{ env.ASSEMBLY_RELEASE_DIR }}
+          if-no-files-found: error
+          retention-days: 14
+
+  promote:
+    if: inputs.action == 'promote'
+    name: Promotion en Release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ASSEMBLY_CANDIDATE_RUN_ID: ${{ inputs.run_id }}
+      ASSEMBLY_RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Préparer les chemins temporaires du runner
+        shell: bash
+        run: |
+          printf 'ASSEMBLY_RELEASE_DIR=%s\n' "$RUNNER_TEMP/native-release" >> "$GITHUB_ENV"
+          printf 'ASSEMBLY_RUN_METADATA=%s\n' "$RUNNER_TEMP/candidate-run.json" >> "$GITHUB_ENV"
+          printf 'ASSEMBLY_RUN_JOBS=%s\n' "$RUNNER_TEMP/candidate-jobs.json" >> "$GITHUB_ENV"
+          printf 'ASSEMBLY_PROMOTION=%s\n' "$RUNNER_TEMP/promotion.json" >> "$GITHUB_ENV"
+
+      - name: Récupérer les sources, les tags et le catalogue suivi
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Installer la version Deno du dépôt
+        uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282 # v2.0.4
+        with:
+          deno-version-file: .deno-version
+
+      - name: Exiger un run de préparation du même dépôt et du workflow attendu
+        shell: bash
+        run: |
+          [[ "$ASSEMBLY_CANDIDATE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$ASSEMBLY_RELEASE_TAG" =~ ^[A-Za-z0-9][A-Za-z0-9._+-]*$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ASSEMBLY_CANDIDATE_RUN_ID" > "$ASSEMBLY_RUN_METADATA"
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/actions/runs/$ASSEMBLY_CANDIDATE_RUN_ID/jobs?per_page=100&filter=all" > "$ASSEMBLY_RUN_JOBS"
+          python3 - <<'PY'
+          import json, os, pathlib
+          run = json.loads(pathlib.Path(os.environ["ASSEMBLY_RUN_METADATA"]).read_text())
+          repo = os.environ["GITHUB_REPOSITORY"]
+          assert run["id"] == int(os.environ["ASSEMBLY_CANDIDATE_RUN_ID"])
+          assert run["status"] == "completed" and run["conclusion"] == "success"
+          assert run["event"] == "workflow_dispatch"
+          assert run["path"] == ".github/workflows/native-runtimes.yml"
+          assert run["repository"]["full_name"] == repo
+          assert run["head_repository"]["full_name"] == repo
+          pages = json.loads(pathlib.Path(os.environ["ASSEMBLY_RUN_JOBS"]).read_text())
+          jobs = [job for page in pages for job in page["jobs"]]
+          latest = {}
+          def rank(job):
+              return (int(job.get("run_attempt") or 0), int(job["id"]))
+          for job in jobs:
+              if job["name"] not in latest or rank(job) > rank(latest[job["name"]]):
+                  latest[job["name"]] = job
+          expected = {f"{kind} {platform}" for kind in ["Build", "Qualification"] for platform in ["darwin-arm64", "darwin-x64", "linux-x64-gnu", "linux-arm64-gnu"]}
+          expected.add("Préparation du catalogue qualifié")
+          passed = {name for name, job in latest.items() if job["conclusion"] == "success"}
+          assert expected <= passed, f"Contrats ou préparation absents : {expected - passed}"
+          PY
+
+      - name: Télécharger exactement la préparation qualifiée du run vérifié
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: native-qualified-release
+          path: ${{ env.ASSEMBLY_RELEASE_DIR }}
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Vérifier catalogue suivi, rapports, sources et octets avant publication
+        working-directory: apps/live-builder
+        run: |
+          deno run --no-prompt --allow-read tools/package-native-runtimes.ts \
+            --verify-release --release-dir "$ASSEMBLY_RELEASE_DIR" \
+            --tracked-catalog vendor/native-runtimes/catalog.json \
+            --repository "$GITHUB_REPOSITORY" --tag "$ASSEMBLY_RELEASE_TAG" > "$ASSEMBLY_PROMOTION"
+
+      - name: Vérifier le tag existant et son commit
+        shell: bash
+        run: |
+          tag_commit="$(git rev-parse --verify "refs/tags/$ASSEMBLY_RELEASE_TAG^{commit}")"
+          test "$tag_commit" = "$(git rev-parse HEAD)"
+
+      - name: Créer explicitement la Release et envoyer ses seuls assets autorisés
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          assets = json.loads(pathlib.Path(os.environ["ASSEMBLY_PROMOTION"]).read_text())["assets"]
+          subprocess.run([
+              "gh", "release", "create", os.environ["ASSEMBLY_RELEASE_TAG"],
+              "--repo", os.environ["GITHUB_REPOSITORY"], "--verify-tag",
+              "--title", os.environ["ASSEMBLY_RELEASE_TAG"],
+              "--notes", "Runtimes natifs qualifiés ; empreintes et autorisation dans catalog.json et SHA256SUMS.",
+              *assets,
+          ], check=True)
+          PY

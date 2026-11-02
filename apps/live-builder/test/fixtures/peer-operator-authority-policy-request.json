@@ -1,0 +1,57 @@
+[
+  {
+    "op": "insertMember",
+    "owner": {
+      "qualifiedName": "ASELiveBuilder::liveBuilder"
+    },
+    "text": "part 'operator-authority-research-network-1' : ASEAuthority::OperatorAuthorityPolicy {\nattribute :>> id = \"research-network\";\nattribute :>> revision = 1;\nattribute :>> enabled = true;\nattribute :>> recipients = \"[\\\"0d618ac4-64e2-5036-a3b2-a6f350a1127b\\\"]\";\nattribute :>> acts = \"[\\\"addNetworkHosts\\\"]\";\nattribute :>> networkHosts = \"[\\\"example.org\\\"]\";\nattribute :>> toolIds = \"[]\";\nattribute :>> maxDelegationDepth = 0;\n}\nbind 'operator-authority-research-network-1'.holder = builder;\nbind 'operator-authority-research-network-1'.mandate = builderMandate;\nbind 'operator-authority-research-network-1'.issuer = owner.ownerMandate.rootAuthority;",
+    "expect": [
+      {
+        "kind": "member",
+        "qualifiedName": "ASELiveBuilder::liveBuilder::'operator-authority-research-network-1'",
+        "metaclass": "PartUsage"
+      },
+      {
+        "kind": "literal",
+        "path": "'operator-authority-research-network-1'::id",
+        "value": "research-network"
+      },
+      {
+        "kind": "literal",
+        "path": "'operator-authority-research-network-1'::revision",
+        "value": 1
+      },
+      {
+        "kind": "literal",
+        "path": "'operator-authority-research-network-1'::enabled",
+        "value": true
+      },
+      {
+        "kind": "literal",
+        "path": "'operator-authority-research-network-1'::recipients",
+        "value": "[\"0d618ac4-64e2-5036-a3b2-a6f350a1127b\"]"
+      },
+      {
+        "kind": "literal",
+        "path": "'operator-authority-research-network-1'::acts",
+        "value": "[\"addNetworkHosts\"]"
+      },
+      {
+        "kind": "literal",
+        "path": "'operator-authority-research-network-1'::networkHosts",
+        "value": "[\"example.org\"]"
+      },
+      {
+        "kind": "literal",
+        "path": "'operator-authority-research-network-1'::toolIds",
+        "value": "[]"
+      },
+      {
+        "kind": "literal",
+        "path": "'operator-authority-research-network-1'::maxDelegationDepth",
+        "value": 0
+      }
+    ],
+    "intent": "authority"
+  }
+]

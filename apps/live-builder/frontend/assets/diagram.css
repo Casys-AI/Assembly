@@ -1,0 +1,463 @@
+/* Native model views: SysML v2 notation on the atelier's neutral palette. */
+.md {
+  --md-node: #ffffff;
+  --md-node-def: #f3f2ef;
+  --md-nested: #fbfaf8;
+  --md-frame: #fdfcfa;
+  --md-stroke: #2b2b2d;
+  --md-soft: #8e8b85;
+  --md-rule: #e1ded8;
+  --md-edge: #4b4b4f;
+  --md-halo: var(--paper, #faf9f7);
+  --md-dot: #e3e0da;
+  --md-ring: rgb(29 29 31 / 10%);
+}
+
+.md {
+  position: relative;
+  min-height: 0;
+  display: grid;
+}
+.md-toolbar {
+  position: relative;
+  margin: 10px 16px 0;
+  min-width: 0;
+  display: flex;
+  gap: 10px;
+  z-index: 1;
+  pointer-events: none;
+}
+.md-chips,
+.md-tools {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line, #e4e1da);
+  border-radius: 10px;
+  background: var(--surface, rgb(255 255 255 / 92%));
+  pointer-events: auto;
+}
+.md-tools {
+  margin-left: auto;
+}
+.md-chips button,
+.md-tools button {
+  all: unset;
+  cursor: pointer;
+  padding: 4px 9px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted, #636368);
+}
+.md-chips button:hover,
+.md-tools button:hover {
+  color: var(--ink, #1d1d1f);
+}
+.md-chips button[aria-pressed="true"] {
+  background: var(--accent-soft, #e9e9eb);
+  color: var(--ink, #1d1d1f);
+}
+.md-chips button[aria-pressed="false"] {
+  text-decoration: line-through;
+  text-decoration-color: var(--md-soft);
+}
+.md-chips span {
+  margin-left: 4px;
+  color: var(--md-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.md-canvas {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  background-image: radial-gradient(var(--md-dot) 0.9px, transparent 1px);
+  background-size: 22px 22px;
+}
+.md-canvas:active {
+  cursor: grabbing;
+}
+.md-canvas svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  font-family: var(--font, system-ui, sans-serif);
+}
+.md-error,
+.md-loading {
+  margin: 56px 20px;
+  color: var(--muted, #636368);
+}
+
+/* Elements */
+.md-node {
+  cursor: pointer;
+  transition: opacity 0.18s ease;
+}
+.md-node text {
+  fill: var(--ink, #1d1d1f);
+}
+.md-body {
+  fill: var(--md-node);
+  stroke: var(--md-stroke);
+  stroke-width: 1.15;
+}
+.md-node.def .md-body {
+  fill: var(--md-node-def);
+}
+.md-node.ref .md-body {
+  stroke-dasharray: 4 3;
+}
+.md-node.compound .md-body {
+  fill: var(--md-nested);
+}
+.md-node.compound.depth0 .md-body,
+.md-node.frame .md-body,
+.md-node.package .md-body {
+  fill: var(--md-frame);
+}
+.md-node.frame .md-body,
+.md-node.package .md-body,
+.md-node.note .md-body {
+  stroke: var(--md-soft);
+}
+.md-tab {
+  fill: var(--md-node-def);
+  stroke: var(--md-soft);
+  stroke-width: 1.15;
+}
+.md-node.note .md-body {
+  fill: var(--md-node-def);
+}
+.md-fold {
+  fill: none;
+  stroke: var(--md-soft);
+}
+.md-solid {
+  fill: var(--md-stroke);
+  stroke: var(--md-stroke);
+}
+.md-ring {
+  fill: var(--md-halo);
+  stroke: var(--md-stroke);
+  stroke-width: 1.3;
+}
+.md-rule {
+  stroke: var(--md-rule);
+}
+.md-stereo {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  fill: var(--muted, #636368) !important;
+}
+.md-name {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.md-type {
+  font-size: 12.5px;
+  fill: var(--muted, #636368) !important;
+}
+.md-sect {
+  font-size: 10px;
+  font-style: italic;
+  fill: var(--md-soft) !important;
+}
+.md-row {
+  font-size: 11.5px;
+}
+.md-note {
+  font-size: 11px;
+  fill: var(--muted, #636368) !important;
+}
+.md-ctl {
+  font-size: 10.5px;
+  font-weight: 500;
+  fill: var(--muted, #636368) !important;
+}
+.md-badge rect {
+  fill: var(--accent-soft, #e9e9eb);
+}
+.md-badge text {
+  font-size: 10px;
+  font-weight: 600;
+  fill: var(--muted, #636368) !important;
+}
+.md-node.selected .md-body {
+  stroke: var(--ink, #1d1d1f);
+  stroke-width: 2.2;
+}
+.md-ring-select {
+  fill: none;
+  stroke: var(--md-ring);
+  stroke-width: 8;
+}
+
+.md-port {
+  cursor: pointer;
+  transition: opacity 0.18s ease;
+}
+.md-port rect {
+  fill: var(--md-stroke);
+  stroke: var(--md-stroke);
+  stroke-width: 1.2;
+}
+.md-port.conjugated rect {
+  fill: var(--md-node);
+}
+.md-port text,
+.md-edge text {
+  font-size: 10.5px;
+  fill: var(--muted, #636368);
+  paint-order: stroke;
+  stroke: var(--md-halo);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.md-port text {
+  font-weight: 500;
+  stroke-width: 3px;
+}
+.md-edge {
+  transition: opacity 0.18s ease;
+}
+.md-line {
+  fill: none;
+  stroke: var(--md-edge);
+  stroke-width: 1.25;
+}
+.md-edge.binding .md-line {
+  stroke-dasharray: 2 3;
+  stroke-width: 1;
+}
+.md-edge.allocation .md-line {
+  stroke-dasharray: 6 4;
+}
+.md-edge.typing .md-line {
+  stroke-dasharray: 4 3;
+}
+.md-edge.note .md-line {
+  stroke-dasharray: 1 3;
+  stroke: var(--md-soft);
+}
+.md-edge.membership .md-line {
+  stroke-width: 1;
+}
+.md-edge .md-guard {
+  fill: var(--ink, #1d1d1f);
+  font-style: italic;
+}
+.md-mark-fill {
+  fill: var(--md-edge);
+  stroke: var(--md-edge);
+}
+.md-mark-hollow {
+  fill: var(--md-halo);
+  stroke: var(--md-edge);
+  stroke-width: 1.1;
+}
+.md-mark-line {
+  fill: none;
+  stroke: var(--md-edge);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+}
+
+/* Focus: what touches the hovered or selected element stays in front. */
+svg.md-focus .md-edge:not(.lit) {
+  opacity: 0.12;
+}
+svg.md-focus .md-node.leaf:not(.lit),
+svg.md-focus .md-port:not(.lit) {
+  opacity: 0.3;
+}
+svg.md-focus .md-edge.lit .md-line {
+  stroke: var(--ink, #1d1d1f);
+  stroke-width: 1.7;
+}
+
+/* Inspector */
+.md-inspector {
+  position: absolute;
+  top: 56px;
+  right: 16px;
+  width: 290px;
+  max-height: calc(100% - 80px);
+  overflow: auto;
+  padding: 14px 16px;
+  border: 1px solid var(--line, #e4e1da);
+  border-radius: 12px;
+  background: var(--surface, rgb(255 255 255 / 92%));
+  backdrop-filter: blur(8px);
+  font-size: 12px;
+}
+.md-inspector h3 {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  word-break: break-word;
+}
+.md-inspector h3 span {
+  font-weight: 400;
+  color: var(--muted, #636368);
+}
+.md-kicker {
+  margin: 0;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted, #636368);
+}
+.md-inspector dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 10px;
+  margin: 12px 0;
+}
+.md-inspector dt {
+  color: var(--muted, #636368);
+}
+.md-inspector dd {
+  margin: 0;
+  word-break: break-all;
+}
+.md-inspector code {
+  font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.md-inspector ul {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+.md-inspector li {
+  display: flex;
+  gap: 8px;
+  padding: 3px 0;
+  border-top: 1px solid var(--line, #e4e1da);
+  cursor: pointer;
+}
+.md-inspector li:hover .md-other {
+  text-decoration: underline;
+}
+.md-kind {
+  min-width: 78px;
+  color: var(--muted, #636368);
+}
+.md-close {
+  all: unset;
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--muted, #636368);
+}
+
+/* One warm full-width sheet shared with the page toolbar. */
+.md {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: #f6f5f2;
+  color: #1d1d1f;
+}
+.md-toolbar {
+  flex-wrap: wrap;
+  align-items: center;
+}
+.md-page-toolbar {
+  display: flex;
+  flex: 1 1 420px;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+.md-page-toolbar:empty {
+  display: none;
+}
+.md-chips {
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+.md-inspector li button {
+  all: unset;
+  display: flex;
+  gap: 8px;
+  cursor: pointer;
+  width: 100%;
+  padding: 4px 0;
+}
+.md button:focus-visible,
+.md [role="button"]:focus-visible,
+.md a:focus-visible {
+  outline: 2px solid #797369;
+  outline-offset: 3px;
+}
+.md button:disabled {
+  opacity: .4;
+  cursor: default;
+}
+@media (max-width: 700px) {
+  .md-toolbar {
+    margin: 8px 8px 0;
+    gap: 5px;
+  }
+  .md-chips {
+    order: 3;
+  }
+  .md-inspector {
+    right: 8px;
+    width: min(290px, calc(100% - 16px));
+    top: 100px;
+    max-height: calc(100% - 115px);
+  }
+}
+
+.md {
+  --ink: #1d1d1f;
+  --muted: #75716a;
+  --paper: #f6f5f2;
+  --surface: rgb(255 255 255 / 92%);
+  --line: #e3e0da;
+  --accent-soft: #efede8;
+}
+
+.md-page-toolbar > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.md-page-toolbar select {
+  min-width: 0;
+  max-width: 100%;
+}
+.md-page-toolbar strong {
+  overflow-wrap: anywhere;
+}
+.md-inspector {
+  top: auto;
+  bottom: 12px;
+  max-height: min(420px, 65%);
+}
+.md-inspector.is-left {
+  left: 12px;
+  right: auto;
+}
+@media (max-width: 700px) {
+  .md-tools {
+    flex: 0 0 auto;
+  }
+  .md-chips {
+    flex: 1 1 auto;
+  }
+  .md-inspector {
+    max-height: 55%;
+  }
+}

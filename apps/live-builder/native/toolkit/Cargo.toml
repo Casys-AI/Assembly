@@ -1,0 +1,41 @@
+# Addon N-API (napi-rs) Deno -> Rust -> SysML Toolkit, crate de production.
+# Aucun chemin WASM : pas de dépendance à sysmlv2-wasm ni à wasm-bindgen ;
+# la sémantique du wrapper amont est recalculée sur les crates natives
+# (transform/model/syntax/viz/lsp). Voir API-CONTRACT.md.
+#
+# Dépendances Toolkit par chemin vers le checkout exact fourni par le
+# source-setup (depuis vendor) : 0.10.10+ase.2, commit
+# 8b541ae04beedde6f28f4a3966f8acd039584327.
+# Versions napi épinglées : napi 3.15.0, napi-derive 3.6.13,
+# napi-build 2.6.0 (CLI npm @napi-rs/cli 3.10.9, voir package.json).
+[package]
+name = "ase-toolkit-napi"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.97"
+license = "MIT"
+publish = false
+description = "napi-rs bridge Deno -> SysML Toolkit (transform/model/viz/lsp), native only"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "=3.15.0", features = ["napi8", "serde-json"] }
+napi-derive = "=3.6.13"
+sysmlv2-transform = { path = "../../.data/toolchains/sysml-toolkit-source-0.10.10+ase.2/crates/sysmlv2-transform" }
+sysmlv2-model = { path = "../../.data/toolchains/sysml-toolkit-source-0.10.10+ase.2/crates/sysmlv2-model" }
+sysmlv2-syntax = { path = "../../.data/toolchains/sysml-toolkit-source-0.10.10+ase.2/crates/sysmlv2-syntax" }
+sysmlv2-viz = { path = "../../.data/toolchains/sysml-toolkit-source-0.10.10+ase.2/crates/sysmlv2-viz" }
+sysmlv2-lsp = { path = "../../.data/toolchains/sysml-toolkit-source-0.10.10+ase.2/crates/sysmlv2-lsp" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[build-dependencies]
+napi-build = "=2.6.0"
+
+# panic=unwind explicite : la frontière attrape les panics (catch_unwind)
+# et empoisonne l'objet concerné. Le profil wasi-release du Toolkit
+# (panic=abort) n'est pas utilisé ici.
+[profile.release]
+panic = "unwind"

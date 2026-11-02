@@ -1,0 +1,61 @@
+{
+  "version": "0.10.10+ase.2",
+  "upstreamVersion": "0.10.10",
+  "upstreamCommit": "339ef0e073d06e553e81c079755ddfcd224e4b92",
+  "fixCommit": "f63b234e72fc634232e24c46a89487df442954f3",
+  "roundtripFixCommit": "c465376482489b9ac5098c7d663e20238061da93",
+  "commit": "8b541ae04beedde6f28f4a3966f8acd039584327",
+  "distribution": "native-napi",
+  "sourceArchive": {
+    "file": "sysml-toolkit-source-0.10.10+ase.2.tgz",
+    "bytes": 3721322,
+    "sha256": "8e890d8346656a4dbd50065d657779c40c7f13750ba5e9a09b4779a0dfa61e7c",
+    "files": 1156,
+    "note": "Complete exact source tree of 8b541ae as a git archive would carry it (USTAR, sorted, fixed mtime/owners, deterministic gzip). Submodule directories spec-refs/SysML-v2-Release and spec-refs/apollo-11-sysml-v2 are empty, as in a git archive; building the addon crates does not need their corpora. Unused workspace crates (including the historical WASM wrapper crate) remain inert sources: the addon depends only on sysmlv2-transform, sysmlv2-model, sysmlv2-syntax, sysmlv2-viz, sysmlv2-lsp, sysmlv2-parser and sysmlv2-cbor. Spot hashes: Cargo.toml 9466e7e2e8ace111450a8384b701dc77111fc5307c365481a2657c19229f6f0f, Cargo.lock c815cb6e3f16fd4e07c5a6bd25728348a52441ca2345c2dd98e61eb323b5e09b."
+  },
+  "stdlibArchive": {
+    "file": "sysml-toolkit-stdlib-0.10.10+ase.2.tgz",
+    "bytes": 11919639,
+    "sha256": "46394459346976cd8f64bdf654f80ae2e23fbac818f1235a97e8f8736b037ff6",
+    "files": {
+      "LICENSE": "c741fcb705b7f3f80058e69560b8ec5a8ba4b1ab9fab255044ddf2b48ae6b800",
+      "LICENSE-EPL-2.0": "0becf16567beb77fa252b7664631dd177c8f9a1889e48995b45379c7130e5303",
+      "THIRD-PARTY-NOTICES.md": "76e86cfa333e4cb2bc41d15b4db81bc5a669445394ac5be06e6829ce1daeeea0",
+      "stdlib/manifest.json": "4363dcb41c3286daa4359c2c834742f1c34dadb983870b2d1cabba496079b3fa",
+      "stdlib/sysml-library.json.gz": "04cbfb6549c7cd7ff2cc23f4ed0d6b9126c6a5ecab71a068b0fb87c6f94413bf",
+      "stdlib/sysml-library.libcache.gz": "83def0ef6846631048d1707798951c02435f7e2ef403b5361b6b132b35909768",
+      "stdlib/sysml-library.prepared.gz": "4d728d5796b5eb14d882bb827d773a59c07c8469c6bd4a41de3d09a607bc1c1a"
+    },
+    "note": "Byte-identical to the reviewed distribution files; hashes unchanged from the historical pin."
+  },
+  "addon": {
+    "crate": "native/toolkit",
+    "name": "ase-toolkit-napi",
+    "abi": "napi8",
+    "rustc": "1.98.1",
+    "napiCli": "3.10.9",
+    "platforms": {
+      "darwin-arm64": "aarch64-apple-darwin",
+      "darwin-x64": "x86_64-apple-darwin",
+      "linux-x64-gnu": "x86_64-unknown-linux-gnu",
+      "linux-arm64-gnu": "aarch64-unknown-linux-gnu"
+    },
+    "installDirectory": ".data/toolchains/sysml-toolkit-native-v0.10.10+ase.2/package",
+    "sourceDirectory": ".data/toolchains/sysml-toolkit-source-0.10.10+ase.2"
+  },
+  "historicalWasmArchive": {
+    "file": "sysml-wasm-0.10.10+ase.2.tgz",
+    "bytes": 16620972,
+    "sha256": "0d54b73e594ec708ec7ef8001ff7c6feb1ce60b5c0a9acb1c999de2257bde968",
+    "status": "Retired from the active distribution: no longer vendored, installed or loaded. Its bytes and the builds it produced remain historical data (conserved outside the product path); historical artifact hashes are neither modified nor reinterpreted.",
+    "build": {
+      "name": "@sysml/wasm",
+      "version": "0.10.10+ase.2",
+      "commit": "8b541ae",
+      "dirty": false,
+      "builtAt": "2026-10-25T09:50:56.000Z",
+      "toolchain": "rustc 1.98.1 (48a229cea 2026-09-01)",
+      "optimizer": "wasm-opt version 117 (version_117)"
+    }
+  }
+}

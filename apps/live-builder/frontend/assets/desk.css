@@ -1,0 +1,1771 @@
+/*
+ * The desk: a calm full-screen workspace, a Dock at the bottom, and panels that
+ * rise above it. Neutral greys (only the logo has colour), soft shadows, generous spacing.
+ */
+.desk {
+  --dock-height: 64px;
+  --dock-bottom: 8px;
+  --dock-tile: 50px;
+  --dock-gap: 14px;
+  /*
+   * The Dock is always shown below the workspace, which stops above it with a
+   * clear gap: nothing slides beneath the Dock any more (overlap stays 0).
+   */
+  --stage-bottom: calc(var(--dock-height) + var(--dock-bottom) + 12px);
+  --dock-overlap: 0px;
+  --panel-radius: 28px;
+  --panel-shadow: 0 24px 60px rgb(0 0 0 / 10%), 0 2px 6px rgb(0 0 0 / 4%);
+  --quiet: rgb(0 0 0 / 5%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--desk);
+}
+
+/* Title bar: the system name, centred and discreet. */
+.desk-titlebar {
+  position: relative;
+  z-index: 30;
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, auto)
+    minmax(max-content, 1fr);
+  align-items: center;
+  gap: 16px;
+  height: 44px;
+  padding: 0 18px;
+}
+.desk-titlebar-start {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.desk-titlebar-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.workspace-identity {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+}
+.workspace-identity h1 {
+  min-width: 0;
+  overflow: hidden;
+  color: #3a3a3c;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-model-version {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.workspace-model-version::before {
+  content: "·";
+  margin-right: 8px;
+}
+.desk .connection {
+  gap: 8px;
+  font-size: 12px;
+}
+.desk .connection .dot {
+  width: 8px;
+  height: 8px;
+  background: #c9a227;
+}
+.desk .connection.live .dot {
+  background: #34a37a;
+}
+
+/* "To decide": a Dock tile; its list opens upwards from the tile. */
+.decisions-menu {
+  position: relative;
+  flex: none;
+}
+.decisions-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.decisions-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.decisions-menu[open] > summary .dock-label {
+  display: none;
+}
+.decisions-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 2px solid #fff;
+  border-radius: 10px;
+  background: var(--accent-ink);
+  color: #fff;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.decisions-popover {
+  position: absolute;
+  bottom: calc(100% + 16px);
+  right: 0;
+  width: min(360px, calc(100vw - 24px));
+  max-height: min(480px, calc(100dvh - 160px));
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid rgb(0 0 0 / 6%);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 97%);
+  box-shadow: var(--panel-shadow);
+  overflow-wrap: anywhere;
+  animation: desk-appear .15s ease-out;
+}
+.decisions-popover h2 {
+  margin: 0;
+  padding: 10px 12px 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.decisions-popover p {
+  margin: 0;
+  padding: 8px 12px 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.decisions-popover ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.decisions-popover a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: var(--ink);
+  font-size: 14px;
+  text-decoration: none;
+}
+.decisions-popover a:hover {
+  background: var(--accent-soft);
+}
+.decisions-popover small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+.decisions-popover button {
+  margin: 0 12px 10px;
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--accent-ink);
+  font-size: 13px;
+}
+
+.desk > .error {
+  position: absolute;
+  top: 52px;
+  left: 50%;
+  z-index: 40;
+  max-width: min(640px, calc(100% - 32px));
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: #fff4f2;
+  color: #8f3a30;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 8%);
+  font-size: 13px;
+  transform: translateX(-50%);
+}
+
+/* The stage: empty at rest, one panel, or the conversation beside an item. */
+.desk-stage {
+  position: relative;
+  flex: 1 1 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 16px;
+  min-width: 0;
+  min-height: 0;
+  padding: 8px 24px var(--stage-bottom);
+  overflow: hidden;
+}
+.desk-view .native-graph .graph-note {
+  bottom: calc(var(--dock-overlap) + 8px);
+}
+/*
+ * Content windows (Model, Evolution, a Case, an operator) fill the workspace
+ * edge to edge under the title bar and stop above the Dock: no side margin,
+ * rounded corner or card shadow. Beside them, the central conversation becomes
+ * a pane split by a hairline. A full Main conversation uses this same surface.
+ */
+.desk-stage.has-item,
+.desk-stage.is-talking {
+  gap: 0;
+  padding: 0 0 var(--stage-bottom);
+}
+
+.desk-stage.has-item > .desk-panel,
+.desk-stage.is-talking > .desk-panel {
+  border: 0;
+  border-block: 1px solid var(--line);
+  border-radius: 0;
+  background: #fff;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  animation-name: desk-fade;
+}
+.desk-stage.is-talking.has-item > .desk-conversation {
+  margin-bottom: 0;
+  border-right: 1px solid var(--line);
+}
+/*
+ * The conversation pane is 440px up to a 1440px screen, then takes a quarter
+ * of every extra pixel (about 29% of the screen), up to 640px.
+ */
+.desk-stage.is-talking.has-item {
+  grid-template-columns:
+    minmax(340px, clamp(440px, 25% + 80px, 640px)) minmax(0, 1fr);
+}
+
+/* Keep Main's full-width surface while centering its conversation at about
+ * the reading measure of a Request's messages. Split panes keep their width. */
+.desk-stage.is-talking:not(.has-item) > .desk-conversation > :is(.agent-header, .conversation-layout) {
+  width: min(100%, 720px);
+  margin-inline: auto;
+}
+
+.desk-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgb(0 0 0 / 6%);
+  border-radius: var(--panel-radius);
+  background: var(--surface);
+  box-shadow: var(--panel-shadow);
+  -webkit-backdrop-filter: blur(30px) saturate(1.3);
+  backdrop-filter: blur(30px) saturate(1.3);
+  animation: desk-appear .18s ease-out;
+}
+.desk-view.model,
+.desk-view.revisions {
+  background: rgb(255 255 255 / 97%);
+}
+
+.desk-grabber {
+  position: relative;
+  flex: none;
+  align-self: center;
+  width: 56px;
+  height: 20px;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+}
+.desk-grabber::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  right: 10px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgb(0 0 0 / 42%);
+  transition: background .15s;
+}
+.desk-grabber:hover::before {
+  background: rgb(0 0 0 / 62%);
+}
+
+.desk-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--quiet);
+  color: #5a5a5f;
+  transition: background .15s, color .15s;
+}
+.desk-close:hover {
+  background: rgb(0 0 0 / 9%);
+  color: var(--ink);
+}
+.desk-close svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+/* Agent header: the name reveals mission, mandate and tools. */
+/* Not positioned: its details popover is placed and bounded by the panel. */
+.agent-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 14px 4px 20px;
+}
+.desk-conversation .agent-header {
+  min-height: 40px;
+  padding-top: 0;
+}
+.agent-header .desk-close {
+  position: static;
+  flex: none;
+  margin-left: auto;
+}
+.agent-header-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 65%;
+  margin-left: -10px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+.agent-header-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.agent-header-name > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.agent-header-name svg {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .6;
+  transition: transform .15s;
+}
+.agent-header-name:hover,
+.agent-header-name[aria-expanded=true] {
+  background: var(--quiet);
+}
+.agent-header-name[aria-expanded=true] svg {
+  transform: rotate(180deg);
+}
+.agent-header-phase {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.agent-header-phase.is-busy::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: dock-breathe 2.4s ease-in-out infinite;
+}
+.agent-details {
+  --details-top: 52px;
+  position: absolute;
+  top: var(--details-top);
+  left: 12px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: min(380px, calc(100% - 24px));
+  max-height: min(440px, calc(100% - var(--details-top) - 12px));
+  overflow: hidden;
+  border: 1px solid rgb(0 0 0 / 7%);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgb(0 0 0 / 14%);
+  animation: desk-appear .15s ease-out;
+}
+.agent-details-tabs {
+  flex: none;
+  display: flex;
+  gap: 2px;
+  margin: 10px;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--quiet);
+}
+.agent-details-tabs button {
+  flex: 1;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+}
+.agent-details-tabs button[aria-pressed=true] {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
+}
+.desk-conversation .agent-details {
+  --details-top: 64px;
+}
+.agent-details .agent-context-panel {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1 1 auto;
+  width: auto;
+  min-height: 0;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.agent-details .agent-context-header {
+  display: none;
+}
+.agent-details .agent-context-body {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 4px 18px 18px;
+  font-size: 14px;
+}
+
+/* Conversation: read top to bottom, the latest message just above the composer. */
+.desk-panel .conversation-layout {
+  flex: 1 1 0;
+}
+.desk-panel .scroll {
+  padding: 12px 28px 8px;
+  overscroll-behavior: contain;
+  scroll-behavior: auto;
+}
+.desk-panel .messages {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 16px;
+  min-height: 100%;
+}
+.desk-panel .message {
+  max-width: 92%;
+  margin: 0;
+}
+.desk-panel .message-body {
+  max-width: none;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.desk-panel .message.user {
+  align-self: flex-end;
+  max-width: 78%;
+}
+.desk-panel .message.user .message-body {
+  padding: 10px 15px;
+  border-radius: 18px;
+  background: var(--accent-soft);
+}
+.desk-panel .message.user > .message-label,
+.desk-panel .message.assistant > .message-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.desk-panel .message.tool {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: rgb(0 0 0 / 3.5%);
+}
+.desk-panel .message.tool .message-label {
+  margin-bottom: 2px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.desk-panel .message.tool summary {
+  color: var(--muted);
+  font-size: 13px;
+}
+.desk-panel .message.tool .message-body {
+  font-size: 13px;
+}
+.desk-panel .empty {
+  margin: 0;
+}
+.desk-panel .empty h3 {
+  font-size: 19px;
+}
+.desk-panel .empty p {
+  font-size: 14px;
+}
+.desk-panel .example {
+  border-color: var(--line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--accent-ink);
+  font-size: 14px;
+}
+.desk-panel .conversation-empty,
+.conversation-unavailable {
+  margin: auto 0 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.conversation-unavailable {
+  margin: auto;
+  padding: 24px;
+  text-align: center;
+}
+.desk-panel .conversation-readonly {
+  flex: none;
+  margin: 10px 16px 16px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 23px;
+  background: rgb(0 0 0 / 3.5%);
+  font-size: 13px;
+  text-align: center;
+}
+.desk-panel .conversation-read-error {
+  margin: 0 20px 6px;
+  padding: 0;
+  font-size: 13px;
+}
+.desk-panel .history-notice {
+  margin: 0 16px 6px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 16px;
+  background: rgb(0 0 0 / 4%);
+}
+.desk-panel .history-notice p {
+  font-size: 13px;
+}
+.desk-panel .history-notice .action {
+  display: inline-block;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+}
+.desk-panel .proposal-jump {
+  margin: 0 16px 6px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 13px;
+}
+.desk-panel .proposal-count {
+  min-width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--accent-ink);
+}
+.desk-panel .proposal-feed-error {
+  margin: 0 16px 6px;
+  border-radius: 14px;
+  background: #fff4f2;
+}
+
+/* Composer: one rounded field with the send arrow inside. */
+.desk-panel .composer {
+  flex: none;
+  padding: 10px 16px 16px;
+  border: 0;
+  background: transparent;
+}
+.desk-panel .input-row {
+  position: relative;
+  display: block;
+}
+.desk-panel .composer-input {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  max-height: 168px;
+  field-sizing: content;
+  padding: 12px 52px 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: 23px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.4;
+  resize: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.desk-panel .composer .free-text-count {
+  margin-inline: 18px;
+}
+.desk-panel .composer-input::placeholder {
+  color: #6b6b70;
+}
+/* A visible keyboard focus: #6e6e73 is 4.9:1 on the field and the panel. */
+.desk-panel .composer-input:focus-visible {
+  border-color: var(--focus);
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.desk-panel .send {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent-ink);
+  color: #fff;
+}
+.desk-panel .send svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.desk-panel .send:disabled {
+  opacity: 1;
+  background: rgb(0 0 0 / 8%);
+  color: rgb(0 0 0 / 40%);
+}
+.desk-panel .send.is-busy:disabled {
+  background: var(--accent);
+  color: #fff;
+  animation: desk-breathe 1.4s ease-in-out infinite;
+}
+
+/* Proposal cards stay complete; only their surface follows the desk. */
+.desk-panel .chat-proposal {
+  margin: 2px 0;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+}
+.desk-panel .chat-proposal.is-pending {
+  border-color: rgb(var(--accent-rgb) / 25%);
+}
+.desk-panel .is-pending > .proposal-heading .proposal-status::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: 1px;
+}
+.desk-panel .proposal-heading h3 {
+  font-size: 15px;
+  font-weight: 600;
+}
+.desk-panel .proposal-status {
+  font-size: 12px;
+}
+.desk-panel .proposal-actions button,
+.desk-panel .proposal-feed-error button {
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+.desk-panel .proposal-receipt > summary {
+  font-size: 14px;
+}
+
+/* Model and Evolution keep their own views inside the desk panel. */
+.desk-view.model > .section-head {
+  padding: 16px 64px 12px 24px;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+}
+.desk-view.model > .section-head h2 {
+  font-size: 15px;
+  font-weight: 600;
+}
+.desk-view.model > .history,
+.desk-view.model > .model-caption,
+.desk-view.model > .recent-events {
+  padding-inline: 24px;
+  background: transparent;
+}
+.desk-view .native-graph {
+  background: var(--paper);
+}
+.desk-view .native-graph button[aria-pressed=true] {
+  border-color: var(--accent-ink);
+  background: var(--accent-ink);
+}
+.desk-view .revision-view {
+  --revision-blue: var(--accent-ink);
+  padding-top: 28px;
+  padding-bottom: calc(40px + var(--dock-overlap));
+}
+
+/*
+ * The Dock, without a bar: the logo floats at the exact centre, work floats on
+ * its left and the right is kept for watches and routines. Each item has its
+ * own soft shadow; the bare desk between them stays clickable.
+ */
+.dock {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--dock-bottom);
+  z-index: 25;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--dock-gap);
+  height: var(--dock-height);
+  padding: 0 16px;
+  pointer-events: none;
+}
+.dock > * {
+  pointer-events: auto;
+}
+.dock-group,
+.dock-list {
+  display: flex;
+  align-items: center;
+  gap: var(--dock-gap);
+  min-width: 0;
+}
+.dock-work {
+  justify-self: end;
+}
+.dock-rest {
+  justify-self: start;
+}
+.dock-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dock-slot {
+  position: relative;
+  display: flex;
+}
+.dock-item {
+  position: relative;
+  display: block;
+  width: var(--dock-tile);
+  height: var(--dock-tile);
+  padding: 0;
+  border: 0;
+  border-radius: 15px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-decoration: none;
+  transition: transform .15s ease;
+}
+.dock-item:hover {
+  transform: translateY(-3px);
+}
+.dock-tile {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 15px;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 8px 22px rgb(0 0 0 / 9%), 0 1px 3px rgb(0 0 0 / 7%);
+  color: #3a3a3c;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+.dock-place .dock-tile svg,
+.decisions-menu .dock-tile svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: #48484a;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dock-separator {
+  flex: none;
+  width: 1px;
+  height: 36px;
+  background: rgb(0 0 0 / 14%);
+}
+.dock-item.is-active .dock-tile {
+  background: var(--accent-active);
+  color: var(--ink);
+}
+.dock-item.is-active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.dock-item.is-busy .dock-tile {
+  animation: dock-working 2s ease-in-out infinite;
+}
+.dock-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--accent);
+}
+/* A pinned Case: a pin head on the tile's top-left corner, away from the
+ * pending dot. */
+.dock-pin {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+}
+.dock-pin::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.dock-label {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 16px);
+  padding: 5px 10px;
+  border: 1px solid rgb(0 0 0 / 6%);
+  border-radius: 9px;
+  background: rgb(255 255 255 / 97%);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 10%);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition: opacity .12s, transform .12s;
+}
+.dock-item:hover .dock-label,
+.dock-item:focus-visible .dock-label,
+.dock-circle:not(.is-open):hover .dock-label,
+.dock-circle:not(.is-open):focus-visible .dock-label {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+/* The Casys logo, a real button that opens the central conversation. */
+.dock-circle {
+  position: relative;
+  flex: none;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  /* No halo: only the discreet drop shadow shared by every floating item. */
+  box-shadow: 0 8px 22px rgb(0 0 0 / 9%), 0 1px 3px rgb(0 0 0 / 7%);
+  transition: transform .15s ease;
+}
+.dock-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+.dock-circle:hover {
+  transform: scale(1.04);
+}
+.dock-circle:focus-visible {
+  outline-offset: 10px;
+}
+/* Work in progress: the mark breathes gently, without any glow. */
+.dock-circle.is-busy .dock-logo {
+  animation: dock-breathe 2.4s ease-in-out infinite;
+}
+.dock-circle-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 15px;
+  height: 15px;
+  border: 3px solid var(--accent-ink);
+  border-radius: 50%;
+  background: #fff;
+}
+/* The oldest work, gathered in one stacked tile when the Dock is full. */
+.dock-pile .dock-tile {
+  box-shadow: 3px -3px 0 -1px #e6e3dd, 6px -6px 0 -2px #d8d5ce,
+    0 8px 22px rgb(0 0 0 / 9%), 0 1px 3px rgb(0 0 0 / 7%);
+  font-size: 14px;
+}
+.dock-pile-list {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 18px);
+  z-index: 5;
+  width: max-content;
+  min-width: 200px;
+  max-width: min(320px, calc(100vw - 32px));
+  max-height: min(360px, 50dvh);
+  overflow: auto;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid rgb(0 0 0 / 6%);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 97%);
+  box-shadow: var(--panel-shadow);
+  list-style: none;
+  transform: translateX(-50%);
+  animation: desk-appear .15s ease-out;
+}
+.dock-pile-list a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px 7px 7px;
+  border-radius: 12px;
+  color: var(--ink);
+  font-size: 14px;
+  text-decoration: none;
+}
+.dock-pile-list a:hover,
+.dock-pile-list a.is-active {
+  background: var(--accent-soft);
+}
+.dock-pile-tile {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: #ecebe7;
+  color: #3a3a3c;
+  font-size: 12px;
+  font-weight: 600;
+}
+.dock-pile-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dock-pile-badge {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+@keyframes desk-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(.97);
+  }
+}
+@keyframes desk-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes desk-appear {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+/* Work in progress breathes gently, the same way on the logo and the header. */
+@keyframes dock-breathe {
+  50% {
+    opacity: .8;
+    transform: scale(.94);
+  }
+}
+@keyframes desk-breathe {
+  50% {
+    opacity: .45;
+  }
+}
+@keyframes dock-working {
+  50% {
+    box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 18%),
+      0 8px 22px rgb(0 0 0 / 9%);
+  }
+}
+
+@media (max-width: 900px) {
+  .desk-stage.is-talking.has-item {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  /* Split panes stack above the Dock on narrow screens. */
+  .desk-stage.is-talking.has-item > .desk-conversation {
+    margin-bottom: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .desk-stage.is-talking.has-item > .desk-conversation .conversation-main {
+    padding-bottom: 0;
+  }
+}
+@media (max-width: 640px) {
+  .desk {
+    --dock-height: 54px;
+    --dock-bottom: 6px;
+    --dock-tile: 42px;
+    --dock-gap: 10px;
+    --panel-radius: 22px;
+  }
+  .desk-titlebar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .workspace-model-version {
+    display: none;
+  }
+  .desk-stage {
+    gap: 10px;
+    padding: 4px 12px var(--stage-bottom);
+  }
+  .desk-panel .scroll {
+    padding-inline: 16px;
+  }
+  .dock {
+    padding: 0 12px;
+  }
+  .dock-tile,
+  .dock-item {
+    border-radius: 13px;
+  }
+  .dock-tile {
+    font-size: 14px;
+  }
+  .dock-item.is-active::after {
+    bottom: -8px;
+  }
+  .dock-circle {
+    width: 54px;
+    height: 54px;
+  }
+  .dock-label {
+    display: none;
+  }
+}
+/* Cases: a tile per open Case, its view beside the conversation, chips. */
+.dock-item.is-case .dock-tile {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+/* A Case closed within the day: still reachable, quieter than open work. */
+.dock-item.is-closed .dock-tile {
+  opacity: 0.5;
+  box-shadow: none;
+}
+.dock-item.is-closed:hover .dock-tile,
+.dock-item.is-closed:focus-visible .dock-tile {
+  opacity: 0.85;
+}
+.dock-label {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.case-view {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+}
+.case-head {
+  flex: none;
+  padding: 22px 64px 16px 28px;
+  border-bottom: 1px solid var(--line);
+}
+.dock-count {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--line);
+  color: #4a4a4f;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+}
+.dock-stack-list {
+  min-width: 260px;
+}
+/* Stacks sit right of the logo: their list opens upward, toward the centre. */
+.dock-stack .dock-stack-list {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+.dock-stack-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dock-stack-title {
+  margin: 4px 10px 6px;
+  color: #6b6b70;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+.dock-stack-list a {
+  flex-wrap: wrap;
+}
+.dock-stack-detail {
+  flex-basis: 100%;
+  color: #6b6b70;
+  font-size: 12px;
+}
+.dock-stack-empty {
+  max-width: 240px;
+  margin: 4px 10px 8px;
+  color: #6b6b70;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.case-objective {
+  margin: -2px 0 10px;
+  color: #4a4a4f;
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.dock-pile-list a.is-closed .dock-pile-tile,
+.dock-pile-list a.is-closed .dock-pile-name {
+  opacity: 0.55;
+}
+.case-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -.015em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.case-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+.case-meta > span {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 4.5%);
+  color: #4a4a4f;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.case-close {
+  margin-top: 14px;
+  padding: 7px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+}
+.case-close:not(:disabled):hover {
+  background: rgb(0 0 0 / 4%);
+}
+.case-error {
+  margin: 10px 0 0;
+  color: #8f3a30;
+  font-size: 13px;
+}
+.case-empty,
+.case-unavailable {
+  margin: auto;
+  padding: 24px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+.case-chip {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 5%);
+  color: #4a4a4f;
+  font-size: 12px;
+  text-decoration: none;
+}
+.case-chip:hover {
+  background: rgb(0 0 0 / 9%);
+  color: var(--ink);
+}
+.desk-panel .message.user > .case-chip {
+  display: table;
+  margin-left: auto;
+}
+/* The specialists, reached from the central agent's name. */
+.agent-team {
+  flex: none;
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--line);
+}
+.agent-team h3 {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.agent-team ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.agent-team a {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  color: var(--ink);
+  font-size: 14px;
+  text-decoration: none;
+}
+.agent-team a:hover {
+  background: rgb(0 0 0 / 5%);
+}
+.agent-team-busy {
+  color: var(--muted);
+  font-size: 12px;
+}
+/* The top bar's application menu: global actions, present and to come. */
+.app-menu {
+  position: relative;
+}
+.app-menu-button {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.app-menu-button:hover,
+.app-menu-button[aria-expanded=true] {
+  background: var(--quiet);
+}
+.app-menu-list,
+.app-about {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 40;
+  min-width: 240px;
+  padding: 6px;
+  border: 1px solid rgb(0 0 0 / 7%);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 98%);
+  box-shadow: var(--panel-shadow);
+  animation: desk-appear .12s ease-out;
+}
+.app-menu-list > button {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  text-align: left;
+}
+.app-menu-list > button:not(:disabled):hover {
+  background: var(--quiet);
+}
+.app-menu-list > button:disabled {
+  opacity: 1;
+  color: #8a8a8f;
+}
+.app-menu-info {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0;
+  padding: 7px 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.app-menu-info > span:last-child {
+  color: var(--ink);
+}
+.app-menu-list hr {
+  margin: 6px 4px;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+.app-about {
+  width: 300px;
+  padding: 18px 20px;
+}
+.app-about h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 700;
+}
+.app-about > p {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.app-about dl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 14px;
+  margin: 0 0 14px;
+  font-size: 13px;
+}
+.app-about dt {
+  color: var(--muted);
+}
+.app-about dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.app-about button {
+  padding: 6px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 13px;
+}
+
+/* Job and Watch pages: the same quiet surface as a Request. */
+.case-body {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 22px;
+  min-height: 0;
+  overflow: auto;
+  padding: 22px 28px 28px;
+}
+.job-steps {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.job-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: 12px;
+  padding: 0 0 18px;
+}
+/* The timeline's line, joining each step to the next. */
+.job-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  bottom: 2px;
+  left: 6px;
+  width: 1.5px;
+  background: var(--line);
+}
+.job-step-mark {
+  position: relative;
+  top: 2px;
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid #b8b8bd;
+  border-radius: 50%;
+  background: #fff;
+}
+.job-step.is-done .job-step-mark {
+  border-color: #48484a;
+  background: #48484a;
+}
+.job-step.is-running .job-step-mark {
+  border-color: #48484a;
+  background: linear-gradient(90deg, #48484a 50%, #fff 50%);
+  animation: dock-breathe 2.4s ease-in-out infinite;
+}
+.job-step.is-judgment .job-step-mark {
+  border-color: var(--ink);
+  border-radius: 3px;
+  transform: rotate(45deg);
+}
+.job-step.is-failed .job-step-mark {
+  border-color: #b3261e;
+  background: #b3261e;
+}
+.job-step.is-skipped .job-step-label {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.job-step-label {
+  font-size: 15px;
+}
+.job-step-state {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.job-judgment {
+  grid-column: 2 / -1;
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgb(0 0 0 / 4%);
+}
+.job-judgment p {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+.job-judgment-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.job-judgment-options button,
+.watch-controls button {
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+}
+.job-judgment-options button:first-child:not(:disabled) {
+  border-color: var(--accent-ink);
+  background: var(--accent-ink);
+  color: #fff;
+}
+.job-runs h3 {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.job-runs ol,
+.watch-band {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.job-run {
+  width: 14px;
+  height: 22px;
+  border-radius: 4px;
+  background: #48484a;
+}
+.job-run.is-failed {
+  background: #b3261e;
+}
+.job-run.is-running {
+  background: linear-gradient(#fff 50%, #48484a 50%);
+  box-shadow: inset 0 0 0 1.5px #48484a;
+}
+.job-run.is-abandoned {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px #b8b8bd;
+}
+.watch-state {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.watch-state.is-paused,
+.watch-state.is-stopped {
+  color: var(--muted);
+}
+.watch-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: -10px;
+}
+.watch-band li {
+  color: #48484a;
+  font-size: 14px;
+  line-height: 1;
+}
+.watch-band li.is-quiet {
+  color: #a1a1a6;
+}
+.watch-wakes {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.watch-wake {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+.watch-wake.is-quiet {
+  color: var(--muted);
+}
+.watch-wake-time {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+/* Jobs and Watches in the Dock: a quiet mark tells them from Requests. */
+.dock-item.is-job .dock-tile,
+.dock-item.is-watch .dock-tile {
+  box-shadow: inset 0 0 0 1.5px #d4d1ca, 0 8px 22px rgb(0 0 0 / 9%),
+    0 1px 3px rgb(0 0 0 / 7%);
+}
+.dock-item.is-watch .dock-tile::after {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #48484a;
+}
+.dock-item.is-watch .dock-tile {
+  position: relative;
+}
+/* Phone widths: smaller tiles keep Cases, Model, Evolution and To decide in
+ * reach (at 390px the right side needs 160px of its 172px). */
+@media (max-width: 460px) {
+  .desk {
+    --dock-tile: 34px;
+    --dock-gap: 6px;
+  }
+  .dock-context-badge {
+    top: -4px;
+    right: -4px;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 3px;
+    font-size: 8px;
+  }
+  .dock {
+    padding: 0 8px;
+  }
+  .dock-circle {
+    width: 46px;
+    height: 46px;
+  }
+  .dock-separator {
+    display: none;
+  }
+  .dock-tile,
+  .dock-item {
+    border-radius: 11px;
+  }
+  .dock-place .dock-tile svg,
+  .decisions-menu .dock-tile svg {
+    width: 19px;
+    height: 19px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .desk *,
+  .desk *::before,
+  .desk *::after,
+  .desk-stage::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* A model place keeps the selected conversation mounted in its original panel. */
+.desk-stage.has-model-context > .is-context-conversation {
+  grid-column: 1;
+  grid-row: 1;
+  padding-inline: 12px;
+  border-right: 1px solid var(--line);
+}
+.desk-stage.has-model-context > #system-panel,
+.desk-stage.has-model-context > #model-panel {
+  grid-column: 2;
+  grid-row: 1;
+}
+.desk-stage.has-model-context > .desk-conversation {
+  grid-column: 1;
+  grid-row: 1;
+}
+.model-inspection {
+  flex: none;
+  margin: 0;
+  padding: 8px 20px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  background: #f7f5f8;
+  font-size: 12px;
+}
+.dock-place.has-context .dock-tile {
+  position: relative;
+}
+/* The Case whose system the place shows, as a bubble on the icon's corner. */
+.dock-context-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border: 1.5px solid #fff;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  line-height: 1;
+}
+/* A waiting proposal darkens the bubble rather than adding a second dot. */
+.dock-place.is-context-request:has(> .dock-badge) .dock-context-badge {
+  background: var(--accent-ink);
+  color: #fff;
+}
+.dock-place.is-context-request > .dock-badge {
+  display: none;
+}
+.desk-stage.has-model-context > .desk-conversation .desk-grabber {
+  display: none;
+}
+@media (max-width: 900px) {
+  .desk-stage.has-model-context > #system-panel,
+  .desk-stage.has-model-context > #model-panel {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .desk-stage.has-model-context > .is-context-conversation {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}
+@media (max-width: 640px) {
+  .desk:has(.has-model-context) .workspace-identity {
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .desk:has(.has-model-context) .workspace-model-version {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 10px;
+  }
+  .desk:has(.has-model-context) .workspace-model-version::before {
+    display: none;
+  }
+}
+.dock-place.has-context:hover .dock-label,
+.dock-place.has-context:focus-visible .dock-label {
+  display: block;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 24px));
+  white-space: normal;
+}

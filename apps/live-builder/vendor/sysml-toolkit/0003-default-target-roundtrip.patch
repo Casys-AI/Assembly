@@ -1,0 +1,378 @@
+From c465376482489b9ac5098c7d663e20238061da93 Mon Sep 17 00:00:00 2001
+From: Erwan Lee Pesle <erpesle@gmail.com>
+Date: Sun, 25 Oct 2026 17:45:30 +0800
+Subject: [PATCH] fix(interchange): restore default action targets on JSON
+ reimport
+
+---
+ crates/sysmlv2-model/src/lift.rs         | 100 +++++++++-
+ crates/sysmlv2-parser/tests/roundtrip.rs | 231 +++++++++++++++++++++++
+ 2 files changed, 330 insertions(+), 1 deletion(-)
+
+diff --git a/crates/sysmlv2-model/src/lift.rs b/crates/sysmlv2-model/src/lift.rs
+index 14f6c83..16d0da5 100644
+--- a/crates/sysmlv2-model/src/lift.rs
++++ b/crates/sysmlv2-model/src/lift.rs
+@@ -1012,6 +1012,90 @@ impl<'a> Lifter<'a> {
+         self.by_id.get(owner_id).copied()
+     }
+ 
++    /// `DefaultTargetSuccession` has no `isDefault` metamodel property:
++    /// its target-only TransitionUsage shape is disambiguated by its body
++    /// context. State target transitions have that shape too, but must keep
++    /// their `transition ... then` spelling. Only ActionBodyItem contexts
++    /// (also included by CalculationBodyItem and CaseBodyItem) take `else`.
++    fn in_action_body(&self, el: El<'a>) -> bool {
++        if self.dialect != Dialect::Sysml {
++            return false;
++        }
++        let Some(owner) = self.owner_of(el) else {
++            return false;
++        };
++        // Keep aligned with syntax/check.rs def_body_ctx/usage_body_ctx.
++        matches!(
++            def_kind_of(ty(owner)),
++            Some(
++                DefKind::Action
++                    | DefKind::Calc
++                    | DefKind::Constraint
++                    | DefKind::Case
++                    | DefKind::Analysis
++                    | DefKind::Verification
++                    | DefKind::UseCase
++            )
++        ) || matches!(
++            usage_kind_of(ty(owner), self.dialect),
++            Some(
++                UsageKind::Action
++                    | UsageKind::Perform
++                    | UsageKind::Accept
++                    | UsageKind::Send
++                    | UsageKind::Assign
++                    | UsageKind::Terminate
++                    | UsageKind::IfNode
++                    | UsageKind::WhileLoop
++                    | UsageKind::ForLoop
++                    | UsageKind::Merge
++                    | UsageKind::Decide
++                    | UsageKind::Join
++                    | UsageKind::Fork
++                    | UsageKind::Transition
++                    | UsageKind::Calc
++                    | UsageKind::Constraint
++                    | UsageKind::AssertConstraint
++                    | UsageKind::Case
++                    | UsageKind::Analysis
++                    | UsageKind::Verification
++                    | UsageKind::UseCase
++                    | UsageKind::Include
++            )
++        )
++    }
++
++    /// Test the raw relationships as well as the lifted parts: a malformed
++    /// guard/source/trigger/effect that cannot be lifted is still present and
++    /// must never turn a transition into an unconditional default branch.
++    /// Full JSON's implied source memberships are semantic derivations, not
++    /// explicitly written sources.
++    fn has_only_default_transition_parts(&self, el: El<'a>) -> bool {
++        let Some(rels) = el.get("ownedRelationship").and_then(Value::as_array) else {
++            return false;
++        };
++        rels.iter().all(|reference| {
++            let Some(rel) = ref_id(reference).and_then(|id| self.by_id.get(id).copied()) else {
++                return false;
++            };
++            if bval(rel, "isImplied") {
++                return true;
++            }
++            match ty(rel) {
++                "Membership" | "TransitionFeatureMembership" => false,
++                "OwningMembership" => self.first_related(rel).is_some_and(|inner| {
++                    ty(inner) == "SuccessionAsUsage"
++                        || def_kind_of(ty(inner)).is_some()
++                        || crate::metaclass::conforms(ty(inner), "AnnotatingElement")
++                }),
++                // These can be UsageBody members, not transition parts.
++                "FeatureMembership" | "AliasMembership" | "Annotation" | "NamespaceImport"
++                | "MembershipImport" => true,
++                _ => false,
++            }
++        })
++    }
++
+     /// An element's declared (short) name, for anonymity tests.
+     fn declared_name<'b>(el: El<'b>) -> Option<&'b str> {
+         sval(el, "declaredName").or_else(|| sval(el, "declaredShortName"))
+@@ -2812,7 +2896,7 @@ impl<'a> Lifter<'a> {
+         }
+ 
+         // Kind-specific details.
+-        let detail = self.assemble_detail(
++        let mut detail = self.assemble_detail(
+             t,
+             kind,
+             el,
+@@ -2829,6 +2913,20 @@ impl<'a> Lifter<'a> {
+             satisfy_by,
+         );
+ 
++        if let UsageDetail::Transition {
++            source: None,
++            trigger: None,
++            guard: None,
++            effect: None,
++            target: Some(_),
++            is_default,
++        } = &mut detail
++        {
++            *is_default = declaration.is_empty()
++                && self.in_action_body(el)
++                && self.has_only_default_transition_parts(el);
++        }
++
+         let saved_body = std::mem::replace(&mut self.body_featuring, featuring);
+         let members = self.lift_members(&body_rels);
+         self.body_featuring = saved_body;
+diff --git a/crates/sysmlv2-parser/tests/roundtrip.rs b/crates/sysmlv2-parser/tests/roundtrip.rs
+index 17fd872..954e759 100644
+--- a/crates/sysmlv2-parser/tests/roundtrip.rs
++++ b/crates/sysmlv2-parser/tests/roundtrip.rs
+@@ -1286,3 +1286,234 @@ fn specialized_reference_names_take_precedence_over_redefinitions() {
+         }
+     }
+ }
++
++/// JSON equality alone misses invalid textual spellings: `else` and an
++/// unguarded target transition have the same abstract syntax.
++#[test]
++fn default_target_successions_reimport_as_valid_action_body_items() {
++    let branch = "action fast; action slow; decide branch; if true then fast; else slow { doc /* branch */ part def Nested; private import Nested::*; }";
++    let containers = [
++        "action def Router",
++        "action router",
++        "calc def Router",
++        "calc router",
++        "constraint def Router",
++        "constraint router",
++        "case def Router",
++        "case router",
++        "analysis def Router",
++        "analysis router",
++        "verification def Router",
++        "verification router",
++        "use case def Router",
++        "use case router",
++        "action outer { action nested", // exercise nested ownership
++        "action outer { if true",
++        "action outer { while true",
++        "action outer { for n in (1, 2)",
++        "state s { entry action enter",
++    ];
++    for container in containers {
++        let closing = if container.contains('{') { "} }" } else { "}" };
++        let source = format!("{container} {{ {branch} {closing}");
++        let parsed = parse_source(&source);
++        assert!(
++            parsed.diagnostics.is_empty(),
++            "{source}: {:?}",
++            parsed.diagnostics
++        );
++        assert!(
++            sysmlv2_parser::check::validate(&parsed.unit).is_empty(),
++            "{source}"
++        );
++        for full in [false, true] {
++            let json = if full {
++                sysmlv2_parser::full::to_full_json(&parsed.unit)
++            } else {
++                to_compact_json(&parsed.unit)
++            };
++            let lifted = from_compact_json(&json).unwrap();
++            assert!(lifted.errors.is_empty(), "{:?}", lifted.errors);
++            let text = print_source(&lifted.unit);
++            assert!(text.contains("else "), "full={full}: {text}");
++            let reparsed = parse_source(&text);
++            assert!(
++                reparsed.diagnostics.is_empty(),
++                "{text}: {:?}",
++                reparsed.diagnostics
++            );
++            let checks = sysmlv2_parser::check::validate(&reparsed.unit);
++            assert!(checks.is_empty(), "{text}: {checks:?}");
++            // Checks both target names and the non-default guard survive.
++            assert_eq!(
++                to_compact_json(&reparsed.unit),
++                to_compact_json(&parsed.unit),
++                "{text}"
++            );
++        }
++    }
++}
++
++#[test]
++fn default_target_successions_keep_state_transitions_and_explicit_sources() {
++    for source in [
++        "state def S { state a; state b; transition then b; transition named first a then b; }",
++        "state s { state a; state b; transition then b; transition first a then b; }",
++        "action a { action x; action y; first x if true then y; }",
++    ] {
++        let parsed = parse_source(source);
++        assert!(
++            parsed.diagnostics.is_empty(),
++            "{source}: {:?}",
++            parsed.diagnostics
++        );
++        assert!(
++            sysmlv2_parser::check::validate(&parsed.unit).is_empty(),
++            "{source}"
++        );
++        for full in [false, true] {
++            let json = if full {
++                sysmlv2_parser::full::to_full_json(&parsed.unit)
++            } else {
++                to_compact_json(&parsed.unit)
++            };
++            let lifted = from_compact_json(&json).unwrap();
++            assert!(lifted.errors.is_empty(), "{:?}", lifted.errors);
++            let text = print_source(&lifted.unit);
++            assert!(!text.contains("else "), "{text}");
++            let reparsed = parse_source(&text);
++            assert!(
++                reparsed.diagnostics.is_empty(),
++                "{text}: {:?}",
++                reparsed.diagnostics
++            );
++            assert!(
++                sysmlv2_parser::check::validate(&reparsed.unit).is_empty(),
++                "{text}"
++            );
++            assert_eq!(
++                to_compact_json(&reparsed.unit),
++                to_compact_json(&parsed.unit),
++                "{text}"
++            );
++        }
++    }
++}
++
++/// Do not heal invalid external data by treating missing lifted parts as
++/// absent syntax. Both wire shapes must respect even an unreadable explicit
++/// guard/trigger/effect/source, and must require a known action-body owner.
++#[test]
++fn default_target_successions_do_not_reclassify_malformed_external_json() {
++    let parsed = parse_source("action a { action x; decide d; else x; }");
++    for full in [false, true] {
++        let original = if full {
++            sysmlv2_parser::full::to_full_json(&parsed.unit)
++        } else {
++            to_compact_json(&parsed.unit)
++        };
++        for corruption in [
++            "guard",
++            "trigger",
++            "effect",
++            "source",
++            "chain_source",
++            "name",
++            "short_name",
++            "owner",
++        ] {
++            let mut json = original.clone();
++            let rows = json.as_array_mut().unwrap();
++            let index = rows
++                .iter()
++                .position(|e| e["@type"] == "TransitionUsage")
++                .unwrap();
++            let transition_id = rows[index]["@id"].clone();
++            match corruption {
++                "name" => {
++                    rows[index]["declaredName"] = serde_json::json!("named");
++                }
++                "short_name" => {
++                    rows[index]["declaredShortName"] = serde_json::json!("n");
++                }
++                "owner" => {
++                    rows[index]
++                        .as_object_mut()
++                        .unwrap()
++                        .remove("owningRelationship");
++                }
++                _ => {
++                    let rel_type = match corruption {
++                        "source" => "Membership",
++                        "chain_source" => "OwningMembership",
++                        _ => "TransitionFeatureMembership",
++                    };
++                    let mut relation = serde_json::json!({
++                        "@id": "broken-part", "@type": rel_type, "isImplied": false,
++                        "owningRelatedElement": {"@id": transition_id},
++                        "ownedRelatedElement": []
++                    });
++                    if rel_type == "TransitionFeatureMembership" {
++                        relation["kind"] = serde_json::json!(corruption);
++                    }
++                    if corruption == "chain_source" {
++                        relation["ownedRelatedElement"] =
++                            serde_json::json!([{"@id": "broken-chain"}]);
++                        rows.push(serde_json::json!({
++                            "@id": "broken-chain", "@type": "Feature",
++                            "owningRelationship": {"@id": "broken-part"}, "ownedRelationship": []
++                        }));
++                    }
++                    rows[index]["ownedRelationship"]
++                        .as_array_mut()
++                        .unwrap()
++                        .push(serde_json::json!({"@id": "broken-part"}));
++                    rows.push(relation);
++                }
++            }
++            // The loader may explicitly reject malformed data; if it lifts
++            // it, the printer must not invent an unconditional else branch.
++            if let Ok(lifted) = from_compact_json(&json) {
++                let text = print_source(&lifted.unit);
++                assert!(!text.contains("else "), "full={full}, {corruption}: {text}");
++            }
++        }
++    }
++}
++
++#[test]
++fn default_target_successions_ignore_implied_but_not_explicit_source_memberships() {
++    let parsed = parse_source("action a { action x; decide d; else x; }");
++    for implied in [false, true] {
++        let mut json = sysmlv2_parser::full::to_full_json(&parsed.unit);
++        let rows = json.as_array_mut().unwrap();
++        let index = rows
++            .iter()
++            .position(|e| e["@type"] == "TransitionUsage")
++            .unwrap();
++        let owner = rows[index]["@id"].clone();
++        rows[index]["ownedRelationship"]
++            .as_array_mut()
++            .unwrap()
++            .push(serde_json::json!({"@id": "semantic-source"}));
++        rows.push(serde_json::json!({
++            "@id": "semantic-source", "@type": "Membership", "isImplied": implied,
++            "owningRelatedElement": {"@id": owner},
++            "memberElement": {"@ref": "d"}, "ownedRelatedElement": []
++        }));
++        let lifted = from_compact_json(&json).unwrap();
++        assert!(lifted.errors.is_empty(), "{:?}", lifted.errors);
++        let text = print_source(&lifted.unit);
++        assert_eq!(text.contains("else "), implied, "{text}");
++        if implied {
++            let reparsed = parse_source(&text);
++            assert!(reparsed.diagnostics.is_empty(), "{text}");
++            assert!(
++                sysmlv2_parser::check::validate(&reparsed.unit).is_empty(),
++                "{text}"
++            );
++        } else {
++            assert!(text.contains("first d"), "{text}");
++        }
++    }
++}
+-- 
+2.50.1 (Apple Git-155)
+

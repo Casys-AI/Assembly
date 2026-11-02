@@ -1,0 +1,910 @@
+generator client {
+  provider               = "prisma-client"
+  output                 = "./generated"
+  runtime                = "deno"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Physical call evidence is independent of the business execution ledger.
+model ProviderCallObservation {
+  projectId        String
+  systemId         String
+  observationId    String
+  executionSpaceId String?
+  payload          String @db.Text
+
+  @@id([projectId, systemId, observationId], map: "ProviderCallObservation_pkey")
+  @@index([projectId, systemId, executionSpaceId, observationId], map: "ProviderCallObservation_scope_idx")
+}
+
+// IDs are host-issued stable identities, never display names or private paths.
+model Project {
+  projectId String           @id
+  systems   AssemblySystem[]
+}
+
+model AssemblySystem {
+  projectId    String
+  systemId     String
+  project      Project            @relation(fields: [projectId], references: [projectId], onDelete: Restrict)
+  spaces       ExecutionSpace[]
+  repositories SourceRepository[]
+  cases        CaseIdentity[]
+  sequence     CaseSequence?
+  spaceOpenings SpaceOpening[]
+  spaceCredentials SpaceControlCredential[]
+
+  @@id([projectId, systemId])
+}
+
+// A Case and an execution space are different identities. CASE-1 owns lifecycle
+// transitions and runtime isolation; this schema does not create a branch runtime.
+model ExecutionSpace {
+  projectId              String
+  systemId               String
+  executionSpaceId       String
+  parentExecutionSpaceId String?
+  caseId                 String?
+  lifecycle              String            @default("active")
+  lifecycleRevision      BigInt            @default(0)
+  createdAt              DateTime          @default(now()) @db.Timestamptz(3)
+  closedAt               DateTime?         @db.Timestamptz(3)
+  system                 AssemblySystem    @relation(fields: [projectId, systemId], references: [projectId, systemId], onDelete: Restrict)
+  parent                 ExecutionSpace?   @relation("SpaceParent", fields: [projectId, systemId, parentExecutionSpaceId], references: [projectId, systemId, executionSpaceId], onDelete: Restrict)
+  children               ExecutionSpace[]  @relation("SpaceParent")
+  case                   CaseIdentity?     @relation(fields: [projectId, systemId, caseId], references: [projectId, systemId, caseId], onDelete: Restrict)
+  operators              OperatorRuntime[]
+  manifests              SpaceManifest[]
+  savedSystems           SavedSystem[]
+  openings               SpaceOpening[]
+  executionAdmissions    SpaceExecutionAdmission[]
+
+  @@id([projectId, systemId, executionSpaceId])
+  @@index([projectId, systemId, parentExecutionSpaceId])
+  @@index([projectId, systemId, caseId])
+}
+
+model CaseIdentity {
+  projectId String
+  systemId  String
+  caseId    String
+  number    BigInt
+  system    AssemblySystem   @relation(fields: [projectId, systemId], references: [projectId, systemId], onDelete: Restrict)
+  spaces    ExecutionSpace[]
+  openings  SpaceOpening[]
+
+  @@id([projectId, systemId, caseId])
+  @@unique([projectId, systemId, number])
+}
+
+// System-wide allocation, deliberately outside execution-space/operator scope.
+model CaseSequence {
+  projectId  String
+  systemId   String
+  lastNumber BigInt         @default(0)
+  system     AssemblySystem @relation(fields: [projectId, systemId], references: [projectId, systemId], onDelete: Restrict)
+
+  @@id([projectId, systemId])
+}
+
+// Immutable exact model/build/artifact/dependency manifest. Store only safe
+// reference metadata; private concrete resources never enter these bytes.
+model SpaceManifest {
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  revision         BigInt
+  kind             String
+  digest           String
+  payload          String         @db.Text
+  recordedAt       DateTime       @default(now()) @db.Timestamptz(3)
+  space            ExecutionSpace @relation(fields: [projectId, systemId, executionSpaceId], references: [projectId, systemId, executionSpaceId], onDelete: Restrict)
+
+  @@id([projectId, systemId, executionSpaceId, revision])
+}
+
+model OperatorRuntime {
+  projectId         String
+  systemId          String
+  executionSpaceId  String
+  operatorId        String
+  space             ExecutionSpace              @relation(fields: [projectId, systemId, executionSpaceId], references: [projectId, systemId, executionSpaceId], onDelete: Restrict)
+  state             RuntimeState?
+  revisions         RuntimeRevision[]
+  budgets           WorkBudget[]
+  plans             WorkPlan[]
+  memories          GovernedMemory[]
+  memoryInvocations MemoryInvocation[]
+  skills            SkillCatalog[]
+  skillInvocations  SkillInvocation[]
+  artifactBindings  ArtifactBinding[]
+  contextSelections ContextSelection[]
+  protectedBindings ProtectedBindingReference[]
+  executions        OperatorExecution[]
+
+  @@id([projectId, systemId, executionSpaceId, operatorId])
+}
+
+model SourceRepository {
+  projectId     String
+  systemId      String
+  repositoryId  String
+  sourceScopeId String
+  // Common model/tool/skill repository is supported. Physical location is
+  // host-resolved, never a private path persisted into shareable metadata.
+  system        AssemblySystem            @relation(fields: [projectId, systemId], references: [projectId, systemId], onDelete: Restrict)
+  artifacts     ArtifactVersion[]
+  writeCommands ModelWriteCommand[]
+  writeHead     ModelWriteRepositoryHead?
+
+  evolutionDossiers       EvolutionDossier[]
+  evolutionTargetBarriers EvolutionTargetBarrier[]
+
+  @@id([projectId, systemId, repositoryId])
+  @@unique([projectId, systemId, repositoryId, sourceScopeId])
+}
+
+model ArtifactVersion {
+  projectId              String
+  systemId               String
+  versionId              String
+  artifactId             String
+  kind                   String
+  sourceReferenceVersion BigInt
+  sourceScopeId          String
+  repositoryId           String
+  commitOid              String
+  manifestPath           String
+  entryPath              String
+  contentDigest          String
+  contentEncoding        String
+  manifestFormat         String?
+  manifestDigestVersion  String
+  manifestDigest         String
+  publishedAt            DateTime          @db.Timestamptz(3)
+  recordedAt             DateTime          @default(now()) @db.Timestamptz(3)
+  repository             SourceRepository  @relation(fields: [projectId, systemId, repositoryId, sourceScopeId], references: [projectId, systemId, repositoryId, sourceScopeId], onDelete: Restrict)
+  bindings               ArtifactBinding[]
+
+  @@id([projectId, systemId, versionId])
+  @@unique([projectId, systemId, artifactId, kind, repositoryId, commitOid, manifestPath])
+}
+
+// A reference is never authority to admit, activate, load or reuse an artifact.
+model ArtifactBinding {
+  projectId         String
+  systemId          String
+  executionSpaceId  String
+  operatorId        String
+  bindingId         String
+  ownerId           String
+  localArtifactId   String
+  versionId         String
+  revision          BigInt
+  invocationId      String
+  provenancePayload String          @db.Text
+  operator          OperatorRuntime @relation(fields: [projectId, systemId, executionSpaceId, operatorId], references: [projectId, systemId, executionSpaceId, operatorId], onDelete: Restrict)
+  version           ArtifactVersion @relation(fields: [projectId, systemId, versionId], references: [projectId, systemId, versionId], onDelete: Restrict)
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, bindingId])
+  @@unique([projectId, systemId, executionSpaceId, operatorId, ownerId, invocationId])
+}
+
+// The protected value store is separate, host-owned and not selected by PG-1.
+// No value, locator, credential, address, URL, private path or hash thereof.
+model ProtectedBindingReference {
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  operatorId       String
+  referenceId      String
+  revision         BigInt
+  resourceType     String
+  status           String
+  recordedAt       DateTime        @default(now()) @db.Timestamptz(3)
+  operator         OperatorRuntime @relation(fields: [projectId, systemId, executionSpaceId, operatorId], references: [projectId, systemId, executionSpaceId, operatorId], onDelete: Restrict)
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, referenceId, revision])
+}
+
+model RuntimeState {
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  operatorId       String
+  revision         BigInt
+  payload          String          @db.Text
+  operator         OperatorRuntime @relation(fields: [projectId, systemId, executionSpaceId, operatorId], references: [projectId, systemId, executionSpaceId, operatorId], onDelete: Restrict)
+
+  @@id([projectId, systemId, executionSpaceId, operatorId])
+}
+
+model RuntimeRevision {
+  projectId         String
+  systemId          String
+  executionSpaceId  String
+  operatorId        String
+  revision          BigInt
+  recordedAt        DateTime           @db.Timestamptz(3)
+  runtimeStateId    String
+  catalogRevision   BigInt
+  modelPayload      String?            @db.Text
+  eventCount        BigInt
+  origin            String
+  payload           String             @db.Text
+  label             String
+  agentCount        BigInt
+  activeToolCount   BigInt
+  projection        RuntimeProjection?
+  contextSelections ContextSelection[]
+  operator          OperatorRuntime    @relation(fields: [projectId, systemId, executionSpaceId, operatorId], references: [projectId, systemId, executionSpaceId, operatorId], onDelete: Restrict)
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, revision])
+}
+
+model WorkBudget {
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  operatorId       String
+  scopeId          String
+  revision         BigInt
+  payload          String          @db.Text
+  operator         OperatorRuntime @relation(fields: [projectId, systemId, executionSpaceId, operatorId], references: [projectId, systemId, executionSpaceId, operatorId], onDelete: Restrict)
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, scopeId])
+}
+
+model WorkPlan {
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  operatorId       String
+  id               String
+  revision         BigInt
+  payload          String          @db.Text
+  operator         OperatorRuntime @relation(fields: [projectId, systemId, executionSpaceId, operatorId], references: [projectId, systemId, executionSpaceId, operatorId], onDelete: Restrict)
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, id])
+}
+
+model GovernedMemory {
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  operatorId       String
+  ownerId          String
+  id               String
+  revision         BigInt
+  digest           String
+  payload          String          @db.Text
+  operator         OperatorRuntime @relation(fields: [projectId, systemId, executionSpaceId, operatorId], references: [projectId, systemId, executionSpaceId, operatorId], onDelete: Restrict)
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, ownerId, id])
+}
+
+model MemoryInvocation {
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  operatorId       String
+  ownerId          String
+  callerId         String
+  invocationId     String
+  noteId           String
+  requestDigest    String
+  operator         OperatorRuntime @relation(fields: [projectId, systemId, executionSpaceId, operatorId], references: [projectId, systemId, executionSpaceId, operatorId], onDelete: Restrict)
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, ownerId, callerId, invocationId])
+}
+
+model SkillCatalog {
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  operatorId       String
+  ownerId          String
+  revision         BigInt
+  payload          String          @db.Text
+  operator         OperatorRuntime @relation(fields: [projectId, systemId, executionSpaceId, operatorId], references: [projectId, systemId, executionSpaceId, operatorId], onDelete: Restrict)
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, ownerId])
+}
+
+model SkillInvocation {
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  operatorId       String
+  ownerId          String
+  callerId         String
+  invocationId     String
+  skillId          String
+  requestDigest    String
+  kind             String
+  operator         OperatorRuntime @relation(fields: [projectId, systemId, executionSpaceId, operatorId], references: [projectId, systemId, executionSpaceId, operatorId], onDelete: Restrict)
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, ownerId, callerId, invocationId])
+}
+
+model ContextSelection {
+  projectId                String
+  systemId                 String
+  executionSpaceId         String
+  operatorId               String
+  selectionId              String
+  caseId                   String?
+  stateRevision            BigInt
+  sourceRangePayload       String          @db.Text
+  selectedVersionsPayload  String          @db.Text
+  derivedProjectionPayload String?         @db.Text
+  source                   RuntimeRevision @relation(fields: [projectId, systemId, executionSpaceId, operatorId, stateRevision], references: [projectId, systemId, executionSpaceId, operatorId, revision], onDelete: Restrict, map: "ContextSelection_source_fkey")
+  recordedAt               DateTime        @default(now()) @db.Timestamptz(3)
+  operator                 OperatorRuntime @relation(fields: [projectId, systemId, executionSpaceId, operatorId], references: [projectId, systemId, executionSpaceId, operatorId], onDelete: Restrict)
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, selectionId])
+}
+
+model RuntimeProjection {
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  operatorId       String
+  revision         BigInt
+  digest           String
+  recordedAt       DateTime        @db.Timestamptz(3)
+  payload          String          @db.Text
+  source           RuntimeRevision @relation(fields: [projectId, systemId, executionSpaceId, operatorId, revision], references: [projectId, systemId, executionSpaceId, operatorId, revision], onDelete: Restrict)
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, revision])
+}
+
+// Durable W4 write commands. Payloads are immutable canonical TEXT bytes
+// (never JSONB, never display names or private paths). seq orders FIFO
+// only within (projectId, systemId, repositoryId). fence/attempts are
+// BIGINT; adapters reject values outside the safe-integer domain.
+model ModelWriteCommand {
+  projectId        String           @map("project_id")
+  systemId         String           @map("system_id")
+  repositoryId     String           @map("repository_id")
+  commandId        String           @map("command_id")
+  seq              BigInt
+  commandDigest    String           @map("command_digest")
+  dossierDigest    String           @map("dossier_digest")
+  commandJson      String           @map("command_json") @db.Text
+  dossierJson      String           @map("dossier_json") @db.Text
+  state            String
+  enqueuedAt       DateTime         @map("enqueued_at") @db.Timestamptz(3)
+  updatedAt        DateTime         @map("updated_at") @db.Timestamptz(3)
+  attempts         BigInt           @default(0)
+  owner            String?
+  fence            BigInt           @default(0)
+  leaseExpiresAt   DateTime?        @map("lease_expires_at") @db.Timestamptz(3)
+  publishedVersion String?          @map("published_version")
+  lastErrorJson    String?          @map("last_error_json") @db.Text
+  repository       SourceRepository @relation(fields: [projectId, systemId, repositoryId], references: [projectId, systemId, repositoryId], onDelete: Restrict, map: "ModelWriteCommand_repository_fk")
+
+  @@id([projectId, systemId, repositoryId, commandId])
+  @@unique([projectId, systemId, repositoryId, seq], map: "ModelWriteCommand_seq_key")
+  @@index([projectId, systemId, repositoryId, state, seq], map: "ModelWriteCommand_fifo_idx")
+  @@index([projectId, systemId, state, leaseExpiresAt], map: "ModelWriteCommand_lease_idx")
+}
+
+// One row per scoped repository: locked FOR UPDATE by enqueue/acquire to
+// serialize claims, and the scoped FIFO sequence source (nextSeq starts
+// at 1; the first allocated seq is 1).
+model ModelWriteRepositoryHead {
+  projectId    String           @map("project_id")
+  systemId     String           @map("system_id")
+  repositoryId String           @map("repository_id")
+  nextSeq      BigInt           @default(1) @map("next_seq")
+  repository   SourceRepository @relation(fields: [projectId, systemId, repositoryId], references: [projectId, systemId, repositoryId], onDelete: Restrict, map: "ModelWriteRepositoryHead_repository_fk")
+
+  @@id([projectId, systemId, repositoryId])
+}
+
+// Business execution metadata only. pg-boss owns jobs; the official saver owns
+// checkpoint bytes/tables. Each admitted native identity has a distinct thread.
+model OperatorExecution {
+  projectId                String
+  systemId                 String
+  executionSpaceId         String
+  operatorId               String
+  threadId                 String
+  identityJson             String                   @db.Text
+  scopeKind                String
+  scopeId                  String
+  rootRequestId            String?
+  ownerId                  String?
+  purpose                  String
+  subjectId                String?
+  revision                 BigInt                   @default(0)
+  epoch                    BigInt                   @default(0)
+  currentRunId             String?
+  currentJobId             String?
+  currentRetry             Int?
+  status                   String
+  checkpointNamespace      String
+  currentCheckpointId      String?
+  predecessorThreadId      String?
+  authorizedPinJson        String?                  @db.Text
+  advanceAuthorizationJson String?                  @db.Text
+  // Exact closed-Case terminal receipt; original Run waiting snapshot stays unchanged.
+  terminalReceiptJson      String?                  @db.Text
+  retiredAt                DateTime?                @db.Timestamptz(3)
+  createdAt                DateTime                 @db.Timestamptz(3)
+  updatedAt                DateTime                 @db.Timestamptz(3)
+  operator                 OperatorRuntime          @relation(fields: [projectId, systemId, executionSpaceId, operatorId], references: [projectId, systemId, executionSpaceId, operatorId], onDelete: Restrict, map: "OperatorExecution_operator_fk")
+  runs                     ExecutionRun[]           @relation("ExecutionThreadRuns")
+  currentRun               ExecutionRun?            @relation("CurrentExecutionRun", fields: [projectId, systemId, executionSpaceId, operatorId, threadId, currentRunId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], onDelete: Restrict, map: "OperatorExecution_current_run_fk")
+  contributions            ExecutionContribution[]
+  predecessorThread        OperatorExecution?       @relation("ExecutionThreadSuccessor", fields: [projectId, systemId, executionSpaceId, operatorId, predecessorThreadId], references: [projectId, systemId, executionSpaceId, operatorId, threadId], onDelete: Restrict, map: "OperatorExecution_predecessor_thread_fk")
+  successorThreads         OperatorExecution[]      @relation("ExecutionThreadSuccessor")
+  activeBindings           ExecutionThreadBinding[]
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, threadId])
+  @@index([projectId, systemId, executionSpaceId, operatorId, status], map: "OperatorExecution_status_idx")
+}
+
+model ExecutionRun {
+  projectId           String
+  systemId            String
+  executionSpaceId    String
+  operatorId          String
+  threadId            String
+  runId               String
+  predecessorRunId    String?
+  parentThreadId      String?
+  parentRunId         String?
+  generation          BigInt
+  contributionId      String
+  pinJson             String                      @db.Text
+  // Exact accepted RuntimeRevisionReference only, never an IR/checkpoint copy.
+  modelReferenceJson  String?                     @db.Text
+  status              String
+  checkpointNamespace String
+  checkpointId        String?
+  // A bounded NativeExecutionSnapshot receipt, never a LangGraph checkpoint.
+  snapshotJson        String?                     @db.Text
+  epoch               BigInt
+  jobId               String
+  retryCount          Int
+  errorJson           String?                     @db.Text
+  createdAt           DateTime                    @db.Timestamptz(3)
+  updatedAt           DateTime                    @db.Timestamptz(3)
+  execution           OperatorExecution           @relation("ExecutionThreadRuns", fields: [projectId, systemId, executionSpaceId, operatorId, threadId], references: [projectId, systemId, executionSpaceId, operatorId, threadId], onDelete: Restrict, map: "ExecutionRun_thread_fk")
+  currentFor          OperatorExecution[]         @relation("CurrentExecutionRun")
+  parent              ExecutionRun?               @relation("ExecutionRunParent", fields: [projectId, systemId, executionSpaceId, operatorId, parentThreadId, parentRunId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], onDelete: Restrict, map: "ExecutionRun_parent_fk")
+  children            ExecutionRun[]              @relation("ExecutionRunParent")
+  predecessor         ExecutionRun?               @relation("ExecutionRunPredecessor", fields: [projectId, systemId, executionSpaceId, operatorId, threadId, predecessorRunId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], onDelete: Restrict, map: "ExecutionRun_predecessor_fk")
+  successors          ExecutionRun[]              @relation("ExecutionRunPredecessor")
+  continuationSources NativeContinuationReceipt[] @relation("ContinuationPredecessor")
+  continuationTargets NativeContinuationReceipt[] @relation("ContinuationSuccessor")
+  initialAdmissionSources InitialAdmissionTransferReceipt[] @relation("InitialAdmissionSource")
+  initialAdmissionTargets InitialAdmissionTransferReceipt[] @relation("InitialAdmissionTarget")
+  contribution        ExecutionContribution       @relation("RunOriginContribution", fields: [projectId, systemId, executionSpaceId, operatorId, threadId, contributionId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, contributionId], onDelete: Restrict, map: "ExecutionRun_contribution_fk")
+  boundContributions  ExecutionContribution[]     @relation("BoundContributionRun")
+  effects             ExecutionEffect[]
+  immutableConsultationGroups ImmutableConsultationGroup[]
+  waitProtocol        ExecutionWaitProtocol?
+  waitReceipts        ExecutionWaitReceipt[]
+  waitConsumptions    ExecutionWaitConsumption[]
+  nativeObservations  ExecutionNativeObservation[]
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, threadId, runId])
+  @@unique([projectId, systemId, executionSpaceId, operatorId, threadId, generation], map: "ExecutionRun_generation_key")
+  @@unique([projectId, systemId, executionSpaceId, operatorId, threadId, runId, contributionId], map: "ExecutionRun_contribution_key")
+}
+
+model ExecutionContribution {
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  operatorId       String
+  threadId         String
+  contributionId   String
+  digest           String
+  requestDigest    String?
+  kind             String
+  originJson       String            @db.Text
+  payloadJson      String            @db.Text
+  jobId            String?
+  runId            String?
+  status           String
+  acceptedAt       DateTime          @db.Timestamptz(3)
+  completedAt      DateTime?         @db.Timestamptz(3)
+  execution        OperatorExecution @relation(fields: [projectId, systemId, executionSpaceId, operatorId, threadId], references: [projectId, systemId, executionSpaceId, operatorId, threadId], onDelete: Restrict, map: "ExecutionContribution_thread_fk")
+  runs             ExecutionRun[]    @relation("RunOriginContribution")
+  boundRun         ExecutionRun?     @relation("BoundContributionRun", fields: [projectId, systemId, executionSpaceId, operatorId, threadId, runId, contributionId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId, contributionId], onDelete: Restrict, map: "ExecutionContribution_run_fk")
+  waitConsumptions ExecutionWaitConsumption[]
+  nativeObservations ExecutionNativeObservation[]
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, threadId, contributionId])
+  @@index([projectId, systemId, executionSpaceId, operatorId, threadId, status], map: "ExecutionContribution_status_idx")
+}
+
+model ExecutionEffect {
+  projectId            String
+  systemId             String
+  executionSpaceId     String
+  operatorId           String
+  threadId             String
+  effectKey            String
+  runId                String
+  contributionId       String
+  nodeId               String
+  requestDigest        String
+  status               String
+  resultJson           String?                     @db.Text
+  authorizationJson    String?                     @db.Text
+  epoch                BigInt
+  jobId                String
+  retryCount           Int
+  startedAt            DateTime                    @db.Timestamptz(3)
+  completedAt          DateTime?                   @db.Timestamptz(3)
+  run                  ExecutionRun                @relation(fields: [projectId, systemId, executionSpaceId, operatorId, threadId, runId, contributionId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId, contributionId], onDelete: Restrict, map: "ExecutionEffect_run_fk")
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, threadId, effectKey])
+  @@index([projectId, systemId, executionSpaceId, operatorId, threadId, status], map: "ExecutionEffect_status_idx")
+}
+
+// A companion marker leaves historical ExecutionRun bytes untouched. Absence is
+// corruption, never permission to decode a modern run as a legacy checkpoint.
+model ExecutionWaitProtocol {
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  operatorId       String
+  threadId         String
+  runId            String
+  protocol         String
+  createdAt        DateTime               @db.Timestamptz(3)
+  run              ExecutionRun           @relation(fields: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], onDelete: Restrict, map: "ExecutionWaitProtocol_run_fk")
+  waits            ExecutionWaitReceipt[]
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, threadId, runId], map: "ExecutionWaitProtocol_pkey")
+}
+
+// One immutable business wait at an exact selected checkpoint. waitJson names
+// the existing effect receipt; it does not duplicate the complete effect result.
+model ExecutionWaitReceipt {
+  projectId           String
+  systemId            String
+  executionSpaceId    String
+  operatorId          String
+  threadId            String
+  runId               String
+  checkpointNamespace String
+  checkpointId        String
+  waitJson            String                     @db.Text
+  pinJson             String                     @db.Text
+  origin              String
+  createdAt           DateTime                   @db.Timestamptz(3)
+  run                 ExecutionRun               @relation(fields: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], onDelete: Restrict, map: "ExecutionWaitReceipt_run_fk")
+  protocol            ExecutionWaitProtocol      @relation(fields: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], onDelete: Restrict, map: "ExecutionWaitReceipt_protocol_fk")
+  consumption         ExecutionWaitConsumption?
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, threadId, runId, checkpointNamespace, checkpointId], map: "ExecutionWaitReceipt_pkey")
+}
+
+// Delivery and consumption are distinct: this receipt is inserted only in the
+// transaction selecting the successor checkpoint that consumed the exact wait.
+model ExecutionWaitConsumption {
+  projectId                   String
+  systemId                    String
+  executionSpaceId            String
+  operatorId                  String
+  threadId                    String
+  runId                       String
+  contributionId              String
+  kind                        String
+  sourceRunId                 String?
+  sourceCheckpointNamespace   String?
+  sourceCheckpointId          String?
+  successorCheckpointNamespace String
+  successorCheckpointId       String
+  consumptionJson             String                 @db.Text
+  createdAt                   DateTime               @db.Timestamptz(3)
+  run                         ExecutionRun           @relation(fields: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], onDelete: Restrict, map: "ExecutionWaitConsumption_run_fk")
+  contribution                ExecutionContribution  @relation(fields: [projectId, systemId, executionSpaceId, operatorId, threadId, contributionId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, contributionId], onDelete: Restrict, map: "ExecutionWaitConsumption_contribution_fk")
+  sourceWait                  ExecutionWaitReceipt?  @relation(fields: [projectId, systemId, executionSpaceId, operatorId, threadId, sourceRunId, sourceCheckpointNamespace, sourceCheckpointId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId, checkpointNamespace, checkpointId], onDelete: Restrict, map: "ExecutionWaitConsumption_source_fk")
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, threadId, runId, contributionId], map: "ExecutionWaitConsumption_pkey")
+  @@unique([projectId, systemId, executionSpaceId, operatorId, threadId, sourceRunId, sourceCheckpointNamespace, sourceCheckpointId], map: "ExecutionWaitConsumption_source_key")
+}
+
+// Lossless native diagnostic journal (R4b). An observation never grants
+// authority, settles an effect, proves consumption or permits continuation.
+// payloadJson is the dedicated versioned exact encoding of one NativeTrace;
+// firstRecordedAt is assigned by PostgreSQL on the first durable insert and
+// is returned unchanged on exact replay. Rows are append-only in SQL.
+model ExecutionNativeObservation {
+  projectId           String
+  systemId            String
+  executionSpaceId    String
+  operatorId          String
+  threadId            String
+  runId               String
+  checkpointNamespace String
+  producerPhase       String
+  occurrenceId        String
+  emissionStep        BigInt
+  eventOrdinal        Int
+  batchCount          Int
+  batchDigest         String
+  contributionId      String
+  identityJson        String                @db.Text
+  pinJson             String                @db.Text
+  payloadJson         String                @db.Text
+  epoch               BigInt
+  jobId               String
+  retryCount          Int
+  firstRecordedAt     DateTime              @db.Timestamptz(3)
+  run                 ExecutionRun          @relation(fields: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], onDelete: Restrict, map: "ExecutionNativeObservation_run_fk")
+  contribution        ExecutionContribution @relation(fields: [projectId, systemId, executionSpaceId, operatorId, threadId, contributionId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, contributionId], onDelete: Restrict, map: "ExecutionNativeObservation_contribution_fk")
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, threadId, runId, checkpointNamespace, producerPhase, occurrenceId, emissionStep, eventOrdinal], map: "ExecutionNativeObservation_pkey")
+  @@index([projectId, systemId, executionSpaceId, operatorId, threadId, runId, emissionStep], map: "ExecutionNativeObservation_run_step_idx")
+}
+
+// One to four registered immutable reads; member receipts remain ExecutionEffect.
+// Publication acknowledges an exact canonical business revision, not checkpoint bytes.
+model ImmutableConsultationGroup {
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  operatorId       String
+  threadId         String
+  groupId          String
+  runId            String
+  contributionId   String
+  manifestDigest   String
+  manifestJson     String       @db.Text
+  publicationJson  String?      @db.Text
+  registeredAt     DateTime     @db.Timestamptz(3)
+  publishedAt      DateTime?    @db.Timestamptz(3)
+  run              ExecutionRun @relation(fields: [projectId, systemId, executionSpaceId, operatorId, threadId, runId, contributionId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId, contributionId], onDelete: Restrict, map: "ImmutableConsultationGroup_run_fk")
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, threadId, groupId], map: "ImmutableConsultationGroup_pkey")
+}
+
+// System/repository-scoped dossier lifetime is independent of a runtime space.
+model EvolutionDossier {
+  kind             String @default("software-evolution-v1")
+  targetScopeKey   String @default("main")
+  executionSpaceId String?
+  projectId    String
+  systemId     String
+  id           String
+  repositoryId String
+  revision     BigInt
+  status       String
+  payload      String                   @db.Text
+  // Preserve the legacy exact lexical ordering; no timestamp normalization.
+  updatedAt    String                   @db.Text
+  repository   SourceRepository         @relation(fields: [projectId, systemId, repositoryId], references: [projectId, systemId, repositoryId], onDelete: Restrict, map: "EvolutionDossier_repository_fk")
+  barriers     EvolutionTargetBarrier[]
+
+  @@id([projectId, systemId, id])
+  @@unique([projectId, systemId, repositoryId, id], map: "EvolutionDossier_repository_id_key")
+  @@index([projectId, systemId, repositoryId, status], map: "EvolutionDossier_pending_idx")
+  @@index([projectId, systemId, repositoryId, updatedAt(sort: Desc), id], map: "EvolutionDossier_recent_idx")
+  @@index([projectId, systemId, repositoryId, kind, targetScopeKey, updatedAt(sort: Desc), id], map: "EvolutionDossier_scoped_recent_idx")
+}
+
+model EvolutionTargetBarrier {
+  targetScopeKey   String @default("main")
+  executionSpaceId String?
+  projectId    String
+  systemId     String
+  repositoryId String
+  operatorId   String
+  dossierId    String
+  repository   SourceRepository @relation(fields: [projectId, systemId, repositoryId], references: [projectId, systemId, repositoryId], onDelete: Restrict, map: "EvolutionTargetBarrier_repository_fk")
+  dossier      EvolutionDossier @relation(fields: [projectId, systemId, repositoryId, dossierId], references: [projectId, systemId, repositoryId, id], onDelete: Restrict, map: "EvolutionTargetBarrier_dossier_fk")
+
+  @@id([projectId, systemId, repositoryId, targetScopeKey, operatorId])
+  @@index([projectId, systemId, repositoryId, dossierId], map: "EvolutionTargetBarrier_dossier_idx")
+}
+
+// A retained transition receipt grants no model adoption or execution authority.
+model NativeContinuationReceipt {
+  projectId                    String
+  systemId                     String
+  executionSpaceId             String
+  operatorId                   String
+  threadId                     String
+  id                           String
+  predecessorRunId             String
+  sourceCheckpointNamespace    String
+  sourceCheckpointId           String
+  preparedNodeId               String
+  settledEffectKey             String
+  sourceNativeActionId         String?
+  // NULL only for immutable historical rows; every new insert names its shape.
+  sourceKind                   String?
+  sourceOccurrenceId           String?
+  evidenceKind                 String
+  evidenceDigest               String
+  evidenceJson                 String          @db.Text
+  successorRunId               String
+  targetPinJson                String          @db.Text
+  status                       String
+  successorCheckpointNamespace String?
+  successorCheckpointId        String?
+  createdAt                    DateTime        @db.Timestamptz(3)
+  selectedAt                   DateTime?       @db.Timestamptz(3)
+  predecessor                  ExecutionRun    @relation("ContinuationPredecessor", fields: [projectId, systemId, executionSpaceId, operatorId, threadId, predecessorRunId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], onDelete: Restrict, map: "NativeContinuationReceipt_predecessor_fk")
+  successor                    ExecutionRun    @relation("ContinuationSuccessor", fields: [projectId, systemId, executionSpaceId, operatorId, threadId, successorRunId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], onDelete: Restrict, map: "NativeContinuationReceipt_successor_fk")
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, threadId, id])
+  @@unique([projectId, systemId, executionSpaceId, operatorId, threadId, predecessorRunId, sourceCheckpointNamespace, sourceCheckpointId, evidenceDigest], map: "NativeContinuationReceipt_source_key")
+}
+
+// Separate lineage for the one permitted cross-thread admission transition.
+model InitialAdmissionTransferReceipt {
+  projectId                    String
+  systemId                     String
+  executionSpaceId             String
+  operatorId                   String
+  id                           String
+  sourceThreadId               String
+  sourceRunId                  String
+  sourceCheckpointNamespace    String
+  sourceCheckpointId           String
+  targetThreadId               String
+  targetRunId                  String
+  targetCheckpointNamespace    String
+  targetCheckpointId           String?
+  intentDigest                 String
+  intentJson                   String @db.Text
+  status                       String
+  createdAt                    DateTime @db.Timestamptz(3)
+  selectedAt                   DateTime? @db.Timestamptz(3)
+  source                       ExecutionRun @relation("InitialAdmissionSource", fields: [projectId, systemId, executionSpaceId, operatorId, sourceThreadId, sourceRunId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], onDelete: Restrict, map: "InitialAdmissionTransfer_source_fk")
+  target                       ExecutionRun @relation("InitialAdmissionTarget", fields: [projectId, systemId, executionSpaceId, operatorId, targetThreadId, targetRunId], references: [projectId, systemId, executionSpaceId, operatorId, threadId, runId], onDelete: Restrict, map: "InitialAdmissionTransfer_target_fk")
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, id])
+  @@unique([projectId, systemId, executionSpaceId, operatorId, sourceThreadId, sourceRunId], map: "InitialAdmissionTransfer_source_key")
+  @@unique([projectId, systemId, executionSpaceId, operatorId, targetThreadId, targetRunId], map: "InitialAdmissionTransfer_target_key")
+}
+
+// Logical identity resolves only to its explicitly selected active thread. A
+// retired thread/history remains immutable rather than being reopened in place.
+model ExecutionThreadBinding {
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  operatorId       String
+  identityDigest   String
+  identityJson     String            @db.Text
+  activeThreadId   String
+  revision         BigInt
+  createdAt        DateTime          @db.Timestamptz(3)
+  updatedAt        DateTime          @db.Timestamptz(3)
+  activeThread     OperatorExecution @relation(fields: [projectId, systemId, executionSpaceId, operatorId, activeThreadId], references: [projectId, systemId, executionSpaceId, operatorId, threadId], onDelete: Restrict, map: "ExecutionThreadBinding_active_thread_fk")
+
+  @@id([projectId, systemId, executionSpaceId, operatorId, identityDigest])
+}
+
+// A durable save intention owns its immutable selection and eventual manifest.
+model SavedSystem {
+  id               String @id
+  projectId        String
+  systemId         String
+  executionSpaceId String
+  saveKey          String
+  commandDigest    String
+  creationAuthorization String? @db.Text
+  tagSelection     String? @db.Text
+  tagBinding       String? @db.Text
+  tagRepositoryId  String?
+  tagName          String?
+  tagVerified      Boolean @default(false)
+  tagRejection     String? @db.Text
+  publication      String? @db.Text
+  metadata         String @db.Text
+  capture          String @db.Text
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+  status           String
+  manifest         String? @db.Text
+  digest           String?
+  issues           String @db.Text
+  revision         Int @default(0)
+  space            ExecutionSpace @relation(fields: [projectId, systemId, executionSpaceId], references: [projectId, systemId, executionSpaceId], onDelete: Restrict)
+  @@unique([projectId, systemId, executionSpaceId, saveKey])
+  @@unique([projectId, systemId, tagRepositoryId, tagName], map: "SavedSystem_repository_tag_key")
+  @@index([projectId, systemId, executionSpaceId, createdAt])
+}
+
+
+// Resolve-once Request opening. Runtime history and consumption live only in the
+// existing space-scoped stores; this journal carries configuration/provenance.
+model SpaceOpening {
+  id                    String @id(map: "SpaceOpening_pkey")
+  projectId             String
+  systemId              String
+  ownerId               String
+  openingKey            String
+  commandDigest         String
+  commandJson           String @db.Text
+  caseId                String
+  caseNumber            BigInt
+  executionSpaceId      String
+  branchId              String
+  initialContributionId String
+  baseJson              String? @db.Text
+  baseDigest            String?
+  phase                 String @default("allocated")
+  admissionId           String?
+  issuesJson            String @default("[]") @db.Text
+  revision              Int @default(0)
+  createdAt             DateTime @default(now()) @db.Timestamptz(3)
+  system                AssemblySystem @relation(fields: [projectId, systemId], references: [projectId, systemId], onDelete: Restrict, onUpdate: Cascade, map: "SpaceOpening_system_fkey")
+  case                  CaseIdentity @relation(fields: [projectId, systemId, caseId], references: [projectId, systemId, caseId], onDelete: Restrict, onUpdate: Cascade, map: "SpaceOpening_case_fkey")
+  space                 ExecutionSpace @relation(fields: [projectId, systemId, executionSpaceId], references: [projectId, systemId, executionSpaceId], onDelete: Restrict, onUpdate: Cascade, map: "SpaceOpening_space_fkey")
+  admissions            SpaceExecutionAdmission[]
+
+  @@unique([projectId, systemId, ownerId, openingKey], map: "SpaceOpening_projectId_systemId_ownerId_openingKey_key")
+  @@unique([projectId, systemId, executionSpaceId], map: "SpaceOpening_projectId_systemId_executionSpaceId_key")
+  @@unique([projectId, systemId, caseId], map: "SpaceOpening_projectId_systemId_caseId_key")
+  @@unique([projectId, systemId, id, executionSpaceId, ownerId], map: "SpaceOpening_scoped_owner_key")
+}
+
+// Secret hashes only. A session is linked to a capability of the SAME owner and
+// system; SQL additionally constrains the parent kind to capability.
+model SpaceControlCredential {
+  id                 String @id(map: "SpaceControlCredential_pkey")
+  projectId          String
+  systemId           String
+  kind               String
+  ownerId            String
+  parentCapabilityId String?
+  parentKind         String?
+  authorityJson      String @db.Text
+  secretHash         String @unique(map: "SpaceControlCredential_secretHash_key")
+  revision           Int @default(0)
+  status             String @default("active")
+  expiresAt          DateTime @db.Timestamptz(3)
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+  system             AssemblySystem @relation(fields: [projectId, systemId], references: [projectId, systemId], onDelete: Restrict, onUpdate: Cascade, map: "SpaceControlCredential_system_fkey")
+  parent             SpaceControlCredential? @relation("SpaceSessionParent", fields: [projectId, systemId, parentCapabilityId, ownerId, parentKind], references: [projectId, systemId, id, ownerId, kind], onDelete: Restrict, onUpdate: Cascade, map: "SpaceCredential_parent_fkey")
+  sessions           SpaceControlCredential[] @relation("SpaceSessionParent")
+  admissions         SpaceExecutionAdmission[]
+
+  @@unique([projectId, systemId, id, ownerId, kind], map: "SpaceControlCredential_scoped_owner_kind_key")
+  @@index([projectId, systemId, parentCapabilityId], map: "SpaceControlCredential_parent_idx")
+}
+
+// This row governs execution independently of the browser session. Explicit
+// capability revocation and effect start lock capability then admission.
+model SpaceExecutionAdmission {
+  id                 String @id(map: "SpaceExecutionAdmission_pkey")
+  projectId          String
+  systemId           String
+  executionSpaceId   String
+  openingId          String @unique(map: "SpaceExecutionAdmission_openingId_key")
+  ownerId            String
+  capabilityId       String
+  capabilityKind     String @default("capability")
+  capabilityRevision Int
+  baseDigest         String
+  authorityJson      String @db.Text
+  permissionsJson    String @db.Text
+  revision           Int @default(0)
+  status             String @default("active")
+  expiresAt          DateTime @db.Timestamptz(3)
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+  opening            SpaceOpening @relation(fields: [projectId, systemId, openingId, executionSpaceId, ownerId], references: [projectId, systemId, id, executionSpaceId, ownerId], onDelete: Restrict, onUpdate: Cascade, map: "SpaceExecutionAdmission_opening_fkey")
+  space              ExecutionSpace @relation(fields: [projectId, systemId, executionSpaceId], references: [projectId, systemId, executionSpaceId], onDelete: Restrict, onUpdate: Cascade, map: "SpaceExecutionAdmission_space_fkey")
+  capability         SpaceControlCredential @relation(fields: [projectId, systemId, capabilityId, ownerId, capabilityKind], references: [projectId, systemId, id, ownerId, kind], onDelete: Restrict, onUpdate: Cascade, map: "SpaceExecutionAdmission_capability_fkey")
+
+  @@unique([projectId, systemId, executionSpaceId], map: "SpaceExecutionAdmission_projectId_systemId_executionSpaceId_key")
+  @@index([projectId, systemId, capabilityId], map: "SpaceExecutionAdmission_capability_idx")
+}

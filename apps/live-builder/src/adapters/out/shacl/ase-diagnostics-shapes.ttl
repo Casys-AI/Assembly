@@ -1,0 +1,27 @@
+# ASE diagnostic shapes, versioned file (sha256 = shapesDigest in reports).
+# Two rules only: this is NOT a claim of complete SHACL coverage.
+# Facts come from the TypeScript diagnostics fact projection
+# (ase-diagnostic-facts-v1): exposure and the host set difference are
+# computed there; SHACL Core verifies the resulting constats. The
+# Toolkit validates the language; the domain grants/refuses rights.
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix asef: <urn:ase:facts:> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+asef:LoopWithoutBudgetShape a sh:NodeShape ;
+  sh:targetClass asef:DiagnosticUnit ;
+  sh:property [
+    sh:path asef:hasInvocationBudget ;
+    sh:hasValue true ;
+    sh:severity sh:Warning ;
+    sh:message "LOOP_WITHOUT_BUDGET" ;
+  ] .
+
+asef:CapabilityBeyondMandateShape a sh:NodeShape ;
+  sh:targetClass asef:NetworkCapability ;
+  sh:property [
+    sh:path asef:outsideHost ;
+    sh:maxCount 0 ;
+    sh:severity sh:Warning ;
+    sh:message "CAPABILITY_BEYOND_MANDATE" ;
+  ] .
