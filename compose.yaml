@@ -1,6 +1,6 @@
 # Local development database (`deno task db:up`). Its data lives in the named
 # volume, never in a checkout, so any checkout can use it. The credentials are
-# for this machine only and match apps/live-builder/.env.example.
+# for this machine only and match .env.example.
 name: assembly
 
 services:

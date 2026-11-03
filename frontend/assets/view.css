@@ -1,0 +1,3102 @@
+/*
+ * The frame of a place's pages (components/view/PageFrame.tsx): the pages as
+ * tabs at the top, then the page's title, always at the same place, then the
+ * page. It follows the model-views prototype
+ * (prototypes/model-views): the same tokens and frame as the
+ * Cases page. Everything is scoped to .view-page, so nothing leaks into the
+ * older views, which keep their own styles until they are replaced.
+ */
+.view-page {
+  /* The page tokens of the prototype, as on the Cases page (cases.css). */
+  --faint: #9a9a9f;
+  --card: #fff;
+  --line-strong: #d6d2c9;
+  --hover: rgb(0 0 0 / 4%);
+  --chip: rgb(0 0 0 / 5%);
+  --chip-hover: rgb(0 0 0 / 9%);
+  --warn: #8a642a;
+  --warn-bg: #f6eedd;
+  --bad: #8f3a30;
+  /* A selected row, the monospace, a link's underline, lines gained and lost. */
+  --selected: rgb(0 0 0 / 5.5%);
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --rule: rgb(0 0 0 / 25%);
+  --add: #19743c;
+  --del: #b13c42;
+  /* A list row's metrics: what puts a control in line with the row's title. */
+  --rev-row-pad: 10px;
+  --rev-mark: 14px;
+  --rev-gap: 10px;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The tabs. Their right edge is kept for the window's close button. */
+.view-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 50px;
+  padding: 10px 56px 10px 16px;
+}
+.view-tabs {
+  display: flex;
+  gap: 2px;
+  max-width: 100%;
+  margin: -3px;
+  padding: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.view-tabs a {
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.view-tabs a:hover {
+  color: var(--ink);
+}
+.view-tabs a[aria-current="page"] {
+  background: var(--selected);
+  color: var(--ink);
+}
+.view-tabs a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-head-end {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+/* The page: a centred column, its title at the same place on every page. */
+.view-body {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 28px;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+.view-column {
+  flex: 1 0 auto;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 36px 12px 56px;
+}
+.view-title {
+  margin: 0 0 28px;
+  font: 600 22px/1.25 var(--font);
+  letter-spacing: -.02em;
+}
+
+/* A page that takes the whole width keeps its title where the column's is. */
+.view-page.is-wide .view-body,
+.view-page.is-fill .view-body {
+  padding: 0 16px;
+}
+.view-page.is-wide .view-column,
+.view-page.is-fill .view-column {
+  max-width: none;
+  padding: 36px 0 16px;
+}
+.view-page.is-wide .view-title,
+.view-page.is-fill .view-title {
+  width: 100%;
+  max-width: 1104px;
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+/* A page that draws its own canvas fills the height; the window does not scroll. */
+.view-page.is-fill .view-body {
+  overflow: hidden;
+}
+.view-page.is-fill .view-column {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+}
+.view-page.is-fill .view-title {
+  flex: none;
+}
+.view-page.is-fill .view-column > :not(.view-title) {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/*
+ * The parts a list-and-detail page uses, from the prototype (.seg, .rev-row,
+ * .chip) and cases.css, where they are scoped to .cases-page; the same values.
+ */
+
+/* Segmented control, and the count of what waits on one of its sides. */
+.view-page .seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 9px;
+  background: var(--chip);
+  justify-self: start;
+}
+.view-page .seg button {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.view-page .seg button[aria-pressed="true"] {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+}
+.view-page .seg .count {
+  display: inline-block;
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--warn-bg);
+  color: var(--warn);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Chips: "main" and "running" sit on the commit they belong to. */
+.view-page .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--chip);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.view-page .chip.run {
+  background: #e8f3ec;
+  color: #1f6b3a;
+}
+/* A chip that leads somewhere: a link, or the "more" that opens a list. */
+.view-page a.chip,
+.view-page summary.chip {
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+.view-page a.chip:hover,
+.view-page summary.chip:hover {
+  background: var(--chip-hover);
+  color: var(--ink);
+}
+.view-page a.chip:focus-visible,
+.view-page summary.chip:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+/* An action on what a detail shows: a chip with a mark, a little roomier. */
+.view-page .chip.is-action {
+  gap: 5px;
+  padding: 3px 10px 3px 8px;
+  font-size: 12px;
+}
+
+/* A list row: a marker, the title on two lines at most, then what it is. */
+.view-page .rev-row {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: var(--rev-mark) minmax(0, 1fr);
+  column-gap: var(--rev-gap);
+  row-gap: 3px;
+  width: 100%;
+  padding: 9px var(--rev-row-pad);
+  border-radius: 10px;
+}
+.view-page .rev-row:hover {
+  background: var(--hover);
+}
+.view-page .rev-row[aria-current="true"] {
+  background: var(--selected);
+}
+.view-page .rev-row > :first-child {
+  grid-row: 1 / span 2;
+  align-self: start;
+  margin-top: 5px;
+}
+.view-page .rev-dot {
+  box-sizing: border-box;
+  width: 7px;
+  height: 7px;
+  border: 1.5px solid var(--faint);
+  border-radius: 50%;
+  justify-self: center;
+}
+/* A proposal's marker says where it stands: waiting, accepted, declined. */
+.view-page .rev-dot.is-pending {
+  border-color: var(--warn);
+}
+.view-page .rev-dot.is-accepted {
+  border-color: #8f8a80;
+  background: #8f8a80;
+}
+.view-page .rev-row[aria-current="true"] .rev-dot {
+  border-color: var(--ink);
+  background: var(--ink);
+}
+.view-page .rev-title {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.view-page .rev-row.is-declined .rev-title {
+  color: var(--faint);
+  text-decoration: line-through;
+  text-decoration-color: rgb(0 0 0 / 20%);
+}
+.view-page .rev-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--faint);
+  font-size: 11.5px;
+}
+.view-page .rev-author {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.view-page .rev-branch {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.view-page .rev-status {
+  color: var(--muted);
+  font-weight: 600;
+}
+.view-page .rev-description {
+  margin: 12px 0;
+  overflow-wrap: anywhere;
+}
+.view-page .rev-description h4 {
+  margin: 0 0 4px;
+}
+.view-page .rev-description p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.view-page .rev-meta code {
+  color: var(--muted);
+  font: 11.5px var(--mono);
+}
+.view-page .rev-meta .chip {
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.view-page .rev-meta .chip.run {
+  color: #1f6b3a;
+}
+.view-page .rev-row:focus-visible,
+.view-page .seg button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Revisions: the list at the left, the one selected at its right. */
+.view-page .rev-page {
+  container: rev / inline-size;
+}
+.view-page .rev {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.view-page .rev-list {
+  position: sticky;
+  top: 12px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  max-height: calc(100dvh - 190px);
+}
+/* The tabs stay in view; the rows scroll under them. */
+.view-page .rev-list ol {
+  display: grid;
+  align-content: start;
+  gap: 1px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+  scrollbar-gutter: stable;
+}
+.view-page .rev-empty {
+  margin: 0;
+  padding: 6px 10px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.view-page .rev-retry {
+  all: unset;
+  cursor: pointer;
+  margin-left: 8px;
+  text-decoration: underline;
+}
+/* `all: unset` cancels the global rule for a shut button. */
+.view-page .rev-retry:disabled {
+  opacity: .5;
+  cursor: default;
+}
+/* What failed, wherever the page tells it (components/view/Problem.tsx). */
+.view-page .proposal-error {
+  margin: 0 0 10px;
+  color: var(--bad);
+  font-size: 12.5px;
+}
+.view-page .rev-host-says {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+}
+/* The code the host gave, before what it says to do about it. */
+.view-page .rev-host-code {
+  margin-right: 6px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+/* A line of text that gives way to an ellipsis rather than wrapping. */
+.view-page .decide-text,
+.view-page .adopt-who {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * The change itself is the app's presentation of a change to the model
+ * (components/ModelChangeCard.tsx). Here it is the page, not a card in a
+ * conversation: no frame, no side padding, the diff as tall as it is.
+ */
+.view-page .rev-detail {
+  min-width: 0;
+}
+.view-page .rev-detail .chat-proposal {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+}
+.view-page .rev-detail .proposal-heading,
+.view-page .rev-detail div.change-heading,
+.view-page .rev-detail .change-bar {
+  padding-inline: 0;
+}
+.view-page .rev-detail .proposal-heading {
+  padding-top: 0;
+}
+.view-page .rev-detail .proposal-heading h3 {
+  font-size: 16px;
+  line-height: 1.35;
+}
+.view-page .rev-detail .proposal-code-diff {
+  max-height: none;
+  margin-inline: 0;
+}
+.view-page .rev-detail .proposal-notice,
+.view-page .rev-reading {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+}
+.view-page .rev-reading {
+  color: var(--muted);
+}
+.view-page .rev-detail .change-byline a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+}
+/* Until the changes are read there are no totals: none is better than zeros. */
+.view-page .rev-detail.is-unread .change-stats {
+  visibility: hidden;
+}
+
+/* Narrow: the detail goes under the list. */
+@container rev (max-width: 720px) {
+  .view-page .rev {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .view-page .rev-list {
+    position: static;
+    max-height: 40dvh;
+  }
+}
+
+/*
+ * To decide (components/decide): the points that wait for a decision, one line
+ * each, as in the prototype's page: a dot, a short text, who asked, an arrow.
+ * The dot is the list marker of the revisions (.rev-dot.is-pending, the
+ * waiting one); a failure is told as everywhere (Problem, with .rev-retry).
+ */
+.view-page .decide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 560px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.view-page .decide-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 8px;
+  border-radius: 9px;
+  color: var(--ink);
+  font-size: 14px;
+  text-decoration: none;
+}
+.view-page .decide-row:hover {
+  background: var(--hover);
+}
+.view-page .decide-row:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .decide-row .rev-dot {
+  flex: none;
+}
+.view-page .decide-who {
+  flex: none;
+  color: var(--faint);
+  font-size: 12px;
+}
+.view-page .decide-go {
+  flex: none;
+  margin-left: auto;
+  color: var(--faint);
+}
+.view-page .view-empty {
+  margin: 0;
+  padding: 40px 0;
+  color: var(--ink);
+  font-weight: 500;
+  text-align: center;
+}
+
+/*
+ * Put in service (components/model/AdoptControl.tsx): under the row of the head
+ * of main, in line with the row's title. The button is the pill of a proposal's
+ * Accept (.proposal-actions); the operator is named, or a menu when several
+ * still wait for the model. A refusal is told under it, as on a proposal.
+ */
+.view-page .adopt {
+  display: grid;
+  gap: 6px;
+  padding: 0 var(--rev-row-pad) 8px
+    calc(var(--rev-row-pad) + var(--rev-mark) + var(--rev-gap));
+}
+.view-page .adopt .proposal-actions {
+  gap: 8px;
+  padding: 0;
+}
+.view-page .adopt-who {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.view-page .adopt select {
+  min-width: 0;
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+}
+.view-page .adopt select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .adopt .proposal-error {
+  margin-bottom: 0;
+}
+.view-page .rev-subject {
+  font-weight: 500;
+}
+
+/*
+ * Files (components/model/FilesPage.tsx): the sources read like a repository,
+ * as the prototype's Files page does. The files at the left, grouped by
+ * directory; the one selected at its right as plain text, a row a line. No
+ * syntax colour yet: the text is one colour, in the page's monospace.
+ */
+.view-page .files-page {
+  container: files / inline-size;
+}
+.view-page .repo-version {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  color: var(--faint);
+  font-size: 12px;
+}
+.view-page .repo-version code {
+  color: var(--muted);
+  font: 11.5px var(--mono);
+}
+.view-page .repo-version a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+}
+.view-page .repo {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* The tree stays in view while a long file scrolls; a long tree scrolls itself. */
+.view-page .tree {
+  position: sticky;
+  top: 12px;
+  display: grid;
+  gap: 8px;
+  max-height: calc(100dvh - 190px);
+  overflow: auto;
+}
+.view-page .tree-group {
+  display: grid;
+  gap: 1px;
+}
+.view-page .tree-dir {
+  padding: 0 10px 6px;
+  color: var(--faint);
+  font-size: 11.5px;
+  overflow-wrap: anywhere;
+}
+.view-page .tree-file {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.view-page .tree-file:hover {
+  background: var(--hover);
+}
+.view-page .tree-file[aria-current="true"] {
+  background: var(--selected);
+  font-weight: 500;
+}
+.view-page .tree-file:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* The file: its head (path, and the commit that last changed it), then its text. */
+.view-page .blob {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.view-page .blob-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  font-size: 13px;
+}
+.view-page .crumbs {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.view-page .crumbs > span {
+  color: var(--faint);
+}
+.view-page .crumbs .sep {
+  margin: 0 6px;
+}
+.view-page .blob-head .last {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+}
+.view-page .blob-head .last:hover .msg {
+  color: var(--ink);
+  text-decoration: underline;
+}
+.view-page .blob-head .last .msg {
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.view-page .blob-head .last code {
+  font: 11.5px var(--mono);
+}
+.view-page .blob-head .last time {
+  color: var(--faint);
+}
+.view-page .blob-head .last:focus-visible,
+.view-page .blob-note a:focus-visible,
+.view-page .repo-version a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .blob-problem {
+  padding: 10px 14px 0;
+}
+.view-page .blob .rev-empty {
+  padding: 10px 14px;
+}
+.view-page .blob-note {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+.view-page .blob-note a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+}
+
+/* A row a line: its number, which is its link, then its text as it is written. */
+.view-page .code {
+  padding: 8px 0;
+  font: 12px/1.6 var(--mono);
+}
+.view-page .code > div {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.view-page .code .ln {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  padding-right: 12px;
+  color: var(--faint);
+  text-align: right;
+  user-select: none;
+}
+.view-page .code .ln:hover {
+  color: var(--ink);
+}
+.view-page .code .ln:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+.view-page .code .hl {
+  background: #fff5d6;
+}
+
+/* Narrow: the tree goes over the file, as a short list of its own. */
+@container files (max-width: 720px) {
+  .view-page .repo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .view-page .tree {
+    position: static;
+    max-height: 30dvh;
+  }
+}
+
+/*
+ * Activity: the model's life as a feed (components/model/ActivityPage.tsx). A
+ * line is the Revisions list's row (.rev-row) with the size of the change at
+ * its right, and it opens its change under it, in place.
+ */
+.view-page .act-page {
+  container: act / inline-size;
+  max-width: 900px;
+}
+.view-page .act-group + .act-group {
+  margin-top: 18px;
+}
+.view-page .act-group-label {
+  margin: 0 0 4px var(--rev-row-pad);
+  color: var(--faint);
+  font: 400 12px/1.5 var(--font);
+}
+.view-page .act-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.view-page .act-item {
+  border-bottom: 1px solid var(--line);
+}
+.view-page .act-row {
+  grid-template-columns: var(--rev-mark) minmax(0, 1fr) auto;
+  padding-block: 12px;
+}
+.view-page .act-row[aria-expanded="true"] {
+  background: var(--selected);
+}
+/* The title and what is under it keep the second column, with or without a size. */
+.view-page .act-row .rev-title,
+.view-page .act-row .rev-meta {
+  grid-column: 2;
+}
+.view-page .act-row .rev-title {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.view-page .act-row .rev-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+.view-page .act-row .rev-meta code {
+  color: var(--faint);
+}
+.view-page .act-size {
+  grid-row: 1 / span 2;
+  grid-column: 3;
+  align-self: center;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.view-page .act-row:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+/*
+ * The change under its line. The line already says what it is and who made it:
+ * the change's own heading would say it twice.
+ */
+.view-page .act-detail {
+  min-width: 0;
+  padding: 4px var(--rev-row-pad) 18px
+    calc(var(--rev-row-pad) + var(--rev-mark) + var(--rev-gap));
+}
+.view-page .act-detail header.change-heading {
+  display: none;
+}
+
+/* The files it touches: what happened, where to read it, how much changed. */
+.view-page .act-files {
+  display: grid;
+  gap: 3px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  font-size: 12.5px;
+}
+.view-page .act-files li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.view-page .act-status {
+  flex: none;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--muted);
+  font-size: 11px;
+}
+.view-page .act-status.is-added {
+  color: var(--add);
+}
+.view-page .act-status.is-deleted {
+  color: var(--del);
+}
+.view-page .act-path {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font: 12px var(--mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.view-page a.act-path {
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+}
+.view-page a.act-path:hover {
+  text-decoration-color: currentColor;
+}
+.view-page a.act-path:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .act-from {
+  color: var(--faint);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.view-page .act-files .change-stats {
+  flex: none;
+  margin-left: auto;
+  font-size: 11.5px;
+}
+
+/* Narrow: the size goes under the line, and the change takes the whole width. */
+@container act (max-width: 520px) {
+  .view-page .act-row {
+    grid-template-columns: var(--rev-mark) minmax(0, 1fr);
+  }
+  .view-page .act-size {
+    grid-row: auto;
+    grid-column: 2;
+    justify-self: start;
+  }
+  .view-page .act-detail {
+    padding-left: var(--rev-row-pad);
+  }
+}
+
+/*
+ * Marks and words the pages of System share (components/view/Icon.tsx and the
+ * chips of Revisions): the outline icon, the faint line, the warning chip.
+ */
+.view-page .ic {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -3px;
+}
+.view-page .faint {
+  color: var(--faint);
+}
+.view-page .chip.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.view-page .chip.ghost {
+  border: 1px solid var(--line);
+  background: transparent;
+}
+
+/* What the host noted while reading the model (components/system/BoardNotes.tsx). */
+.view-page .board-notes {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.view-page .board-notes [data-severity="warning"] {
+  color: var(--warn);
+}
+.view-page .board-notes [data-severity="error"] {
+  color: var(--bad);
+}
+
+/* Team and Performance are centred columns like every page. Team keeps the
+ * column's width for the team (`TEAM_ROOM`) and adds the performance rail at
+ * its right: the pair is centred; it stacks when the pane is narrow. */
+.view-page:is([data-page="team"], [data-page="performance"]) {
+  container: system-performance / inline-size;
+}
+.view-page.is-column[data-page="team"] .view-column {
+  max-width: calc(1080px + 28px + 248px);
+}
+.view-page .system-team-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 248px;
+  gap: 28px;
+  align-items: start;
+}
+.view-page .system-team-content {
+  container: team / inline-size;
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+.view-page .system-performance-rail {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  padding-left: 24px;
+  border-left: 1px solid var(--line);
+}
+.view-page :is(.performance-summary, .performance-evidence) h2 {
+  margin: 0 0 12px;
+  color: var(--ink);
+  font: 600 15px/1.4 var(--font);
+}
+.view-page :is(.performance-unavailable, .performance-evidence p) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.view-page .performance-metrics {
+  display: grid;
+  gap: 24px;
+  margin: 24px 0;
+}
+.view-page .performance-metrics > div {
+  min-width: 0;
+}
+.view-page .performance-metrics dt {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.view-page .performance-metrics dd {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+.view-page .performance-metadata {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.view-page .performance-summary > a {
+  color: var(--ink);
+  font-size: 13px;
+  text-underline-offset: 3px;
+}
+.view-page .performance-summary > a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.view-page .performance-page .performance-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+}
+.view-page .performance-evidence {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.view-page .performance-components-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.view-page .performance-components-scroll table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+}
+.view-page .performance-components-scroll :is(th, td) {
+  padding: 10px 12px;
+  vertical-align: top;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+.view-page .performance-components-scroll thead th {
+  white-space: nowrap;
+}
+.view-page .performance-components-scroll :is(th, td):not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.view-page .performance-components-scroll th[scope="row"] {
+  min-width: 14rem;
+  max-width: 22rem;
+}
+/* Narrow: the team first, the rail under it. */
+@container system-performance (width < 900px) {
+  .view-page .system-team-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .view-page .system-team-content {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .view-page .system-performance-rail {
+    grid-column: 1;
+    grid-row: 2;
+    padding: 24px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+  .view-page .performance-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@container system-performance (width < 560px) {
+  .view-page .performance-metrics,
+  .view-page .performance-page .performance-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/*
+ * Team (components/system): the agents as a network, then one agent in full.
+ * The network is laid out by lib/team-layout.ts, which sets each node's place
+ * and size; the metrics here (an avatar of 52px, a pill 28px high, a name line
+ * of 18px) are the ones it assumes.
+ */
+.view-page .team-page {
+  container: team / inline-size;
+  display: grid;
+  gap: 28px;
+}
+.view-page .tmap {
+  position: relative;
+  width: 100%;
+}
+.view-page .tmap .wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.view-page .wire {
+  stroke: #dcd8cf;
+  stroke-width: 1.2;
+}
+.view-page .wire.talk {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+/* The global Main supervises a Case's Branch Operator from the main system. */
+.view-page .wire.supervises {
+  stroke-dasharray: 4 4;
+}
+.view-page .tnode,
+.view-page .tres {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  box-sizing: border-box;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.view-page .tnode:active,
+.view-page .tres:active {
+  cursor: grabbing;
+}
+.view-page .tnode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px;
+  border-radius: 14px;
+  color: var(--ink);
+  text-align: center;
+  text-decoration: none;
+}
+.view-page .tname {
+  max-width: 100%;
+  overflow: hidden;
+  font: 600 13px/18px var(--font);
+  /* A wire that passes behind a name does not cut it. */
+  text-overflow: ellipsis;
+  text-shadow: 0 0 3px var(--card), 0 0 3px var(--card), 0 0 3px var(--card);
+  white-space: nowrap;
+}
+.view-page .tavatar {
+  position: relative;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: 0 6px 16px rgb(0 0 0 / 6%);
+  color: #48484a;
+  font: 600 15px/1 var(--font);
+  letter-spacing: .01em;
+}
+.view-page .tavatar .ic {
+  width: 24px;
+  height: 24px;
+}
+.view-page .is-you .tavatar {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+.view-page .tnode.is-picked .tavatar {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgb(0 0 0 / 6%);
+}
+.view-page .tnode:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+/* An agent at work shows a green dot, as a run does in the history. */
+.view-page [data-busy="true"] .tavatar::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #1f6b3a;
+  box-shadow: 0 0 0 2px var(--card);
+}
+.view-page .tres {
+  display: flex;
+  justify-content: center;
+}
+.view-page .tanchor {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  height: 28px;
+  padding: 0 11px 0 9px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: #4a4a4f;
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.view-page .tres.is-shared .tanchor {
+  border-color: #bdb8ad;
+  color: var(--ink);
+  font-weight: 500;
+}
+.view-page .tanchor .times {
+  margin-left: 2px;
+  color: var(--faint);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* The agent: its name and how it stands with you, then what the model declares. */
+.view-page .profile {
+  max-width: 820px;
+}
+.view-page .profile-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.view-page .profile-head .tavatar {
+  width: 56px;
+  height: 56px;
+}
+.view-page .profile-head h2 {
+  margin: 0 0 2px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+.view-page .profile-head .faint {
+  font-size: 13px;
+}
+.view-page .ctx {
+  display: grid;
+  gap: 14px;
+  max-width: 900px;
+}
+.view-page .ctx-sec {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.view-page .ctx-sec.is-blank {
+  border-style: dashed;
+}
+.view-page .ctx-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.view-page .ctx-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.view-page .ctx-head + .faint {
+  margin-top: 8px;
+  font-size: 13px;
+}
+.view-page .stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-top: 14px;
+}
+.view-page .stat b {
+  display: block;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+}
+.view-page .stat span {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.view-page .ctx-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.view-page .ctx-row .fl {
+  width: 64px;
+  color: var(--faint);
+  font-size: 11.5px;
+}
+.view-page .ctx-row .rule {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #4a4a4f;
+  font-size: 12.5px;
+}
+.view-page .mandate {
+  max-width: 70ch;
+  margin: 10px 0 0;
+  color: #4a4a4f;
+  font-size: 13.5px;
+}
+.view-page .mandate.faint {
+  color: var(--faint);
+}
+
+/* More agents than a network can hold: a list at the left, the agent beside it. */
+.view-page .team-page.is-list {
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 36px;
+  align-items: start;
+}
+.view-page :is(.team-picker, .flows-picker) {
+  position: sticky;
+  top: 12px;
+  display: grid;
+  gap: 1px;
+  align-content: start;
+  max-height: calc(100dvh - 190px);
+  overflow: auto;
+}
+.view-page :is(.team-pick, .flows-pick) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  text-decoration: none;
+}
+.view-page :is(.team-pick, .flows-pick):hover {
+  background: var(--hover);
+}
+.view-page :is(.team-pick, .flows-pick)[aria-current="true"] {
+  background: var(--selected);
+  font-weight: 500;
+}
+.view-page :is(.team-pick, .flows-pick):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page :is(.team-pick-name, .flows-pick-name) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.view-page .tavatar.is-mini {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  box-shadow: none;
+  font-size: 9px;
+}
+@container team (max-width: 640px) {
+  .view-page .team-page.is-list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .view-page .team-picker {
+    position: static;
+    max-height: 30dvh;
+  }
+}
+
+/*
+ * What a System page puts forward while one of its elements is chosen
+ * (lib/element-detail.ts `standing`): every element is an `.el`; the chosen
+ * one is outlined, what it is related to is outlined thinner and says why
+ * (`.el-why`), what holds it or is held by it is left as it is, and in a page
+ * with a choice (`.has-selection`) everything else steps back.
+ */
+.view-page .el {
+  transition: opacity .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.view-page .el.is-selected {
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.view-page .el.is-lit {
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.view-page .has-selection .el:not(.is-selected):not(.is-lit):not(.is-context) {
+  opacity: .32;
+}
+.view-page .el-why {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.view-page .el-why .chip {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/*
+ * Explore (components/system/ExplorePage.tsx): everything the model declares,
+ * a quiet list per concept. From the prototype's .board and .card.row, with
+ * the page tokens above.
+ */
+.view-page .explore-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 28px;
+  align-items: start;
+}
+.view-page .explore-col {
+  min-width: 0;
+}
+.view-page .explore-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.view-page .explore-head .ic {
+  width: 15px;
+  height: 15px;
+}
+.view-page .explore-n {
+  color: var(--faint);
+}
+.view-page :is(.explore-group, .flows-group) {
+  margin: 14px 8px 4px;
+  color: var(--faint);
+  font-size: 11px;
+}
+.view-page .explore-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0 0 2px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  color: var(--ink);
+  font-size: 13.5px;
+  text-decoration: none;
+}
+.view-page .explore-card:hover {
+  background: var(--hover);
+}
+.view-page .explore-card:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .explore-t {
+  min-width: 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.view-page .explore-ty {
+  color: var(--muted);
+  font-weight: 400;
+}
+.view-page :is(.explore-times, .flows-times) {
+  margin-left: auto;
+  color: var(--faint);
+  font-size: 12px;
+}
+.view-page .explore-card > .el-why {
+  flex: 1 0 100%;
+}
+/* What kind an element is: a small mark, or the keyword in SysML's words
+   (the detail says it the same way, above the name). */
+.view-page .kind-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  color: var(--faint);
+}
+.view-page .kind-icon .ic {
+  width: 14px;
+  height: 14px;
+  vertical-align: 0;
+}
+.view-page .kind-kw {
+  color: var(--faint);
+  font: 500 10.5px var(--mono);
+  letter-spacing: .01em;
+}
+
+/*
+ * The detail of an element, open in the page right after the element it was
+ * chosen from (components/system/DetailSlot.tsx, ElementDetail.tsx): never a
+ * popover over the page, never a panel of its own. In a column it is narrow.
+ */
+.view-page .detail {
+  position: relative;
+  box-sizing: border-box;
+  max-width: 560px;
+  margin: 6px 0 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  animation: detail-in .14s ease-out;
+}
+.view-page .detail.is-narrow {
+  min-height: 40px;
+  margin: 2px 0 8px;
+  padding: 8px 10px;
+}
+@keyframes detail-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .view-page .detail {
+    animation: none;
+  }
+}
+/* The cross is the link that closes it, which Escape follows. */
+.view-page .detail-x {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--chip);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  text-decoration: none;
+}
+.view-page .detail.is-narrow .detail-x {
+  top: 6px;
+  right: 6px;
+}
+.view-page .detail-x:hover {
+  background: var(--chip-hover);
+}
+.view-page .detail-x:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .detail-title {
+  margin: 2px 32px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  overflow-wrap: anywhere;
+}
+.view-page .detail-type {
+  color: var(--muted);
+  font-size: 12px;
+}
+.view-page .detail-sum {
+  display: -webkit-box;
+  margin: 6px 0 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12.5px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.view-page .detail.is-narrow .detail-sum {
+  margin: 0 26px 8px 0;
+}
+.view-page .detail-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 10px;
+  margin: 12px 0 0;
+  font-size: 12px;
+}
+.view-page .detail-facts dt {
+  color: var(--faint);
+  white-space: nowrap;
+}
+.view-page .detail-facts dd {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.view-page .detail-facts dd.is-code {
+  color: var(--muted);
+  font: 11.5px var(--mono);
+  word-break: break-all;
+}
+.view-page .detail > .faint {
+  margin-top: 6px;
+  font-size: 11.5px;
+}
+.view-page .detail-rel {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.view-page .detail-rel h5 {
+  margin: 0 0 4px;
+  color: var(--faint);
+  font-size: 11px;
+  font-weight: 500;
+}
+.view-page .detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.view-page .detail-chips .faint {
+  font-size: 12px;
+}
+/* The groups past the first ones open under a "more", which is a chip too. */
+.view-page .detail-more {
+  display: grid;
+  gap: 8px;
+}
+.view-page .detail-more > summary {
+  justify-self: start;
+  list-style: none;
+}
+.view-page .detail-more > summary::-webkit-details-marker {
+  display: none;
+}
+.view-page .detail-more[open] > summary {
+  display: none;
+}
+.view-page .detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.view-page .detail.is-narrow .detail-actions {
+  margin-top: 0;
+  padding-top: 0;
+  padding-right: 26px;
+  border-top: 0;
+}
+/* In a list the detail is an item of it; in a table, a row that does not widen it. */
+.view-page .detail-item {
+  list-style: none;
+}
+.view-page .detail-row > td {
+  padding: 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+.view-page .detail-hold {
+  position: sticky;
+  left: 12px;
+  width: 0;
+}
+.view-page .detail-hold .detail {
+  width: min(560px, calc(100cqw - 24px));
+  max-width: none;
+}
+/*
+ * The wrapper of a table that opens details in its rows (DetailSlot as="row"):
+ * it is the container the detail measures its width against, and it clips
+ * nothing, so a detail can hang over a narrow column. A row of a detail has
+ * no hover of its own.
+ */
+.view-page .detail-table {
+  container-type: inline-size;
+  overflow: visible;
+}
+.view-page .detail-table tr.detail-row:hover > td {
+  background: var(--card);
+}
+
+/*
+ * The pages kept in a menu after the tabs (components/view/MoreMenu.tsx). It
+ * sits beside the tab strip, not in it: the strip scrolls and would clip it.
+ */
+.view-page .view-more {
+  position: relative;
+  flex: none;
+  margin-left: -7px;
+}
+.view-page .view-more > summary {
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  list-style: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.view-page .view-more > summary::-webkit-details-marker {
+  display: none;
+}
+.view-page .view-more > summary::after {
+  content: "▾";
+  margin-left: 4px;
+  font-size: 10px;
+}
+.view-page .view-more > summary:hover,
+.view-page .view-more[open] > summary {
+  color: var(--ink);
+}
+.view-page .view-more > summary[aria-current="page"] {
+  background: var(--selected);
+  color: var(--ink);
+}
+.view-page .view-more > summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .view-more-list {
+  position: absolute;
+  top: 34px;
+  left: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 8%);
+}
+.view-page .view-more-list a {
+  padding: 6px 10px;
+  border-radius: 7px;
+  color: var(--ink);
+  font-size: 13px;
+  text-decoration: none;
+}
+.view-page .view-more-list a:hover,
+.view-page .view-more-list a[aria-current="page"] {
+  background: var(--hover);
+}
+.view-page .view-more-list a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+/* A table row that is an element: the row, not a box, says it is chosen or lit. */
+.view-page tr.el.is-selected,
+.view-page tr.el.is-lit {
+  box-shadow: none;
+}
+.view-page tr.el.is-selected > :is(td, th) {
+  background: var(--desk);
+}
+.view-page tr.el.is-lit > :is(td, th) {
+  background: var(--paper);
+}
+
+/*
+ * Requirements (components/system/RequirementsPage.tsx): a quiet list of what
+ * the model demands, a dot for where each stands. On: someone answers for a
+ * requirement, a performed step makes a constraint hold. Off: no one answers
+ * for it. Idle: nothing performs it.
+ */
+.view-page .requirements {
+  max-width: 760px;
+}
+.view-page .qhead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 22px 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.view-page .qsection:first-of-type .qhead {
+  margin-top: 4px;
+}
+.view-page .qlist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.view-page .qrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  padding: 9px 8px;
+  border-radius: 9px;
+  color: var(--ink);
+  font-size: 14px;
+  text-decoration: none;
+}
+.view-page .qrow:hover {
+  background: var(--hover);
+}
+.view-page .qrow:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .qrow > .el-why {
+  flex: 1 0 100%;
+  padding-left: 24px;
+}
+.view-page .qmark {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translateY(1px);
+}
+.view-page .qmark.is-on {
+  background: var(--ink);
+}
+.view-page .qmark.is-off {
+  box-shadow: inset 0 0 0 1.5px var(--warn);
+}
+.view-page .qmark.is-idle {
+  box-shadow: inset 0 0 0 1.5px var(--faint);
+}
+.view-page .qtext {
+  min-width: 0;
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+}
+.view-page .qsub,
+.view-page .qclause,
+.view-page .qtext .expr {
+  display: block;
+}
+.view-page .qsub {
+  margin-top: 2px;
+  color: var(--faint);
+  font-size: 12px;
+}
+.view-page .qon {
+  margin-left: 8px;
+  color: var(--faint);
+  font-size: 12px;
+}
+.view-page .qty {
+  color: var(--muted);
+}
+.view-page .qclause {
+  margin-top: 4px;
+  font-size: 12.5px;
+}
+.view-page .expr {
+  margin-top: 4px;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  font: 11.5px/1.5 var(--mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/*
+ * Parts (components/system/PartsPage.tsx, PartPanel.tsx): each unit as a
+ * panel, its parts nested as the model nests them, the ports of each part,
+ * and a table of what the model connects. A part is a card on the paper; the
+ * platform the operators rely on is dashed.
+ */
+.view-page .part-unit {
+  margin: 0 0 22px;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--paper);
+}
+.view-page .part-link {
+  display: block;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+.view-page .part-link:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .part-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+.view-page .part-t {
+  font-weight: 600;
+}
+.view-page .part-unit > .part-link .part-t {
+  font-size: 15px;
+}
+.view-page .part-ty {
+  color: var(--muted);
+}
+.view-page .part-sum {
+  display: -webkit-box;
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.view-page .part-kind {
+  margin-top: 14px;
+}
+.view-page .part-unit > .el-why,
+.view-page .panel > .el-why {
+  margin-top: 6px;
+}
+.view-page .panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 6px;
+}
+.view-page .panels.is-nested {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.view-page .panel {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--card);
+}
+.view-page .panel .panel,
+.view-page .panels.is-platform > .panel {
+  background: var(--paper);
+}
+.view-page .panels.is-platform > .panel {
+  border-style: dashed;
+}
+.view-page .ports {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+.view-page .port {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 7px;
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  color: inherit;
+  font-size: 12px;
+  text-decoration: none;
+}
+.view-page .port:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .port-sq {
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--ink);
+  border-radius: 1.5px;
+  background: var(--ink);
+}
+.view-page .port.is-conjugated .port-sq {
+  background: var(--card);
+}
+.view-page .port-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.view-page .port-name .kind-kw {
+  margin-right: 5px;
+}
+.view-page .port-ty {
+  color: var(--muted);
+}
+.view-page .port-flow,
+.view-page .port > .el-why {
+  grid-column: 2;
+}
+.view-page .port-flow {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.view-page .port-warn {
+  color: var(--warn);
+}
+.view-page .part-conns {
+  width: 100%;
+  margin-top: 14px;
+  border-collapse: collapse;
+}
+.view-page .part-conns th {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--line);
+  color: var(--faint);
+  font-size: 11px;
+  font-weight: 500;
+  text-align: left;
+}
+.view-page .part-conns td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  vertical-align: top;
+}
+
+/*
+ * Allocations (components/system/AllocationsPage.tsx): who performs what. The
+ * rows are what the model allocates, grouped by flow and unit; the columns, by
+ * unit, are what performs it; a dot is an allocation. A row's detail is a row
+ * of the table (see `.detail-table`), which stays in view while the matrix
+ * scrolls sideways.
+ */
+.view-page .matrix-scroll {
+  overflow-x: auto;
+}
+.view-page .matrix {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--card);
+}
+.view-page .matrix tr:not(.detail-row) > :is(td, th) {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 400;
+}
+.view-page .matrix thead th {
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+  vertical-align: bottom;
+}
+.view-page .matrix thead th.vert {
+  height: 150px;
+  white-space: nowrap;
+}
+.view-page .matrix thead th.vert span {
+  display: inline-block;
+  max-height: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: rotate(180deg);
+  writing-mode: vertical-rl;
+}
+.view-page .matrix thead tr.groups th {
+  border-left: 1px solid var(--line);
+  color: var(--ink);
+  font-weight: 500;
+  text-align: left;
+}
+.view-page .matrix tbody th {
+  position: sticky;
+  left: 0;
+  background: var(--card);
+  text-align: left;
+  white-space: nowrap;
+}
+.view-page .matrix tr.matrix-group th {
+  padding-top: 12px;
+  color: var(--faint);
+  font-size: 11px;
+}
+.view-page .matrix tr:not(.detail-row) > td {
+  border-left: 1px solid transparent;
+  text-align: center;
+}
+.view-page .matrix tr:not(.detail-row) > td.g0 {
+  border-left-color: var(--line);
+}
+.view-page .matrix tbody tr:not(.detail-row):not(.is-selected):hover > :is(td, th) {
+  background: var(--paper);
+}
+.view-page .matrix-row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.view-page .matrix-row:focus-visible,
+.view-page .matrix-cell:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .matrix-cell {
+  display: block;
+  margin: -6px -8px;
+  padding: 6px 8px;
+}
+/*
+ * A dot: the mark of a right, in the SysML matrix and in the glance of Rights.
+ * Filled when the model says so (a state adds its own look).
+ */
+.view-page .dot {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.view-page .dot.allowed {
+  background: var(--ink);
+}
+.view-page .dot.propose {
+  background: linear-gradient(90deg, var(--ink) 50%, transparent 50%);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+.view-page .dot.denied {
+  box-shadow: inset 0 0 0 1.5px var(--line-strong);
+}
+.view-page .dot.inherited {
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+/* Granted by the model, but of no use (nothing to act on, no host to reach...). */
+.view-page .dot.is-unusable {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--warn);
+}
+
+/*
+ * Rights (components/system/RightsPage.tsx, RightsMatrix.tsx): who may do what.
+ * The readable page is the glance, actors in rows and families in columns with
+ * one mark where they meet; in SysML's words it is the matrix above, with a dot
+ * where the model gives a right. Details open in a row under the line (see
+ * `.detail-table`). From the prototype's .glance, with the page tokens; its marks
+ * are the matrix's dots (above).
+ */
+.view-page .rights {
+  container: rights / inline-size;
+}
+.view-page .glance {
+  border-collapse: collapse;
+}
+/* A line read from another system: its name links there, written like the rest. */
+.view-page :is(.glance, .rights-matrix) tr.is-main a {
+  color: inherit;
+  text-decoration: none;
+}
+.view-page .glance tr:not(.detail-row) > :is(th, td) {
+  padding: 12px 20px;
+  font-weight: 400;
+  text-align: center;
+}
+.view-page .glance thead th {
+  color: var(--muted);
+  font-size: 11px;
+}
+.view-page .glance thead th .ic {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 0 auto 3px;
+  color: var(--muted);
+}
+.view-page .glance tbody tr:not(.detail-row) > th {
+  position: sticky;
+  left: 0;
+  background: var(--paper);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+.view-page .glance tbody tr:not(.detail-row) > :is(th, td) {
+  border-bottom: 1px solid var(--line);
+}
+.view-page .glance td.act {
+  position: relative;
+  padding: 0;
+}
+.view-page .glance td.act:hover,
+.view-page .glance td.on {
+  background: var(--selected);
+}
+.view-page .mark-link {
+  position: relative;
+  display: block;
+  padding: 12px 20px;
+  line-height: 0;
+}
+.view-page .mark-link:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+@container rights (max-width: 520px) {
+  .view-page .glance tr:not(.detail-row) > :is(th, td) {
+    padding: 10px 8px;
+  }
+  .view-page .mark-link {
+    padding: 10px 8px;
+  }
+}
+.view-page .rights .mini {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--muted);
+  vertical-align: middle;
+}
+/* Another system's operator: its initials, as on its Dock tile. */
+.view-page .rights tr.is-main .mini {
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+.view-page .rights .mini .ic {
+  width: 13px;
+  height: 13px;
+  vertical-align: 0;
+}
+.view-page .rights .mini.you {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--card);
+}
+/* The flag of an actor that approves its own tools with no one to review them. */
+.view-page .rights .flag {
+  position: absolute;
+  top: 7px;
+  right: calc(50% - 13px);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+.view-page .rights .legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+.view-page .rights .legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.view-page .rights .legend .ic {
+  width: 14px;
+  height: 14px;
+  vertical-align: 0;
+}
+.view-page .rights .legend .flag {
+  position: static;
+  display: inline-block;
+}
+.view-page .matrix tbody tr.is-selected > :is(th, td) {
+  background: var(--selected);
+}
+/* The rights are told in longer words than the performers of Allocations. */
+.view-page .rights-matrix thead th.vert {
+  height: 190px;
+}
+.view-page .rights-matrix thead th.vert span {
+  max-height: 180px;
+}
+.view-page .matrix td.is-selected {
+  box-shadow: inset 0 0 0 1.5px var(--rule);
+}
+/* A family's rights, one by one, in the detail of a mark. */
+.view-page .rights-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.view-page .rights-lines li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+}
+.view-page .rights-lines .faint {
+  margin-left: auto;
+  font-size: 11.5px;
+}
+.view-page .rights-lines .ic {
+  width: 14px;
+  height: 14px;
+  vertical-align: 0;
+}
+/* The places of the model's files that declare a right: a name and a file, which may wrap in a narrow detail. */
+.view-page .chip.is-source {
+  flex-wrap: wrap;
+  max-width: 100%;
+  border-radius: 12px;
+  white-space: normal;
+}
+.view-page .rights-codes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+.view-page .rights-codes code {
+  color: var(--muted);
+  font: 11.5px var(--mono);
+}
+.view-page .rights-flag {
+  color: var(--warn);
+}
+/* Which version the rights are of: quiet, under the page. */
+.view-page .rights-caveats {
+  margin: 18px 0 0;
+  color: var(--faint);
+  font-size: 11.5px;
+}
+
+/*
+ * Flows (components/system/FlowsPage.tsx, FlowThread.tsx, LifecycleTrack.tsx):
+ * the behavior the model describes, one flow or lifecycle at a time, picked
+ * from a list at the left (it shares the Team list's look). A flow is a thread
+ * of page elements, not a diagram: steps are cards one after the other, a
+ * decision a diamond that splits the thread into branches side by side. A
+ * thread wider than the page scrolls inside its own box. From the prototype's
+ * .vflow and .life, with the page tokens.
+ */
+.view-page .flows-page {
+  container: flows / inline-size;
+}
+/* The list stands in the column's left margin: the column widens by the list
+ * only, so the stage keeps a page's full width and the pair stays centred. */
+.view-page.is-column[data-page="flows"] .view-column {
+  max-width: calc(1080px + 180px + 28px);
+}
+.view-page .flows-split {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.view-page .flows-picker > .flows-group:first-child {
+  margin-top: 0;
+}
+.view-page .flows-stage {
+  min-width: 0;
+  padding: 4px 0 14px;
+  overflow-x: auto;
+}
+@container flows (max-width: 640px) {
+  .view-page .flows-split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  /* The list becomes a row of entries that wrap, headings on a line of their own. */
+  .view-page .flows-picker {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-height: none;
+    overflow: visible;
+  }
+  .view-page .flows-picker > .flows-group {
+    flex-basis: 100%;
+    margin: 6px 4px 0;
+  }
+}
+
+/* Who performs a step: a filled dot for an operator, a ring for the platform. */
+.view-page .who {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.view-page .who i {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.view-page .who.is-platform i {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--faint);
+}
+
+/* The thread. Its root takes the width of its widest branches, so none is cut off. */
+.view-page .vflow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.view-page .vflow.is-root {
+  width: max-content;
+  min-width: 100%;
+}
+.view-page .vflow > li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 18px;
+}
+.view-page .vflow > li::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 18px;
+  border-left: 1.5px solid var(--line-strong);
+}
+.view-page .vflow.is-root > li:first-child {
+  padding-top: 0;
+}
+.view-page .vflow.is-root > li:first-child::before {
+  display: none;
+}
+.view-page .vstart::after,
+.view-page .vend::after {
+  content: "";
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.view-page .vend::after {
+  width: 8px;
+  height: 8px;
+  box-shadow: 0 0 0 2.5px var(--card), 0 0 0 4px var(--ink);
+}
+
+/* A step is a card, a decision a diamond, a merge its name; each is a link. */
+.view-page .vcard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  box-sizing: border-box;
+  min-width: 110px;
+  max-width: 190px;
+  padding: 7px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  text-align: center;
+  text-decoration: none;
+}
+.view-page .vcard:hover {
+  background: var(--paper);
+}
+.view-page .vcard b {
+  font-size: 13.5px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.view-page .vcard .vty {
+  color: var(--muted);
+  font-weight: 400;
+}
+.view-page .vwho {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px 10px;
+}
+.view-page .vpick {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+.view-page .vdiamond {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--faint);
+  border-radius: 2px;
+  background: var(--card);
+  transform: rotate(45deg);
+}
+.view-page .vpick:hover .vdiamond,
+.view-page .vpick.is-selected .vdiamond {
+  border-color: var(--ink);
+}
+.view-page .vname {
+  padding: 2px 8px;
+  border-radius: 8px;
+  color: var(--faint);
+  font-size: 12px;
+  letter-spacing: .02em;
+  text-decoration: none;
+}
+.view-page .vname:hover {
+  color: var(--ink);
+}
+.view-page .vname .kind-kw {
+  margin-right: 5px;
+}
+.view-page .is-unreachable.vcard,
+.view-page .is-unreachable .vdiamond {
+  border-style: dashed;
+}
+.view-page .is-unreachable.vname {
+  font-style: italic;
+}
+.view-page .vcard:focus-visible,
+.view-page .vpick:focus-visible,
+.view-page .vname:focus-visible,
+.view-page .life-state:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .vgoto {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.view-page .vloop {
+  margin-top: 4px;
+  color: var(--faint);
+  font-size: 11.5px;
+}
+
+/* A decision splits the thread: its branches stand side by side, each under a bar. */
+.view-page .vbranches {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  margin-top: 18px;
+}
+.view-page .vbranches::before {
+  content: "";
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  height: 18px;
+  border-left: 1.5px solid var(--line-strong);
+}
+.view-page .vbranch {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 4px 0;
+}
+.view-page .vbranch::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  border-top: 1.5px solid var(--line-strong);
+}
+.view-page .vbranch:first-child::before {
+  left: 50%;
+}
+.view-page .vbranch:last-child::before {
+  right: 50%;
+}
+.view-page .vbranch:only-child::before {
+  display: none;
+}
+.view-page .vbranch::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 18px;
+  border-left: 1.5px solid var(--line-strong);
+}
+.view-page .vlabel {
+  position: absolute;
+  top: 3px;
+  left: calc(50% + 7px);
+  max-width: calc(50% - 14px);
+  overflow: hidden;
+  color: var(--faint);
+  font-size: 11.5px;
+  font-style: italic;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.view-page .vbranch > .vflow > li:first-child {
+  padding-top: 10px;
+}
+.view-page .vbranch > .vflow > li:first-child::before {
+  height: 10px;
+}
+
+/* A lifecycle: its states in columns by rank; the start is outlined, an end is dashed. */
+.view-page .life {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 6px 2px;
+}
+.view-page .life-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.view-page .life-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.view-page .life-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.view-page .life-state:hover {
+  background: var(--paper);
+}
+.view-page .life-state.is-initial {
+  border-color: var(--ink);
+}
+.view-page .life-state.is-terminal {
+  border-style: dashed;
+  background: var(--paper);
+}
+.view-page .life-state.is-inherited {
+  color: var(--muted);
+}
+
+/* The detail of a step or a state, in the thread: a width of its own, under what it opens from. */
+.view-page :is(.vflow, .life) .detail {
+  width: min(340px, 80vw);
+  text-align: left;
+}
+
+/* Categories come from the pinned Toolkit's native semantic-token legend. */
+.code .token-keyword {
+  color: #7653a1;
+  font-weight: 500;
+}
+.code .token-comment {
+  color: #7d8275;
+  font-style: italic;
+}
+.code .token-string {
+  color: #88713c;
+}
+.code .token-number {
+  color: #9a663e;
+}
+.code .token-type {
+  color: #356d80;
+}
+.code .token-namespace {
+  color: #685678;
+}
+.code .token-property,
+.code .token-variable,
+.code .token-enum-member {
+  color: #4d6477;
+}
+
+/* Initial admission: the reference mock's compact inventory, not a diff card. */
+.view-page .rev-initial {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+.view-page .rev-initial-head h2 {
+  font: 600 16px/1.35 var(--font);
+  margin: 0 0 4px;
+}
+.view-page .rev-initial-meta {
+  font-size: 12.5px;
+  color: var(--faint, var(--muted));
+}
+.view-page .rev-initial-meta code {
+  font: 12px var(--mono);
+}
+.view-page .rev-initial-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.view-page .rev-initial-stats {
+  display: flex;
+  gap: 8px;
+  font: 12px var(--mono);
+}
+.view-page .rev-initial-stats .plus {
+  color: #1f6b3a;
+}
+.view-page .rev-initial-stats .minus {
+  color: #a1342b;
+}
+.view-page .rev-initial-stats .faint {
+  font-family: var(--font);
+  color: var(--faint, var(--muted));
+}
+.view-page .rev-initial-bar .change-layout {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 9px;
+  background: var(--chip, #f3f3f3);
+  margin-left: auto;
+}
+.view-page .rev-initial-bar .change-layout button {
+  all: unset;
+  cursor: pointer;
+  padding: 2px 9px;
+  border-radius: 7px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.view-page .rev-initial-bar .change-layout button[aria-pressed="true"] {
+  background: var(--card, #fff);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+}
+.view-page .rev-initial-files {
+  list-style: none;
+  margin: 0;
+  display: grid;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px;
+}
+.view-page .rev-initial-files a,
+.view-page .rev-initial-file {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 5px 8px;
+  border-radius: 7px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.view-page .rev-initial-files a:hover {
+  background: var(--hover);
+  text-decoration: none;
+}
+.view-page .rev-initial-files code {
+  font: 12.5px var(--mono);
+  overflow-wrap: anywhere;
+}
+.view-page .rev-initial-files .change-stats {
+  margin-left: auto;
+  flex: none;
+  white-space: nowrap;
+  font: 11.5px var(--mono);
+}
+.view-page .rev-initial-status {
+  flex: none;
+  font: 11px var(--mono);
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--chip, #f3f3f3);
+}
+.view-page .rev-initial-status.is-added {
+  color: #1f6b3a;
+}
+.view-page .rev-initial-status.is-deleted {
+  color: #a1342b;
+}
+.view-page .rev-initial a:focus-visible,
+.view-page .rev-initial button:focus-visible {
+  outline: 2px solid var(--focus, #6e6e73);
+  outline-offset: 2px;
+}
+
+/* Runtime tool state stays in its existing tool surface. */
+.tool-candidate-chip {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--ink);
+  font-size: 11.5px;
+  text-decoration: none;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.tool-candidate-chip .tool-chip-state {
+  font-size: 10.5px;
+}
+.tool-candidate-chip .tool-chip-state::before {
+  content: "· ";
+}
+.tool-candidate-chip.warn {
+  background: #fff1ce;
+  color: #805515;
+}
+.tool-candidate-chip.is-failed {
+  color: var(--bad);
+}
+.tool-candidate-chip:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .tool-candidate-chip {
+  white-space: normal;
+}
+.view-page .tool-candidate-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+}
+.view-page .tool-read-status {
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+.view-page .explore-tool-states {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 8px 5px 36px;
+}
+.view-page .explore-card.is-appearing {
+  outline: 1px solid var(--focus);
+  background: var(--hover);
+  animation: tool-appearance 2.4s ease-out;
+}
+@keyframes tool-appearance {
+  from {
+    background: var(--hover);
+  }
+  to {
+    background: transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .view-page .explore-card.is-appearing {
+    animation: none;
+  }
+}
+
+/* The release actions stay beside the content, and stack in narrow panes. */
+.view-page .files-content-layout,
+.view-page .saved-systems-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
+  gap: 24px;
+  align-items: start;
+  min-width: 0;
+}
+.view-page .files-release-actions {
+  grid-column: 2;
+  grid-row: 1;
+}
+.view-page .files-content-layout > .repo,
+.view-page .files-content-layout > .rev-empty {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+.view-page .releases-actions {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.view-page .releases-actions .button {
+  justify-self: start;
+}
+@container files (max-width: 800px) {
+  .view-page .files-content-layout,
+  .view-page .saved-systems-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .view-page .files-release-actions {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .view-page .files-content-layout > .repo,
+  .view-page .files-content-layout > .rev-empty {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}
+
+/* Saved systems uses the existing proposal controls and system detail tokens.
+ * Keep the form and catalogue in one readable column, including narrow panes. */
+.view-page .saved-systems {
+  display: grid;
+  gap: 20px;
+  max-width: 760px;
+  min-width: 0;
+  padding-bottom: 24px;
+  overflow-wrap: anywhere;
+}
+.view-page .saved-systems-create {
+  min-width: 0;
+  width: 100%;
+}
+.view-page .saved-systems-create > .saved-systems {
+  max-width: none;
+}
+.view-page .saved-systems-create .saved-systems-form {
+  padding: 24px;
+  gap: 22px;
+}
+.view-page .saved-systems-create .saved-systems-field textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+/* Where a Release stands, in one plain word on its row and in its detail. */
+.view-page .saved-systems-readiness {
+  color: var(--faint);
+  font-size: 11.5px;
+}
+.view-page .saved-systems-readiness.is-ready {
+  color: var(--muted);
+}
+.view-page .saved-systems > p,
+.view-page .saved-system-inspection > p,
+.view-page .saved-system-inspection > h3,
+.view-page .saved-system-inspection > h4 {
+  margin: 0;
+}
+.view-page .saved-systems-form,
+.view-page .saved-system-inspection {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.view-page .saved-systems-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.view-page .saved-systems-field label {
+  margin: 0;
+}
+.view-page .saved-systems-field input,
+.view-page .saved-systems-field select,
+.view-page .saved-systems-field textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+}
+.view-page .saved-systems-field input:focus-visible,
+.view-page .saved-systems-field textarea:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .saved-systems .proposal-actions {
+  padding: 0;
+}
+.view-page .saved-systems .proposal-error {
+  margin: 0;
+}
+.view-page .saved-systems-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+/* The Releases read like the Revisions list: one row each, 1px apart. */
+.view-page .saved-systems-list {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.view-page .saved-systems-list .rev-row:disabled {
+  cursor: default;
+}
+/* A Release's short source commit links to its files, in the page's greys. */
+.view-page .saved-systems .rev-meta a,
+.view-page .releases-actions .rev-meta a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+}
+/* Each retained tool's facts, then its source action, under Details. */
+.view-page .saved-system-tools {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* A chip that acts: Refresh, Create tag. */
+.view-page .saved-systems button.chip,
+.view-page .create-tag button.chip {
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+}
+.view-page .saved-systems button.chip:not(:disabled):hover,
+.view-page .create-tag button.chip:not(:disabled):hover {
+  background: var(--chip-hover);
+  color: var(--ink);
+}
+.view-page .create-tag,
+.view-page .create-tag form {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  min-width: 0;
+}
+.view-page .create-tag p {
+  margin: 0;
+}
+.view-page .create-tag label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.view-page .create-tag input {
+  min-width: 0;
+  max-width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+}
+.view-page .create-tag input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.view-page .saved-systems code {
+  overflow-wrap: anywhere;
+}
+.view-page .saved-systems pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+/* This evidence disclosure remains closable after opening. */
+.view-page .saved-systems .detail-more[open] > summary {
+  display: inline-flex;
+}
+@media (max-width: 540px) {
+  .view-page .saved-systems .detail-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .view-page .saved-systems .detail-facts dd {
+    margin-bottom: 6px;
+  }
+}

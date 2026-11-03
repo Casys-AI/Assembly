@@ -1,12 +1,12 @@
 # Developing Assembly
 
-The maintained projects are the workbench in `apps/live-builder` and its Fresh
-interface in `apps/live-builder/frontend`. Each keeps its own Deno configuration
-and lockfile. Root tasks coordinate them without imposing a workspace or mixing
-their browser and server dependencies.
+The maintained projects are the workbench at the repository root and its Fresh
+interface in `frontend`. Each keeps its own Deno configuration and lockfile;
+root tasks reach the interface with `--cwd frontend`, without imposing a
+workspace or mixing their browser and server dependencies.
 
-Use Deno **2.9.7**, as recorded in the `.deno-version` files. Workbench setup
-also installs the qualified binary in its local toolchain.
+Use Deno **2.9.7**, as recorded in `.deno-version`. Workbench setup also
+installs the qualified binary in its local toolchain.
 
 ```sh
 deno task setup   # verified precompiled bundles; requires published catalog entries
@@ -17,15 +17,15 @@ deno task build   # build Fresh, then check its routes and generated files
 deno task dev     # interface with HMR at http://127.0.0.1:5173/
 deno task dev:backend <name> # existing named backend in explicit development mode
 deno task db:up   # local development PostgreSQL in Docker (compose.yaml)
-deno task db:migrate # apply pending migrations to apps/live-builder/.env's database
+deno task db:migrate # apply pending migrations to .env's database
 deno task db:down # stop it; data stays in the `assembly_postgres` volume
 ```
 
 The development database runs in Docker, not from a checkout: `compose.yaml`
 starts PostgreSQL 18.4 on `127.0.0.1:55432` with its data in a named volume, and
-`apps/live-builder/.env.example` points to it. Copy that file to
-`apps/live-builder/.env`, run `deno task db:up` then `deno task db:migrate`.
-`docker compose down --volumes` deletes the database; nothing else does.
+`.env.example` points to it. Copy that file to `.env`, run `deno task db:up`
+then `deno task db:migrate`. `docker compose down --volumes` deletes the
+database; nothing else does.
 
 `ASSEMBLY_ENV=development|production` selects backend behavior at startup;
 production is the default. The `dev` task chain explicitly selects development
@@ -40,8 +40,14 @@ The compiled interface and HMR both read the backend's public
 `/api/environment`. Development uses its existing controls/cookie through
 `POST /api/space-session/local`, without a file picker or Vite credential
 bootstrap. Production keeps the explicit control-file exchange and exact-origin
-checks. A build-time frontend flag never chooses authentication behavior. Follow
-the [workbench README](apps/live-builder/README.md) for the launch sequence.
+checks. A build-time frontend flag never chooses authentication behavior. Start
+the named backend, then the interface with the address the backend prints:
+
+```sh
+deno task dev:backend <name>
+ASSEMBLY_BACKEND_URL=http://127.0.0.1:4313 deno task dev   # http://127.0.0.1:5173/
+```
+
 Frontend changes need no build or backend restart; backend code/mode changes
 require an explicit restart.
 
@@ -50,30 +56,28 @@ supported aliases; a defined `ASSEMBLY_*` value takes precedence, including an
 empty value. Third-party settings such as `SYSML_TOOLKIT_DIR` keep their names.
 
 BMAD stable is configured to use the existing plans. The
-[usage guide](apps/live-builder/docs/how-to/developpement/utiliser-bmad.md)
-describes the sources, workflows and pinned reinstallation.
+[usage guide](docs/how-to/developpement/utiliser-bmad.md) describes the sources,
+workflows and pinned reinstallation.
 
 User setup requires Git, Deno and a `GITHUB_TOKEN` or `GH_TOKEN` with access to
 private Releases. It runs no compiler and never implicitly falls back to a
-source build. The tracked catalog under
-`apps/live-builder/vendor/native-runtimes/` authorizes downloaded bytes. It is
-currently empty: use `deno task setup:source` until the first qualified assets
-have been prepared and promoted.
+source build. The tracked catalog under `vendor/native-runtimes/` authorizes
+downloaded bytes. It is currently empty: use `deno task setup:source` until the
+first qualified assets have been prepared and promoted.
 
 Source mode requires Rust **1.98.1**, Node and npm; `ASSEMBLY_RUST_BIN_DIR` can
-select the pinned Rust binaries. It verifies the shared
-`apps/live-builder/vendor/rust/` archive, both locks and sources before an
-offline Cargo build with `--frozen`. npm may fetch the pinned N-API CLI. Build
-caches and targets stay local and separate. Old installations are retained; a
-divergent package is never overwritten.
+select the pinned Rust binaries. It verifies the shared `vendor/rust/` archive,
+both locks and sources before an offline Cargo build with `--frozen`. npm may
+fetch the pinned N-API CLI. Build caches and targets stay local and separate.
+Old installations are retained; a divergent package is never overwritten.
 
 The `native-runtimes.yml` workflow separates builds for the four declared
 targets, native qualification and manual Release promotion. A target enters the
 catalog only after passing its contracts. Generated-tool sandbox qualification
 is a separate local macOS check; the release workflow does not replace it. Linux
 refusals are tested separately. See the
-[native contract](apps/live-builder/docs/reference/modeles/toolkit-local.md) for
-asset preparation without publication.
+[native contract](docs/reference/modeles/toolkit-local.md) for asset preparation
+without publication.
 
 - `deno task test`, from the root or the workbench: unit, setup and interface
   (SSR and DOM) tests; from `frontend`, the interface tests only. `quality` adds
@@ -82,14 +86,14 @@ asset preparation without publication.
   Toolkit, SHACL, LDkit, native-build or real-provider opt-ins from the
   terminal.
 - Iterate with `deno task test:changed`, or select a file and optionally a
-  `--filter` on `test:unit` / `test:integration` from `apps/live-builder`.
+  `--filter` on `test:unit` / `test:integration` from the repository root.
   Affected-test selection uses Deno's import graph and Git changes. It is an
   iteration aid that retains affected integration tests within its stage
   budgets, not a replacement for complete integration qualification.
 - `test:integration` is a focused 60-second loop: supply file selectors,
   `--related` or `--changed`. A filter alone does not scope the module sweep.
   Without selection it refuses before starting tests; `--plan` can still inspect
-  the unselected roots. For example, from `apps/live-builder`:
+  the unselected roots. For example, from the repository root:
   `deno task test:integration test/integration/model-version-events_test.ts`.
 - `test:integration:full --allow-slow`, from the root or workbench: all
   `test/integration` modules with a 390-second overall budget, clean normal
@@ -106,9 +110,9 @@ asset preparation without publication.
 - `test:full --allow-slow`: unit/setup/Toolkit tests and, from the root, the
   interface tests. It does not include the heavy mandate and evolution campaign.
 - `test:heavy --allow-slow`: the separate mandate and evolution campaign in
-  `apps/live-builder/test/heavy/`. Requires both Toolkit and the dedicated
-  PostgreSQL test URL so the durable half is not silently ignored. Run this once
-  on a stabilized lot when its qualification is required.
+  `test/heavy/`. Requires both Toolkit and the dedicated PostgreSQL test URL so
+  the durable half is not silently ignored. Run this once on a stabilized lot
+  when its qualification is required.
 - Add `--plan` to inspect a task's profile, selected commands and time budget
   without launching tests or requiring the campaign infrastructure. The plan
   never prints connection strings.
@@ -125,9 +129,9 @@ outside this documentation language pass.
 
 ## Code boundaries
 
-The backend in `apps/live-builder/src` has five folders. Each imports only what
-is listed here; `test/integration/architecture_test.ts` guards `domain/`,
-`application/` and `infrastructure/`.
+The backend in `src` has five folders. Each imports only what is listed here;
+`test/integration/architecture_test.ts` guards `domain/`, `application/` and
+`infrastructure/`.
 
 - `domain/` holds types, rules and transitions. It imports only itself: no
   database, network, Deno or validation framework. Its contexts (`model`,
@@ -173,23 +177,23 @@ execution trace remains distinct from a scenario declared in the model.
 
 ## Tests
 
-All maintained test tasks use `apps/live-builder/tools/test-runner.ts` and the
-pinned Deno executable. One launcher runs at a time across this repository's
-worktrees: a second one prints the holder's profile, folder and process, then
-waits for the lock up to 15 minutes (`--wait=SECONDS`; `--wait=0` fails at
-once). Unit, setup and interface stages run on Deno's `--parallel` workers (half
-the CPUs, at most four; `--jobs=N` overrides); integration and the slow profiles
-keep one worker. The launcher runs at low scheduling priority, limits native
-worker-pool settings, and places owned temporary files in the checkout's
-`.data/test-runs/`. Every run retains per-stage JUnit reports in its run
-directory, with test-case durations and source-file grouping (file totals sum
-case times and exclude module loading). A successful run removes only its owned
-`tmp/` directory; a failed run retains it and prints the run directory for
-diagnosis. It does not delete unrelated temporary files or database schemas.
+All maintained test tasks use `tools/test-runner.ts` and the pinned Deno
+executable. One launcher runs at a time across this repository's worktrees: a
+second one prints the holder's profile, folder and process, then waits for the
+lock up to 15 minutes (`--wait=SECONDS`; `--wait=0` fails at once). Unit, setup
+and interface stages run on Deno's `--parallel` workers (half the CPUs, at most
+four; `--jobs=N` overrides); integration and the slow profiles keep one worker.
+The launcher runs at low scheduling priority, limits native worker-pool
+settings, and places owned temporary files in the checkout's `.data/test-runs/`.
+Every run retains per-stage JUnit reports in its run directory, with test-case
+durations and source-file grouping (file totals sum case times and exclude
+module loading). A successful run removes only its owned `tmp/` directory; a
+failed run retains it and prints the run directory for diagnosis. It does not
+delete unrelated temporary files or database schemas.
 
 | Command                              | Runs                                               | Measured (before) | Budget       |
 | ------------------------------------ | -------------------------------------------------- | ----------------- | ------------ |
-| `test`, root or `apps/live-builder`  | unit, setup, interface SSR and DOM; parallel       | 57–70 s (~100 s)  | 132 s        |
+| `test`, root                         | unit, setup, interface SSR and DOM; parallel       | 57–70 s (~100 s)  | 132 s        |
 | `test`, `frontend`                   | interface SSR and DOM; parallel                    | 6–9 s (18 s)      | 17 s         |
 | `test:unit` / `test:setup`           | one stage; parallel                                | 33–55 s / 7–23 s  | 80 s / 35 s  |
 | `test:changed`                       | affected unit, setup, integration; root: interface | varies            | 175 s, 192 s |
@@ -271,7 +275,7 @@ runtimes. The generated-tool sandbox requires macOS `sandbox-exec`; Linux tests
 retain the explicit unsupported-platform refusal and do not qualify Darwin
 isolation.
 
-Run the sandbox integration suite locally on macOS from `apps/live-builder`. On
+Run the sandbox integration suite locally on macOS from the repository root. On
 a fresh checkout, first use the pinned Deno 2.9.7 to install dependencies and
 prepare only its local executable:
 

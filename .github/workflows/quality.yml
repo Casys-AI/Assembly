@@ -40,17 +40,15 @@ jobs:
           package-manager-cache: false
 
       - name: Installer les dépendances de l'atelier depuis le lockfile
-        working-directory: apps/live-builder
         run: deno ci
 
       - name: Installer les dépendances de l'interface depuis le lockfile
-        working-directory: apps/live-builder/frontend
+        working-directory: frontend
         run: deno ci
 
       # Les addons natifs sont construits et qualifiés par native-runtimes.yml ;
       # ici seul le runtime Deno épinglé est préparé, sans compilation Rust/npm.
       - name: Préparer uniquement le runtime Deno épinglé
-        working-directory: apps/live-builder
         run: >-
           deno eval --no-prompt --allow-read --allow-write --allow-env
           "import { installRuntime } from './tools/setup.ts';

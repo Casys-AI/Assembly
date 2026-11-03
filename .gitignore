@@ -9,9 +9,9 @@ coverage/
 # Réponses personnelles de l'installation BMAD (les réglages d'équipe sont dans custom/).
 /_bmad/config.user.toml
 
-# Local live-builder credentials and state.
-apps/live-builder/.env
-apps/live-builder/.env.*
-!apps/live-builder/.env.example
-apps/live-builder/.data/
-apps/live-builder/frontend/_fresh/
+# Local credentials and state.
+/.env
+/.env.*
+!/.env.example
+/.data/
+/frontend/_fresh/

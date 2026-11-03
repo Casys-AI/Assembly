@@ -77,11 +77,9 @@ jobs:
           npm --version
 
       - name: Installer les dépendances de l'atelier depuis le lockfile
-        working-directory: apps/live-builder
         run: deno ci
 
       - name: Construire les deux addons en mode source explicite
-        working-directory: apps/live-builder
         run: >-
           nice -n 15 deno eval --allow-all
           "import { installToolkit } from './tools/setup-sysml-toolkit.ts';
@@ -93,7 +91,6 @@ jobs:
           console.log(JSON.stringify({ toolkit, semantic }));"
 
       - name: Produire les archives et le catalogue candidat
-        working-directory: apps/live-builder
         run: |
           deno run --no-prompt --allow-all tools/package-native-runtimes.ts \
             --toolkit-package "$(python3 -c 'import json,os;print(json.load(open(os.environ["ASSEMBLY_PACKAGE_PATHS"]))["toolkit"])')" \
@@ -153,11 +150,9 @@ jobs:
           path: ${{ env.ASSEMBLY_CANDIDATE_DIR }}
 
       - name: Installer les dépendances de l'atelier depuis le lockfile
-        working-directory: apps/live-builder
         run: deno ci
 
       - name: Réinstaller les bundles et lire nativement les deux runtimes
-        working-directory: apps/live-builder
         run: |
           mkdir -p "$ASSEMBLY_QUALIFY_DIR/toolchains"
           nice -n 15 deno run --no-prompt --allow-read --allow-write --allow-env --allow-run=deno --allow-ffi tools/qualify-native-runtimes.ts \
@@ -168,7 +163,6 @@ jobs:
             --platform "${{ matrix.platform }}"
 
       - name: Contrats natifs Toolkit sur l'addon réinstallé exact
-        working-directory: apps/live-builder
         run: |
           report="$ASSEMBLY_QUALIFY_DIR/qualification-report.json"
           package_dir="$(python3 -c 'import json,sys;print([b["packageDir"] for b in json.load(open(sys.argv[1]))["bundles"] if b["runtime"]=="toolkit"][0])' "$report")"
@@ -180,7 +174,6 @@ jobs:
           done
 
       - name: Contrat natif Oxigraph sur le package réinstallé réel
-        working-directory: apps/live-builder
         env:
           ASSEMBLY_SEMANTIC_INTEGRATION: "1"
         run: |
@@ -243,7 +236,6 @@ jobs:
           path: ${{ env.ASSEMBLY_PREPARED_DIR }}/qualified
 
       - name: Assembler uniquement les huit archives qualifiées
-        working-directory: apps/live-builder
         run: |
           deno run --no-prompt --allow-read --allow-write tools/package-native-runtimes.ts \
             --assemble-release --input-dir "$ASSEMBLY_PREPARED_DIR" \
@@ -330,7 +322,6 @@ jobs:
           github-token: ${{ github.token }}
 
       - name: Vérifier catalogue suivi, rapports, sources et octets avant publication
-        working-directory: apps/live-builder
         run: |
           deno run --no-prompt --allow-read tools/package-native-runtimes.ts \
             --verify-release --release-dir "$ASSEMBLY_RELEASE_DIR" \
