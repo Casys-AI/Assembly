@@ -246,6 +246,10 @@ Deno.test("the size of a box is estimated from its label, within limits", () => 
   equal(agent("A").h, 91);
   equal(agent("x".repeat(60)).w, 150);
   ok(agent("Coordinateur veille").w > agent("Analyste").w);
+  // A name too long for the widest box takes a second line, and no more.
+  equal(agent("x".repeat(16)).h, 91);
+  equal(agent("x".repeat(17)).h, 109);
+  equal(agent("x".repeat(60)).h, 109);
   // The wires meet the avatar, which is above the middle of an agent's box.
   ok(agent("A").ay < 0);
   equal(pill("tool").h, 28);

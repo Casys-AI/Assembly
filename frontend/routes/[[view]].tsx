@@ -13,6 +13,7 @@ const views = new Set([
   // The Model place's earlier address: old links keep opening it.
   "revisions",
   "decide",
+  "activity",
 ]);
 
 export const handler = define.handlers({
@@ -21,6 +22,12 @@ export const handler = define.handlers({
     const initialUrl = new URL(ctx.req.url);
     // Fresh adds this transport flag while the address bar keeps the clean URL.
     initialUrl.searchParams.delete("fresh-partial");
+    if (ctx.params.view === "decide") {
+      return new Response(null, {
+        status: 308,
+        headers: { location: `/activity${initialUrl.search}` },
+      });
+    }
     return { data: { initialUrl: initialUrl.href } };
   },
 });

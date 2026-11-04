@@ -9,13 +9,13 @@
 
 /**
  * Where the places live, and the only table that spells their paths. System
- * opens on its Team page; Model is the versioned model; To decide is
- * `/decide`. The paths an old link may still carry are `PLACE_ALIASES`.
+ * opens on its Team page; Model is the versioned model; Activity is
+ * `/activity`. The paths an old link may still carry are `PLACE_ALIASES`.
  */
 export const PLACE_PATH = {
   system: "/system",
   model: "/model",
-  decide: "/decide",
+  activity: "/activity",
 } as const;
 
 export type PlaceId = keyof typeof PLACE_PATH;
@@ -27,6 +27,7 @@ export type PlaceId = keyof typeof PLACE_PATH;
  */
 export const PLACE_ALIASES: Readonly<Record<string, PlaceId>> = {
   "/revisions": "model",
+  "/decide": "activity",
 };
 
 /** The place a path opens, by its own path or by an alias; none otherwise. */

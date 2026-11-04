@@ -23,7 +23,7 @@ export interface WorkPlanExecutionPorts {
   ): Promise<BehaviorInvocationResult>;
   /** Normalize the target mechanism's completion envelope, never domain policy. */
   completion?(receipt: BehaviorInvocationResult): WorkCompletion;
-  now?(): string;
+  now(): string;
 }
 
 export type { WorkResultObservation } from "../../../domain/work/policies/verified-effect-closure.ts";

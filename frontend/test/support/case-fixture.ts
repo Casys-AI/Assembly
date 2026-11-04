@@ -1,3 +1,5 @@
+import type { CaseModelScope } from "../../lib/case-model-scope.ts";
+
 /** A Case record as `/api/cases` returns it, with a field the UI ignores. */
 export function caseRecord(
   number: number,
@@ -73,4 +75,24 @@ export function watchRecord(number = 8, state = "watching") {
       ],
     },
   });
+}
+
+/** Exact Request scope supplied by the host, with explicit version overrides. */
+export function caseScope(
+  caseId: string,
+  version: string,
+  patch: Partial<CaseModelScope> = {},
+): CaseModelScope {
+  return {
+    caseId,
+    branchId: `branch:${caseId}`,
+    executionSpaceId: `space:${caseId}`,
+    version,
+    baseVersion: version,
+    branchVersion: version,
+    executionVersion: version,
+    release: null,
+    readOnly: true,
+    ...patch,
+  };
 }

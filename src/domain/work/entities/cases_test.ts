@@ -1,5 +1,11 @@
 import { deepStrictEqual, equal, throws } from "node:assert/strict";
-import { assertCasesState, type Case, closeCase, openCase } from "./cases.ts";
+import {
+  assertCasesState,
+  type Case,
+  closeCase,
+  openCase,
+  requireCaseClosureVerdict,
+} from "./cases.ts";
 import { CaseError } from "../errors/case.ts";
 
 function input(): Omit<Case, "status" | "closedAt"> {
@@ -146,4 +152,36 @@ Deno.test("several open Requests retain unique identities and a single invocatio
       code: "INVALID_CASE",
     });
   }
+});
+
+Deno.test("closure retains the author's explicit judgment while historical records stay unknown", () => {
+  const record = openCase(input());
+  for (const verdict of ["accepted", "rejected"] as const) {
+    const closed = closeCase(record, "done", record.createdAt, {
+      closedBy: "authenticated-owner",
+      verdict,
+    });
+    equal(closed.closedBy, "authenticated-owner");
+    equal(closed.verdict, verdict);
+    assertCasesState({ cases: [closed] });
+  }
+  const historical = closeCase(record, "done", record.createdAt);
+  assertCasesState({ cases: [historical] });
+  equal(historical.closedBy, undefined);
+  equal(historical.verdict, undefined);
+  throws(() => requireCaseClosureVerdict("done", undefined), {
+    code: "CASE_VERDICT_REQUIRED",
+  });
+  throws(
+    () => assertCasesState({ cases: [{ ...historical, verdict: "accepted" }] }),
+    { code: "INVALID_CASE" },
+  );
+  throws(
+    () =>
+      closeCase(record, "abandoned", record.createdAt, {
+        closedBy: "owner",
+        verdict: "accepted",
+      }),
+    { code: "INVALID_CASE" },
+  );
 });

@@ -1,3 +1,4 @@
+import { requestVersionInfo } from "../../lib/workbench/version-label.ts";
 import {
   deepStrictEqual,
   doesNotMatch,
@@ -388,6 +389,7 @@ Deno.test("Request Model tabs keep the inspected version when switching Files an
   for (const page of ["files", "sysml"] as const) {
     const html = renderToString(
       <ScopedModelPage
+        versionInfo={requestVersionInfo({ id: "case-one" })}
         page={page}
         location={{
           pathname: "/model",
@@ -412,6 +414,7 @@ Deno.test("Request Model tabs keep the inspected version when switching Files an
 Deno.test("Request Model tabs expose only pages with a scoped reader", () => {
   const html = renderToString(
     <ScopedModelPage
+      versionInfo={requestVersionInfo({ id: "case-one" })}
       page="files"
       caseId="case-one"
       location={{
@@ -434,6 +437,7 @@ Deno.test("resolved Request pages without a scoped reader refuse before showing 
   for (const page of ["activity", "revisions", "releases", "graph"] as const) {
     const html = renderToString(
       <ScopedModelPage
+        versionInfo={requestVersionInfo({ id: "case-one" })}
         page={page}
         location={{ pathname: "/model", search }}
         request={() => {
@@ -452,6 +456,7 @@ Deno.test("resolved Request pages without a scoped reader refuse before showing 
 Deno.test("host-resolved Request Releases reuse the scoped Files reader instead of an unavailable or Main catalogue view", () => {
   const html = renderToString(
     <ScopedModelPage
+      versionInfo={requestVersionInfo({ id: "caseA" })}
       page="releases"
       caseId="caseA"
       location={{

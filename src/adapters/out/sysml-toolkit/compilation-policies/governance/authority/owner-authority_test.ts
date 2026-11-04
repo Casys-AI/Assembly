@@ -1,6 +1,6 @@
 import { canonicalProductName } from "../../../../../../domain/model/sysml-product-names.ts";
 import { compileOwnerAuthority } from "./owner-authority.ts";
-import type { NativeLiteral } from "../../work/execution-model.ts";
+import type { NativeLiteral } from "../../../../../../domain/model/records/native-literal.ts";
 import type {
   ElementRecord,
   ModelSnapshot,

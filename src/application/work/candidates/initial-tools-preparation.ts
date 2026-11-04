@@ -10,10 +10,10 @@ import { executionDigest } from "../../../domain/primitives/execution-digest.ts"
 import { isOpenCase } from "../../../domain/work/entities/cases.ts";
 import { hasActivationIntent } from "../../../domain/work/policies/candidate-activation.ts";
 import { draftDigest } from "../runtime/values.ts";
-import { nativeFlowContractDigest } from "../runtime/model-advance.ts";
+import { nativeFlowContractDigest } from "../../../domain/model/execution/flow-contract.ts";
 import { initialAdmissionTargetCaseDigest } from "../runtime/initial-admission-transfer.ts";
 import { invocationKey } from "../operators/journal.ts";
-import type { NativeExecutionIdentity } from "../runtime/execution.ts";
+import type { NativeExecutionIdentity } from "../native-execution/contract.ts";
 
 export class InitialToolsPreparationRefused extends Error {
   readonly code = "INITIAL_TOOLS_PREPARATION_REFUSED";

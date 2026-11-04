@@ -1,6 +1,9 @@
 import type { RequestSourceEditor } from "../../../lib/model/sources/request-edit.ts";
+import type { VersionInfo } from "../../../lib/workbench/version-label.ts";
+import type { RequestNames } from "../../system/useReleaseAgents.ts";
 import type { SavedSystemSourceSelection } from "../../../../src/domain/work/saved-systems.ts";
 import type { SavedSystemsApi } from "../../../lib/system/saved-systems.ts";
+import type { AuthorRoster } from "../../../lib/model/revisions/authors.ts";
 import { useEffect, useMemo } from "preact/hooks";
 import {
   createModelFiles,
@@ -23,6 +26,8 @@ import {
 import { useModelLive } from "../../view/useModelLive.ts";
 
 export interface FilesPageProps {
+  versionInfo: VersionInfo;
+  requestNames?: RequestNames;
   /** Releases reuse the exact displayed Files source reader. */
   releases?: boolean;
   /** Model/tool creation and global token reads stay read-only; explicit Release
@@ -36,6 +41,8 @@ export interface FilesPageProps {
   /** Displayed branch locator only; the server validates retention authority. */
   releaseBranch?: SavedSystemSourceSelection["branch"];
   releaseApi?: SavedSystemsApi;
+  /** Who a Release's agents are, by name. */
+  releaseRoster?: AuthorRoster;
   catalogueInvalidation?: number;
   catalogueConnection?: "connecting" | "live" | "reconnecting" | "closed";
   sessionGeneration?: number;

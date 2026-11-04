@@ -2,7 +2,7 @@
  * Native grant qualification and D2 atomicity are separate witnesses. */
 import assert from "node:assert/strict";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 import { requestAdoptionFixture } from "../support/request-adoption-fixture.ts";
 import { parseScopedSoftwareContext } from "../../src/application/model/evolution/scoped-software-context.ts";
 import type { EvolutionProposalAuthorization } from "../../src/domain/model/evolution/policy.ts";

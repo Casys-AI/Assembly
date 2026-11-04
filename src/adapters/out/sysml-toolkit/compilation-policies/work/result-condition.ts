@@ -3,8 +3,8 @@ import type {
   ElementRecord,
   ModelSnapshot,
 } from "../../../../../domain/model/records/snapshot.ts";
-import type { NativeLiteral } from "./execution-model.ts";
-import { sourceRefs } from "../../../../model/projections/graph/source.ts";
+import type { NativeLiteral } from "../../../../../domain/model/records/native-literal.ts";
+import { sourceRefs } from "../../../../../domain/model/projections/source-facts.ts";
 
 import type { WorkResultExpression as NativeResultExpression } from "../../../../../domain/work/policies/verified-effect-closure.ts";
 function check(value: unknown, message: string): asserts value {

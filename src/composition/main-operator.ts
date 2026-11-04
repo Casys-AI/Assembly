@@ -7,7 +7,7 @@ import { ArtifactSourceError } from "../domain/work/artifacts/source-reference.t
 import type { DecisionInformationPort } from "../application/work/context/information-ports.ts";
 import type { SystemRuntime } from "../application/work/runtime/system.ts";
 import type { RequestChangeDecision } from "../application/work/request-spaces/request-change-decision.ts";
-import { openOperatorWorkspace } from "../adapters/work/operator-workspace.ts";
+import { openOperatorWorkspace } from "./operator-workspace.ts";
 import {
   type PostgresHostStorage,
   publicPostgresFailure,

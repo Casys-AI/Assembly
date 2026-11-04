@@ -30,6 +30,7 @@ import type {
 } from "./turn-context.ts";
 import { changeDecisionMetadata } from "../../../domain/governance/operator-authority.ts";
 import { batchHistory } from "./batches.ts";
+import { pendingHostObservations } from "../operators/host-observations.ts";
 import { creationScopeOf } from "../runtime/ports.ts";
 import {
   canRequestOperatorCreationPolicy,
@@ -449,6 +450,8 @@ export async function buildUnprojectedDecisionContext(
       { id, name, stage, error, kind },
     ) => ({ id, name, stage, error, kind })),
   };
+  const outcomes = pendingHostObservations(decisionContext);
+  if (outcomes.length) decisionContext.hostObservations = outcomes;
   return { decisionContext, selectiveModel };
 }
 

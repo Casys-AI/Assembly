@@ -4,7 +4,7 @@ import type { MatrixEnforcementAnchor } from "../../src/domain/governance/record
 import { decideCandidate } from "../../src/application/work/candidates/decisions.ts";
 import { SystemGovernance } from "../../src/domain/governance/policies/governance.ts";
 import { createModelRevisionHandler } from "../../src/adapters/in/http/model/revisions.ts";
-import { NativeModelSourceAuthorization } from "../../src/adapters/governance/model-access/source-authorization.ts";
+import { NativeModelSourceAuthorization } from "../../src/application/governance/model-access/source-authorization.ts";
 
 type EnforcementFunction = (...args: never[]) => unknown;
 

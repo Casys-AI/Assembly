@@ -5,6 +5,7 @@ import {
 } from "../model/source-admission/request-delegated-authority.ts";
 import { deepStrictEqual, equal, rejects, throws } from "node:assert/strict";
 import {
+  createWorkspaceBranchReads,
   type RequestDelegatedDecisionInput,
   RequestSpaceAuthorityBridge,
   type RequestSpaceAuthorityBridgePort,
@@ -1323,4 +1324,68 @@ Deno.test("4.8e D4: unknown or unverified recipients are refused with the recipi
     context: { recipientCaseId: "case", recipients: ["member"] },
     recovery: { action: "refuse-and-repropose" },
   });
+});
+
+Deno.test("workspace Main contexts share a revision walk and exclude another runtime with the same native ID", async () => {
+  const { main } = (await branchAuthorityFixture()).snapshot;
+  const primary = { snapshot: main! } as SystemRuntime;
+  const other = { snapshot: structuredClone(main!) } as SystemRuntime;
+  let walks = 0;
+  const view = {
+    requests: [],
+    awaitingPerson: [],
+    openRequests: [],
+    recorded: [],
+  };
+  const reads = createWorkspaceBranchReads({
+    primary,
+    runtimes: new Map(),
+    bridge: {
+      mainView: () => {
+        walks++;
+        return Promise.resolve(view);
+      },
+    },
+    authorityRoute: () => {
+      throw new Error("No local changes");
+    },
+  });
+  equal(reads.branchView(primary), reads.branchView(primary));
+  await reads.awaitingPersonContext(primary);
+  equal(walks, 1);
+  main!.revision++;
+  await reads.branchView(primary);
+  equal(walks, 2);
+  deepStrictEqual(await reads.branchView(other), view);
+  equal(reads.branchDecider(other), undefined);
+  equal(walks, 2);
+});
+
+Deno.test("workspace Main context evicts a rejected branch walk", async () => {
+  const { main } = (await branchAuthorityFixture()).snapshot;
+  const primary = { snapshot: main! } as SystemRuntime;
+  let walks = 0;
+  const reads = createWorkspaceBranchReads({
+    primary,
+    runtimes: new Map(),
+    bridge: {
+      mainView: () => {
+        walks++;
+        return walks === 1
+          ? Promise.reject(new Error("temporarily unavailable"))
+          : Promise.resolve({
+            requests: [],
+            awaitingPerson: [],
+            openRequests: [],
+            recorded: [],
+          });
+      },
+    },
+    authorityRoute: () => {
+      throw new Error("No local changes");
+    },
+  });
+  await rejects(reads.branchView(primary), /temporarily unavailable/);
+  await reads.branchView(primary);
+  equal(walks, 2);
 });

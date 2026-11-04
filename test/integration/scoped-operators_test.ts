@@ -1,3 +1,4 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import { isHostEdit } from "../../src/domain/model/publication/compatibility.ts";
 import { MemorySourceRepository } from "../support/memory-source-repository.ts";
@@ -8,11 +9,8 @@ import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts
 import assert from "node:assert/strict";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  discoverConversationUnits,
-  SourceModel,
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { discoverConversationUnits } from "../../src/domain/model/records/source-identity.ts";
 import type { Candidate } from "../../src/domain/work/candidates.ts";
 import { toolDraftDigest } from "../../src/application/work/artifacts/catalog.ts";
 
@@ -104,7 +102,7 @@ Deno.test({
     });
     assert.equal(legacy.identity.systemQualifiedName, undefined);
     const repository = new MemorySourceRepository(scopedCompiler());
-    const primary = new SourceModel({
+    const primary = createSourceModel({
       tooling: new SysmlToolkitAdapter({
         packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
       }),
@@ -112,7 +110,7 @@ Deno.test({
       projectId,
       initialSources: twoUnits(sources),
     });
-    const collector = new SourceModel({
+    const collector = createSourceModel({
       tooling: new SysmlToolkitAdapter({
         packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
       }),
@@ -478,7 +476,7 @@ Deno.test({
       .replace(/\n *attribute humanInputEnabled : Boolean = true;/, "");
     const repository = new MemorySourceRepository(scopedCompiler());
     const tooling = new SysmlToolkitAdapter({ packageDir: packageDir! });
-    const model = new SourceModel({
+    const model = createSourceModel({
       repository,
       tooling,
       projectId,

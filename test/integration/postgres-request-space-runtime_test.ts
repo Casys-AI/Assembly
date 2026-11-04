@@ -1,3 +1,4 @@
+import { createRequestRuntimeReaders } from "../../src/adapters/out/postgres/request-runtime-readers.ts";
 import { createRequestInputAdmissionGuard } from "../../src/adapters/out/postgres/request-input-admission.ts";
 import { PostgresRequestExecutionBindingReader } from "../../src/adapters/out/postgres/request-execution-binding.ts";
 import { PostgresRequestSourceAdmissionStore } from "../../src/adapters/out/postgres/request-source-admission-store.ts";
@@ -5,8 +6,8 @@ import { PostgresRequestSourceAdmissionStore } from "../../src/adapters/out/post
  * Git retention, compilation/source qualification and connected UI are separate.
  */
 import assert from "node:assert/strict";
-import { RequestSpaceRuntime } from "../../src/adapters/work/request-space-runtime.ts";
-import { createPostgresAdmittedRequestRuntime } from "../../src/adapters/work/runtime/postgres.ts";
+import { RequestSpaceRuntime } from "../../src/application/work/request-spaces/runtime.ts";
+import { createPostgresAdmittedRequestRuntime } from "../../src/adapters/out/native-execution/postgres.ts";
 import { PostgresHostStorage } from "../../src/adapters/out/postgres/host-storage.ts";
 import { postgresClientConfiguration } from "../../src/adapters/out/postgres/config.ts";
 import { PostgresRequestSpaceStore } from "../../src/adapters/out/postgres/request-space-store.ts";
@@ -28,7 +29,7 @@ import type { OperatorExecutionDelivery } from "../../src/application/work/opera
 import {
   NativeExecutionAdmissionRefused,
   nativeExecutionIdentity,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import { AjvSchemaValidator } from "../../src/infrastructure/ajv-schema-validation.ts";
 import {
   postgresTestEnabled,
@@ -189,8 +190,13 @@ Deno.test({
       };
       const makeFactory = () =>
         new RequestSpaceRuntime({
+          ...createRequestRuntimeReaders(storage.client),
+          onNoticeError: () => {},
           storage,
-          native,
+          native: {
+            scope: native.ledger.options.scope,
+            forCaseSpace: native.forCaseSpace,
+          },
           openings,
           source,
           branches,
@@ -326,6 +332,28 @@ Deno.test({
         );
         assert.equal(born!.cases![0].openedFrom.openingId, record.id);
         assert.deepEqual(born!.messages, []);
+        // Exercise the concrete lifecycle reader against this persisted active
+        // space before admission/native execution, without changing the birth.
+        assert.equal(born!.cases![0].status, "open");
+        assert.equal(
+          born!.executionModel!.identity.builderId,
+          record.base!.requestOwner.operatorId,
+        );
+        assert.equal(
+          await factory.initialExecutionOutcome(record, {
+            ...born!,
+            busy: false,
+            activeInputMessageId: record.initialContributionId,
+            messages: [{
+              id: record.initialContributionId,
+              role: "user",
+              caseId: record.caseId,
+              text: record.command.text,
+              at: record.createdAt,
+            }],
+          }),
+          undefined,
+        );
         assert.equal(
           await storage.client.operatorExecution.count({ where: stores.scope }),
           0,

@@ -15,6 +15,7 @@ import {
   creationMode,
   creationPreviewExercise,
   creationReceiptVerifies,
+  type CreationScope,
   exactChildCreationGrant,
   mainCreationScope,
   matchesTeamProvision,
@@ -468,6 +469,20 @@ Deno.test("per-creation refuses self-approval while the proposal stays within th
   );
 });
 
+Deno.test("branch creation refuses a team count without the current admitted Case", () => {
+  const { model, spec } = fixture();
+  assert.throws(
+    () =>
+      assertCreationWithinPolicy(
+        model,
+        spec,
+        undefined,
+        { space: branchSpace(), branchTeamSize: 0 } as CreationScope,
+      ),
+    { code: "AUTHORITY_OUT_OF_BOUNDS" },
+  );
+});
+
 Deno.test("in a branch the bound of three counts the whole team and inherited children are inert", () => {
   const { model, policy, spec } = fixture();
   policy.maxChildren = 5;
@@ -484,6 +499,7 @@ Deno.test("in a branch the bound of three counts the whole team and inherited ch
     assertCreationWithinPolicy(model, spec, undefined, {
       ...scope,
       branchTeamSize: 2,
+      currentCaseId: "originating-request",
     })
   );
   assert.throws(
@@ -491,6 +507,7 @@ Deno.test("in a branch the bound of three counts the whole team and inherited ch
       assertCreationWithinPolicy(model, spec, undefined, {
         ...scope,
         branchTeamSize: 3,
+        currentCaseId: "originating-request",
       }),
     { code: "AUTHORITY_OUT_OF_BOUNDS" },
   );
@@ -505,6 +522,7 @@ Deno.test("in a branch the bound of three counts the whole team and inherited ch
     assertCreationWithinPolicy(model, spec, undefined, {
       ...scope,
       branchTeamSize: 1,
+      currentCaseId: "originating-request",
     })
   );
   // The space must carry this model's identity.
@@ -513,16 +531,25 @@ Deno.test("in a branch the bound of three counts the whole team and inherited ch
       assertCreationWithinPolicy(model, spec, undefined, {
         space: { ...branchSpace(), systemId: "another-system" },
         branchTeamSize: 0,
+        currentCaseId: "originating-request",
       }),
     { code: "AUTHORITY_OUT_OF_BOUNDS" },
   );
-  // Main is unchanged: the native children list counts, the branch size is ignored.
+  // Main uses its native children and refuses branch-only context.
   policy.maxChildren = 5;
-  assert.doesNotThrow(() =>
+  assert.throws(() =>
     assertCreationWithinPolicy(model, spec, undefined, {
       space: { ...branchSpace(), executionSpaceId: "main" },
       branchTeamSize: 3,
-    })
+      currentCaseId: "originating-request",
+    }), { code: "AUTHORITY_OUT_OF_BOUNDS" });
+  assert.doesNotThrow(() =>
+    assertCreationWithinPolicy(
+      model,
+      spec,
+      undefined,
+      mainCreationScope(model.identity),
+    )
   );
   policy.children = ["a", "b", "c", "d", "e"];
   assert.throws(() =>
@@ -838,6 +865,7 @@ Deno.test("duplicate teammate proposals refuse pending and approved creations wi
           executionSpaceId: "space-x",
         },
         branchTeamSize: 1,
+        currentCaseId: "originating-request",
       };
       const base = await requestOpeningBase();
       base.requestOwner.operatorId = parent.identity.builderId;
@@ -926,6 +954,7 @@ Deno.test("teammate duplicate refusal preserves different missions, provisions, 
         executionSpaceId: "space-x",
       },
       branchTeamSize: 1,
+      currentCaseId: "originating-request",
     });
     assert.equal(
       governance.propose(
@@ -1002,6 +1031,7 @@ Deno.test("in a branch, inherited main children never block a legitimately creat
       executionSpaceId: "space-x",
     },
     branchTeamSize: 1,
+    currentCaseId: "originating-request",
   };
   assert.equal(creationReceiptVerifies([parent, child], child, scope), true);
 });
@@ -1103,6 +1133,7 @@ Deno.test("4.8e E8: one creation policy copied by a Release counts each branch's
   const at = (executionSpaceId: string, branchTeamSize: number) => ({
     space: { ...branchSpace(), executionSpaceId },
     branchTeamSize,
+    currentCaseId: "originating-request",
   });
   // X is full with its own three; Y, from the same Release, has none yet.
   assert.throws(
@@ -1216,6 +1247,7 @@ Deno.test("a unit provisions the same declared model rights in Main and a Reques
         executionSpaceId: "request-one",
       },
       branchTeamSize: 0,
+      currentCaseId: "originating-request",
     }]
   ) {
     assert.doesNotThrow(() =>
@@ -1301,6 +1333,7 @@ Deno.test("a BO requests only its own bounded creation grant in its branch", asy
       executionSpaceId: "request-branch",
     },
     branchTeamSize: 0,
+    currentCaseId: "originating-request",
   };
   const request = {
     networkHosts: ["example.org"],

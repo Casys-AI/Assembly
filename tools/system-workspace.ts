@@ -9,7 +9,7 @@ import {
   validateModelSources as validateSources,
 } from "../src/domain/model/value-objects/sources.ts";
 import { loadInitialSources } from "../src/adapters/out/filesystem/initial-model-sources.ts";
-import { withInitialTools } from "../src/adapters/work/tools/initial-catalog.ts";
+import { withInitialTools } from "../src/adapters/out/sysml-toolkit/compilation-policies/work/initial-catalog.ts";
 import { MAX_INITIAL_TOOLS_JSON_CHARACTERS } from "../src/domain/work/initial-tool-catalog.ts";
 
 export interface NamedSystem {

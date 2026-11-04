@@ -1,6 +1,7 @@
 import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
 import type { Message } from "../../../src/domain/work/dialogue.ts";
 import { type CaseRecord, messageCaseId } from "./cases.ts";
+import { caseOperatorName } from "./operator-names.ts";
 
 /** The name of a Case whose owner the roster does not know. */
 export const unknownOwnerName = "Coordinator";
@@ -22,10 +23,18 @@ const time = (message: Message | undefined) =>
 function node(
   agent: AgentConversation | null,
   messages: Message[],
+  record: Pick<CaseRecord, "id"> & Partial<Pick<CaseRecord, "objective">>,
 ): CaseTreeNode {
   return {
     agent,
-    name: agent ? agent.name || agent.agentId : unknownOwnerName,
+    name: agent
+      ? caseOperatorName(
+        agent.name || agent.agentId,
+        record.objective === undefined
+          ? undefined
+          : { id: record.id, objective: record.objective },
+      )
+      : unknownOwnerName,
     messages,
     busy: agent?.busy === true,
     children: [],
@@ -44,14 +53,14 @@ function node(
  */
 export function caseTree(
   conversations: readonly AgentConversation[],
-  record: Pick<CaseRecord, "id">,
+  record: Pick<CaseRecord, "id"> & Partial<Pick<CaseRecord, "objective">>,
   owner: AgentConversation | null,
 ): CaseTreeNode {
   const thread = (agent: AgentConversation) =>
     agent.messages
       .filter((message) => messageCaseId(message) === record.id)
       .sort((a, b) => time(a) - time(b));
-  const root = node(owner, owner ? thread(owner) : []);
+  const root = node(owner, owner ? thread(owner) : [], record);
   const memberOfRequest = (agent: AgentConversation) =>
     agent.runtimeOwned !== false && owner !== null &&
     agent.operatorTeam?.requestId === record.id &&
@@ -65,7 +74,10 @@ export function caseTree(
     .sort((a, b) =>
       time(a.messages[0]) - time(b.messages[0]) || a.index - b.index
     )
-    .map(({ agent, messages }) => ({ agent, tree: node(agent, messages) }));
+    .map(({ agent, messages }) => ({
+      agent,
+      tree: node(agent, messages, record),
+    }));
   const byNativeId = new Map<string, CaseTreeNode>();
   for (const { agent, tree } of members) {
     if (!byNativeId.has(agent.nativeId)) byNativeId.set(agent.nativeId, tree);

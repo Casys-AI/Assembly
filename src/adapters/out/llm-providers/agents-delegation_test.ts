@@ -485,7 +485,14 @@ Deno.test("unsupported tool-admission requests are rejected from native tools an
     model: "fixture",
     fetch: fake.fetch,
   });
-  await rejects(() => native.decide(context), /Invalid agent decision schema/);
+  await rejects(
+    () => native.decide(context),
+    {
+      message:
+        "Claude request failed: invalid tool decision schema after repair (INVALID_TOOL_INPUT)",
+    },
+  );
+  equal(fake.requests.length, 2);
   class JsonResponseAgents extends MuseAgents {
     protected override call(_prompt: string, schema: object): Promise<unknown> {
       const variants = (schema as typeof decisionSchema).oneOf;

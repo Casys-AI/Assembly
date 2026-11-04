@@ -23,6 +23,7 @@ import { grant, operatorRoster } from "../../test/support/operator-fixture.ts";
 import { probeRoot } from "../../test/support/hook-probe.ts";
 import { press } from "../../test/support/press.ts";
 import { ModelChangeCard } from "../model/changes/ModelChangeCard.tsx";
+import { decisionState } from "../../lib/conversations/decision-state.ts";
 import { chatEntries, ChatTimeline } from "./ChatTimeline.tsx";
 import {
   CandidateAuthorityFacts,
@@ -186,7 +187,7 @@ Deno.test("candidate receipts identify the delegate, owning operator, exact dige
   );
   const text = textOf(html);
   match(html, /data-authority="candidate-admission"/);
-  match(text, /Admitted by Main Operator · research-tools revision 1/);
+  match(text, /Decided by Main Operator · rule research-tools · rev\. 1/);
   match(text, /Owning operator Research native:research/);
   match(text, /Authority Delegate under the person’s tool admission grant/);
   match(text, new RegExp(candidate.digest));
@@ -194,7 +195,7 @@ Deno.test("candidate receipts identify the delegate, owning operator, exact dige
   match(text, /Grant issuer System owner native:person/);
   doesNotMatch(
     html,
-    /<button|>Accept<|>Decline<|>Adjust<|Admitted by System owner/,
+    /<button|>Accept<|>Decline<|>Adjust<|Decided by System owner/,
   );
   candidate.admission!.actorId = PEER;
   equal(
@@ -216,13 +217,12 @@ Deno.test("a policy proposal states holder, exact recipients and complete bounds
     <OperatorAuthorityFacts change={policyChange()} roster={roster()} />,
   );
   const text = textOf(html);
-  match(text, /Awaiting person/);
+  // Exact values only: the card says where the decision stands.
+  doesNotMatch(html, /<summary|Awaiting person|Policy grant published/);
   match(
     text,
-    /Policy research-network Expected current revision 0 Proposed revision 1/,
+    /^Policy research-network Expected current revision 0 Proposed revision 1 Holder Main Operator native:designer/,
   );
-  match(text, /Change grant/);
-  match(text, /Holder Main Operator native:designer/);
   match(text, /Recipients Research native:research/);
   match(text, /Allowed hosts example\.org, example\.net/);
   match(text, /Tool admission Not included/);
@@ -231,7 +231,7 @@ Deno.test("a policy proposal states holder, exact recipients and complete bounds
   doesNotMatch(html, /<button|>Accept<|>Decline<|>Adjust<|Decided by/);
 });
 
-Deno.test("a human publication names the recorded owner, Request and commit", () => {
+Deno.test("a human publication names the recorded owner, from its receipt only", () => {
   const change = policyChange({
     status: "approved",
     authority: "human",
@@ -248,10 +248,8 @@ Deno.test("a human publication names the recorded owner, Request and commit", ()
   const html = renderToString(
     <OperatorAuthorityFacts change={change} roster={roster()} />,
   );
-  match(textOf(html), /Policy grant published/);
   match(textOf(html), /Decided by System owner main-system:human/);
-  match(html, /href="\/cases\?case=ui-fixture%3Acase%3A1"/);
-  match(textOf(html), new RegExp(`Published commit ${HEAD}`));
+  doesNotMatch(textOf(html), /Policy grant published|Published commit/);
   delete change.authorityExercise;
   doesNotMatch(
     textOf(
@@ -292,11 +290,7 @@ Deno.test("a policy's expected, proposed and published revisions remain distinct
       <OperatorAuthorityFacts change={change} roster={roster()} />,
     );
     match(textOf(html), /Expected current revision 4 Proposed revision 5/);
-    match(textOf(html), /Change policy-revision-change/);
-    doesNotMatch(
-      textOf(html),
-      /Published revision|Policy grant published|Policy revision published/,
-    );
+    doesNotMatch(textOf(html), /Published revision/);
     doesNotMatch(html, /<input|<textarea|<button/);
     if (status === "approved") {
       change.publishedCommit = HEAD;
@@ -305,9 +299,8 @@ Deno.test("a policy's expected, proposed and published revisions remain distinct
           <OperatorAuthorityFacts change={change} roster={roster()} />,
         ),
       );
-      match(published, /Policy revision published/);
       match(published, /Expected current revision 4 Published revision 5/);
-      doesNotMatch(published, /Proposed revision|Policy grant published/);
+      doesNotMatch(published, /Proposed revision|Policy revision published/);
     }
   }
 });
@@ -320,12 +313,13 @@ Deno.test("an exercise shows only its granted hosts and keeps its recorded actor
       reading={{ data: sources(), fresh: true }}
     />,
   );
-  match(textOf(html), /Decided by Main Operator · research-network revision 1/);
+  match(
+    textOf(html),
+    /^Policy research-network · revision 1 Decided by Main Operator native:designer/,
+  );
   match(textOf(html), /Hosts in this decision example\.org/);
   doesNotMatch(textOf(html), /example\.net|Allowed hosts/);
   match(textOf(html), /Revoked · current revision 2/);
-  match(html, /href="\/cases\?case=ui-fixture%3Acase%3A2"/);
-  match(textOf(html), new RegExp(`Published commit ${HEAD}`));
 });
 
 Deno.test("historical facts never borrow current policy status or invent authority from a mismatched receipt", () => {
@@ -338,7 +332,7 @@ Deno.test("historical facts never borrow current policy status or invent authori
     />,
   );
   match(textOf(html), /Recorded at this revision/);
-  match(textOf(html), /research-network revision 1/);
+  match(textOf(html), /research-network · revision 1/);
   doesNotMatch(textOf(html), /Current sources|Revoked|current revision 2/);
   const invalid = exercise();
   invalid.authorityExercise!.delegation!.caseId = "foreign-case";
@@ -378,6 +372,7 @@ Deno.test("the authority disclosure preserves the existing exact proposal action
     <ModelChangeCard
       id="policy-proposal"
       change={change}
+      decision={decisionState(change)}
       authority={<OperatorAuthorityFacts change={change} roster={roster()} />}
       onDecide={(verdict) => {
         verdicts.push(verdict);
@@ -891,7 +886,8 @@ Deno.test("the conversation's real change card includes the authority disclosure
     />,
   );
   match(textOf(html), /Grant operator authority/);
-  match(textOf(html), /Awaiting person/);
+  match(textOf(html), /To decide/);
+  doesNotMatch(textOf(html), /Awaiting person/);
   match(textOf(html), /Holder Main Operator native:designer/);
   match(textOf(html), /Allowed hosts example\.org, example\.net/);
   match(html, />Accept<|>Decline<|>Adjust</);

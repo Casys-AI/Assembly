@@ -1,4 +1,5 @@
-import { textOf } from "../../test/support/dom.ts";
+import { textOf, within } from "../../test/support/dom.ts";
+import { branchOperatorName } from "../../lib/cases/operator-names.ts";
 import { seedRequestCases } from "../../test/support/request-fixture.ts";
 import { AgentPanel } from "../conversations/AgentPanel.tsx";
 import { ChatView } from "../conversations/ChatView.tsx";
@@ -25,9 +26,98 @@ import { renderLinks } from "../../test/support/links.ts";
 import { press } from "../../test/support/press.ts";
 import { snapshot } from "../../test/support/workbench-fixture.ts";
 import { CasesPage } from "./CasesPage.tsx";
+import {
+  localSkillRelease,
+  RELEASE_VERSION,
+} from "../../test/support/release-opening-fixture.ts";
 import { grant, operatorRoster } from "../../test/support/operator-fixture.ts";
 
 const NOW = Date.parse("2026-10-24T15:00:00Z");
+
+Deno.test("Request header, list, tree and compact panel share the named operator and scoped version actions", () => {
+  const state = pageState();
+  const record = state.requests.cases.byId("ui-fixture:case:1")!;
+  const current = state.agentConversations.snapshot.value!;
+  state.agentConversations.accept({
+    ...current,
+    conversations: current.conversations.map((agent) => ({
+      ...agent,
+      name: agent.nativeId === record.owner ? "Branch Operator" : agent.name,
+      repositoryVersion: RELEASE_VERSION,
+    })),
+  });
+  const baseVersion = `commit:${"b".repeat(40)}`;
+  const admitted = `commit:${"c".repeat(40)}`;
+  state.requests.scopes.value = new Map([[record.id, {
+    caseId: record.id,
+    branchId: "exact-branch",
+    executionSpaceId: "space",
+    baseVersion,
+    version: RELEASE_VERSION,
+    executionVersion: RELEASE_VERSION,
+    branchVersion: admitted,
+    readOnly: true,
+    release: null,
+  }]]);
+  for (const compact of [false, true]) {
+    const html = renderToString(
+      page(state, { selectedId: record.id, compact, agentId: "collector" }),
+    );
+    const text = textOf(html);
+    match(text, new RegExp(branchOperatorName(record)));
+    doesNotMatch(
+      textOf(within(html).byRole("tree", { name: "Agents" })),
+      /Branch Operator/,
+    );
+    match(html, /aria-label="Request 1 · modified · In service · Read-only"/);
+    const release = within(html).byRole("link", { name: "Create release" });
+    const url = new URL(release.getAttribute("href")!, "http://localhost");
+    equal(url.searchParams.get("caseBranch"), record.id);
+    equal(url.searchParams.get("agent"), "collector");
+    equal(url.searchParams.get("version"), admitted);
+    equal(url.searchParams.get("create"), "1");
+    doesNotMatch(
+      html.slice(html.indexOf('<aside class="agent-panel"')),
+      />Create release</,
+    );
+  }
+  match(
+    renderToString(page(state)),
+    /aria-label="Request 1 · modified · In service · Read-only"/,
+  );
+  state.dispose();
+});
+
+Deno.test("Request header names its exact origin Release and reports an unavailable name without inferring from the model version", () => {
+  const state = pageState();
+  const caseId = "ui-fixture:case:1";
+  const release = localSkillRelease("origin");
+  release.metadata.name = "Training research v1";
+  release.assetAvailability = "unavailable";
+  state.requests.scopes.value = new Map([[caseId, {
+    caseId,
+    branchId: "branch",
+    executionSpaceId: "space",
+    branchVersion: RELEASE_VERSION,
+    executionVersion: RELEASE_VERSION,
+    version: RELEASE_VERSION,
+    readOnly: true,
+    release: { id: release.id, digest: release.digest! },
+  }]]);
+  state.requests.releaseCatalogue.value = [release];
+  match(
+    textOf(renderToString(page(state, { selectedId: caseId }))),
+    /From Release Training research v1/,
+  );
+  state.requests.releaseCatalogue.value = [{
+    ...release,
+    digest: "f".repeat(64),
+  }];
+  const unmatched = textOf(renderToString(page(state, { selectedId: caseId })));
+  match(unmatched, /Origin Release · name unavailable/);
+  doesNotMatch(unmatched, /From Release Training research v1/);
+  state.dispose();
+});
 
 /** The central agent and a specialist, with messages attached to two Cases. */
 function roster(): ConversationsSnapshot {
@@ -718,9 +808,9 @@ Deno.test("the selected Request has its own head and pins without borrowing Main
     [...chips.matchAll(/<span class="chip[^"]*"[^>]*>([^<]*)</g)].map((m) =>
       m[1]
     ),
-    ["Request", "Open", "Coordinateur"],
+    ["Open", "Coordinateur"],
   );
-  match(top, /<button[^>]*>Pin<\/button>/);
+  match(top, /aria-label="Keep in Dock" aria-pressed="false"/);
   doesNotMatch(top, /<button[^>]*>Close<\/button>|Effort/);
   const mainBudget = renderToString(
     <CaseView state={state} record={state.cases.byId("ui-fixture:case:1")} />,
@@ -756,10 +846,13 @@ Deno.test("scoped Pin and Unpin stay local; the existing Main close port still c
     },
   });
   const node = () => page(state, { selectedId: "ui-fixture:case:1" });
-  press(node()).click("Pin");
+  press(node()).click("Keep in Dock");
   deepStrictEqual(state.pins.ids.value, ["ui-fixture:case:1"]);
-  match(head(renderToString(node())), /<button[^>]*>Unpin<\/button>/);
-  press(node()).click("Unpin");
+  match(
+    head(renderToString(node())),
+    /aria-label="Keep in Dock" aria-pressed="true"/,
+  );
+  press(node()).click("Keep in Dock");
   deepStrictEqual(state.pins.ids.value, []);
 
   doesNotMatch(renderToString(node()), /<button[^>]*>Close<\/button>/);
@@ -913,7 +1006,11 @@ Deno.test("an operator's Request shows its owner's conversation: its change, and
   // The decision is recorded in the Request and leads there.
   deepStrictEqual(
     decisions.map((entry) => [entry.agentId, entry.caseId, entry.href]),
-    [["research", "ui-fixture:case:2", "/cases?case=ui-fixture%3Acase%3A2"]],
+    [[
+      "research",
+      "ui-fixture:case:2",
+      "/cases?case=ui-fixture%3Acase%3A2&agent=research",
+    ]],
   );
   const html = render("ui-fixture:case:2");
   const thread = detail(html);

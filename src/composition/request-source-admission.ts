@@ -1,3 +1,4 @@
+import { retainedMember } from "../domain/work/request-spaces.ts";
 import type { ClockPort } from "../application/work/runtime/ports.ts";
 import { SystemClock } from "../infrastructure/clock.ts";
 import type { ScopedOperatorRef } from "../domain/governance/authority.ts";
@@ -32,11 +33,11 @@ import {
 } from "../adapters/out/postgres/request-source-admission-store.ts";
 import { PostgresRequestSourceOwnerSessions } from "../adapters/out/postgres/request-source-owner-session.ts";
 import { PostgresRequestSourcePublicationParticipant } from "../adapters/out/postgres/request-source-publication-participant.ts";
-import type { PostgresModelWriteQueue } from "../adapters/model/repository/writing/postgres-write-queue.ts";
+import type { PostgresModelWriteQueue } from "../adapters/out/postgres/model-write-queue.ts";
 import {
   type RequestSourceOwnerContextOptions,
   RequestSourceOwnerContexts,
-} from "../adapters/work/request-source-owner-context.ts";
+} from "../adapters/out/postgres/request-source-owner-context.ts";
 import { Prisma } from "../adapters/out/postgres/client.ts";
 import {
   parseRequestSourceOwnerPhaseBinding,
@@ -245,7 +246,6 @@ export function createRequestSourceAdmissionComposition(
       requester.operatorId !== opening.base!.requestOwner.operatorId
     ) {
       const pin = requestExecutionPinFor(
-        opening.base!.requestOwner.operatorId,
         {
           ...chain.execution,
           adoptions: chain.execution.adoptions.filter((entry) =>
@@ -254,6 +254,7 @@ export function createRequestSourceAdmissionComposition(
           ),
         },
         requester.operatorId,
+        opening.base!,
       );
       const previous = chain.receipts.filter((entry) =>
         entry.revision <= predecessor.revision
@@ -265,6 +266,9 @@ export function createRequestSourceAdmissionComposition(
           member.operatorId === requester.operatorId
         )
       );
+      const retained = retainedMember(opening.base!, requester.operatorId);
+      // RequestSpaceAuthorityBridge verifies the roster before delegated publication.
+      const team = prior.operatorTeam;
       if (
         requester.executionSpaceId !== opening.executionSpaceId ||
         requester.projectId !== prior.identity.projectId ||
@@ -273,15 +277,18 @@ export function createRequestSourceAdmissionComposition(
         prior.identity.projectId !== `git:${repositoryId}` ||
         prior.version.repositoryVersion !== pin.source.version ||
         prior.version.digest !== pin.modelDigest ||
-        !prior.operatorTeam ||
-        prior.operatorTeam.requestId !== opening.caseId ||
-        prior.operatorTeam.requestOwnerId !==
-          opening.base!.requestOwner.operatorId ||
-        prior.operatorTeam.parentOperatorId !==
-          birth?.manifest.intent.target.operatorId ||
+        !team ||
+        team.requestOwnerId !== opening.base!.requestOwner.operatorId ||
+        (retained
+          ? retained.nativeSystemId !== prior.identity.systemId
+          : team.parentOperatorId !==
+            birth?.manifest.intent.target.operatorId) ||
         (previous
           ? canonical(previous.identity) !== canonical(prior.identity) ||
             previous.digest !== prior.version.digest
+          : retained
+          ? retained.modelDigest !== prior.version.digest ||
+            retained.repositoryVersion !== prior.version.repositoryVersion
           : birth?.manifest.intent.team?.childSystemId !==
             prior.identity.systemId)
       ) refuse("The captured historical Request member differs.");

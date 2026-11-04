@@ -1,3 +1,7 @@
+import { GENERIC_BRANCH_NAME } from "../../lib/cases/operator-names.ts";
+import { WorkspaceVersion } from "../workbench/WorkspaceVersion.tsx";
+import type { VersionInfo } from "../../lib/workbench/version-label.ts";
+import { type RequestNames, useReleaseAgents } from "./useReleaseAgents.ts";
 import {
   assertReleaseTagSelection,
   type ReleaseTagBinding,
@@ -10,10 +14,16 @@ import {
 import { useModelContextHref } from "../view/ModelContextLink.tsx";
 import { viewHref } from "../../lib/workbench/view-location.ts";
 import { type ComponentChildren, Fragment, type RefObject } from "preact";
-import type { SavedSystemSourceSelection } from "../../../src/domain/work/saved-systems.ts";
+import type {
+  SavedSystemPrerequisite,
+  SavedSystemSourceSelection,
+} from "../../../src/domain/work/saved-systems.ts";
 import { filesHref } from "../../lib/model/sources/files.ts";
-import { since } from "../../lib/cases/cases.ts";
-import { shortCommit } from "../../lib/model/revisions/change.ts";
+import { CreateTag } from "../model/CreateTag.tsx";
+import { newRequestHref, since } from "../../lib/cases/cases.ts";
+import { monogram } from "../../lib/workbench/desk.ts";
+import type { AuthorRoster } from "../../lib/model/revisions/authors.ts";
+import { operatorName } from "../../lib/model/revisions/change.ts";
 import { exactDate } from "../model/revisions/RevisionDetail.tsx";
 import { Marker } from "../model/RowParts.tsx";
 import {
@@ -32,6 +42,7 @@ import {
   createCombinedSavedSystemsApi,
   createSavedSystemsController,
   releaseCatalogueQuery,
+  releaseOpeningKind,
   type SavedSystemsApi,
   type SavedSystemView,
   validOpeningEvidence,
@@ -58,13 +69,43 @@ function ReleaseFilesLink(
 const branchLabel = (source: SavedSystemSourceSelection) =>
   source.branch.kind === "case" ? `Request ${source.branch.caseId}` : "main";
 
-/** The exact source as its short commit, the whole of it in the tooltip. */
-function SourceHash(
-  { source, title }: { source: SavedSystemSourceSelection; title: string },
+/** A source link keeps exact identity in its tooltip and Release details. */
+function SourceVersion(
+  {
+    source,
+    title,
+    release,
+    requestNumber,
+    inService,
+    info,
+  }: {
+    source: SavedSystemSourceSelection;
+    title: string;
+    release?: { name: string; id: string };
+    requestNumber?: number;
+    inService?: string;
+    info?: VersionInfo;
+  },
 ) {
   return (
     <ReleaseFilesLink source={source} title={title}>
-      <code>{shortCommit(source.sourceVersion)}</code>
+      <WorkspaceVersion
+        inspect={false}
+        info={{
+          ...info,
+          source: release
+            ? { kind: "release", ...release }
+            : info?.source ?? (source.branch.kind === "case"
+              ? {
+                kind: "request",
+                caseId: source.branch.caseId,
+                number: requestNumber,
+              }
+              : { kind: "main" }),
+          version: source.sourceVersion,
+          inService,
+        }}
+      />
     </ReleaseFilesLink>
   );
 }
@@ -204,6 +245,32 @@ const ISSUES: Readonly<Record<string, string>> = {
     "The admitted system changed before retention finished. Select the model version again.",
   PREREQUISITES_REQUIRED: "Declared dependencies are listed below.",
 };
+/** A kind of prerequisite in a word a person reads. */
+const NEEDS: Readonly<Record<SavedSystemPrerequisite["kind"], string>> = {
+  skill: "Skills",
+  "host-runtime": "Tool sandbox",
+  "private-resource": "Private resources",
+  "unsupported-dependency": "Unsupported dependency",
+  "missing-asset": "Missing tool",
+};
+/** One readable name per kind of prerequisite, its exact sentences for a tooltip. */
+function releaseNeeds(prerequisites: readonly SavedSystemPrerequisite[]) {
+  const needs = new Map<string, Set<string>>();
+  for (const entry of prerequisites) {
+    const label = NEEDS[entry.kind];
+    needs.set(
+      label,
+      (needs.get(label) ?? new Set()).add(
+        PREREQUISITES[entry.code] ??
+          "A dependency requires review before reuse.",
+      ),
+    );
+  }
+  return [...needs].map(([label, sentences]) => ({
+    label,
+    detail: [...sentences].join(" "),
+  }));
+}
 function publicationLabel(record: SavedSystemView): string {
   if (record.rejection) {
     return record.rejection.code === "SOURCE_STALE"
@@ -246,18 +313,48 @@ const TAG_AVAILABILITY = {
   unavailable: "unavailable or changed",
   unchecked: "not checked",
 };
-const operatorLabel = (
-  operator: SavedSystemView["selectedOperators"][number],
-  index: number,
-) =>
-  operator.systemQualifiedName?.split("::").at(-1) || `Operator ${index + 1}`;
 export function SavedSystemInspection(
-  { record, headingRef, showRejectedAction = false }: {
+  {
+    record,
+    headingRef,
+    showRejectedAction = false,
+    roster = [],
+    requests,
+    sessionGeneration,
+    nameRefresh = 0,
+    inService,
+  }: {
     record: SavedSystemView;
     headingRef?: RefObject<HTMLHeadingElement>;
     showRejectedAction?: boolean;
+    /** Who the agents are, by name; their identity stays in the tooltip. */
+    roster?: AuthorRoster;
+    requests?: RequestNames;
+    sessionGeneration?: number;
+    nameRefresh?: number;
+    inService?: string;
   },
 ) {
+  const agents = useReleaseAgents(
+    record,
+    requests,
+    sessionGeneration,
+    nameRefresh,
+  );
+  const agentName = (id: string) => {
+    const modeled = agents.names.get(id);
+    if (modeled) return modeled;
+    const known = operatorName(roster, id);
+    if (
+      known &&
+      !(record.source?.branch.kind === "case" &&
+        ["Main Operator", GENERIC_BRANCH_NAME].includes(known))
+    ) return known;
+    return undefined;
+  };
+  const unnamed = agents.status === "reading"
+    ? "Reading name…"
+    : "Name unavailable";
   const operators = record.manifest
     ? record.manifest.operators.map((operator) => ({
       operator,
@@ -268,25 +365,35 @@ export function SavedSystemInspection(
       retained: null,
     }));
   const state = readiness(record, true);
+  const needs = releaseNeeds(record.prerequisites);
   return (
     <article
       class="panel saved-system-inspection"
       aria-label="Release inspection"
     >
-      <h3 ref={headingRef} tabIndex={-1}>{record.metadata.name}</h3>
+      <h3 ref={headingRef} tabIndex={-1}>
+        {state === "ready" && (
+          <span class="saved-system-ready" aria-hidden="true">✓</span>
+        )}
+        {record.metadata.name}
+      </h3>
       {record.metadata.purpose && <p>{record.metadata.purpose}</p>}
       <p
         class="rev-meta"
-        title={`${publicationLabel(record)} · ${
-          READINESS[state]
-        }. Opening a Request rechecks current host support and authority. ${
-          AVAILABILITY[record.assetAvailability]
-        }`}
+        title={[
+          `${publicationLabel(record)} · ${READINESS[state]}.`,
+          "Opening a Request rechecks current host support and authority.",
+          needs.length > 0 &&
+          `Checked at start: ${needs.map((need) => need.label).join(", ")}.`,
+          AVAILABILITY[record.assetAvailability],
+        ].filter(Boolean).join(" ")}
       >
         {record.source
           ? (
-            <SourceHash
+            <SourceVersion
               source={record.source}
+              release={{ name: record.metadata.name, id: record.id }}
+              inService={inService}
               title={`${branchLabel(record.source)} · ${
                 record.rejection ? "selected source" : "retained model"
               } ${record.source.sourceVersion}`}
@@ -369,27 +476,39 @@ export function SavedSystemInspection(
           <When at={record.createdAt} />
         </dd>
       </dl>
-      <h4>Operators</h4>
-      <ul aria-label="Retained operators">
-        {operators.map(({ operator }, index) => (
-          <li key={operator.operatorId}>
-            {operatorLabel(operator, index)} · {operator.tools.length}{" "}
-            {operator.tools.length === 1 ? "tool" : "tools"}
-          </li>
-        ))}
+      <ul class="saved-system-agents" aria-label="Agents">
+        {operators.map(({ operator }) => {
+          const name = agentName(operator.operatorId);
+          return (
+            <li
+              key={operator.operatorId}
+              title={`${operator.operatorId} · ${operator.tools.length} ${
+                operator.tools.length === 1 ? "tool" : "tools"
+              }`}
+            >
+              <span class="tavatar is-mini" aria-hidden="true">
+                {name ? monogram(name) : "?"}
+              </span>
+              {name ?? unnamed}
+            </li>
+          );
+        })}
       </ul>
-      {record.prerequisites.length > 0 && (
-        <>
-          <h4>Requirements</h4>
-          <ul>
-            {record.prerequisites.map((entry, index) => (
-              <li key={index}>
-                {PREREQUISITES[entry.code] ??
-                  "A dependency requires review before reuse."}
-              </li>
-            ))}
-          </ul>
-        </>
+      {needs.length > 0 && (
+        <ul class="saved-system-needs" aria-label="Requirements">
+          {needs.map((need) => (
+            <li key={need.label} class="chip" title={need.detail}>
+              {need.label}
+            </li>
+          ))}
+        </ul>
+      )}
+      {state === "ready" && (
+        <p>
+          <a class="chip is-action" href={newRequestHref(record.id)}>
+            New Request from this Release
+          </a>
+        </p>
       )}
       <details class="detail-more">
         <summary class="chip">Details</summary>
@@ -463,12 +582,12 @@ export function SavedSystemInspection(
             </>
           )}
         </dl>
-        {operators.map(({ operator, retained }, index) => (
+        {operators.map(({ operator, retained }) => (
           <section
             key={operator.operatorId}
             aria-label={`Retained operator ${operator.operatorId}`}
           >
-            <h4>{operatorLabel(operator, index)}</h4>
+            <h4>{agentName(operator.operatorId)}</h4>
             <dl class="detail-facts">
               <dt>Operator identity</dt>
               <dd class="is-code">{operator.operatorId}</dd>
@@ -629,10 +748,13 @@ export function SavedSystemCatalogue(
     </ul>
   );
 }
-/** A verified ready inspection needs no retention retry prompt. */
+/**
+ * Retention failed when the Release cannot start a Request at all. A declared
+ * skill alone leaves it incomplete by contract, yet a Request can start from
+ * it: retrying retention would change nothing.
+ */
 export function showReleaseRepair(record: SavedSystemView | null): boolean {
-  return !(record && record.openingAvailability === "ready" &&
-    validOpeningEvidence(record));
+  return !record || releaseOpeningKind(record) === null;
 }
 
 /** Recovery stays in the existing rightbar and never submits on mount. */
@@ -664,7 +786,7 @@ export function ReleaseSaveRecovery(
         {acknowledged ? "Retention incomplete" : "Not confirmed"}
       </p>
       <p class="rev-meta">
-        <SourceHash
+        <SourceVersion
           source={command.source}
           title={`${
             branchLabel(command.source)
@@ -711,8 +833,17 @@ export function SavedSystems(
     catalogueInvalidation = 0,
     catalogueConnection,
     sessionGeneration = 0,
+    roster,
+    requests,
+    inService,
+    versionInfo,
   }: {
     api?: SavedSystemsApi;
+    /** Who a Release's agents are, by name. */
+    roster?: AuthorRoster;
+    requests?: RequestNames;
+    inService?: string;
+    versionInfo?: VersionInfo;
     /** Validated shared-stream events and stream opens; never read authority. */
     catalogueInvalidation?: number;
     catalogueConnection?: "connecting" | "live" | "reconnecting" | "closed";
@@ -776,7 +907,9 @@ export function SavedSystems(
           setTagRead("ready");
         }
       }, () => {
-        if (active) setTagRead("failed");
+        if (active) {
+          setTagRead("failed");
+        }
       }).finally(() => {
         inFlight = false;
         if (active && queued) {
@@ -835,15 +968,20 @@ export function SavedSystems(
     })
     : contextualCatalogue;
   const createHref = viewHref(catalogueHref, { create: "1" });
+  const [nameRefresh, setNameRefresh] = useState(0);
   const refreshCatalogue = useRef<() => void>(() => {});
   const previousInvalidation = useRef(catalogueInvalidation);
   useEffect(() => {
     const refresh = () => {
-      if (document.visibilityState !== "hidden") void controller.invalidate();
+      if (document.visibilityState !== "hidden") {
+        void controller.invalidate();
+        setNameRefresh((value) => value + 1);
+      }
     };
     refreshCatalogue.current = () => {
       if (document.visibilityState !== "hidden") {
         void controller.invalidate();
+        setNameRefresh((value) => value + 1);
         refreshTags.current();
       }
     };
@@ -890,6 +1028,25 @@ export function SavedSystems(
         />
       )}
     </>
+  );
+  const details = (
+    <div id={detailsId} role="region" aria-label="Release details">
+      {state.selected && (
+        <SavedSystemInspection
+          requests={requests}
+          sessionGeneration={sessionGeneration}
+          nameRefresh={nameRefresh}
+          inService={JSON.stringify(state.selected.source?.branch) ===
+              JSON.stringify(source?.branch)
+            ? inService
+            : undefined}
+          record={state.selected}
+          headingRef={inspectionHeading}
+          showRejectedAction={!state.intent}
+          roster={roster}
+        />
+      )}
+    </div>
   );
   return (
     <section
@@ -943,6 +1100,19 @@ export function SavedSystems(
           ? (
             <>
               {recovery}
+              {/* The Release just created comes first, with its next step. */}
+              {details}
+              {source && canCreate && !state.intent && (
+                <CreateTag
+                  key={sourceKey}
+                  source={source}
+                  disabled={state.busy && !state.reading}
+                  onCreated={(tag) => {
+                    setTagName(tag.name);
+                    refreshTags.current();
+                  }}
+                />
+              )}
               {source && canCreate
                 ? (
                   <form
@@ -962,8 +1132,13 @@ export function SavedSystems(
                   >
                     <p class="repo-version">
                       <span>Source</span>
-                      <SourceHash
+                      <SourceVersion
                         source={source}
+                        info={versionInfo}
+                        requestNumber={source.branch.kind === "case"
+                          ? requests?.byId(source.branch.caseId)?.number
+                          : undefined}
+                        inService={inService}
                         title={`${
                           branchLabel(source)
                         } · exact source ${source.sourceVersion}`}
@@ -1026,8 +1201,8 @@ export function SavedSystems(
                         </p>
                       )}
                       {tagRead === "ready" && tags.length === 0 && (
-                        <p title="No available tags point to this exact source. Create a tag from Files first.">
-                          No tag on this version · create one in Files.
+                        <p>
+                          No tag on this version · create one above.
                         </p>
                       )}
                     </div>
@@ -1060,7 +1235,8 @@ export function SavedSystems(
                       <button
                         class="proposal-accept"
                         type="submit"
-                        disabled={state.busy || state.intent !== null ||
+                        disabled={(state.busy && !state.reading) ||
+                          state.intent !== null ||
                           !name.trim() || !tagValid}
                       >
                         {state.selected
@@ -1075,15 +1251,6 @@ export function SavedSystems(
                     An exact eligible source is required to create a Release.
                   </p>
                 )}
-              <div id={detailsId} role="region" aria-label="Release details">
-                {state.selected && (
-                  <SavedSystemInspection
-                    record={state.selected}
-                    headingRef={inspectionHeading}
-                    showRejectedAction={!state.intent}
-                  />
-                )}
-              </div>
             </>
           )
           : (
@@ -1099,19 +1266,12 @@ export function SavedSystems(
               <SavedSystemCatalogue
                 records={state.records}
                 selected={state.selected}
-                busy={state.busy}
+                // A catalogue read never blocks a choice: it waits behind it.
+                busy={state.busy && !state.reading}
                 detailsId={detailsId}
                 onInspect={(id) => void inspect(id)}
               />
-              <div id={detailsId} role="region" aria-label="Release details">
-                {state.selected && (
-                  <SavedSystemInspection
-                    record={state.selected}
-                    headingRef={inspectionHeading}
-                    showRejectedAction={!state.intent}
-                  />
-                )}
-              </div>
+              {details}
             </>
           )}
       </div>

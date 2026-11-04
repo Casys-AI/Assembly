@@ -2,8 +2,8 @@ import type {
   ElementRecord,
   ModelSnapshot,
 } from "../../src/domain/model/records/snapshot.ts";
-import type { ModelIdentity } from "../../src/domain/work/dialogue.ts";
-import type { NativeLiteral } from "../../src/adapters/out/sysml-toolkit/compilation-policies/work/execution-model.ts";
+import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
+import type { NativeLiteral } from "../../src/domain/model/records/native-literal.ts";
 import type {
   FlowProjection,
   FlowProjectionEdge,

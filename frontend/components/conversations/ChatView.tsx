@@ -263,8 +263,10 @@ export function ChatView(
   // Errors belong to the conversation that produced them, never to its neighbour.
   const conversationError = independent
     ? targetCaseId
-      ? state.requests.readErrors.value.get(targetCaseId) ||
-        state.requests.writeErrors.value.get(targetCaseId) || ""
+      ? [
+        state.requests.writeErrors.value.get(targetCaseId),
+        state.requests.readErrors.value.get(targetCaseId),
+      ].filter(Boolean).join(" ")
       : state.requests.error.value
     : own
     ? state.agentConversations.errorFor(conversation.agentId)
@@ -327,11 +329,6 @@ export function ChatView(
           <p class="conversation-read-error" role="status">
             The initial execution was refused. This Request remains open. Retry
             is not automatic.
-          </p>
-        )}
-        {!readOnly && conversationError && (
-          <p class="conversation-read-error" role="status">
-            {conversationError}
           </p>
         )}
         <div
@@ -461,6 +458,11 @@ export function ChatView(
           </div>
         </div>
         {props.beforeComposer}
+        {!readOnly && conversationError && (
+          <p class="proposal-error" role="alert">
+            {conversationError}
+          </p>
+        )}
         {/* A thread without human input says so where the composer would be. */}
         {props.composer === false
           ? null

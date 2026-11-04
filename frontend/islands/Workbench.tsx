@@ -1,4 +1,10 @@
+import { WorkspaceVersion } from "../components/workbench/WorkspaceVersion.tsx";
+import {
+  requestVersionInfo,
+  type VersionInfo,
+} from "../lib/workbench/version-label.ts";
 import { createRevisionApi } from "../lib/model/revisions/api.ts";
+import { type ModelLive, modelLive } from "../lib/model/live.ts";
 import {
   type CaseModelScope,
   caseSourceMetadataRevision,
@@ -18,7 +24,7 @@ import {
   type DockStackGroup,
   type DockWork,
 } from "../components/workbench/Dock.tsx";
-import { DecidePage } from "../components/decide/DecidePage.tsx";
+import { ActivityPlace } from "../components/decide/ActivityPlace.tsx";
 import { ModelSpace } from "../components/model/ModelSpace.tsx";
 import { SystemFrame } from "../components/system/SystemFrame.tsx";
 import { ModelLinkContext } from "../components/view/ModelContextLink.tsx";
@@ -49,7 +55,6 @@ import {
   type PendingDecision,
 } from "../lib/decide/pending.ts";
 import { placeOfPath, viewHref } from "../lib/workbench/view-location.ts";
-import { readOperatorNotice } from "../lib/conversations/operator-notice.ts";
 import {
   currentContextModelHref,
   modelConversationHidden,
@@ -71,7 +76,7 @@ import {
 // Link the global styles in dev; production keeps the normal client entry.
 if (import.meta.hot) void import("../client.ts");
 
-export type WorkspaceView = "chat" | "tools" | "system" | "model" | "decide";
+export type WorkspaceView = "chat" | "tools" | "system" | "model" | "activity";
 
 /** Read-only peer sessions can own runtimes; recorded audit threads do not. */
 export function runtimeRevisionOperators(
@@ -187,59 +192,80 @@ export function releaseSourceContext(source: string, head: string | null): {
     : { label: "historical release source", divergent: true };
 }
 
-export function useReleaseSourceHead(key: string | null): string | null {
+export function useReleaseSourceHead(
+  key: string | null,
+  { connection = "live", generation = 0, live = modelLive }: {
+    connection?: WorkbenchState["connection"]["value"];
+    generation?: number;
+    live?: ModelLive;
+  } = {},
+): string | null {
   const [releaseHead, setReleaseHead] = useState<
     { key: string; version: string } | null
   >(null);
   useEffect(() => {
-    if (!key) return;
+    setReleaseHead(null);
+    // Wait for the first open so it does not duplicate an initialization read.
+    if (!key || connection !== "live") return;
     let active = true;
-    let generation = 0;
-    const read = () => {
-      const current = ++generation;
-      createRevisionApi().files().then((result) => {
-        if (active && current === generation) {
-          setReleaseHead({ key: key, version: result.version });
-        }
-      }, () => {
-        if (active && current === generation) setReleaseHead(null);
-      });
-    };
-    read();
-    const timer = setInterval(read, 15_000);
+    let announced = false;
+    const stop = live.follow(({ version }) => {
+      announced = true;
+      setReleaseHead({ key, version });
+    });
+    // Following does not replay a head announced before this page opened.
+    // Reconnects also reread: an unchanged announcement may be deduplicated.
+    createRevisionApi().files().then((result) => {
+      if (active && !announced) {
+        setReleaseHead({ key, version: result.version });
+      }
+    }, () => {
+      if (active && !announced) setReleaseHead(null);
+    });
     return () => {
       active = false;
-      clearInterval(timer);
+      stop();
     };
-  }, [key]);
-  return releaseHead?.key === key ? releaseHead.version : null;
+  }, [key, connection, generation, live]);
+  return connection === "live" && releaseHead?.key === key
+    ? releaseHead.version
+    : null;
 }
 
-/**
- * The Dock and the Requests list say which Requests wait for the person, on
- * every page: each open Request's conversation is read once, then again when
- * Main's conversation receives a notice that a Request asked something. Main's
- * stream carries those notices, so no Request is polled here; none starts work.
- */
+/** Hold open Request conversations for decision badges on every page. */
 export function useOpenRequestReads(state: WorkbenchState, started: boolean) {
   const sessionReady = state.requests.sessionReady.value;
   const openKey = state.requests.cases.open.value.map((record) => record.id)
     .join("\n");
-  const noticeKey = (state.conversationSnapshot.value?.conversations ?? [])
-    .flatMap((agent) => agent.messages)
-    .flatMap((message) => {
-      const notice = readOperatorNotice(message);
-      return notice?.kind === "authority-escalation"
-        ? [`${notice.caseId}:${notice.changeId}`]
-        : [];
-    })
-    .join("\n");
+  const scope = JSON.stringify([
+    state.current.value?.id,
+    state.requests.context.value,
+    state.requests.sessionGeneration.value,
+  ]);
+  const held = useRef({ scope, releases: new Map<string, () => void>() });
+  useEffect(() => () => {
+    for (const release of held.current.releases.values()) release();
+    held.current.releases.clear();
+  }, [state]);
   useEffect(() => {
-    if (!started || !sessionReady || !openKey) return;
-    for (const record of state.requests.cases.open.peek()) {
-      void state.requests.refresh(record.id);
+    const desired = new Set(
+      started && sessionReady
+        ? state.requests.cases.open.peek().map((r) => r.id)
+        : [],
+    );
+    for (const [caseId, release] of held.current.releases) {
+      if (held.current.scope !== scope || !desired.has(caseId)) {
+        release();
+        held.current.releases.delete(caseId);
+      }
     }
-  }, [state, started, sessionReady, openKey, noticeKey]);
+    held.current.scope = scope;
+    for (const caseId of desired) {
+      if (!held.current.releases.has(caseId)) {
+        held.current.releases.set(caseId, state.requests.retain(caseId));
+      }
+    }
+  }, [state, started, sessionReady, scope, openKey]);
 }
 
 /** Keep the selected Request mounted while another surface is visible. */
@@ -388,6 +414,11 @@ export function Workspace(
       void synchronizeCaseLocation(state, wantedCaseId);
     }
   }, [started, wantedCaseId, recordFor(wantedCaseId)?.id]);
+  // `/cases?from=`: the next catalogue read selects that Release for a new Request.
+  const startFrom = item?.kind === "cases" ? item.startFrom : undefined;
+  useEffect(() => {
+    if (startFrom) state.requests.startFrom(startFrom);
+  }, [startFrom]);
   // Each kind of Case keeps one address once its record says which it is: a
   // Request opened by `/chat?case=` moves to the Requests page's, and keeps the
   // sub-agent it reads.
@@ -454,7 +485,10 @@ export function Workspace(
       !unavailableModelScope(location.searchParams)
     ? inspectedVersion
     : null;
-  const releaseHeadVersion = useReleaseSourceHead(mainReleaseKey);
+  const releaseHeadVersion = useReleaseSourceHead(mainReleaseKey, {
+    connection,
+    generation: state.connectionGeneration.value,
+  });
   const mainReleaseContext = mainReleaseKey
     ? releaseSourceContext(mainReleaseKey, releaseHeadVersion)
     : null;
@@ -494,33 +528,21 @@ export function Workspace(
   const selectedRequestScope = selectedCaseId
     ? state.requests.scopes.value.get(selectedCaseId)
     : undefined;
-  const displayedVersionLabel = modelOpen
-    ? resolvedScope
-      ? `${contextName} · ${resolvedScope.branchId} · Model ${
-        resolvedScope.version.replace(/^commit:/, "").slice(0, 8)
-      } · read-only${
-        resolvedScope.version !== resolvedScope.executionVersion
-          ? " inspection"
-          : ""
-      }`
-      : modelScopeUnavailable
-      ? `${contextName} · Model unavailable`
-      : inspectedVersion
-      ? `${contextName} · main · Model ${
-        inspectedVersion.replace(/^commit:/, "").slice(0, 8)
-      } · ${
-        creatingRelease
-          ? mainReleaseContext?.label ?? "release source"
-          : "read-only inspection"
-      }`
-      : `${contextName} · main · ${versionLabel}`
-    : selectedCaseId
-    ? selectedRequestScope
-      ? `Request · ${selectedRequestScope.branchId} · Model ${
-        selectedRequestScope.version.replace(/^commit:/, "").slice(0, 8)
-      } · read-only`
-      : "Request · model version unavailable"
-    : versionLabel;
+  const titleCaseId = modelOpen ? contextCaseId : selectedCaseId;
+  const titleRecord = titleCaseId ? recordFor(titleCaseId) : null;
+  const titleVersion: VersionInfo = titleCaseId
+    ? requestVersionInfo(
+      titleRecord ?? { id: titleCaseId },
+      modelOpen ? resolvedScope : selectedRequestScope,
+    )
+    : {
+      source: { kind: "main" },
+      version: modelScopeUnavailable
+        ? undefined
+        : inspectedVersion ?? modelVersion,
+      inService: modelVersion,
+      readOnly: Boolean(inspectedVersion),
+    };
   const requestShown = showCases ||
     Boolean(
       modelSplit && contextCaseId && !scheduledCase && !globalMainSelected,
@@ -663,9 +685,6 @@ export function Workspace(
   }, [graphShown, initialUrl, started]);
 
   const decisions = state.pendingDecisions.value;
-  // The Dock and the Requests list say which Requests wait for the person: the
-  // main system's decisions, and those their operators asked in them.
-  const caseDecisions = [...decisions, ...state.requestDecisions.value];
   const operators = arrivalOrder(
     (roster?.conversations ?? []).filter((entry) =>
       entry.agentId !== centralId
@@ -699,7 +718,7 @@ export function Workspace(
         record,
         openCases,
         owner?.agentId,
-        caseDecisions,
+        decisions,
       ),
       active: opened && (!modelOpen || modelSplit),
       href: modelOpen
@@ -867,12 +886,12 @@ export function Workspace(
       active: item?.kind === "model",
     },
     {
-      id: "decide",
-      label: "To decide",
-      href: item?.kind === "decide" ? deskHome : PLACE_PATH.decide,
+      id: "activity",
+      label: "Activity",
+      href: item?.kind === "activity" ? deskHome : PLACE_PATH.activity,
       pending: false,
-      active: item?.kind === "decide",
-      count: decisions.length,
+      active: item?.kind === "activity",
+      count: state.pendingDecisionCount.value,
     },
   ];
   const connectionLabel = connection === "live"
@@ -894,22 +913,27 @@ export function Workspace(
           />
         </div>
         <div class="workspace-identity">
-          <h1 title={systemName}>{systemName}</h1>
-          <span
-            class="workspace-model-version"
-            title={modelScopeUnavailable
-              ? "Scoped model reader unavailable"
-              : resolvedScope?.version || inspectedVersion ||
-                selectedRequestScope?.version || modelVersion ||
-                modelDigest}
-          >
-            {displayedVersionLabel}
-          </span>
+          <WorkspaceVersion
+            followHead={modelOpen && !titleCaseId && !inspectedVersion &&
+              !modelScopeUnavailable &&
+              location.searchParams.get("page") !== "graph"}
+            info={{
+              ...titleVersion,
+              qualifiedName: systemName,
+              modelDigest: !titleCaseId && titleVersion.version === modelVersion
+                ? modelDigest
+                : undefined,
+            }}
+          />
         </div>
         <div class="desk-titlebar-end">
           {modelOpen && contextCaseId && (
-            <a href={conversationHref()} aria-label="Leave Case context">
-              Leave Case
+            <a
+              class="button"
+              href={conversationHref()}
+              aria-label="Leave Request context"
+            >
+              Leave Request
             </a>
           )}
           {/* The connection shows only when something is wrong. */}
@@ -1035,7 +1059,7 @@ export function Workspace(
             compact={modelOpen || !requestShown && Boolean(requestSelection)}
             selectedId={selectedCaseId ?? requestSelection?.caseId ?? null}
             agentId={namedAgentId ?? requestSelection?.agentId ?? null}
-            decisions={caseDecisions}
+            decisions={decisions}
             onStarted={(caseId) => {
               setStartedCase(caseId);
               showAddress(viewHref(caseHref(caseId), {
@@ -1105,21 +1129,13 @@ export function Workspace(
         </section>
         <section
           class="decide desk-panel desk-view"
-          id="decide-panel"
-          aria-label="To decide"
-          hidden={item?.kind !== "decide"}
+          id="activity-panel"
+          aria-label="Activity"
+          hidden={item?.kind !== "activity"}
         >
-          <CloseLink label="Close To decide" />
-          {item?.kind === "decide" && (
-            <DecidePage
-              decisions={decisions}
-              loading={state.pendingDecisionsLoading.value}
-              error={state.pendingDecisionsError.value}
-              // Before the workbench starts, its own start reads the decisions.
-              onRefresh={() => {
-                if (started) void state.refreshPendingDecisions();
-              }}
-            />
+          <CloseLink label="Close Activity" />
+          {item?.kind === "activity" && (
+            <ActivityPlace state={state} started={started} />
           )}
         </section>
       </main>

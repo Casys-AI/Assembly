@@ -1,5 +1,5 @@
 import { settle } from "../../../test/support/settle.ts";
-import { textOf } from "../../../test/support/dom.ts";
+import { parse, textOf, within } from "../../../test/support/dom.ts";
 import {
   deepStrictEqual,
   doesNotMatch,
@@ -16,6 +16,7 @@ import {
   diffStats,
   shortCommit,
 } from "../../../lib/model/revisions/change.ts";
+import { decisionState } from "../../../lib/conversations/decision-state.ts";
 import {
   BASE,
   creation,
@@ -49,6 +50,7 @@ function card(
     <ModelChangeCard
       id={`change-${change.id}`}
       change={change}
+      decision={decisionState(change)}
       proposedBy={proposedBy ?? undefined}
       onDecide={noop}
       adjustmentMessage={ask}
@@ -95,15 +97,24 @@ Deno.test("each kind of change names what it does, with the file and root of a g
   doesNotMatch(named, /<script/);
 });
 
-Deno.test("the card says who proposed the change, the short commit it stands on and the size of the diff", () => {
+Deno.test("the card says who proposed the change and folds its diff under its size; the commit waits in the inspector", () => {
   const html = card(grant());
-  match(textOf(html), /proposed by Designer 0123456 \+2 −0 · 1 file/);
-  // The commit is the base, never a proposal commit; the full value is a tooltip.
+  const inspector = parse(html).querySelector(".inspector")!;
+  equal(textOf(inspector.querySelector("summary")!), "proposed by Designer");
+  equal(
+    within(inspector).byRole("link").getAttribute("href"),
+    "/cases?case=ui-fixture%3Acase%3A1",
+  );
   match(
     html,
-    /<code title="Base commit commit:0123456789abcdef0123456789abcdef01234567">0123456<\/code>/,
+    /<summary title="1 file">SysML <span class="change-stats"><span class="plus">\+2<\/span> <span class="minus">−0<\/span><\/span><\/summary>/,
   );
-  doesNotMatch(html, />0123456789abcdef/);
+  // No hash on the card: the base commit, exact, is in the inspector.
+  doesNotMatch(html, /<code title=|>0123456</);
+  match(
+    textOf(html),
+    /Change grant Request ui-fixture:case:1 Base commit commit:0123456789abcdef0123456789abcdef01234567/,
+  );
   equal(shortCommit(BASE), "0123456");
   equal(shortCommit("branch:main"), "main");
   deepStrictEqual(diffStats(diff()), { additions: 2, deletions: 0, files: 1 });
@@ -112,12 +123,13 @@ Deno.test("the card says who proposed the change, the short commit it stands on 
   many.additions = 12;
   many.deletions = 3;
   match(
-    textOf(card(grant({ diff: many }))),
-    /\+12 −3 · 3 files/,
+    card(grant({ diff: many })),
+    /<summary title="3 files">SysML .*\+12.*−3/,
   );
   // An unknown proposer is left out rather than shown as an identity.
   const anonymous = card(grant({ requestedBy: "native:ghost" }), null);
   doesNotMatch(anonymous, /proposed by|native:ghost/);
+  match(anonymous, /<summary\s*>Details<\/summary>/);
   // The proposer's name is text.
   const hostile = card(grant(), "<b>Mallory</b>");
   match(hostile, /proposed by &lt;b(?:>|&gt;)Mallory/);
@@ -158,10 +170,11 @@ Deno.test("Accept, Decline and Adjust sit on the card only while it is pending",
   match(pending, />Decline<\/button>/);
   match(pending, />Adjust<\/button>/);
   // The diff waits in a closed fold, with its layout toggle.
-  match(pending, /<details class="change-diff"><summary>View diff<\/summary>/);
+  match(pending, /<details class="change-diff"><summary title="1 file">SysML /);
   match(pending, /class="revision-diff-host proposal-code-diff"/);
   doesNotMatch(pending, /<details class="proposal-receipt"/);
-  doesNotMatch(pending, /change-chip/);
+  // The header says it waits, in the words every decision uses.
+  match(pending, /<span class="change-chip is-to-decide"\s*>To decide<\/span>/);
   for (const status of ["approved", "refused"] as const) {
     const settled = card(
       grant({ status, publishedCommit: "commit:" + "f".repeat(40) }),
@@ -176,21 +189,42 @@ Deno.test("Accept, Decline and Adjust sit on the card only while it is pending",
 Deno.test("a decided change shows its outcome as a chip", () => {
   const published = "commit:" + "f".repeat(40);
   const chip = (change: ChangeWithDiff) =>
-    card(change).match(/<span class="change-chip is-(\w+)">([^<]*)<\/span>/)
+    card(change).match(/<span class="change-chip is-([\w-]+)"[^>]*>([^<]*)/)
       ?.slice(1);
   deepStrictEqual(chip(grant({ status: "refused" })), ["declined", "Declined"]);
   deepStrictEqual(chip(grant({ status: "approved" })), [
-    "accepted",
-    "Accepted",
+    "applying",
+    "Applying",
   ]);
   deepStrictEqual(
     chip(grant({ status: "approved", publishedCommit: published })),
     ["applied", "Applied"],
   );
+  // Applying names its steps and decider together on hover.
+  const applying = parse(renderToString(
+    <ModelChangeCard
+      id="applying"
+      change={grant({ status: "approved" })}
+      decision={decisionState(grant({ status: "approved" }))}
+      decidedBy="Decided by you · rule owner · rev. 1"
+      onDecide={noop}
+      adjustmentMessage={ask}
+      onAdjustment={noop}
+    />,
+  )).querySelector(".change-chip")!;
+  equal(
+    applying.getAttribute("title"),
+    "Decided ✓ · Saved · In service · Decided by you · rule owner · rev. 1",
+  );
+  equal(applying.querySelectorAll(".chip-steps span").length, 3);
+  equal(applying.querySelectorAll(".chip-steps .is-done").length, 1);
+  const superseded = parse(card(grant({ status: "superseded" })));
+  ok(superseded.querySelector("article.is-superseded"));
+  equal(textOf(superseded.querySelector(".change-chip")!), "Superseded");
   equal(changeOutcome(grant()), "pending");
-  // Once published, the commit shown is the one that published it.
+  // Once published, the inspector names the commit that published it.
   const html = card(grant({ status: "approved", publishedCommit: published }));
-  match(html, /<code title="Published commit commit:f{40}">fffffff<\/code>/);
+  match(textOf(html), /Published commit commit:f{40}/);
   doesNotMatch(html, /0123456/);
   // A change without a diff has nothing more to wait for after approval.
   equal(
@@ -253,6 +287,7 @@ Deno.test("Accept and Decline reach the owner of the decision with the verdict",
     <ModelChangeCard
       id="change-grant"
       change={grant()}
+      decision={decisionState(grant())}
       onDecide={(verdict, reason) => {
         verdicts.push([verdict, reason]);
         return Promise.resolve(true);
@@ -275,6 +310,7 @@ Deno.test("Accept and Decline reach the owner of the decision with the verdict",
     <ModelChangeCard
       id="change-grant"
       change={grant()}
+      decision={decisionState(grant())}
       acceptDisabled
       onDecide={(verdict) => {
         verdicts.push([verdict, undefined]);
@@ -375,10 +411,15 @@ Deno.test("ModelChangeView folds a decided change with its chip, and opens when 
   // The facts and the diff are still there, behind the fold.
   match(textOf(folded), /proposed by Designer aaaaaaa \+5 −2 · 2 files/);
   match(folded, /d2h-ins/);
-  // A caller can name the status itself.
+  // A caller can draw the status itself, on the receipt and on the header.
+  const status = <span class="change-chip is-superseded">Superseded</span>;
   match(
-    renderToString(view({ state: "declined", statusLabel: "Superseded" })),
-    /is-declined">Superseded<\/span>/,
+    renderToString(view({ state: "declined", status })),
+    /<span>Rename the engine<\/span><span class="change-chip is-superseded">Superseded<\/span><\/summary>/,
+  );
+  match(
+    renderToString(view({ status, layout: "header" })),
+    /<\/div><span class="change-chip is-superseded">Superseded<\/span><\/header>/,
   );
   // Open on request, still with its outcome.
   const open = renderToString(view({ state: "applied", open: true }));
@@ -518,6 +559,7 @@ async function withCard(
     node = ModelChangeCard({
       id: `change-${change.id}`,
       change,
+      decision: decisionState(change),
       proposedBy: "Designer",
       adjustmentMessage: ask,
       ...handlers,
@@ -565,10 +607,10 @@ function deferred<T>() {
   const promise = new Promise<T>((done) => resolve = done);
   return { promise, resolve };
 }
-/** What a card that has not been folded looks like: plain header, no chip. */
+/** What a card that has not been folded looks like: its header, no fold. */
 function isHeader(html: string) {
   match(html, /<header class="proposal-heading change-heading">/);
-  doesNotMatch(html, /<details class="proposal-receipt"|change-chip/);
+  doesNotMatch(html, /<details class="proposal-receipt"/);
 }
 
 Deno.test("a declined change keeps its header and its form while an adjustment is made and sent", async () => {
@@ -620,11 +662,14 @@ Deno.test("a declined change keeps its header and its form while an adjustment i
     );
     match(html, /<form class="proposal-adjustment"/);
     doesNotMatch(html, /<textarea[^>]*disabled/);
-    // Cancelling is what folds it, with its outcome.
+    // Cancelling ends the form, but the failure remains visible in the receipt.
     await card.click("Cancel");
     html = card.html();
-    match(html, /<details class="proposal-receipt"><summary>/);
-    match(html, /<span class="change-chip is-declined">Declined<\/span>/);
+    equal(
+      parse(html).querySelector<HTMLDetailsElement>(".proposal-receipt")!.open,
+      true,
+    );
+    match(html, /<span class="change-chip is-declined"\s*>Declined<\/span>/);
     doesNotMatch(html, /<header|<textarea/);
   });
 });
@@ -641,7 +686,8 @@ Deno.test("an adjustment that was sent folds the declined change as requested", 
     await card.submit();
     const html = card.html();
     match(html, /<details class="proposal-receipt"><summary>/);
-    match(html, /<span class="change-chip is-declined">Adjustment requested</);
+    const chip = within(html).byText("Adjustment requested");
+    equal(chip.getAttribute("title"), "Adjustment requested");
     doesNotMatch(html, /<header|<textarea|proposal-error/);
   });
 });
@@ -670,23 +716,42 @@ Deno.test("a change decided while its Accept or Decline is still working keeps i
     html = card.html();
     match(html, /<details class="proposal-receipt"><summary>/);
     doesNotMatch(html, /<details[^>]* open|<header/);
-    match(html, /<span class="change-chip is-declined">Declined<\/span>/);
+    match(html, /<span class="change-chip is-declined"\s*>Declined<\/span>/);
   });
 });
 
-Deno.test("approved blocked change exposes retry separately from approval", () => {
-  const html = renderToString(
-    <ModelChangeCard
-      id="change-retry"
-      change={grant({ status: "approved" })}
-      onDecide={noop}
-      adjustmentMessage={ask}
-      onAdjustment={noop}
-      retryStatus="Applying blocked"
-      onRetryApplying={() => {}}
-    />,
+Deno.test("a new team member reads as the member: monogram, name, mission and its rights as marks", () => {
+  const member = creation({
+    name: "Hook Reviewer",
+    operator: {
+      kind: "request-team-member",
+      instruction: "Review the hooks and propose a better version.",
+      provision: {
+        budget: { maxAgentDecisions: 3, maxToolProposals: 1, maxFlowSteps: 20 },
+        networkHosts: [],
+        mayPropose: [],
+        mayInvokeActiveCatalog: false,
+      },
+    },
+    teamOrigin: {
+      operatorId: "native:designer",
+      requestId: "ui-fixture:case:1",
+    },
+  });
+  const html = card(member, "Remurin Talvrek");
+  const heading = within(html).byRole("heading", { name: "Hook Reviewer" });
+  equal(textOf(heading.querySelector(".agent-tile")!), "HR");
+  match(
+    html,
+    /<p class="member-mission" title="Review the hooks and propose a better version\.">Review the hooks/,
   );
-  match(html, /Applying blocked/);
-  match(html, /Retry applying/);
-  doesNotMatch(html, />Accept<\/button>/);
+  match(html, /<li\s+title="No network"><svg[^]*?<\/svg>no network<\/li>/);
+  match(
+    textOf(html),
+    /Hook Reviewer Review the hooks and propose a better version\. this Request no network creates no one New member · proposed by Remurin Talvrek/,
+  );
+  // Nothing exact on the card itself: identities and commits wait inside.
+  const shown = html.slice(0, html.indexOf('<div class="inspector-body">'));
+  doesNotMatch(shown, /ui-fixture:case:1|0123456|Create team operator/);
+  match(html, /<summary title="1 file">SysML /);
 });

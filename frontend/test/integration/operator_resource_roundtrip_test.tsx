@@ -17,6 +17,18 @@ import {
 } from "../../../src/application/telemetry/provider-call.ts";
 import { parsePerformanceReadout } from "../../lib/system/performance/api.ts";
 import { PerformancePage } from "../../components/system/PerformancePage.tsx";
+import type { CurrentProviderResourceReadout } from "../../../src/application/telemetry/current-provider-resources.ts";
+import { performanceView } from "../../lib/system/performance/kpis.ts";
+
+const page = (readout: CurrentProviderResourceReadout) =>
+  renderToString(
+    <PerformancePage
+      view={performanceView({
+        read: { status: "ready", readout },
+        scope: { kind: "request", record: null },
+      })}
+    />,
+  );
 
 Deno.test("actual selected resource aggregation survives strict parsing and renders operator attribution without foreign rows", () => {
   const query: ProviderResourceQuery = {
@@ -63,11 +75,11 @@ Deno.test("actual selected resource aggregation survives strict parsing and rend
   }));
   aggregate.add(row(2, "Assembly::ObservedOperator", { outcome: "failed" }));
   aggregate.add(row(3, null));
-  const wrongVersion = row(4, "Assembly::ForeignVersion");
+  const historicalMember = row(4, "Assembly::HistoricalMember");
   aggregate.add({
-    ...wrongVersion,
+    ...historicalMember,
     correlation: {
-      ...wrongVersion.correlation,
+      ...historicalMember.correlation,
       repositoryVersion: `commit:${"c".repeat(40)}`,
     },
   });
@@ -97,14 +109,19 @@ Deno.test("actual selected resource aggregation survives strict parsing and rend
       },
     },
     resources: aggregate.finish("2026-10-30T00:00:04.000Z"),
+    request: {
+      durationMs: null,
+      humanInterventions: { messages: 0, decisions: 0 },
+    },
   }));
   const readout = parsePerformanceReadout(wire, selection);
-  equal(readout.resources.calls, 3);
+  equal(readout.resources.calls, 4);
   deepStrictEqual(
     readout.resources.operatorGroups?.map((
       group,
     ) => [group.operatorId, group.calls]),
     [
+      ["Assembly::HistoricalMember", 1],
       ["Assembly::ObservedOperator", 2],
       [null, 1],
     ],
@@ -112,24 +129,24 @@ Deno.test("actual selected resource aggregation survives strict parsing and rend
   deepStrictEqual(readout.resources.units.input_tokens, {
     observedSubtotal: 10,
     presentCalls: 1,
-    missingCalls: 2,
+    missingCalls: 3,
     state: "partial",
   });
-  const html = renderToString(
-    <PerformancePage read={{ status: "ready", readout }} />,
-  );
-  match(html, /3 retained calls/);
-  match(html, /Assembly::ObservedOperator/);
-  match(html, /Unattributed operator/);
-  match(html, /10 \(partial\)/);
-  match(html, /1 calls reported, 2 missing/);
-  match(html, /Physical call outcomes: 2 returned, 1 failed/);
-  match(html, /<dt>Verified outcomes<\/dt><dd>N\/A<\/dd>/);
+  const html = page(readout);
+  match(html, /title="Usage missing for 4 of 4 calls\.">N\/A/);
+  match(html, /version · Assembly::HistoricalMember">.*?Former member/s);
+  match(html, /version · Assembly::ObservedOperator">.*?Former member/s);
+  match(html, /Unattributed/);
+  match(html, /Input 10 \(3 missing\)/);
+  match(html, /<b>1<\/b><span>failed call<\/span>/);
   doesNotMatch(
     html,
-    /Assembly::ForeignVersion|Assembly::ForeignCase|Assembly::AfterCutoff/,
+    /Assembly::ForeignCase|Assembly::AfterCutoff/,
   );
   doesNotMatch(html, /Assembly::CurrentOwner/);
+  const unknownField = structuredClone(wire);
+  unknownField.resources.operatorGroups[0].unknownMetric = {};
+  throws(() => parsePerformanceReadout(unknownField, selection));
   const corrupt = structuredClone(wire);
   corrupt.resources.operatorGroups[0].calls++;
   throws(() => parsePerformanceReadout(corrupt, selection));
@@ -192,6 +209,10 @@ function actualLatencyWire(
         },
       },
       resources: aggregate.finish("2026-10-30T00:00:04.000Z"),
+      request: {
+        durationMs: null,
+        humanInterventions: { messages: 0, decisions: 0 },
+      },
     })),
   };
 }
@@ -268,13 +289,8 @@ Deno.test("persisted opaque whitespace operator identities remain distinct throu
     ],
   );
   equal(readout.resources.calls, 3);
-  const html = renderToString(
-    <PerformancePage read={{ status: "ready", readout }} />,
-  );
-  match(html, /title=" "/);
-  match(html, /title=" {2}"/);
-  match(html, />(?:&quot;|") (?:&quot;|")<\/code>/);
-  match(html, />(?:&quot;|") {2}(?:&quot;|")<\/code>/);
-  match(html, />(?:&quot;|") a (?:&quot;|")<\/code>/);
-  match(html, /white-space:pre-wrap/);
+  const html = page(readout);
+  for (const id of [" ", "  ", " a "]) {
+    match(html, new RegExp(`title="Not in the team at this version · ${id}"`));
+  }
 });

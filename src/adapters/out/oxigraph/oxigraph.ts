@@ -428,7 +428,7 @@ export async function loadSemanticIndexAddon(
     const require = deps.requireAddon ?? createRequire(import.meta.url);
     const addon = require(snapshot.path) as SemanticIndexAddonModule;
     if (
-      addon.storeVersion() !== "0.1.0" || addon.oxigraphVersion() !== "0.4.11"
+      addon.storeVersion() !== "0.1.0" || addon.oxigraphVersion() !== "0.5.12"
     ) {
       throw new Error("Semantic addon version does not match pinned contract");
     }

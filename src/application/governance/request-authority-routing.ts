@@ -109,6 +109,18 @@ export function requestAuthorityRoute(input: {
   if (byId.size !== states.length || byId.has(undefined)) {
     return unresolved("CHAIN_UNVERIFIED", "Operator identities conflict");
   }
+  // Main-local teams are bound to the exact Case. Branch membership has
+  // already been verified against the opening roster by the bridge.
+  const belongsToRequest = (state: SystemRuntimeState) =>
+    input.root.kind !== "main-opener" ||
+    !state.executionModel?.operatorTeam ||
+    state.executionModel.operatorTeam.requestId === root.id;
+  if (!belongsToRequest(requester)) {
+    return unresolved(
+      "CHAIN_UNVERIFIED",
+      "Source membership belongs to another Request",
+    );
+  }
   const sameRoot = (record: Case | undefined) =>
     !!record && record.id === root.id &&
     record.owner === root.owner && record.openedBy === root.openedBy &&
@@ -156,7 +168,7 @@ export function requestAuthorityRoute(input: {
             parent!.space,
             parentModel.identity.builderId,
           )) ||
-        !team || team.requestId !== root.id ||
+        !team ||
         team.requestOwnerId !== root.owner
       ) {
         return unresolved(
@@ -234,6 +246,12 @@ export function requestAuthorityRoute(input: {
         "A responsible operator is unavailable; availability is not absence of authority",
       );
     }
+    if (!belongsToRequest(actor)) {
+      return unresolved(
+        "CHAIN_UNVERIFIED",
+        "Source membership belongs to another Request",
+      );
+    }
     if (!route.responsibleOperatorId) route.responsibleOperatorId = actorId;
     if (!atRoot) {
       if (
@@ -248,7 +266,7 @@ export function requestAuthorityRoute(input: {
       const team = child.executionModel?.operatorTeam;
       if (
         team &&
-        (team.parentOperatorId !== actorId || team.requestId !== root.id ||
+        (team.parentOperatorId !== actorId ||
           team.requestOwnerId !== root.owner)
       ) {
         return unresolved(

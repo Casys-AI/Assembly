@@ -17,7 +17,7 @@ import { branchAuthorityFixture } from "../../../../test/support/branch-authorit
 import type { OperatorExecutionDelivery } from "./execution.ts";
 import { recordRequestNetworkOutcome } from "./request-network-outcome.ts";
 import { requestChangeProposalDigest } from "../../../domain/governance/records/request-change.ts";
-import { nativeExecutionIdentity } from "../runtime/execution.ts";
+import { nativeExecutionIdentity } from "../native-execution/contract.ts";
 
 /** A teammate working on delegated work, which itself delegated to a leaf. */
 function teammate(outgoing?: { status: "pending" | "completed"; of?: string }) {
@@ -96,7 +96,10 @@ function teammate(outgoing?: { status: "pending" | "completed"; of?: string }) {
   };
   const host = {
     state,
-    ports: { model: { readExecutableModel: () => Promise.resolve(model) } },
+    ports: {
+      clock: { now: () => "2026-11-03T00:00:00.000Z" },
+      model: { readExecutableModel: () => Promise.resolve(model) },
+    },
     continuationFingerprint: () => Promise.resolve("continuation"),
     artifactEvidence: () => Promise.resolve({}),
   } as unknown as OperatorWorkHost;

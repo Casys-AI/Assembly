@@ -432,6 +432,7 @@ export function createSavedSystemsController(
     intent: null as ReleaseSaveIntent | null,
     repair: null as ReleaseSaveCommand | null,
     busy: false,
+    reading: false,
     error: "",
     refused: false,
     readError: "",
@@ -445,6 +446,9 @@ export function createSavedSystemsController(
   let refreshAgain = false;
   let readAbort: AbortController | null = null;
   let queuedRefresh: (() => void) | null = null;
+  // The one explicit command, waiting or running, and how to let it start.
+  let commandPending = false;
+  let resumeCommand: (() => void) | null = null;
   let inspectionGeneration = 0;
   async function restore() {
     const host = await (recovery.host ?? currentReleaseSaveHost)();
@@ -559,10 +563,53 @@ export function createSavedSystemsController(
     // Status remains incomplete/pending; this is an ACK, never an authority grant.
     slot.retire(intent);
     state.intent = null;
+    // Only the host's read says whether a Request can start from it now.
+    if (result.status !== "conflict") await readRelease(result.id);
+  }
+  /** Read one exact Release; a failed read leaves the one shown as it was. */
+  async function readRelease(id: string) {
+    const generation = ++inspectionGeneration;
+    const result = await api.inspect(id);
+    if (disposed || generation !== inspectionGeneration) return;
+    if (
+      result.id !== id || !validSavedSystemTag(result) ||
+      !validOpeningEvidence(result)
+    ) {
+      throw new Error("The inspected Release identity or tag is invalid.");
+    }
+    const { host } = await restore();
+    if (disposed || generation !== inspectionGeneration) return;
+    if (
+      result.origin?.projectId !== host.projectId ||
+      result.origin?.systemId !== host.systemId
+    ) {
+      throw new Error("The inspected Release host does not match.");
+    }
+    state.selected = result;
+    state.repair = result.status === "pending" || result.status === "incomplete"
+      ? canonicalCommand(result, host)
+      : null;
   }
   async function run(work: () => Promise<void>, background = false) {
-    if (state.busy || disposed) return;
+    if (disposed) return;
+    if (!background) {
+      // One explicit command at a time, never dropped in silence. It waits
+      // only for the read in progress: reads asked meanwhile queue behind it.
+      if (commandPending) {
+        state.error = "Another Release action is still running.";
+        changed();
+        return;
+      }
+      commandPending = true;
+      if (state.busy) {
+        await new Promise<void>((resume) => {
+          resumeCommand = resume;
+        });
+      }
+      if (disposed) return;
+    } else if (state.busy) return;
     state.busy = true;
+    state.reading = background;
     if (background) {
       state.readError = "";
       state.readRefused = false;
@@ -590,10 +637,17 @@ export function createSavedSystemsController(
       }
     } finally {
       state.busy = false;
+      state.reading = false;
+      if (!background) commandPending = false;
       if (!disposed) changed();
-      const next = queuedRefresh;
-      queuedRefresh = null;
-      next?.();
+      const resume = resumeCommand;
+      resumeCommand = null;
+      if (resume) resume();
+      else {
+        const next = queuedRefresh;
+        queuedRefresh = null;
+        next?.();
+      }
     }
   }
   function refresh(): Promise<void> {
@@ -658,7 +712,7 @@ export function createSavedSystemsController(
         } else pending.resolve();
       });
     };
-    if (state.busy) queuedRefresh = read;
+    if (state.busy || commandPending) queuedRefresh = read;
     else read();
     return pending.promise;
   }
@@ -743,29 +797,10 @@ export function createSavedSystemsController(
       }),
     inspect: (id: string) =>
       run(async () => {
-        const generation = ++inspectionGeneration;
+        // Another Release's evidence never stands in while this one is read.
         state.selected = null;
         state.repair = null;
-        const result = await api.inspect(id);
-        if (disposed || generation !== inspectionGeneration) return;
-        if (
-          result.id !== id || !validSavedSystemTag(result) ||
-          !validOpeningEvidence(result)
-        ) {
-          throw new Error("The inspected Release identity or tag is invalid.");
-        }
-        const { host } = await restore();
-        if (disposed || generation !== inspectionGeneration) return;
-        if (
-          result.origin?.projectId !== host.projectId ||
-          result.origin?.systemId !== host.systemId
-        ) {
-          throw new Error("The inspected Release host does not match.");
-        }
-        state.selected = result;
-        if (result.status === "pending" || result.status === "incomplete") {
-          state.repair = canonicalCommand(result, host);
-        }
+        await readRelease(id);
       }),
     dispose() {
       disposed = true;

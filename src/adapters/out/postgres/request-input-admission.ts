@@ -3,7 +3,7 @@ import {
   exactSourceVersion,
   RequestSpaceError,
 } from "../../../domain/work/request-spaces.ts";
-import type { PostgresExecutionLedgerOptions } from "../../work/runtime/postgres-ledger.ts";
+import type { PostgresExecutionLedgerOptions } from "../native-execution/postgres-ledger.ts";
 import type { PostgresRequestExecutionBindingReader } from "./request-execution-binding.ts";
 import type { PostgresSpaceAdmissions } from "./request-space-control-store.ts";
 import { decodeRequestSpaceOpening } from "./request-space-store.ts";

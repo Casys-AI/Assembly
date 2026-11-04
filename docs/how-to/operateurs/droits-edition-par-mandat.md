@@ -110,8 +110,8 @@ permissions.
 - [Domain policy](../../../src/domain/governance/policies/model-edit-policy.ts)
   and
   [native compilation](../../../src/adapters/out/sysml-toolkit/compilation-policies/governance/model-access/editing/policy.ts).
-- [Before/after confinement](../../../src/adapters/governance/model-access/editing/scope.ts).
-- [Proposer authority and protected controls](../../../src/adapters/governance/model-access/source-authorization.ts).
+- [Before/after confinement](../../../src/domain/model/editing/scope.ts).
+- [Proposer authority and protected controls](../../../src/application/governance/model-access/source-authorization.ts).
 - [Git publication and recovery](../../../src/adapters/out/git/repository.ts).
 - [Deterministic tests with Toolkit](../../../test/integration/model-edit-mandate_test.ts).
 - [Explicit AI qualification](../../../tools/qualify-model-edit-mandate.ts), run

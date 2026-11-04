@@ -97,9 +97,16 @@ Deno.test("existing Request page reads only the selected durable scope despite t
   match(html, /B-only conversation/);
   doesNotMatch(html, /A-only conversation|Main-only conversation/);
   match(html, /branchB/);
-  match(html, /read-only/);
+  match(html, /aria-label="Request 2 · In service · Read-only"/);
   match(html, /View model/);
-  match(html, /page=releases&amp;caseBranch=caseB&amp;agent=/);
+  match(
+    html,
+    new RegExp(
+      `page=releases&amp;caseBranch=caseB&amp;create=1&amp;version=${
+        encodeURIComponent(version)
+      }`,
+    ),
+  );
   match(html, /create=1/);
   doesNotMatch(html, />Close<|Effort /);
 });
@@ -119,7 +126,7 @@ Deno.test("compact Request context retains an unavailable selected conversation 
     />,
   );
   match(html, /is-compact/);
-  match(html, /cases-selected-conversation">saved-member/);
+  match(html, /cases-selected-conversation">Conversation unavailable/);
   match(html, /selected Request conversation is unavailable/);
   match(html, /case=caseB&amp;agent=saved-member/);
   doesNotMatch(
@@ -141,7 +148,7 @@ Deno.test("new Request reuses the composer with explicit Current Main/Release ch
       onBack={() => {}}
     />,
   );
-  match(html, /System for this Request/);
+  match(html, /Start from<select/);
   match(html, /Current Main/);
   match(html, /Import local control file/);
   match(html, /class="composer"/);
@@ -165,10 +172,14 @@ Deno.test("existing Request source selector names owned incomplete Release candi
     digest: record.digest!,
   };
   const html = renderToString(<RequestSource state={state} active />);
-  match(html, /System for this Request/);
+  match(html, /Start from<select/);
   match(html, /title="[^"]*Request caseA[^"]*"/);
-  match(html, /title="[^"]*checked automatically at start"/);
-  match(html, /current authority/);
+  // The startup check is told in the tooltip, never as a paragraph.
+  match(
+    html,
+    /<select[^>]*title="[^"]*Checked automatically at start: the host verifies exact bundled skills and current authority[^"]*"/,
+  );
+  doesNotMatch(html, /<p[^>]*>Checked automatically/);
   doesNotMatch(html, /Retention completed|Release is eligible|Adopt|Activate/);
 });
 

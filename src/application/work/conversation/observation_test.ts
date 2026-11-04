@@ -29,6 +29,7 @@ Deno.test("completed source tools are observed without manufacturing a Candidate
     };
     const feedback: { text: string; observation?: MessageObservation }[] = [];
     const host: ConversationObservationHost = {
+      ports: { clock: { now: () => "2026-11-03T00:00:00.000Z" } },
       state,
       get snapshot() {
         return structuredClone(state);

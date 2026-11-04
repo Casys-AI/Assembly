@@ -141,11 +141,22 @@ export interface CreationActor {
  * Where the policy is read (spec 4.8e E1). Creation policies are relative to
  * that space, as delegated policies are since 4.8c: read in a branch they
  * apply mirrored inside it and never outside it. In a branch the caller
- * supplies the current whole-team size (settled Q5); in main it is ignored.
+ * supplies the current Case and whole-team size (settled Q5); main excludes both.
  */
-export interface CreationScope {
-  space: ExecutionSpaceRef;
-  branchTeamSize?: number;
+export type CreationScope =
+  & { space: ExecutionSpaceRef }
+  & (
+    | { branchTeamSize?: undefined; currentCaseId?: undefined }
+    | { branchTeamSize: number; currentCaseId: string }
+  );
+
+/** Construct the one explicit creation scope for a verified Request branch. */
+export function requestCreationScope(
+  space: ExecutionSpaceRef,
+  currentCaseId: string,
+  branchTeamSize: number,
+): CreationScope {
+  return { space: { ...space }, currentCaseId, branchTeamSize };
 }
 
 /** The explicit main-space scope of a model; main callers state it, never omit it. */
@@ -177,6 +188,18 @@ function requireCreationScope(
     );
   }
   const branch = scope.space.executionSpaceId !== MAIN_EXECUTION_SPACE_ID;
+  if (
+    !branch &&
+      (scope.currentCaseId !== undefined ||
+        scope.branchTeamSize !== undefined) ||
+    branch &&
+      (typeof scope.currentCaseId !== "string" || !scope.currentCaseId.trim())
+  ) {
+    throw new OperatorAuthorityError(
+      "AUTHORITY_OUT_OF_BOUNDS",
+      "A current creation Case requires a verified Request branch scope",
+    );
+  }
   if (
     branch &&
     (!Number.isSafeInteger(scope.branchTeamSize) || scope.branchTeamSize! < 0)
@@ -356,6 +379,9 @@ export function creationAuthorityExercise(
   actor: CreationActor,
   scope: CreationScope,
 ): AuthorityExercise {
+  const requestId = scope.space.executionSpaceId === MAIN_EXECUTION_SPACE_ID
+    ? model.operatorTeam?.requestId
+    : scope.currentCaseId;
   if (
     change.kind !== "operator-creation" || !change.operator ||
     change.requestedBy !== actor.actorId ||
@@ -364,8 +390,8 @@ export function creationAuthorityExercise(
       (!change.teamOrigin || change.teamOrigin.requestId !== change.caseId) ||
     !isTeamOperatorSpec(change.operator) && !!change.teamOrigin ||
     model.operatorTeam &&
-      (change.caseId !== model.operatorTeam.requestId ||
-        change.teamOrigin?.requestId !== model.operatorTeam.requestId ||
+      (change.caseId !== requestId ||
+        change.teamOrigin?.requestId !== requestId ||
         change.teamOrigin?.operatorId !== model.operatorTeam.requestOwnerId)
   ) {
     throw new OperatorAuthorityError(

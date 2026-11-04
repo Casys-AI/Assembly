@@ -1,6 +1,6 @@
 /** Immutable local-owner ceiling continuation. This record grants no authority;
  * every recovery rechecks its canonical authorization and durable budget log. */
-import type { ModelIdentity } from "../dialogue.ts";
+import type { ModelIdentity } from "../../shared-kernel/model-identity.ts";
 import type { ExecutableModelVersion } from "../../model/execution/executable-model.ts";
 import type {
   WorkBudgetOperation,

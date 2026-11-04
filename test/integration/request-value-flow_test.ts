@@ -1,3 +1,4 @@
+import { ACCEPTED_CASE_CLOSURE } from "../support/case-closure.ts";
 /** Deterministic provider; real source, grants, queue, plan and sandbox. */
 import assert from "node:assert/strict";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
@@ -161,6 +162,7 @@ Deno.test({
     >();
     const candidateBatches: ChatDecision[][] = [];
     let mainClosedTurns = 0;
+    let requestReplyReady = false;
     const completedReplays: Array<
       { name: string; quiet: boolean; violations: unknown[] }
     > = [];
@@ -507,12 +509,12 @@ Deno.test({
             const observed = plan.tasks.flatMap((task) => task.outputs)
               .filter((output) => output.kind === "tool-source")
               .map((output) => (output.value as { text: string }).text);
+            requestReplyReady = true;
             return Promise.resolve({
               kind: "reply",
               text: observed.join(" ") + " " +
                 JSON.stringify(plan.tasks.map((task) => task.outputs)) +
                 " Assembly generated-tool code executes without local-file permission; Deno service permissions are a separate scope.",
-              caseClosure: "done",
             });
           }
           assert.equal(plan.status, "waiting");
@@ -760,7 +762,7 @@ Deno.test({
         );
       for (
         let round = 0;
-        owner.cases.cases[0]?.status !== "closed-done";
+        !requestReplyReady;
         round++
       ) {
         assert(round < 3, "Request did not converge within the bounded driver");
@@ -770,6 +772,12 @@ Deno.test({
         );
         await speakToMain("Decide the operator candidates awaiting you.");
       }
+      await owner.closeCase(
+        owner.cases.cases[0]!.id,
+        "done",
+        ACCEPTED_CASE_CLOSURE,
+      );
+      await settle();
       // The completion is journalled in Main's design conversation without a
       // turn: Main reads it when the person speaks to it again.
       const completion = runtime.primary.snapshot.messages.filter((message) =>

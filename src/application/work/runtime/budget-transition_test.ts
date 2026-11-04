@@ -10,7 +10,7 @@ import { executionDigest } from "../../../domain/primitives/execution-digest.ts"
 import {
   nativeExecutionIdentity,
   type NativeExecutionSnapshot,
-} from "./execution.ts";
+} from "../native-execution/contract.ts";
 import {
   adoptBudgetCeiling,
   assertBudgetResumeAdmission,

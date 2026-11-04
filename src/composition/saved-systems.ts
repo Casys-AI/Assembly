@@ -11,11 +11,12 @@ import {
   SavedSystemError,
   type SavedSystemScope,
 } from "../domain/work/saved-systems.ts";
-import { PostgresArtifactBindings } from "../adapters/work/artifacts/postgres-bindings.ts";
+import { PostgresArtifactBindings } from "../adapters/out/postgres/artifact-source-bindings.ts";
 import { PostgresSavedSystemStore } from "../adapters/out/postgres/saved-system-store.ts";
-import { SavedSystemAssets } from "../adapters/work/saved-system-assets.ts";
+import { SavedSystemAssets } from "../application/work/saved-systems/assets.ts";
 import { SavedSystemsService } from "../application/work/saved-systems/service.ts";
 import { GitModelRepository } from "../adapters/out/git/repository.ts";
+import { sourceExecutablesCompilation } from "../adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import type { PrismaClient } from "../adapters/out/postgres/client.ts";
 import type { ModelBuildService } from "../application/model/builds/service.ts";
 import type { ModelBuildStore } from "../application/model/builds/ports/out/build-store.port.ts";
@@ -75,12 +76,17 @@ export function createSavedSystemsComposition(
   }
   const canReadSavedSourceScope = () => canReadScope(savedScope);
   const savedAssets = new SavedSystemAssets({
-    projectDir: options.projectDir,
+    openSourceReader: () =>
+      GitModelRepository.openReadOnly({
+        projectDir: options.projectDir,
+        repositoryId: options.repositoryId,
+        buildService: options.buildService,
+      }),
+    compilation: sourceExecutablesCompilation,
     repositoryId: options.repositoryId,
     projectId: savedScope.projectId,
     sourceScopeId: options.sourceScopeId,
     primaryOperatorId: options.primaryOperatorId,
-    buildService: options.buildService,
     vault: options.vault,
     cache: options.cache,
     retainCommit: options.retainCommit,

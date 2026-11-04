@@ -1,5 +1,6 @@
-import { deepStrictEqual, equal, throws } from "node:assert/strict";
+import { deepStrictEqual, equal, match, throws } from "node:assert/strict";
 import { signal } from "@preact/signals";
+import { RequestSourceApiError } from "../model/sources/request-revisions.ts";
 import type {
   AgentConversation,
   AgentMessageCommand,
@@ -211,6 +212,68 @@ Deno.test("uncertain writes retain their draft without blocking or leaking error
   equal(writes, 1);
   state.select("contact");
   equal(draft.value, "À conserver");
+});
+
+Deno.test("a stale conversation is reread and retried once with the fresh revision", async () => {
+  for (const outcome of ["success", "second-stale", "read-fails"] as const) {
+    const draft = signal("Keep this message");
+    const events: Array<AgentMessageCommand | "read"> = [];
+    let writes = 0;
+    const refreshed = source();
+    refreshed.conversations[0].revision = 8;
+    const state = createAgentConversations({
+      draft,
+      canWrite: () => true,
+      port: {
+        read: () => {
+          events.push("read");
+          return outcome === "read-fails"
+            ? Promise.reject(new Error("Conversation read refused"))
+            : Promise.resolve(refreshed);
+        },
+        send: (command) => {
+          events.push(command);
+          writes++;
+          if (writes === 1 || outcome === "second-stale") {
+            return Promise.reject(
+              new RequestSourceApiError(
+                "Conversation changed",
+                409,
+                "STALE_CONVERSATION",
+              ),
+            );
+          }
+          return Promise.resolve({ accepted: true });
+        },
+      },
+    });
+    state.accept(source());
+    equal(await state.send(), outcome === "success");
+    deepStrictEqual(events.slice(0, 2), [
+      { agentId: "contact", text: "Keep this message", expectedRevision: 7 },
+      "read",
+    ]);
+    if (outcome !== "read-fails") {
+      deepStrictEqual(events[2], {
+        agentId: "contact",
+        text: "Keep this message",
+        expectedRevision: 8,
+      });
+    }
+    equal(
+      events.filter((event) => event !== "read").length,
+      outcome === "read-fails" ? 1 : 2,
+    );
+    if (outcome !== "success") {
+      equal(draft.value, "Keep this message");
+      match(state.error.value, /STALE_CONVERSATION/);
+      if (outcome === "read-fails") {
+        match(state.error.value, /Conversation read refused/);
+      }
+    } else {
+      equal(draft.value, "");
+    }
+  }
 });
 
 Deno.test("a newer conversation event wins over an older in-flight read and dispose ignores late results", async () => {

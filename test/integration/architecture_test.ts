@@ -59,6 +59,10 @@ Deno.test("atelier production imports keep the DDD dependency direction", async 
             !dependency.href.startsWith(new URL("infrastructure/", root).href),
             `${file}: dependency on infrastructure (${specifier})`,
           );
+          assert(
+            !dependency.href.startsWith(new URL("composition/", root).href),
+            `${file}: dependency on composition (${specifier})`,
+          );
           if (layer === "domain") {
             assert(
               dependency.href.startsWith(directory.href),
@@ -145,7 +149,7 @@ const INFRASTRUCTURE_ADAPTERS_WARNLIST: Array<
 // automatic future growth. All equality/direction/new-pair checks remain strict.
 const DOMAIN_CROSS_CONTEXT_WARNLIST: Record<string, number> = {
   "governance->model": 17,
-  "governance->work": 10,
+  "governance->work": 9,
   "model->governance": 16,
   "model->work": 10,
   "skills->work": 1,
@@ -242,43 +246,13 @@ Deno.test("the sysml toolkit pin stays at its frozen path", async () => {
   }
 });
 
-// Dated warn-list (2026-11-02, closure R6): context adapters still awaiting
-// migration. Counts exclude colocated tests and may only shrink. Lower the
-// count in the commit that removes a file; remove an entry when it reaches zero.
-const ADAPTERS_CONTEXT_WARNLIST: Record<string, number> = {
-  work: 32,
-  model: 26,
-  governance: 9,
-  skills: 1,
-};
-
-Deno.test("adapters top level stays within the dated context warn-list", async () => {
+Deno.test("adapters top level contains only incoming and outgoing adapters and the frozen toolkit pin", async () => {
   const root = new URL("../../src/adapters/", import.meta.url);
-  const counts: Record<string, number> = {};
   for await (const entry of Deno.readDir(root)) {
-    if (entry.name === "sysml-toolkit-pin.ts" && entry.isFile) continue;
-    if ((entry.name === "in" || entry.name === "out") && entry.isDirectory) {
-      continue;
-    }
     assert(
-      entry.isDirectory && Object.hasOwn(ADAPTERS_CONTEXT_WARNLIST, entry.name),
+      entry.name === "sysml-toolkit-pin.ts" && entry.isFile ||
+        (entry.name === "in" || entry.name === "out") && entry.isDirectory,
       `unexpected adapters top-level entry: ${entry.name}`,
-    );
-    let count = 0;
-    for await (const _file of sourceFiles(new URL(`${entry.name}/`, root))) {
-      count++;
-    }
-    counts[entry.name] = count;
-  }
-  for (const [context, recorded] of Object.entries(ADAPTERS_CONTEXT_WARNLIST)) {
-    const actual = counts[context] ?? 0;
-    assert(recorded > 0, `remove zeroed adapters context entry: ${context}`);
-    assert.equal(
-      actual,
-      recorded,
-      actual > recorded
-        ? `new adapters context file ${context}: ${actual} > warn-list ${recorded}`
-        : `adapters context ${context} shrank to ${actual}; lower or remove its warn-list entry in this change`,
     );
   }
 });

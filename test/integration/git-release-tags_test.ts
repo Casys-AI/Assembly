@@ -2,7 +2,7 @@ import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import { GitReleaseTags } from "../../src/adapters/out/git/release-tags.ts";
 import { repositoryWriterLock } from "../../src/adapters/out/git/writer-lock.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 import type { SavedSystemSourceEvidence } from "../../src/domain/work/saved-systems.ts";
 
 Deno.test("release tags bind exact Git objects, recover without overwrite, and report drift", async () => {

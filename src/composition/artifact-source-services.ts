@@ -4,7 +4,7 @@ import {
   type QueuedArtifactSourcePublisher,
 } from "../application/work/artifacts/publication.ts";
 import type { ArtifactSourceRepositoryPort } from "../application/work/artifacts/source-repository.ts";
-import { PostgresArtifactBindings } from "../adapters/work/artifacts/postgres-bindings.ts";
+import { PostgresArtifactBindings } from "../adapters/out/postgres/artifact-source-bindings.ts";
 import type { PrismaClient } from "../adapters/out/postgres/client.ts";
 import { safeStoragePort } from "../adapters/out/postgres/errors.ts";
 import {

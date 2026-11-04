@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { fromPrisma } from "pg-boss";
 import { SystemRuntime } from "../../src/application/work/runtime/system.ts";
-import type { PostgresNativeExecutionLedger } from "../../src/adapters/work/runtime/postgres-ledger.ts";
+import type { PostgresNativeExecutionLedger } from "../../src/adapters/out/native-execution/postgres-ledger.ts";
 import { postgresExecutionTransaction } from "../../src/adapters/out/postgres/execution-transaction.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";
 import type {
@@ -17,16 +17,16 @@ import {
   executableFixture,
 } from "../support/execution-fixture.ts";
 import { emptyNativeEvolutionAwait } from "../../src/application/work/runtime/evolution.ts";
-import type { NativeDeclaredConsultationRefusal } from "../../src/application/work/runtime/execution.ts";
+import type { NativeDeclaredConsultationRefusal } from "../../src/application/work/native-execution/contract.ts";
 import { createMemoryArtifactSources } from "../support/memory-artifact-sources.ts";
-import { nativeCandidateConversationAdvanceEvidence } from "../../src/application/work/runtime/model-advance.ts";
-import type { NativeExecutionRequest } from "../../src/application/work/runtime/execution.ts";
+import { nativeCandidateConversationAdvanceEvidence } from "../../src/application/work/native-execution/model-advance.ts";
+import type { NativeExecutionRequest } from "../../src/application/work/native-execution/contract.ts";
 import { unexpectedModelAuthoring } from "../support/model-authoring.ts";
 import { openPostgresDurableRecoveryHost } from "../support/postgres-runtime-fixture.ts";
 import {
   nativeExecutionIdentity,
   runtimeRevisionReference,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import { eventually } from "../support/eventually.ts";
 import { postgresTestEnabled } from "../support/postgres.ts";
 
@@ -763,7 +763,7 @@ Deno.test({
           async save(state, expected) {
             if (
               interrupt && !interrupted && state.cases?.some((record) =>
-                record.status === "closed-done"
+                record.status === "closed-abandoned"
               ) &&
               state.requestResumptions?.some((receipt) =>
                 receipt.status === "completed"
@@ -791,7 +791,7 @@ Deno.test({
             return Promise.resolve({
               kind: "reply" as const,
               text: calls === 1 ? "Opened" : "Durable terminal reply",
-              ...(calls === 2 ? { caseClosure: "done" as const } : {}),
+              ...(calls === 2 ? { caseClosure: "abandoned" as const } : {}),
             });
           },
           review: () => {
@@ -800,7 +800,8 @@ Deno.test({
         },
         model: {
           ...unexpectedModelAuthoring,
-          initialize: () => Promise.resolve(structuredClone(model.identity)),
+          initialize: () =>
+            Promise.resolve(structuredClone(model.identity)),
           readExecutableModel: () => Promise.resolve(structuredClone(model)),
           graph: () => Promise.resolve({}),
           applyApprovedChange() {
@@ -867,7 +868,7 @@ Deno.test({
       await boundary.promise;
       const storage = await first.storage.operator("child");
       const before = (await storage.state.load())!;
-      assert.equal(before.cases![0]!.status, "closed-done");
+      assert.equal(before.cases![0]!.status, "closed-abandoned");
       assert.equal(before.requestResumptions![0]!.status, "started");
       assert.equal(before.requestResumptions![0]!.outcome, undefined);
       const inputMessageId = `${caseId}:resume:${resume.resumeId}`;
@@ -899,7 +900,7 @@ Deno.test({
       );
       await successor.idle(reopened, 30000);
       const outcome = await reopened.resumeRequest(resume);
-      assert.equal(outcome.status, "closed-done");
+      assert.equal(outcome.status, "closed-abandoned");
       assert.equal(outcome.reply, "Durable terminal reply");
       assert.equal(outcome.modelVersion, model.version.repositoryVersion);
       assert.deepEqual(await reopened.resumeRequest(resume), outcome);

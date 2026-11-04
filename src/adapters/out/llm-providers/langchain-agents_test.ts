@@ -16,6 +16,76 @@ import type { StructuredPromptParts } from "./structured-agents.ts";
 
 const context: ChatContext = { messages: [], activeTools: [], candidates: [] };
 
+Deno.test("native host observations share the opening user message and replay once", async () => {
+  class PromptAgent extends LangChainAgents {
+    request(parts: StructuredPromptParts) {
+      return this.call("{}", decisionBatchSchema(decisionSchema), parts);
+    }
+  }
+  const fake = createClaudeToolsFake(() => ({
+    decision: { kind: "reply", text: "Done" },
+  }));
+  const agent = new PromptAgent({
+    apiKey: "fixture",
+    model: "fixture",
+    fetch: fake.fetch,
+  });
+  const turn = {
+    inputMessageId: "input-1",
+    brief: { input: "Brief" },
+    requestOutcomes: [{ messageId: "outcome-1", value: "Recorded outcome" }],
+  };
+  const parts: StructuredPromptParts = {
+    system: "Instructions",
+    payload: turn.brief,
+    turn,
+  };
+  await agent.request(parts);
+  await agent.request({
+    ...parts,
+    turn: {
+      ...turn,
+      requestOutcomes: [...turn.requestOutcomes, {
+        messageId: "outcome-2",
+        value: "Later observation",
+      }],
+    },
+    replay: [{
+      turn,
+      assistantBlocks: [{
+        type: "tool_use",
+        id: "call-1",
+        name: "consult_model",
+        input: {},
+      }],
+      results: [{ id: "call-1", result: "Read" }],
+    }],
+  });
+  equal(
+    JSON.stringify(fake.requests[1].messages).split("Later observation")
+      .length - 1,
+    1,
+  );
+  equal(fake.requests[1].messages.length, 3);
+  equal(fake.requests[1].messages[2].content[0].type, "tool_result");
+  for (const request of fake.requests) {
+    equal(request.messages[0].role, "user");
+    equal(request.messages[0].content.length, 2);
+    equal(request.messages[0].content[0].text, JSON.stringify(turn.brief));
+    equal(
+      JSON.stringify(request.messages).split("Recorded outcome").length - 1,
+      1,
+    );
+    for (let i = 1; i < request.messages.length; i++) {
+      equal(
+        request.messages[i - 1].role === "user" &&
+          request.messages[i].role === "user",
+        false,
+      );
+    }
+  }
+});
+
 Deno.test("native turn replay preserves the prior request and appends one result and the next input", async () => {
   class PromptAgent extends LangChainAgents {
     request(parts: StructuredPromptParts) {
@@ -521,6 +591,51 @@ Deno.test("schema repair produces two observations and sink rejection never adds
   equal(collection.status.received, 2);
   equal(collection.status.dropped.sinkFailure, 2);
   equal(collection.status.pending, 0);
+});
+
+Deno.test("Request completion without a person verdict is repaired before returning", async () => {
+  const requestContext: ChatContext = {
+    ...context,
+    case: {
+      id: "request",
+      number: 1,
+      type: "request",
+      objective: "Read",
+      owner: "operator",
+      openedBy: "person",
+      openedFrom: { conversationId: "main" },
+      modelPin: { digest: "pin" },
+      status: "open",
+      createdAt: "now",
+    },
+  };
+  const repaired = { kind: "reply", text: "Ready for your judgment" } as const;
+  for (const batch of [false, true]) {
+    const fake = createClaudeToolsFake((view) =>
+      view.isRepair ? { decision: repaired } : {
+        toolUse: {
+          name: "reply",
+          input: { text: "Complete", caseClosure: "done" },
+        },
+      }
+    );
+    const agent = new LangChainAgents({
+      apiKey: "fixture",
+      model: "sonnet",
+      fetch: fake.fetch,
+    });
+    if (batch) {
+      deepStrictEqual(
+        (await agent.decideBatch(requestContext)).calls.map((call) =>
+          call.decision
+        ),
+        [repaired],
+      );
+    } else deepStrictEqual(await agent.decide(requestContext), repaired);
+    equal(fake.requests.length, 2);
+    equal(fake.views[1]!.repair?.code, "INVALID_TOOL_INPUT");
+    match(fake.views[1]!.repair!.detail, /caseClosure.*allowed values/);
+  }
 });
 
 Deno.test("concurrent SDK completions share one bounded observer without changing HTTP decisions", async () => {

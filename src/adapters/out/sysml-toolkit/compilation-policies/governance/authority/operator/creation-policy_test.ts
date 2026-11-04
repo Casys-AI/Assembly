@@ -3,7 +3,7 @@ import type {
   ElementRecord,
   ModelSnapshot,
 } from "../../../../../../../domain/model/records/snapshot.ts";
-import type { ModelIdentity } from "../../../../../../../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../../../../../domain/shared-kernel/model-identity.ts";
 import { compileOperatorCreationPolicies } from "./creation-policy.ts";
 
 function fixture(product = "Assembly") {

@@ -124,17 +124,19 @@ structured graph merging is not yet used to publish the model.
 
 ## Release tags and exact source selection
 
-**30 October 2026 UX update:** publication, retained closure and current Request
-availability are independent observations. Selected inspection, after existing
-access checks, may add view-only `openingAvailability` (`unchecked`, `ready`,
-`unavailable`) and sanitized `openingIssues`. List/save do not perform host
-preflight. Ready is displayed as **Ready at last check**, never persisted as a
-grant or continuously live assurance; fresh opening repeats its checks. Skill
-prerequisite metadata remains historical dependency evidence, not proof that an
-exact local bundle is absent. No second approval, allocation or mutation occurs
-from reading readiness. ROOT observed green readiness for one selected published
-Main Release, without a retention retry or second approval; the UX qualification
-of 30 October 2026 records its bounded proof and remaining gates.
+Publication, retained closure and current Request availability are independent
+observations. Selected inspection, after existing access checks, may add
+view-only `openingAvailability` (`unchecked`, `ready`, `unavailable`) and
+sanitized `openingIssues`. List and save do not perform host preflight. A
+Release that a Request can start from shows **Ready** in the catalogue and in
+its inspection, with a **New Request from this Release** link that preselects it
+in the **Start from** selector of the Requests page. The tooltip reads “Ready at
+last check”: readiness is never persisted as a grant or continuously live
+assurance, and a fresh opening repeats its checks. Skill prerequisite metadata
+remains historical dependency evidence, not proof that an exact local bundle is
+absent. No second approval, allocation or mutation occurs from reading
+readiness. The UX qualification of 30 October 2026 recorded a bounded proof for
+one selected published Main Release.
 
 A new Model Release selects an eligible branch and an exact `commit:<40 hex>`
 source. The authenticated, scoped local command `POST /api/saved-systems/tags`
@@ -270,22 +272,27 @@ operator uses `main`.
 
 ### Deciding on a mandate revision proposed in chat
 
-`POST /api/decisions`
+`POST /api/conversations/:agentId/changes/:changeId/decision`
 
 ```json
 {
-  "kind": "change",
-  "changeId": "<proposition-exacte>",
-  "expectedRevision": 226,
+  "expectedRevision": 42,
+  "configurationRevision": 2,
   "verdict": "approve"
 }
 ```
 
-Here, `expectedRevision` is the current **application** revision; `226` is an
-example. The host then checks the proposal’s configuration revision. For this
-governance command, approval applies the bounded native change, rereads and
-validates the model, then adopts the new configuration before any chat resumes.
-This specialised workflow differs from generic SysML file acceptance above.
+Here, `expectedRevision` is the conversation revision and
+`configurationRevision` is the base revision of the proposal. A decision in a
+Request adds `?space=requests` and a `caseId` to the body (see
+[Cases](../operateurs/cases.md#reading-and-talking-to-a-request-in-its-space)).
+For this governance command, approval applies the bounded native change, rereads
+and validates the model, then adopts the new configuration before any chat
+resumes. This specialised workflow differs from generic SysML file acceptance
+above. The historical `POST /api/decisions` route with `kind: "change"` remains
+a local control; the card in the chat no longer calls it. The change, its diff
+and the recorded receipt are described in
+[Operator authority](../operateurs/autorite-des-operateurs.md#proposition-diff-et-décision-humaine).
 
 Decisions are local controls. They do not authenticate a human identity. POSTs
 whose `Origin` differs, or whose `Sec-Fetch-Site` is `cross-site`, are rejected.
@@ -294,7 +301,7 @@ whose `Origin` differs, or whose `Sec-Fetch-Site` is `cross-site`, are rejected.
 
 | Method and path                               | Result                                                                                                            |
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `GET /api/state`                              | Current state: conversation, configuration, agents, mandates, candidates and events.                              |
+| `GET /api/state`                              | Current state: conversation, configuration, operators, mandates, candidates and events.                           |
 | `GET /api/history`                            | `{currentRevision, revisions}`; each entry describes a recorded revision and whether its projection is available. |
 | `GET /api/history/:revision`                  | `{state, projection}` for the recorded state; `404` if absent.                                                    |
 | `GET /api/events`                             | SSE stream of application states.                                                                                 |
@@ -369,5 +376,6 @@ Contract sources:
 [Revisions page](../../../frontend/components/model/revisions/RevisionsPage.tsx),
 [versions put in service](../../../frontend/lib/model/revisions/history.ts),
 [compiler](../../../src/adapters/out/sysml-toolkit/compilation/compiler.ts),
-[diff](../../../src/adapters/model/sources/changes/diff.ts),
-[HTTP composition](../../../src/main.ts).
+[diff](../../../src/application/model/revisions/source-diff.ts),
+[HTTP routes](../../../src/adapters/in/http/app.ts),
+[composition root](../../../src/composition/root.ts).

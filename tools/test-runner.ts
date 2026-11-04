@@ -24,9 +24,9 @@ const NATIVE = [
   "test/integration",
   "src/adapters/out/sysml-toolkit/compilation-policies/governance/model-access/administration/policy_test.ts",
   "src/adapters/out/sysml-toolkit/compilation-policies/governance/model-access/editing/policy_test.ts",
-  "src/adapters/governance/model-access/delegation/state_test.ts",
-  "src/adapters/governance/authority/operator/writer_test.ts",
-  "src/adapters/model/sources/editing/host-writer_test.ts",
+  "src/application/governance/model-access/delegation/state_test.ts",
+  "src/composition/operator-writer_test.ts",
+  "src/application/model/editing/host-writer_test.ts",
 ];
 const POSTGRES = [
   "postgres-retirement-job-receipts",
@@ -73,7 +73,6 @@ const POSTGRES = [
   "postgres-shared-native-runtime",
   "postgres-agent-cap",
   "case-numbering",
-  "operator-cases",
   "legacy-plan-cases",
   "cases-store",
   "queued-model-writer",
@@ -99,6 +98,13 @@ const POSTGRES_TOOLKIT = [
   "request-value-flow",
   "request-team-workspace",
   "request-authority-middle",
+  "generic-work-result",
+  "operator-authority",
+  "operator-workspace",
+  "operator-authority-policy",
+  "tool-admission-policy",
+  "operator-cases",
+  "skills-execution",
 ].map((name) => `test/integration/${name}_test.ts`);
 const FRONTEND = [
   "islands",
@@ -488,7 +494,10 @@ function definition(
       };
     case "semantic":
       return {
-        roots: ["test/integration/semantic-index_test.ts"],
+        roots: [
+          "test/integration/semantic-index_test.ts",
+          "test/integration/ldkit-shacl_test.ts",
+        ],
         permissions: INTEGRATION_PERMISSIONS,
       };
   }
@@ -615,7 +624,7 @@ export function createTestPlan(
     timeoutSeconds: options.timeoutSeconds,
     stages,
     exclusions:
-      "Normal standard/workspace stages run unit/setup (plus frontend for workspace); changed profiles retain affected integration. Focused integration requires selection; integration-full explicitly runs the complete non-native integration roots. Normal and integration-full stages exclude inherited Toolkit, PostgreSQL, native builds, SHACL/LDkit and real providers. toolkit/full exclude PostgreSQL and heavy; postgres excludes Toolkit; postgres-toolkit requires both explicit fixtures; semantic selects SHACL/LDkit only. Heavy is explicit, never implied by full. Ignored tests are not qualification evidence.",
+      "Normal standard/workspace stages run unit/setup (plus frontend for workspace); changed profiles retain affected integration. Focused integration requires selection; integration-full explicitly runs the complete non-native integration roots. Normal and integration-full stages exclude inherited Toolkit, PostgreSQL, native builds, SHACL/LDkit and real providers. toolkit/full exclude PostgreSQL and heavy; postgres excludes Toolkit; postgres-toolkit requires both explicit fixtures; semantic selects native index, SHACL and LDkit without Toolkit. Heavy is explicit, never implied by full. Ignored tests are not qualification evidence.",
   };
 }
 
@@ -674,6 +683,8 @@ export function stageEnvironment(
   }
   if (stage === "semantic") {
     env.ASSEMBLY_SHACL_INTEGRATION = "1";
+    env.ASSEMBLY_SEMANTIC_INTEGRATION = "1";
+    env.ASE_SEMANTIC_INTEGRATION = "1";
   }
   Object.assign(env, {
     DENO_JOBS: String(jobs),

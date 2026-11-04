@@ -55,6 +55,7 @@ async function mount(
   }
   const show = (next: string, generation = options.generation) =>
     root.show(Probe, {
+      versionInfo: { source: { kind: "main" as const } },
       location: { search: next },
       generation,
       live: options.live,

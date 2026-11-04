@@ -574,6 +574,7 @@ for (const kind of ["invoke_tool", "invoke_behavior"] as const) {
     };
     fixture.snapshot.conversationBatches = [batch];
     const host = {
+      ports: { clock: { now: () => "2026-11-03T00:00:00.000Z" } },
       state: fixture.snapshot,
       update: (mutate: (state: SystemRuntimeState) => void) => {
         mutate(fixture.snapshot);

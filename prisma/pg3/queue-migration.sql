@@ -1,6 +1,6 @@
 -- PG-3 reference SQL adopted as migration 20261027000002_model_write_queue.
 -- Keep physical fields/constraints synchronized with the canonical schema and
--- src/adapters/model/repository/writing/postgres-write-queue.ts.
+-- src/adapters/out/postgres/model-write-queue.ts.
 -- Qualification context: PostgreSQL 18.4, Prisma 7.10.1, Deno 2.9.7.
 -- Unqualified identifiers on purpose: the migration runner / test fixture
 -- sets search_path to the target schema (same convention as the PG-1

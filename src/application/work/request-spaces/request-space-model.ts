@@ -1,12 +1,13 @@
 import type { ModelPort } from "../runtime/ports.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { SystemConfiguration } from "../../../domain/governance/records/system-configuration.ts";
-import type { ModelIdentity } from "../../../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../domain/shared-kernel/model-identity.ts";
 import {
   exactSourceVersion,
   type OpeningBase,
   type OpeningRecord,
   RequestSpaceError,
+  type VerifiedRequestTeam,
 } from "../../../domain/work/request-spaces.ts";
 import { creationReceiptVerifies } from "../../../domain/governance/policies/operator-creation-policy.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
@@ -68,16 +69,13 @@ export class RequestSpaceModel implements ModelPort {
       }
       & (
         | {
-          caseId?: undefined;
+          requestTeam?: undefined;
           executionSpaceId?: undefined;
-          branchTeamSize?: undefined;
         }
         | {
-          /** A Case-scoped runtime port names its Case, its branch space
-           * and the verified whole-team size, for creation reads there. */
-          caseId: string;
+          /** Verified Case roster and its branch space for creation reads. */
           executionSpaceId: string;
-          branchTeamSize: number;
+          requestTeam: VerifiedRequestTeam;
         }
       ),
   ) {
@@ -134,12 +132,13 @@ export class RequestSpaceModel implements ModelPort {
       );
     }
     this.#model = model;
-    if (input.caseId !== undefined) {
+    if (input.requestTeam !== undefined) {
       this.requestChangeScope = {
-        caseId: input.caseId,
+        caseId: input.requestTeam.caseId,
         operatorId: model.identity.builderId,
         executionSpaceId: input.executionSpaceId,
-        branchTeamSize: input.branchTeamSize,
+        branchTeamSize: input.requestTeam.memberIds.length,
+        memberIds: input.requestTeam.memberIds,
       };
     }
     this.#networkChangePreview = input.networkChangePreview;

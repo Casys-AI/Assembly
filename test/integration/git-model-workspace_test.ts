@@ -1,8 +1,9 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 import { latestModelObservation } from "../support/model-observation.ts";
 import { SYSML_TOOLKIT_VERSION } from "../../src/adapters/out/sysml-toolkit/runtime/loader.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
-import { NativeModelSourceAuthorization } from "../../src/adapters/governance/model-access/source-authorization.ts";
+import { NativeModelSourceAuthorization } from "../../src/application/governance/model-access/source-authorization.ts";
 import { editPolicy } from "../fixtures/model-edit-mandate.ts";
 import type { ModelRevision } from "../../src/domain/model/records/revision.ts";
 import type { ModelSources as Sources } from "../../src/domain/model/value-objects/sources.ts";
@@ -20,16 +21,15 @@ import {
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import {
-  SourceModel,
+  sourceCompilation,
+  sourceEvolutionCompilation,
   validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
-import { queryModelRevision } from "../../src/adapters/model/sources/editing/tooling.ts";
+import { queryModelRevision } from "../../src/application/model/editing/query-revision.ts";
 import { ModelContextReader } from "../../src/application/model/consultation/source-reader.ts";
 import { createModelRevisionHandler } from "../../src/adapters/in/http/model/revisions.ts";
-import {
-  ModelRepositoryError,
-} from "../../src/application/model/repository.ts";
+import { ModelRepositoryError } from "../../src/application/model/repository.ts";
 import type {
   ChatContext,
   ChatDecision,
@@ -224,21 +224,29 @@ Deno.test({
       let repository = await GitModelRepository.open({
         projectDir: project.projectDir,
         compiler,
-        sourceAuthorization: new NativeModelSourceAuthorization(projectId),
+        sourceAuthorization: new NativeModelSourceAuthorization(
+          projectId,
+          sourceCompilation,
+          sourceEvolutionCompilation,
+        ),
       });
       assert.equal(repository.projectId, projectId);
       const tooling = new SysmlToolkitAdapter({ packageDir: packageDir! });
-      let primaryModel = new SourceModel({
+      let primaryModel = createSourceModel({
         repository,
         projectId,
         initialSources: sources,
         tooling,
       });
-      const peerModel = new SourceModel({
+      const peerModel = createSourceModel({
         repository: await GitModelRepository.open({
           projectDir: project.projectDir,
           compiler,
-          sourceAuthorization: new NativeModelSourceAuthorization(projectId),
+          sourceAuthorization: new NativeModelSourceAuthorization(
+            projectId,
+            sourceCompilation,
+            sourceEvolutionCompilation,
+          ),
         }),
         projectId,
         systemQualifiedName: "AssemblyLiveBuilder::collector",
@@ -805,9 +813,17 @@ Deno.test({
       repository = await GitModelRepository.open({
         projectDir: project.projectDir,
         compiler,
-        sourceAuthorization: new NativeModelSourceAuthorization(projectId),
+        sourceAuthorization: new NativeModelSourceAuthorization(
+          projectId,
+          sourceCompilation,
+          sourceEvolutionCompilation,
+        ),
       });
-      primaryModel = new SourceModel({ repository, projectId, tooling });
+      primaryModel = createSourceModel({
+        repository,
+        projectId,
+        tooling,
+      });
       runtime = await openRuntime();
       closeRuntime = () => runtime.close();
       assert.equal(calls, 4);

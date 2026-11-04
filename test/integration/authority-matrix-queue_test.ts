@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { AuthorityMatrixService } from "../../src/application/governance/authority-matrix.ts";
 import { ModelRepositoryError } from "../../src/application/model/repository.ts";
-import { ToolkitModelBoardReader } from "../../src/adapters/model/projections/board-reader.ts";
+import { ToolkitModelBoardReader } from "../../src/adapters/out/sysml-toolkit/projections/board-reader.ts";
 import { createModelBoardHandler } from "../../src/adapters/in/http/model/board.ts";
 import { CompiledAuthorityMatrixReader } from "../../src/adapters/out/sysml-toolkit/projections/authority-matrix/reader.ts";
 import {

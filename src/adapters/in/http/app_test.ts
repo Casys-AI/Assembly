@@ -249,6 +249,70 @@ Deno.test("http app: an event stream opened with a Request session joins its own
   ]);
 });
 
+Deno.test("http app: server audience disconnect immediately releases the event stream resources", async () => {
+  const audience = new SseAudience<SpaceController>();
+  const member = { ownerId: "owner" } as SpaceController;
+  let added: EventListenerOrEventListenerObject | null = null;
+  let removed: EventListenerOrEventListenerObject | null = null;
+  let intervalCleared = false;
+  const originalSetInterval = globalThis.setInterval;
+  const originalClearInterval = globalThis.clearInterval;
+  let timer: ReturnType<typeof setInterval> | undefined;
+  globalThis.setInterval = ((callback: () => void, delay?: number) => {
+    timer = originalSetInterval(callback, delay);
+    return timer;
+  }) as typeof setInterval;
+  globalThis.clearInterval =
+    ((id: ReturnType<typeof setInterval> | undefined) => {
+      if (id === timer) intervalCleared = true;
+      originalClearInterval(id);
+    }) as typeof clearInterval;
+  const { base } = dependencies({
+    eventAudience: {
+      identify(request) {
+        const signal = request.signal;
+        const add = signal.addEventListener.bind(signal);
+        const remove = signal.removeEventListener.bind(signal);
+        signal.addEventListener = ((
+          type: string,
+          listener: EventListenerOrEventListenerObject,
+          options?: AddEventListenerOptions,
+        ) => {
+          if (type === "abort") added = listener;
+          add(type, listener, options);
+        }) as typeof signal.addEventListener;
+        signal.removeEventListener = ((
+          type: string,
+          listener: EventListenerOrEventListenerObject,
+          options?: EventListenerOptions,
+        ) => {
+          if (type === "abort") removed = listener;
+          remove(type, listener, options);
+        }) as typeof signal.removeEventListener;
+        return Promise.resolve(member);
+      },
+      audience,
+    },
+  });
+  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+  try {
+    const response = await createHttpApp(base).request("/api/events");
+    reader = response.body!.getReader();
+    for (let i = 0; i < 4; i++) assert.equal((await reader.read()).done, false);
+    assert.equal(base.clients.size, 1);
+    assert.ok(added);
+    audience.disconnect(member);
+    assert.equal(base.clients.size, 0);
+    assert.equal(intervalCleared, true);
+    assert.equal(removed, added);
+    assert.equal((await reader.read()).done, true);
+  } finally {
+    await reader?.cancel();
+    globalThis.setInterval = originalSetInterval;
+    globalThis.clearInterval = originalClearInterval;
+  }
+});
+
 Deno.test("http app: delegation errors keep the mapped status", async () => {
   const failing: HttpEdgeHandler = () => {
     throw new ChangePublicationError("PUBLICATION_FAILED", {

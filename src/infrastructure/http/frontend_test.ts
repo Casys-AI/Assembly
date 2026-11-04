@@ -20,6 +20,7 @@ Deno.test("Fresh dispatch owns only application views and its assets, keeping AP
       "/model",
       "/revisions?commit=branch:x",
       "/decide",
+      "/activity",
     ]
   ) {
     const response = await dispatch(new Request(`http://localhost${path}`));
@@ -46,7 +47,7 @@ Deno.test("Fresh dispatch owns only application views and its assets, keeping AP
   ) {
     assert.equal(await dispatch(new Request(`http://localhost${path}`)), null);
   }
-  assert.equal(calls.length, 8);
+  assert.equal(calls.length, 9);
 });
 
 Deno.test("Fresh loader imports only the compiled handler", async () => {

@@ -44,9 +44,23 @@ values below. A change goes through revision and adoption.
 | Main operator      | `operatorName="Main Operator"`, `primaryContact=true`, `humanInputEnabled=true`. Its mission is to design and evolve the system with the person and create operators for Requests. |
 | Context            | `recentMessages=8`, `maxMessageCharacters=2000`, `maxCollectionItems=12`, `maxContextCharacters=250000`. Limits count JSON characters.                                             |
 | Memory             | `modeling` scope, sources required, known outcome required for admission, maximum validity 86 400 000 ms, `allowSelfAdmission=false`.                                              |
-| Skills             | Host `raw.githubusercontent.com`, `maxSkillBytes=65536`, `maxInstalledSkills=32`, `maxLoadedSkills=4`, `maxLoadedCharacters=48000`.                                                |
+| Skills             | No download hosts (`allowedHosts=[]`), `maxSkillBytes=65536`, `maxInstalledSkills=32`, `maxLoadedSkills=4`, `maxLoadedCharacters=48000`.                                           |
 | Initial skill      | `assembly-modeling`, bundled reference, digest recorded in the model, loaded on first installation.                                                                                |
 | Conventional tools | No tools selected by default; human admission in the normal configuration.                                                                                                         |
+
+New systems also receive an explicit invocation budget of 1,000 cumulative agent
+invocations per dossier (`revision=1`, `onExhausted="wait"`, recipient
+`local-control`). This is the chosen initial setting, not a recommended ceiling
+for every mission. It is separate from each turn's decision and flow-step
+limits. The diagnostic-only `AccountabilityAssignment` binds the containing
+conversation to its declared human owner; it does not establish that person's
+acceptance of accountability. Plans require their own direct assignment.
+
+The bundled initial skill needs no download host. Installing a remote skill
+requires an accepted and adopted source revision that explicitly authorizes its
+host in `SkillPolicy.allowedHosts`. If the network mandate does not list that
+host, `CAPABILITY_BEYOND_MANDATE` reports a warning. Existing source sets are
+not rewritten by these defaults.
 
 The name and mission come from [`system.sysml`](../../../models/system.sysml)
 and [`configuration.sysml`](../../../models/configuration.sysml). The 25 October

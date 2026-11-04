@@ -2,6 +2,7 @@ import { ModelContextLink } from "../../view/ModelContextLink.tsx";
 import { useRef } from "preact/hooks";
 import { monogram } from "../../../lib/workbench/desk.ts";
 import {
+  AVATAR,
   edgesOf,
   layoutTeam,
   nodesOf,
@@ -28,9 +29,18 @@ const RESOURCE_ICON: Record<TeamResource["kind"], IconName> = {
 };
 
 /**
+ * A call's arrow, in pixels: its length, and the air between its tip and the
+ * rim of the callee's avatar; it is put that far back from the wire's end.
+ */
+const ARROW = 8;
+const ARROW_GAP = 3;
+const ARROW_BACK = ARROW + AVATAR / 2 + ARROW_GAP;
+
+/**
  * The team as a network, not an org chart: the agents in the middle, what they
- * work with around them; a line says who uses what, and a dark one who the
- * person talks with. A thing several agents use is one node with its count.
+ * work with around them; a line says who uses what, a dark one who the person
+ * talks with, and an arrow which agent may call which. A thing several agents
+ * use is one node with its count.
  * Selecting an agent is following its link, and draws the same layout again:
  * the simulation runs when the team or the width changes, not for a click.
  * Nodes can be dragged (pointer events, no library); a press that does not
@@ -73,6 +83,23 @@ export function TeamNetwork(
       style={{ height: `${layout.height}px` }}
     >
       <svg class="wires" aria-hidden="true">
+        <defs>
+          <marker
+            id="tmap-call"
+            viewBox={`0 0 ${ARROW} ${ARROW}`}
+            markerWidth={ARROW}
+            markerHeight={ARROW}
+            markerUnits="userSpaceOnUse"
+            refX={ARROW_BACK}
+            refY={ARROW / 2}
+            orient="auto"
+          >
+            <path
+              class="arrow"
+              d={`M0 0.5L${ARROW} ${ARROW / 2}L0 ${ARROW - 0.5}z`}
+            />
+          </marker>
+        </defs>
         {edges.map((edge) => {
           const from = at.get(edge.from), to = at.get(edge.to);
           if (!from || !to) return null;
@@ -85,6 +112,7 @@ export function TeamNetwork(
               y1={y1}
               x2={x2}
               y2={y2}
+              marker-end={edge.kind === "calls" ? "url(#tmap-call)" : undefined}
             />
           );
         })}

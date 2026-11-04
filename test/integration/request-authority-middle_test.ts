@@ -22,13 +22,13 @@ import type {
   ChatContext,
   ChatDecision,
 } from "../../src/domain/work/dialogue.ts";
-import { validateSourceExecutable } from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { caseTypesForModel } from "../../src/domain/work/records/case-types.ts";
 import { designerScopeId } from "../../src/application/work/cases/runtime.ts";
 import {
   sourceLiterals,
   sourceSnapshot,
-} from "../../src/adapters/model/projections/graph/source.ts";
+} from "../../src/domain/model/projections/source-facts.ts";
 import { compileOperatorAuthorityPolicies } from "../../src/adapters/out/sysml-toolkit/compilation-policies/governance/authority/operator/policy.ts";
 import { compileToolAdmissionPolicies } from "../../src/adapters/out/sysml-toolkit/compilation-policies/governance/authority/tool-admission-policy.ts";
 import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority.ts";

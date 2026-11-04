@@ -8,6 +8,7 @@
  * SystemRuntimeState), so moving them would create forbidden
  * domain->application edges. See the architecture test (DDD direction).
  */
+import type { ModelIdentity } from "../shared-kernel/model-identity.ts";
 import type {
   AuthorityExercise,
   OwnerAuthority,
@@ -132,19 +133,6 @@ export interface Event {
   /** Full deployment record, written once per session startup. */
   runtimeProvenance?:
     import("./value-objects/runtime-provenance.ts").RuntimeProvenanceRecord;
-}
-
-export interface ModelIdentity {
-  /** Concrete native ConversationSystem selected in a shared source revision. */
-  systemQualifiedName?: string;
-  backend?: "native";
-  projectId: string;
-  editingContextId: string;
-  rootId: string;
-  systemId: string;
-  catalogId: string;
-  builderId: string;
-  reviewerId?: string;
 }
 
 /** Execution data only; admitted rights and configuration are always read afresh. */
@@ -581,6 +569,10 @@ export interface ChatDecisionCall {
 export interface ProviderTurn {
   inputMessageId: string;
   brief: unknown;
+  /** Host-recorded decisions and contribution completions delivered between calls,
+   * appended after the brief and before this call; never fabricated provider
+   * tool results. */
+  requestOutcomes?: Array<{ messageId: string; value: unknown }>;
 }
 
 /** Host-authored schema repair, with authentic provider blocks kept opaque. */
@@ -756,6 +748,8 @@ export interface ChatContext {
     assistantBlocks: unknown[];
     results: Array<{ id: string; result: string; isError?: boolean }>;
   }>;
+  /** Exact pending host observations, kept outside compactable journal excerpts. */
+  hostObservations?: ProviderTurn["requestOutcomes"];
   /** Policy-holder host metadata; candidate code is available only by exact inspection. */
   operatorToolAdmission?: {
     policies:

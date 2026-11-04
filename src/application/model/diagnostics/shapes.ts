@@ -1,18 +1,15 @@
-/** SHACL diagnostics port (W6): versioned shapes over projected facts.
- *
- * The engine is a separate, replaceable port; Oxigraph's presence proves
- * nothing about SHACL. Reports are immutable and keyed by the artifact,
- * the shapes digest, the facts projector, the engine and its options —
- * user masks stay in `ModelDiagnosticsService`, outside the report. The
- * Toolkit still validates the language and the domain still grants or
- * refuses rights; these diagnostics are advisory, like the TS lint.
- */
+/** Advisory, immutable reports over exact native model projections.
+ * Compiler associations bind parameterized constraints; user masks stay in
+ * ModelDiagnosticsService. Toolkit and domain authority remain independent. */
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { canonicalDigest } from "../../../domain/primitives/execution-digest.ts";
 import type {
   ModelDiagnostic,
 } from "../../../domain/model/policies/diagnostics.ts";
-import type { BuildRef } from "../../../domain/model/value-objects/element-ref.ts";
+import type {
+  BuildRef,
+  ProjectionRef,
+} from "../../../domain/model/value-objects/element-ref.ts";
 
 export const SHACL_REPORT_KIND = "shacl-report";
 
@@ -36,6 +33,9 @@ interface ShaclReportIdentity {
 export interface ShaclValidationReport {
   readonly build: BuildRef;
   readonly identity: ShaclReportIdentity;
+  /** Present for native graph reports; legacy serialized reports may omit it. */
+  readonly projection?: ProjectionRef;
+  readonly contextDigest?: string;
   readonly conforms: boolean;
   /** Diagnostics in the domain shape, joinable with the TS lint output. */
   readonly diagnostics: readonly ModelDiagnostic[];
@@ -59,9 +59,9 @@ const RECOVERY: Record<ModelShapesErrorCode, string> = {
   SHAPES_INVALID_INPUT:
     "Fix the caller: build reference, facts or shapes are malformed (see context.reason).",
   SHACL_ENGINE_UNAVAILABLE:
-    "Install the pinned pure-JS SHACL engine dependencies; there is no WASM fallback and no built-in substitute.",
+    "Install the pinned shapes/query parsers and native semantic index; there is no alternate evaluator.",
   SHACL_VALIDATION_FAILED:
-    "Inspect the shapes and facts projection versions in the report identity, then retry; the TS lint remains available.",
+    "Inspect the shapes, compiler associations, native query limits and report cache; the TS lint remains available.",
   SHACL_RESULT_UNMAPPED:
     "Extend the Assembly result mapping for the new shape, or rerun without strictUnmapped to count instead of refuse.",
 };
@@ -72,8 +72,9 @@ export class ModelShapesError extends Error {
     readonly code: ModelShapesErrorCode,
     readonly context: Readonly<Record<string, unknown>>,
     message: string,
+    options?: ErrorOptions,
   ) {
-    super(message);
+    super(message, options);
     this.name = "ModelShapesError";
     this.recovery = RECOVERY[code];
   }

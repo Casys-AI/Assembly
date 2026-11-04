@@ -28,8 +28,8 @@ import type { Prisma, PrismaClient } from "./client.ts";
 import type { PostgresHostStorage } from "./host-storage.ts";
 import type { PostgresSpaceAdmissions } from "./request-space-control-store.ts";
 import type { PostgresSystemScope } from "./scope.ts";
-import type { PostgresSpaceEffectStartGuard } from "../../work/runtime/postgres-ledger.ts";
-import type { ResolvedOperatorScope } from "../../work/runtime/operator-dispatch.ts";
+import type { PostgresSpaceEffectStartGuard } from "../native-execution/postgres-ledger.ts";
+import type { ResolvedOperatorScope } from "../../../application/work/native-execution/contract.ts";
 
 const refused = () =>
   new RequestSpaceError(

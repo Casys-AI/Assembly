@@ -387,6 +387,111 @@ details > summary {
   overflow: auto;
   font-size: 12px;
 }
+/* An agent's Markdown: tight paragraphs, lists and code in the message. */
+.message-body p,
+.message-body ul,
+.message-body ol,
+.message-body pre {
+  margin: 0;
+}
+.message-body > * + * {
+  margin-top: .6em;
+}
+.message-body ul,
+.message-body ol {
+  padding-left: 1.4em;
+}
+.message-body li + li {
+  margin-top: .2em;
+}
+.message-body code,
+.tool-steps-list pre {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.message-body code {
+  padding: 0 .3em;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 5%);
+  font-size: .9em;
+}
+.message-body pre {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 4%);
+}
+.message-body pre code {
+  padding: 0;
+  background: none;
+}
+.message-heading {
+  font-weight: 650;
+}
+.message-body blockquote {
+  margin: 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--line);
+  color: var(--muted);
+}
+.message-case-link {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 5%);
+  color: var(--accent);
+  font-size: .9em;
+  text-decoration: none;
+}
+.message-case-link:hover {
+  background: rgb(0 0 0 / 9%);
+  color: var(--ink);
+}
+/* Host and tool records: one quiet line; their exact texts inside. */
+.tool-steps {
+  margin: 0 0 22px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.tool-steps > summary {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  list-style: none;
+}
+.tool-steps > summary::-webkit-details-marker {
+  display: none;
+}
+.tool-steps > summary:hover {
+  background: rgb(0 0 0 / 5%);
+  color: var(--ink);
+}
+.tool-steps-list {
+  display: grid;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.tool-steps-list pre {
+  max-height: 240px;
+  margin: 0;
+  padding: 8px 10px;
+  overflow: auto;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 3.5%);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* How a closed Request ended, where the owner's reply field was. */
+.request-closed {
+  align-self: center;
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
 .capabilities {
   margin-top: 25px;
   border-top: 1px solid var(--line);

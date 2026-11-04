@@ -18,9 +18,7 @@ import {
 } from "node:assert/strict";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");

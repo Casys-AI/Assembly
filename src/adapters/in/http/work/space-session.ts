@@ -18,6 +18,7 @@ export function spaceSessionSecret(request: Request): string {
     throw new RequestSpaceError(
       "FORBIDDEN",
       "A current local control session is required.",
+      { context: { session: "invalid" } },
     );
   }
   const value = matches[0].slice(SPACE_SESSION_COOKIE.length + 1);
@@ -25,6 +26,7 @@ export function spaceSessionSecret(request: Request): string {
     throw new RequestSpaceError(
       "FORBIDDEN",
       "A current local control session is required.",
+      { context: { session: "invalid" } },
     );
   }
   return value;
@@ -90,7 +92,12 @@ export function spaceHttpError(error: unknown): Response {
   }
   if (error instanceof RequestSpaceError) {
     return spaceJson(
-      { code: error.code, error: error.message },
+      {
+        code: error.code,
+        error: error.message,
+        context: error.context,
+        recovery: error.recovery,
+      },
       error.code === "INVALID_COMMAND"
         ? 400
         : error.code === "FORBIDDEN" || error.code === "ADMISSION_REFUSED"

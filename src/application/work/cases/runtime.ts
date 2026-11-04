@@ -1,5 +1,6 @@
 import { CaseError } from "../../../domain/work/errors/case.ts";
 import {
+  type CaseClosureEvidence,
   type CaseKind,
   closeCase,
   isOpenCase,
@@ -471,7 +472,7 @@ export function openInitializationCase(
 /** Consult the execution ledger, where registered groups exist before any
  * canonical batch publication receipt has been written. */
 export async function assertCaseHasNoOpenImmutableGroups(
-  execution: import("../runtime/execution.ts").NativeExecutionPort,
+  execution: import("../native-execution/contract.ts").NativeExecutionPort,
   operatorId: string,
   caseId: string,
 ): Promise<void> {
@@ -497,6 +498,7 @@ export function closeCaseById(
   id: string,
   outcome: "done" | "abandoned",
   clock: ClockPort,
+  evidence?: CaseClosureEvidence,
 ): void {
   const index = state.cases?.findIndex((record) => record.id === id) ?? -1;
   if (index < 0) throw new CaseError("NOT_FOUND", "Unknown Case");
@@ -526,6 +528,12 @@ export function closeCaseById(
       "Decide the pending change or abandon the Case.",
     );
   }
+  const closed = closeCase(
+    state.cases![index],
+    outcome,
+    clock.now(),
+    evidence,
+  );
   if (outcome === "abandoned") {
     for (const change of pending) {
       change.status = "refused";
@@ -534,7 +542,7 @@ export function closeCaseById(
       delete change.authorityExercise;
     }
   }
-  state.cases![index] = closeCase(state.cases![index], outcome, clock.now());
+  state.cases![index] = closed;
   for (const change of state.configuration?.changes ?? []) {
     if (change.caseId !== id || !state.changeWorkContinuations?.[change.id]) {
       continue;

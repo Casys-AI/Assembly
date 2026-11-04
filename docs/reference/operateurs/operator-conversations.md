@@ -56,6 +56,30 @@ containing the same `ConversationsSnapshot`, when opened and whenever changes
 occur. The aggregate version can invalidate the catalog read. There is no
 additional SSE stream per agent.
 
+Independent Requests use the same stream with a private advisory event:
+
+```text
+event: request-conversations-invalidated
+data: {"schemaVersion":1,"caseId":"<request-id>"}
+```
+
+The host resolves the Request's owner and revalidates the receiving session
+before delivery. The event contains no messages or execution permission. The
+host closes only the affected stream when its session is explicitly invalid,
+allowing the existing reconnection and session-recovery paths to run. A
+temporary lookup failure grants no access and does not close other sessions. The
+client rereads `GET /api/conversations?caseId=<request-id>` under its current
+session for an actively displayed Request or an open Request supplying Dock
+decisions. An unheld identity can refresh the scoped collection, but does not
+directly trigger a conversation read.
+
+Notifications follow persisted runtime changes, including recorded progress and
+failure; they do not represent uncommitted LLM tokens. On reconnection or when
+the browser comes back online, the client reconciles its held conversations and
+Request collection. Returning online does not renew an already-ready session or
+require another event stream. This is current-state recovery, without a durable
+SSE replay journal or periodic conversation polling.
+
 <a id="commandes-humaines"></a>
 
 ## Human commands

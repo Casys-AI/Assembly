@@ -15,7 +15,7 @@ import type { ClockPort } from "../runtime/ports.ts";
 import { caseBudgetPolicy, selectCaseInvocation } from "./runtime.ts";
 import { characterCount } from "../../../domain/primitives/character-count.ts";
 import { errorText, makeEvent } from "../runtime/values.ts";
-import type { NativeExecutionContribution } from "../runtime/execution.ts";
+import type { NativeExecutionContribution } from "../native-execution/contract.ts";
 import type { ScheduledCaseTrigger } from "../operators/command-delivery.ts";
 
 const continuationKeys = [
@@ -383,7 +383,11 @@ export async function executeScheduledCase(
     }
     if (!state.events.some((event) => event.id === `${input.id}:started`)) {
       state.events.push({
-        ...makeEvent("case-execution-started", record.objective),
+        ...makeEvent(
+          this.ports.clock,
+          "case-execution-started",
+          record.objective,
+        ),
         id: `${input.id}:started`,
         caseId: input.caseId,
       });
@@ -473,6 +477,7 @@ export async function executeScheduledCase(
     );
     state.events.push({
       ...makeEvent(
+        this.ports.clock,
         failure ? "case-execution-failed" : "case-execution-completed",
         failure ?? reply!.text,
       ),

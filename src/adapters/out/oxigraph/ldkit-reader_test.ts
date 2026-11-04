@@ -176,7 +176,9 @@ Deno.test("metaclass listing, neighborhood and transversal walks map rows", asyn
   equal(parts[0]?.name, "p");
   equal(requests.at(-1)?.limits?.maxResults, 50);
   equal(
-    requests.at(-1)?.sparql.includes("<urn:ase:metaclass:PartUsage>"),
+    requests.at(-1)?.sparql.includes(
+      "<https://www.omg.org/spec/SysML#PartUsage>",
+    ),
     true,
   );
 
@@ -276,7 +278,7 @@ Deno.test("quad-pattern source translates patterns to bounded SELECTs", async ()
 });
 
 Deno.test("schemas keep canonical predicates; the surface is read-only", () => {
-  equal(PackageSchema["@type"], "urn:ase:metaclass:Package");
+  equal(PackageSchema["@type"], "https://www.omg.org/spec/SysML#Package");
   const schema = modelElementSchema("PartUsage");
   equal(schema.ownedMember["@id"], propPredicate("ownedMember"));
   equal(schema.nativeId["@id"], ASE_VOCAB.nativeId);
@@ -410,11 +412,51 @@ Deno.test("named neighborhoods preserve occurrence duplicates and reject null ma
   );
 });
 
+Deno.test("neighbor discovery accepts SysML properties and sysx annotations", async () => {
+  const { index, requests } = fakeIndex();
+  index.queryReadOnly = (request) => {
+    const identities = identityResponse(request);
+    if (identities) return Promise.resolve(identities);
+    requests.push(request);
+    return Promise.resolve({
+      form: "solutions",
+      variables: ["p", "other", "direction"],
+      truncated: false,
+      rows: ["ownedMember", "sysx:sourceDocument"].map((property) => ({
+        p: iri(propPredicate(property)),
+        other: iri(partIri),
+        direction: lit("out"),
+      })),
+    });
+  };
+  const reader = new BoundModelReader(index, build);
+  const result = await reader.neighborsPage({ build, nativeId: "pkg" }, {
+    direction: "both",
+  });
+  deepStrictEqual(result.items.map((edge) => edge.property), [
+    "ownedMember",
+    "sysx:sourceDocument",
+  ]);
+  const query = requests[0]!.sparql;
+  for (
+    const fragment of [
+      'STRSTARTS(STR(?p), "https://www.omg.org/spec/SysML#")',
+      'STRSTARTS(STR(?p), "urn:ase:vocab:prop:")',
+      'STRSTARTS(?propertySuffix, "sysx%3A")',
+      'STRAFTER(STR(?p), "https://www.omg.org/spec/SysML#")',
+      'STRAFTER(STR(?p), "urn:ase:vocab:prop:")',
+    ]
+  ) equal(query.includes(fragment), true);
+});
+
 Deno.test("neighbor discovery pages filter noise before 20/50 row budgets", async () => {
   for (const count of [20, 50]) {
     const { index } = fakeIndex();
     const candidates = [
-      { p: iri(ASE_VOCAB.rdfType), other: iri("urn:ase:metaclass:Package") },
+      {
+        p: iri(ASE_VOCAB.rdfType),
+        other: iri("https://www.omg.org/spec/SysML#Package"),
+      },
       {
         p: iri(propPredicate("external")),
         other: iri("https://external.example/item"),
@@ -434,10 +476,12 @@ Deno.test("neighbor discovery pages filter noise before 20/50 row budgets", asyn
       if (identities) return Promise.resolve(identities);
       let rows = candidates;
       if (
-        request.sparql.includes('STRSTARTS(STR(?p), "urn:ase:vocab:prop:")')
+        request.sparql.includes(
+          'STRSTARTS(STR(?p), "https://www.omg.org/spec/SysML#")',
+        )
       ) {
         rows = rows.filter((row) =>
-          row.p.value.startsWith("urn:ase:vocab:prop:")
+          row.p.value.startsWith("https://www.omg.org/spec/SysML#")
         );
       }
       if (request.sparql.includes("?other ase:nativeId ?neighborNativeId")) {

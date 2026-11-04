@@ -35,12 +35,12 @@ import {
   emptyNativeEvolutionAwait,
   exactNativeChangeApprovalWait,
 } from "../../../application/work/runtime/evolution.ts";
-import { runtimeRevisionReference } from "../../../application/work/runtime/execution.ts";
+import { runtimeRevisionReference } from "../../../application/work/native-execution/contract.ts";
 import type {
   RequestSpaceRuntime,
   RequestSpaceRuntimeDependencies,
-} from "../../work/request-space-runtime.ts";
-import type { PostgresAdmittedRequestRuntime } from "../../work/runtime/postgres.ts";
+} from "../../../application/work/request-spaces/runtime.ts";
+import type { PostgresAdmittedRequestRuntime } from "../native-execution/postgres.ts";
 import { parseNeverStartedAdoptionSource } from "../../../application/work/evolution/native-adoption-successor.ts";
 import {
   canonicalDigest,
@@ -69,6 +69,19 @@ function conflict(message: string): never {
     recovery:
       "Reload the recorded adoption dossier and current Request binding before retrying.",
   });
+}
+
+/** Only the machine code belongs in the serializable context; the original
+ * error remains the cause for the private technical journal. */
+function adoptionFailureCause(error: unknown) {
+  const record = error as {
+    code?: unknown;
+    meta?: { driverAdapterError?: { cause?: { originalCode?: unknown } } };
+  } | null;
+  const code = record?.code === "P2010"
+    ? record.meta?.driverAdapterError?.cause?.originalCode ?? record.code
+    : record?.code;
+  return { code: typeof code === "string" ? code : "UNEXPECTED_ERROR" };
 }
 
 /** Admission is shared by the branch. Only this target's digest advances;
@@ -133,7 +146,7 @@ export class PostgresRequestAdoptionTransition
     private readonly options: {
       client: PrismaClient;
       primary: PostgresPrimarySpaceControlSource;
-      runtime: RequestSpaceRuntime;
+      runtime: RequestSpaceRuntime<OperatorStorage>;
       native: PostgresAdmittedRequestRuntime;
       store: PostgresEvolutionStore;
       binding: PostgresRequestExecutionBindingReader;
@@ -204,6 +217,13 @@ export class PostgresRequestAdoptionTransition
               throw new RequestAdoptionError(
                 "BLOCKED",
                 "The armed adoption remains blocked until its exact boundary is proved.",
+                {
+                  context: {
+                    dossierId: dossier.id,
+                    adoptionKey: dossier.intent.adoptionKey,
+                    blockers: checkpoint.blockers,
+                  },
+                },
               );
             }
             const next = await parseRequestOwnerAdoptionDossier({
@@ -237,9 +257,9 @@ export class PostgresRequestAdoptionTransition
               if (
                 canonical(
                   requestExecutionPinFor(
-                    opening.base!.requestOwner.operatorId,
                     chain.execution,
                     dossier.intent.target.operatorId,
+                    opening.base!,
                   ),
                 ) !== canonical(binding.pin)
               ) {
@@ -680,7 +700,16 @@ export class PostgresRequestAdoptionTransition
       throw new RequestAdoptionError(
         "BLOCKED",
         "The original adoption remains armed or unknown. Inspect or resume the same key.",
-        { cause: error },
+        {
+          cause: error,
+          context: {
+            dossierId: dossier.id,
+            adoptionKey: dossier.intent.adoptionKey,
+            cause: adoptionFailureCause(error),
+          },
+          recovery:
+            "Inspect or resume this same adoption key; do not create another adoption.",
+        },
       );
     }
   }
@@ -1181,9 +1210,9 @@ export class PostgresRequestAdoptionTransition
       chain.head.sourceDigest !== dossier.intent.candidate.sourceDigest ||
       canonical(
           requestExecutionPinFor(
-            opening.base!.requestOwner.operatorId,
             chain.execution,
             dossier.intent.target.operatorId,
+            opening.base!,
           ),
         ) !== canonical(dossier.intent.previous.pin)
     ) conflict("The exact admitted source or execution lineage changed.");

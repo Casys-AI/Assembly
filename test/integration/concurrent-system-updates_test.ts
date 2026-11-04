@@ -1,8 +1,9 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 import { SYSML_TOOLKIT_VERSION } from "../../src/adapters/out/sysml-toolkit/runtime/loader.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import { editPolicy } from "../fixtures/model-edit-mandate.ts";
-import { NativeModelSourceAuthorization } from "../../src/adapters/governance/model-access/source-authorization.ts";
+import { NativeModelSourceAuthorization } from "../../src/application/governance/model-access/source-authorization.ts";
 import type { ModelRevision } from "../../src/domain/model/records/revision.ts";
 import type { ModelSources as Sources } from "../../src/domain/model/value-objects/sources.ts";
 import { ModelRepositoryError } from "../../src/application/model/repository.ts";
@@ -13,20 +14,21 @@ import assert from "node:assert/strict";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import {
-  discoverConversationUnits,
-  SourceModel,
+  sourceCompilation,
+  sourceEvolutionCompilation,
   validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { discoverConversationUnits } from "../../src/domain/model/records/source-identity.ts";
 import {
   sourceLiterals,
   sourceRefs,
-} from "../../src/adapters/model/projections/graph/source.ts";
+} from "../../src/domain/model/projections/source-facts.ts";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import type {
   Candidate,
   ModelBinding,
 } from "../../src/domain/work/candidates.ts";
-import type { ModelIdentity } from "../../src/domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");
@@ -249,12 +251,16 @@ Deno.test({
       const options = {
         projectDir: stateDir,
         compiler: gatedCompiler,
-        sourceAuthorization: new NativeModelSourceAuthorization(projectId),
+        sourceAuthorization: new NativeModelSourceAuthorization(
+          projectId,
+          sourceCompilation,
+          sourceEvolutionCompilation,
+        ),
       };
       const repository = await GitModelRepository.open(options);
       const peer = await GitModelRepository.open(options);
       assert.notEqual(repository, peer);
-      const primary = new SourceModel({
+      const primary = createSourceModel({
         tooling: new SysmlToolkitAdapter({ packageDir: packageDir! }),
         repository,
         projectId,
@@ -262,7 +268,7 @@ Deno.test({
           await loadInitialSources(undefined, { information: false }),
         ),
       });
-      const collector = new SourceModel({
+      const collector = createSourceModel({
         tooling: new SysmlToolkitAdapter({ packageDir: packageDir! }),
         repository: peer,
         projectId,

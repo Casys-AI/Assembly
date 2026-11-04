@@ -10,7 +10,7 @@ import {
   modelSourceDigest,
   validateModelSources,
 } from "../../src/domain/model/value-objects/sources.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 
 /** Exercise every locale-sensitive ordering site, with nonempty origins. */
 const input = JSON.parse(await Deno.readTextFile(Deno.args[0]));

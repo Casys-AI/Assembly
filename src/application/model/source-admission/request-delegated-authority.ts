@@ -24,13 +24,12 @@ import { delegatedAuthorityExercise } from "../../../domain/governance/policies/
 import {
   assertCreationWithinPolicy,
   creationAuthorityExercise,
+  requestCreationScope,
 } from "../../../domain/governance/policies/operator-creation-policy.ts";
 import { MAX_BRANCH_TEAM } from "../../../domain/work/records/conversations.ts";
 import { scopedOperator } from "../../../domain/governance/policies/delegation-scope.ts";
-import type {
-  ModelIdentity,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../domain/shared-kernel/model-identity.ts";
 import type { PendingChange } from "../../../domain/governance/records/pending-change.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import {
@@ -159,10 +158,7 @@ function scoped(value: unknown, path: string): ScopedOperatorRef {
   return entry as unknown as ScopedOperatorRef;
 }
 
-function sessionlessPrior(
-  value: unknown,
-  destination: RequestModelWriteDestination,
-) {
+function sessionlessPrior(value: unknown) {
   const withTeam = !!value && typeof value === "object" &&
     Object.hasOwn(value, "operatorTeam");
   const prior = exact(value, [
@@ -179,7 +175,7 @@ function sessionlessPrior(
           .includes(key)
       ) ||
       !text(team.parentOperatorId) || !text(team.requestOwnerId) ||
-      team.requestId !== destination.caseId ||
+      !text(team.requestId) ||
       team.parentOperatorId === (prior.identity as ModelIdentity)?.builderId ||
       team.requestOwnerId === (prior.identity as ModelIdentity)?.builderId ||
       (team.creationPolicyId !== undefined && !text(team.creationPolicyId))
@@ -198,12 +194,14 @@ function sessionlessPrior(
 export function requestWriteAuthorityHasMemberPin(
   authority: RequestWriteAuthority,
 ): boolean {
-  return (isDelegatedRequestAuthority(authority) ||
-    isCreationGrantRequestAuthority(authority)) &&
-    authority.priorModel.operatorTeam?.requestId ===
-      authority.destination.caseId &&
-    authority.priorModel.operatorTeam.requestOwnerId !==
-      authority.priorModel.identity.builderId;
+  if (
+    !isDelegatedRequestAuthority(authority) &&
+    !isCreationGrantRequestAuthority(authority)
+  ) return false;
+  // RequestSpaceAuthorityBridge verifies the roster before constructing this authority.
+  const team = authority.priorModel.operatorTeam;
+  return team !== undefined &&
+    team.requestOwnerId !== authority.priorModel.identity.builderId;
 }
 
 /** Exact executing/compiled-model proof for the optional member provenance.
@@ -245,7 +243,7 @@ export function parseRequestDelegatedAuthority(
       "authority.destination",
     );
   }
-  const prior = sessionlessPrior(envelope.priorModel, destination);
+  const prior = sessionlessPrior(envelope.priorModel);
   const version = exact(
     prior.version,
     ["digest", "repositoryVersion"],
@@ -379,7 +377,7 @@ export function parseRequestCreationGrantAuthority(
       "authority.destination",
     );
   }
-  const prior = sessionlessPrior(envelope.priorModel, destination);
+  const prior = sessionlessPrior(envelope.priorModel);
   const version = exact(
     prior.version,
     ["digest", "repositoryVersion"],
@@ -488,10 +486,11 @@ export function requestWriteCreationScope(
   | import("../../../domain/governance/policies/operator-creation-policy.ts").CreationScope
   | undefined {
   if (isCreationGrantRequestAuthority(authority)) {
-    return {
-      space: structuredClone(authority.space),
-      branchTeamSize: authority.branchTeamSize,
-    };
+    return requestCreationScope(
+      authority.space,
+      destination.caseId,
+      authority.branchTeamSize,
+    );
   }
   if (isDelegatedRequestAuthority(authority)) return undefined;
   const prior = requestWriteAuthorityPrior(authority).identity;
@@ -791,7 +790,7 @@ export function assertRequestCreationGrantAuthorityCurrent(
       policyId: receipt.policyId,
       policyRevision: receipt.policyRevision,
     },
-    { space, branchTeamSize },
+    requestCreationScope(space, opening.caseId, branchTeamSize),
   );
   if (canonical(exercise) !== canonical(envelope.exercise)) {
     return stale("The creation receipt differs from the current grant");
@@ -815,7 +814,11 @@ export function buildRequestCreationGrantAuthority(
       { changeId: change.id },
     );
   }
-  const scope = { space: input.space, branchTeamSize: input.branchTeamSize };
+  const scope = requestCreationScope(
+    input.space,
+    input.opening.caseId,
+    input.branchTeamSize,
+  );
   const policy = assertCreationWithinPolicy(
     model,
     change.operator,

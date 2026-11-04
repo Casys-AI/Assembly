@@ -248,7 +248,7 @@ Deno.test("explicit zero remains known in its operator group and later additions
   );
 });
 
-Deno.test("resource projection retains exact actual version/digest/cutoff/Case selection", () => {
+Deno.test("Request resources include all pins but retain the exact Case, space and cutoff", () => {
   const aggregate = new ProviderResourceAggregation({
     ...query,
     caseId: "case-a",
@@ -281,12 +281,12 @@ Deno.test("resource projection retains exact actual version/digest/cutoff/Case s
     }),
   );
   const result = aggregate.finish(query.endedThrough);
-  equal(result.calls, 1);
+  equal(result.calls, 5);
   equal(result.units.output_tokens.observedSubtotal, 0);
-  equal(result.units.output_tokens.state, "known");
+  equal(result.units.output_tokens.state, "partial");
   deepStrictEqual(
     result.operatorGroups!.map((group) => [group.operatorId, group.calls]),
-    [[null, 1]],
+    [["out-of-selection", 4], [null, 1]],
   );
   throws(() =>
     aggregate.add(observation({
@@ -299,7 +299,7 @@ Deno.test("resource projection retains exact actual version/digest/cutoff/Case s
         },
       },
     })), /scope mismatch/);
-  equal(aggregate.finish(query.endedThrough).operatorGroups!.length, 1);
+  equal(aggregate.finish(query.endedThrough).operatorGroups!.length, 2);
 });
 
 Deno.test("empty observations remain unknown and resource overflow never rounds an integer total", () => {
@@ -393,4 +393,87 @@ Deno.test("resource query requires exact immutable references and copies caller 
       /Invalid provider resource query/,
     );
   }
+});
+
+Deno.test("token summaries require complete units, never double-count cache breakdowns and apply to operator groups", () => {
+  const aggregate = new ProviderResourceAggregation(query);
+  const call = observation({
+    usage: {
+      input_tokens: 10,
+      output_tokens: 5,
+      cache_creation_input_tokens: 10,
+      cache_read_input_tokens: 20,
+      cache_creation: { ephemeral_5m_input_tokens: 10 },
+    },
+  });
+  aggregate.add(call);
+  aggregate.add(call);
+  const result = aggregate.finish(query.endedThrough);
+  deepStrictEqual(result.tokenSummary, {
+    total: 90,
+    meanPerCall: 45,
+    cacheReadShare: 0.5,
+  });
+  deepStrictEqual(result.operatorGroups!.map((group) => group.tokenSummary), [
+    result.tokenSummary,
+  ]);
+  aggregate.add(observation({ usage: { input_tokens: 1 } }));
+  deepStrictEqual(aggregate.finish(query.endedThrough).tokenSummary, {
+    total: null,
+    meanPerCall: null,
+    cacheReadShare: null,
+  });
+  equal(
+    aggregate.finish(query.endedThrough).units.input_tokens.observedSubtotal,
+    21,
+  );
+});
+
+Deno.test("Main resources stay pinned while empty, zero and overflow token summaries remain distinct", () => {
+  const aggregate = new ProviderResourceAggregation(query);
+  const empty = aggregate.finish(query.endedThrough).tokenSummary;
+  deepStrictEqual(empty, {
+    total: null,
+    meanPerCall: null,
+    cacheReadShare: null,
+  });
+  aggregate.add(observation({
+    correlation: {
+      ...observation().correlation,
+      modelDigest: "b".repeat(64),
+    },
+  }));
+  aggregate.add(observation({
+    correlation: {
+      ...observation().correlation,
+      repositoryVersion: `commit:${"b".repeat(40)}`,
+    },
+  }));
+  equal(aggregate.finish(query.endedThrough).calls, 0);
+  aggregate.add(observation({
+    usage: {
+      input_tokens: 0,
+      output_tokens: 0,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
+    },
+  }));
+  deepStrictEqual(aggregate.finish(query.endedThrough).tokenSummary, {
+    total: 0,
+    meanPerCall: 0,
+    cacheReadShare: null,
+  });
+  aggregate.add(observation({
+    usage: {
+      input_tokens: Number.MAX_SAFE_INTEGER,
+      output_tokens: 1,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
+    },
+  }));
+  deepStrictEqual(aggregate.finish(query.endedThrough).tokenSummary, {
+    total: null,
+    meanPerCall: null,
+    cacheReadShare: 0,
+  });
 });

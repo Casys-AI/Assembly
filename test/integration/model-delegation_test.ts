@@ -1,14 +1,14 @@
 /** Real Toolkit, Git and source authorization. No provider or network calls. */
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import assert from "node:assert/strict";
-import type { SourceModel } from "../../src/adapters/model/sources/source-model.ts";
+import type { SourceModel } from "../../src/application/model/source-model.ts";
 import {
   MODEL_DELEGATIONS_FILE,
   readModelDelegations,
   renderModelDelegations,
-} from "../../src/adapters/governance/model-access/delegation/ledger.ts";
+} from "../../src/domain/governance/policies/model-delegation-ledger.ts";
 import type { ModelDelegationChange } from "../../src/domain/governance/records/model-delegation-request.ts";
-import type { ModelIdentity } from "../../src/domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import {
   delegationSystems,
   openDelegationFixture,

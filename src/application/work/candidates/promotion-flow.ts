@@ -6,14 +6,14 @@ import {
 import type { ArtifactSourceServicePort } from "../artifacts/publication.ts";
 import { resolveCandidateSource } from "../artifacts/candidate-source.ts";
 import type { ArtifactSourceBusinessProof } from "../../../domain/work/artifacts/source-publication.ts";
-import { nativeCatalogAdvanceEvidence } from "../runtime/model-advance.ts";
+import { nativeCatalogAdvanceEvidence } from "../native-execution/model-advance.ts";
 import {
   type NativeExecutionContribution,
   nativeExecutionContribution,
   nativeExecutionIdentity,
   type NativeExecutionPort,
   runtimeRevisionReference,
-} from "../runtime/execution.ts";
+} from "../native-execution/contract.ts";
 import { AgentBudgetWait } from "../budget/agent.ts";
 import { hasActivationIntent } from "../../../domain/work/policies/candidate-activation.ts";
 import { assertToolName } from "../../../domain/work/value-objects/tool-name.ts";
@@ -48,19 +48,19 @@ import type {
   ToolDraft,
 } from "../../../domain/work/candidates.ts";
 import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
-import type { AgentPort, ToolRunnerPort } from "../runtime/ports.ts";
+import type { AgentPort, ClockPort, ToolRunnerPort } from "../runtime/ports.ts";
 import type { ExactCandidateReview } from "./promotion.ts";
 import {
   draftDigest,
   errorText,
   makeEvent,
-  now,
   valueDigest,
 } from "../runtime/values.ts";
 
 export interface PromotionFlowHost {
   readonly state: SystemRuntimeState;
   readonly ports: {
+    clock: ClockPort;
     agents: Pick<AgentPort, "review" | "admit">;
     execution?: NativeExecutionPort;
     artifactSources?: ArtifactSourceServicePort;
@@ -319,7 +319,11 @@ export async function build(
         await this.update((state) => {
           if (!state.events.some((item) => item.id === id)) {
             state.events.push({
-              ...makeEvent(`flow-${event.kind}`, `Promotion : ${event.kind}`),
+              ...makeEvent(
+                this.ports.clock,
+                `flow-${event.kind}`,
+                `Promotion : ${event.kind}`,
+              ),
               id,
               execution: {
                 ...this.executionReference(model, {
@@ -382,6 +386,7 @@ export async function build(
         delete c.promotionContext;
         s.events.push(
           makeEvent(
+            this.ports.clock,
             c.stage === "activating"
               ? "tool-activation-interrupted"
               : "tool-failed",
@@ -489,7 +494,7 @@ async function proposeCandidate(
     ...(caseId ? { caseId } : { designerScopeId: designer!.scopeId }),
     digest: await draftDigest(draft),
     stage: "proposed",
-    createdAt: now(),
+    createdAt: this.ports.clock.now(),
     baseCatalogRevision: this.state.catalogRevision,
     ...(context.executionSubjectId
       ? {
@@ -582,6 +587,7 @@ async function proposeCandidate(
     }
     s.events.push(
       makeEvent(
+        this.ports.clock,
         "tool-proposed",
         `Proposition : ${candidate.name}`,
         candidate,
@@ -718,6 +724,7 @@ async function reviewCandidate(
     stored.reviewExecution = proof;
     s.events.push(
       makeEvent(
+        this.ports.clock,
         "review-decided",
         `${reviewerId} : ${review.verdict} — ${review.reason}`,
         stored,
@@ -870,6 +877,7 @@ async function decideAdmission(
     stored.admissionDecision = decision;
     s.events.push(
       makeEvent(
+        this.ports.clock,
         "admission-decided",
         `${authority} : ${decision!.verdict} — ${decision!.reason}`,
         stored,

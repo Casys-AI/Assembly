@@ -83,7 +83,7 @@ Deno.test("unavailable local development session remains a runtime error without
   requests.dispose();
 });
 
-Deno.test("authenticated cases refusal renews a development session before cached expiry", async () => {
+Deno.test("only an identified session refusal renews a development session before cached expiry", async () => {
   for (const status of [401, 403]) {
     let sessionPosts = 0;
     let environmentReads = 0;
@@ -108,7 +108,11 @@ Deno.test("authenticated cases refusal renews a development session before cache
         assert.equal(path, "/api/cases?space=requests");
         return Promise.resolve(
           refused
-            ? Response.json({ error: "Session refused." }, { status })
+            ? Response.json({
+              code: "FORBIDDEN",
+              error: "Session refused.",
+              context: { session: "invalid" },
+            }, { status })
             : Response.json(cases),
         );
       },
@@ -140,6 +144,73 @@ Deno.test("authenticated cases refusal renews a development session before cache
     } finally {
       requests.dispose();
     }
+  }
+});
+
+Deno.test("a Request permission refusal stays local and never renews the control session", async () => {
+  let sessionPosts = 0;
+  const requests = createRequests({
+    fetch: (path) => {
+      if (path === "/api/space-session/local") {
+        sessionPosts++;
+        return Promise.resolve(Response.json({
+          expiresAt: new Date(Date.now() + 30 * 60_000).toISOString(),
+        }));
+      }
+      const body = path === "/api/environment"
+        ? { environment: "development" }
+        : path === "/api/request-space-openings/context"
+        ? context
+        : path === "/api/cases?space=requests"
+        ? cases
+        : {
+          code: "FORBIDDEN",
+          error: "The selected Request is unavailable",
+        };
+      return Promise.resolve(Response.json(body, {
+        status: path.startsWith("/api/conversations?") ? 403 : 200,
+      }));
+    },
+  });
+  try {
+    await requests.prepareConnection();
+    await requests.cases.refresh();
+    for (let i = 0; i < 3; i++) {
+      await requests.refresh("unavailable");
+      assert.equal(requests.sessionReady.peek(), true);
+      assert.equal(
+        requests.readErrors.peek().get("unavailable"),
+        "The selected Request is unavailable",
+      );
+      await requests.prepareConnection();
+    }
+    assert.equal(sessionPosts, 1);
+    assert.equal(requests.sessionGeneration.peek(), 1);
+  } finally {
+    requests.dispose();
+  }
+});
+
+Deno.test("an old authentication refusal cannot disconnect a replacement session or host", async () => {
+  for (const changed of ["session", "host", "host-return", "dispose"]) {
+    const reply = Promise.withResolvers<Response>();
+    const requests = createRequests({ fetch: () => reply.promise });
+    requests.context.value = context;
+    requests.sessionReady.value = true;
+    const reading = requests.cases.ensure("request");
+    if (changed === "session") requests.sessionGeneration.value++;
+    else if (changed === "dispose") requests.dispose();
+    else {
+      requests.context.value = { ...context, systemId: "other" };
+      if (changed === "host-return") requests.context.value = context;
+    }
+    reply.resolve(Response.json({
+      code: "FORBIDDEN",
+      context: { session: "invalid" },
+    }, { status: 403 }));
+    await reading;
+    assert.equal(requests.sessionReady.peek(), true);
+    requests.dispose();
   }
 });
 

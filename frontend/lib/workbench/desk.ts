@@ -137,16 +137,17 @@ export type DeskItem =
   | { kind: "case"; caseId: string }
   /**
    * The Requests page, with the Request it selects when the address names one,
-   * and the sub-agent whose messages in that Request it reads.
+   * and the sub-agent whose messages in that Request it reads; without one, the
+   * Release a new Request starts from (`from`).
    */
-  | { kind: "cases"; caseId?: string; agentId?: string }
+  | { kind: "cases"; caseId?: string; agentId?: string; startFrom?: string }
   | { kind: "agent"; agentId: string }
   /** The System place and the page of it the address names. */
   | { kind: "system"; page: SystemPage }
   /** The Model place and the page of it the address names. */
   | { kind: "model"; page: ModelPage }
-  /** The To decide place: what waits for the person's decision. */
-  | { kind: "decide" };
+  /** The Activity place: pending decisions, followed by recorded events. */
+  | { kind: "activity" };
 
 /**
  * The address of the page that draws the native graph, when the desk shows one:
@@ -186,18 +187,23 @@ export function deskLocation(
   if (url.pathname === "/cases") {
     const caseId = url.searchParams.get("case");
     const agentId = url.searchParams.get("agent");
+    const startFrom = url.searchParams.get("from");
     return {
       ...none,
       item: {
         kind: "cases",
-        ...(caseId ? { caseId, ...(agentId ? { agentId } : {}) } : {}),
+        ...(caseId
+          ? { caseId, ...(agentId ? { agentId } : {}) }
+          : startFrom
+          ? { startFrom }
+          : {}),
       },
     };
   }
   if (place === "model") {
     return { ...none, item: { kind: "model", page: modelPageOf(url) } };
   }
-  if (place === "decide") return { ...none, item: { kind: "decide" } };
+  if (place === "activity") return { ...none, item: { kind: "activity" } };
   if (url.pathname !== "/chat" && url.pathname !== "/tools") return none;
   // A Case opens beside the conversation, on the conversation's own address.
   const caseId = url.searchParams.get("case");

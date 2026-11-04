@@ -218,7 +218,7 @@ Understand the choices.
 - [Why the model is read through versioned projections](explanation/modeles/projections-du-modele.md):
   one read per commit, a pinned and bounded Toolkit, the head followed through
   events.
-- [Why System, Model and To decide are separate places](explanation/modeles/pages-system-et-model.md):
+- [Why System, Model and Activity are separate places](explanation/modeles/pages-system-et-model.md):
   places, navigation and the distinction between the current model and executed
   version.
 

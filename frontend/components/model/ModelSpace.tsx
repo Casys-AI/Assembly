@@ -1,5 +1,10 @@
 import { createRequestSourceRevisionApi } from "../../lib/model/sources/request-revisions.ts";
 import {
+  requestVersionInfo,
+  type VersionInfo,
+} from "../../lib/workbench/version-label.ts";
+import type { RequestNames } from "../system/useReleaseAgents.ts";
+import {
   createRequestSourceEditor,
   type RequestEditScope,
   type RequestSourceEditor,
@@ -29,6 +34,7 @@ import {
   authorRoster,
 } from "../../lib/model/revisions/authors.ts";
 import type { WorkbenchState } from "../../lib/workbench/state.ts";
+import { caseRoster } from "../../lib/cases/operator-names.ts";
 import { toolProposalSelection } from "../../lib/model/tool-proposal-location.ts";
 import { ToolProposalDetail } from "./changes/ToolProposalDetail.tsx";
 import { GraphView } from "../graph/GraphView.tsx";
@@ -37,7 +43,12 @@ import { ActivityPage } from "./activity/ActivityPage.tsx";
 import { FilesPage } from "./files/FilesPage.tsx";
 import { RevisionsPage } from "./revisions/RevisionsPage.tsx";
 import { ObservedOperatorAuthority } from "../conversations/OperatorAuthorityFacts.tsx";
-import { authorityChangeForCommit } from "../../lib/conversations/operator-authority.ts";
+import { ChangeInspector } from "../conversations/DecisionParts.tsx";
+import {
+  authorityChangeForCommit,
+  decidedBy,
+  decidedByLabel,
+} from "../../lib/conversations/operator-authority.ts";
 import type { SourceCommit } from "../../lib/model/revisions/api.ts";
 import { SysmlPage } from "./diagrams/SysmlPage.tsx";
 import { type ModelLive, silentModelLive } from "../../lib/model/live.ts";
@@ -153,6 +164,11 @@ export function ModelSpace(
         version={version}
         render={(scope, request, scopedSearch) => (
           <ScopedModelPage
+            versionInfo={requestVersionInfo(
+              state.requests.cases.byId(scope.caseId) ?? { id: scope.caseId },
+              scope,
+            )}
+            requestNames={state.requests.cases}
             catalogueConnection={state.connection.value}
             catalogueInvalidation={state.releaseCatalogueGeneration.value}
             sessionGeneration={state.requests.sessionGeneration.value}
@@ -164,6 +180,11 @@ export function ModelSpace(
             executionVersion={scope.executionVersion}
             baseVersion={scope.baseVersion}
             branchVersion={scope.branchVersion}
+            roster={caseRoster(
+              state.requests.snapshots.value.get(scope.caseId)
+                ?.conversations ?? [],
+              state.requests.cases.byId(scope.caseId),
+            )}
             sourceEditor={editorFor({
               caseId: scope.caseId,
               branchId: scope.branchId,
@@ -185,12 +206,18 @@ export function ModelSpace(
     (page === "activity" || page === "revisions");
   const names = modelAuthors(state, operators);
   const authorityForCommit = (commit: SourceCommit) => {
-    const change = authorityChangeForCommit(
-      commit,
-      state.conversationSnapshot.value?.conversations ?? [],
-    );
+    const roster = state.conversationSnapshot.value?.conversations ?? [];
+    const change = authorityChangeForCommit(commit, roster);
+    // Only a change its recorded decider published is joined to a commit.
     return change
-      ? <ObservedOperatorAuthority change={change} state={state} historical />
+      ? (
+        <ChangeInspector
+          change={change}
+          summary={decidedByLabel(decidedBy(change, roster)!)}
+        >
+          <ObservedOperatorAuthority change={change} state={state} historical />
+        </ChangeInspector>
+      )
       : null;
   };
   const toolSelection = page === "revisions"
@@ -242,6 +269,11 @@ export function ModelSpace(
         : page === "sysml"
         ? (
           <SysmlPage
+            versionInfo={{
+              source: { kind: "main" },
+              inService: state.current.value?.executionModel?.version
+                .repositoryVersion,
+            }}
             location={location}
             generation={state.chatProposals.generation.value}
           />
@@ -259,10 +291,17 @@ export function ModelSpace(
         : page === "files" || page === "releases"
         ? (
           <FilesPage
+            versionInfo={{
+              source: { kind: "main" },
+              inService: state.current.value?.executionModel?.version
+                .repositoryVersion,
+            }}
+            requestNames={state.requests.cases}
             catalogueConnection={state.connection.value}
             catalogueInvalidation={state.releaseCatalogueGeneration.value}
             sessionGeneration={state.requests.sessionGeneration.value}
             releases={page === "releases"}
+            releaseRoster={names}
             location={location}
             // A decision made anywhere moves the head the files are read at.
             generation={state.chatProposals.generation.value}
@@ -317,6 +356,9 @@ export function ScopedModelPage(
     catalogueInvalidation,
     catalogueConnection,
     sessionGeneration,
+    roster,
+    versionInfo,
+    requestNames,
     live = silentModelLive,
   }: {
     page: ModelPage;
@@ -329,6 +371,10 @@ export function ScopedModelPage(
     baseVersion?: string;
     branchVersion?: string;
     sourceEditor?: RequestSourceEditor;
+    /** The Request's agents, by the names it gives them. */
+    roster?: AuthorRoster;
+    versionInfo: VersionInfo;
+    requestNames?: RequestNames;
     catalogueInvalidation?: number;
     catalogueConnection?: "connecting" | "live" | "reconnecting" | "closed";
     sessionGeneration?: number;
@@ -369,6 +415,8 @@ export function ScopedModelPage(
       {page === "files" || (page === "releases" && Boolean(caseId))
         ? (
           <FilesPage
+            versionInfo={versionInfo}
+            requestNames={requestNames}
             location={location}
             catalogueInvalidation={catalogueInvalidation}
             catalogueConnection={catalogueConnection}
@@ -378,6 +426,7 @@ export function ScopedModelPage(
             releases={page === "releases"}
             releaseBranch={caseId ? { kind: "case", caseId } : undefined}
             releaseApi={releaseApi}
+            releaseRoster={roster}
             requestExecutionVersion={executionVersion}
             requestBaseVersion={baseVersion}
             requestBranchVersion={branchVersion}
@@ -388,6 +437,7 @@ export function ScopedModelPage(
         : page === "sysml"
         ? (
           <SysmlPage
+            versionInfo={versionInfo}
             location={location}
             api={views}
             sourceFetch={request}

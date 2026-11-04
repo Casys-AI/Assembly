@@ -13,6 +13,14 @@ export type CaseStatus =
   | "waiting"
   | "closed-done"
   | "closed-abandoned";
+export const CASE_VERDICTS = ["accepted", "rejected"] as const;
+export type CaseVerdict = typeof CASE_VERDICTS[number];
+/** Authenticated person and their judgment; this is not verified success. */
+export interface CaseClosureEvidence {
+  closedBy: string;
+  verdict?: CaseVerdict;
+}
+
 export interface JobDetails {
   schedule?: string;
   steps: {
@@ -80,6 +88,8 @@ export interface Case {
   budget?: { budgetId: string; scopeId: string };
   createdAt: string;
   closedAt?: string;
+  closedBy?: string;
+  verdict?: CaseVerdict;
   /** Durable first-request delivery; a retry never allocates another Case. */
   firstRequestDispatched?: boolean;
   /** An interrupted opening may resume only its exact durable checkpoint. */
@@ -151,6 +161,7 @@ export function closeCase(
   caseRecord: Case,
   outcome: "done" | "abandoned",
   at: string,
+  evidence?: CaseClosureEvidence,
 ): Case {
   if (!isOpenCase(caseRecord)) {
     throw new CaseError(
@@ -165,6 +176,7 @@ export function closeCase(
     ...structuredClone(caseRecord),
     status: outcome === "done" ? "closed-done" : "closed-abandoned",
     closedAt: at,
+    ...(evidence ? structuredClone(evidence) : {}),
   };
   if (closed.scheduling) delete closed.scheduling.nextAt;
   if (closed.watch) {
@@ -207,6 +219,10 @@ function assertCase(value: unknown): asserts value is Case {
       (!identity(j.firstRequestDispatch.modelDigest) ||
         typeof j.firstRequestDispatch.providerPending !== "boolean" ||
         typeof j.firstRequestDispatch.progressed !== "boolean")) ||
+    (j.closedBy !== undefined && (!identity(j.closedBy) || isOpenCase(j))) ||
+    (j.verdict !== undefined &&
+      (j.status !== "closed-done" || !j.closedBy ||
+        !CASE_VERDICTS.includes(j.verdict))) ||
     !timestamp(j.createdAt) ||
     (isOpenCase(j) ? j.closedAt !== undefined : !timestamp(j.closedAt)) ||
     (j.closedAt !== undefined &&
@@ -310,5 +326,26 @@ export function assertCasesState(
       "INVALID_CASE",
       "Invalid Case invocation or duplicate identity",
     );
+  }
+}
+
+/** Explicit Request commands require a verdict for done. */
+export function requireCaseClosureVerdict(
+  outcome: "done" | "abandoned",
+  verdict: CaseVerdict | undefined,
+): void {
+  if (outcome === "done" && verdict === undefined) {
+    throw new CaseError(
+      "CASE_VERDICT_REQUIRED",
+      "Closing as done requires an explicit accepted or rejected verdict",
+      { outcome },
+      "Choose accepted or rejected when closing the Request.",
+    );
+  }
+  if (
+    verdict !== undefined &&
+    outcome !== "done"
+  ) {
+    throw new CaseError("INVALID_CASE", "Invalid closure verdict");
   }
 }

@@ -8,7 +8,7 @@ import type {
   ElementRecord,
   ModelSnapshot,
 } from "../../../../../domain/model/records/snapshot.ts";
-import type { NativeLiteral } from "./execution-model.ts";
+import type { NativeLiteral } from "../../../../../domain/model/records/native-literal.ts";
 
 function fixture() {
   const definition: ElementRecord = {

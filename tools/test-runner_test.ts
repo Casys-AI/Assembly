@@ -1025,7 +1025,25 @@ Deno.test("runner opt-in profiles enable only their named dependencies", () => {
   equal(heavy.ASSEMBLY_SEMANTIC_INTEGRATION, "1");
   const semantic = stageEnvironment(inherited, "semantic", "/owned");
   equal(semantic.ASSEMBLY_SHACL_INTEGRATION, "1");
-  equal(semantic.ASSEMBLY_SEMANTIC_INTEGRATION, "0");
+  equal(semantic.ASSEMBLY_SEMANTIC_INTEGRATION, "1");
+  equal(semantic.ASE_SEMANTIC_INTEGRATION, "1");
+});
+
+Deno.test("runner semantic selects native SHACL and LDkit contracts without Toolkit", () => {
+  const files = [
+    "test/integration/semantic-index_test.ts",
+    "test/integration/ldkit-shacl_test.ts",
+  ];
+  const selected = createTestPlan(
+    parseRunnerOptions(["semantic", "--plan", ...files]),
+  );
+  deepStrictEqual(selected.stages[0].selectors, files);
+  throws(() =>
+    createTestPlan(parseRunnerOptions([
+      "semantic",
+      "--plan",
+      "test/integration/model-context-graph-navigation_test.ts",
+    ])), /outside/);
 });
 
 Deno.test("runner postgres selects Request adoption and evolved Release authority without native opt-ins", () => {
@@ -1096,11 +1114,17 @@ Deno.test("runner postgres-toolkit selects Request adoption and evolved Release 
   }
 });
 
-Deno.test("runner postgres-toolkit selects the Request team and middle-authority scenarios, which need both fixtures", () => {
+Deno.test("runner postgres-toolkit selects the scenarios that need both fixtures", () => {
   for (
     const file of [
       "test/integration/request-team-workspace_test.ts",
       "test/integration/request-authority-middle_test.ts",
+      "test/integration/generic-work-result_test.ts",
+      "test/integration/operator-authority_test.ts",
+      "test/integration/operator-workspace_test.ts",
+      "test/integration/operator-authority-policy_test.ts",
+      "test/integration/tool-admission-policy_test.ts",
+      "test/integration/operator-cases_test.ts",
     ]
   ) {
     const plan = createTestPlan(

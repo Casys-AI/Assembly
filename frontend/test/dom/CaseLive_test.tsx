@@ -63,6 +63,11 @@ function caseHost() {
       "http://127.0.0.1:4311",
     );
     reads.push(`${url.pathname}${url.search}`);
+    if (url.pathname === "/api/model-history") {
+      return Promise.resolve(
+        Response.json({ headVersion: HEAD, commits: [], truncated: false }),
+      );
+    }
     if (url.pathname === "/api/case-model/A") {
       return Promise.resolve(Response.json({
         caseId: "A",

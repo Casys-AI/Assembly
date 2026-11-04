@@ -5,6 +5,7 @@ import type {
   ConversationsSnapshot,
 } from "../../../src/domain/work/records/conversations.ts";
 import { readEvolutionRecord } from "./evolution.ts";
+import { retryOnceAfterStale, sendErrorMessage } from "../api-error.ts";
 
 const object = (value: unknown): value is Record<string, unknown> =>
   Boolean(value && typeof value === "object" && !Array.isArray(value));
@@ -156,7 +157,7 @@ export function createAgentConversations(options: {
    * Whether a human message to this exact agent would be accepted now; with a
    * `caseId`, a message continuing that Request.
    */
-  function canSendTo(
+  function targetCanSend(
     agentId: string | null | undefined,
     caseId?: string | null,
   ): boolean {
@@ -166,11 +167,17 @@ export function createAgentConversations(options: {
     );
     return Boolean(
       agent && takesHumanMessage(agent, caseId) && !agent.busy &&
-        !pendingAgentIds.value.includes(agent.agentId) &&
         (!options.currentSystemId ||
           current?.systemId === options.currentSystemId()) &&
         !readError.value && options.canWrite(),
     );
+  }
+  function canSendTo(
+    agentId: string | null | undefined,
+    caseId?: string | null,
+  ): boolean {
+    return !pendingAgentIds.value.includes(agentId ?? "") &&
+      targetCanSend(agentId, caseId);
   }
   const canSend = computed(() => canSendTo(selectedAgentId.value));
   // One draft per agent, whichever panel shows it; the selected agent's draft
@@ -209,8 +216,8 @@ export function createAgentConversations(options: {
       snapshot.value?.conversations.find((entry) =>
         entry.agentId === agentId
       ) ?? null;
-    return readError.value ||
-      writeErrors.value.get(key(snapshot.value, agent)) || "";
+    return [writeErrors.value.get(key(snapshot.value, agent)), readError.value]
+      .filter(Boolean).join(" ");
   }
   const error = computed(() => errorFor(selectedAgentId.value));
   function writeError(key: string, message: string) {
@@ -369,17 +376,30 @@ export function createAgentConversations(options: {
     pendingAgentIds.value = [...pendingAgentIds.peek(), agent.agentId];
     writeError(submittedKey, "");
     try {
-      const acknowledgement = await options.port.send({
-        agentId: agent.agentId,
-        text: text.trim(),
-        expectedRevision: agent.revision,
-        // A named Case continues that Request; `null` opens a new one.
-        ...(typeof caseId === "string"
-          ? { caseId }
-          : caseId === null
-          ? { newConversation: true as const }
-          : {}),
-      });
+      const acknowledgement = await retryOnceAfterStale(
+        (target: AgentConversation = agent) =>
+          options.port!.send({
+            agentId: target.agentId,
+            text: text.trim(),
+            expectedRevision: target.revision,
+            // A named Case continues that Request; `null` opens a new one.
+            ...(typeof caseId === "string"
+              ? { caseId }
+              : caseId === null
+              ? { newConversation: true as const }
+              : {}),
+          }),
+        async () => {
+          const beforeRead = snapshot.peek();
+          await refresh();
+          const fresh = agentOf(snapshot.peek(), agentId);
+          return snapshot.peek() !== beforeRead &&
+              key(snapshot.peek(), fresh) === submittedKey &&
+              targetCanSend(agentId, caseId)
+            ? fresh
+            : null;
+        },
+      );
       if (!acknowledgement.accepted) {
         throw new Error("The message was not confirmed.");
       }
@@ -397,7 +417,7 @@ export function createAgentConversations(options: {
       if (requestLifecycle === lifecycle) {
         writeError(
           submittedKey,
-          cause instanceof Error ? cause.message : "Message not confirmed.",
+          sendErrorMessage(cause, "Message not confirmed."),
         );
       }
       return false;

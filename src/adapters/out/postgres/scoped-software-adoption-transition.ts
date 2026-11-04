@@ -1,6 +1,7 @@
-import type { RequestSpaceRuntimeOptions } from "../../work/request-space-runtime.ts";
-import type { ScopedSoftwareAdoptionPort } from "../../work/scoped-software-evolution.ts";
-import type { PostgresAdmittedRequestRuntime } from "../../work/runtime/postgres.ts";
+import type { OperatorStorage } from "./host-storage.ts";
+import type { RequestSpaceRuntimeOptions } from "../../../application/work/request-spaces/runtime.ts";
+import type { ScopedSoftwareAdoptionPort } from "../../../application/model/evolution/ports.ts";
+import type { PostgresAdmittedRequestRuntime } from "../native-execution/postgres.ts";
 import type { ScopedSoftwareEvolutionDossierV2 } from "../../../application/model/evolution/scoped-software-dossier.ts";
 import type { ScopedSoftwareSourceAdmissionV2 } from "../../../application/model/source-admission/scoped-software-source-admission.ts";
 import { EvolutionError } from "../../../application/model/evolution/ports.ts";
@@ -13,7 +14,7 @@ import {
   projectEvolutionBudgets,
   retainedBudgetPolicy,
 } from "../../../application/work/runtime/evolution-budget-projection.ts";
-import { runtimeRevisionReference } from "../../../application/work/runtime/execution.ts";
+import { runtimeRevisionReference } from "../../../application/work/native-execution/contract.ts";
 import {
   type ScopedSoftwareAdoptionManifestV2,
   type ScopedSoftwareAdoptionReceiptV2,
@@ -34,7 +35,7 @@ import {
 /** Composition must provide real locked native-policy revalidation and Git
  * anchor verification. Neither is inferred from the persisted receipt. */
 export class PostgresScopedSoftwareAdoptionTransition
-  implements ScopedSoftwareAdoptionPort {
+  implements ScopedSoftwareAdoptionPort<OperatorStorage> {
   constructor(
     private readonly options: {
       client: PrismaClient;
@@ -42,7 +43,7 @@ export class PostgresScopedSoftwareAdoptionTransition
       journal: PostgresRequestSourceAdmissionStore;
       binding: PostgresRequestExecutionBindingReader;
       native: PostgresAdmittedRequestRuntime;
-      dependencies: RequestSpaceRuntimeOptions["dependencies"];
+      dependencies: RequestSpaceRuntimeOptions<OperatorStorage>["dependencies"];
       verifyGit(admission: ScopedSoftwareSourceAdmissionV2): Promise<void>;
       withRepositoryLock<T>(operation: () => Promise<T>): Promise<T>;
       lockPrimary(tx: Prisma.TransactionClient): Promise<void>;
@@ -70,7 +71,9 @@ export class PostgresScopedSoftwareAdoptionTransition
   }
 
   async inspect(
-    input: Parameters<ScopedSoftwareAdoptionPort["inspect"]>[0],
+    input: Parameters<
+      ScopedSoftwareAdoptionPort<OperatorStorage>["inspect"]
+    >[0],
   ): Promise<ScopedSoftwareAdoptionReceiptV2 | null> {
     const { dossier, target, publication, runtime } = input;
     const chain = await this.options.client.$transaction(
@@ -130,7 +133,7 @@ export class PostgresScopedSoftwareAdoptionTransition
   }
 
   async adopt(
-    input: Parameters<ScopedSoftwareAdoptionPort["adopt"]>[0],
+    input: Parameters<ScopedSoftwareAdoptionPort<OperatorStorage>["adopt"]>[0],
   ): Promise<ScopedSoftwareAdoptionReceiptV2> {
     const receipt = await this.options.withRepositoryLock(() =>
       this.adoptLocked(input)
@@ -152,7 +155,7 @@ export class PostgresScopedSoftwareAdoptionTransition
   }
 
   private async adoptLocked(
-    input: Parameters<ScopedSoftwareAdoptionPort["adopt"]>[0],
+    input: Parameters<ScopedSoftwareAdoptionPort<OperatorStorage>["adopt"]>[0],
   ): Promise<ScopedSoftwareAdoptionReceiptV2> {
     const { dossier, target, publication, runtime, candidate, boundary } =
       input;

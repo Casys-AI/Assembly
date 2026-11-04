@@ -1,3 +1,4 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 /** Host-agnostic mandate tier: the 16 scenarios that need the real toolkit
  * but no PostgreSQL, on the memory composition.
  *
@@ -11,12 +12,12 @@ import {
   applyEdits,
   readHostEditText,
   verifyEdits,
-} from "../../src/adapters/model/sources/editing/host-writer.ts";
+} from "../../src/application/model/editing/host-writer.ts";
 import {
   modelSourceElement,
   modelToolingTarget,
-} from "../../src/adapters/model/sources/editing/tooling.ts";
-import { sha256 } from "../../src/adapters/model/builds/materialization/artifact.ts";
+} from "../../src/domain/model/editing/source-index.ts";
+import { sha256 } from "../../src/domain/model/value-objects/artifact.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import { createControlHandler } from "../../src/adapters/in/http/work/control.ts";
 import { createConversationsHandler } from "../../src/adapters/in/http/work/conversations.ts";
@@ -37,11 +38,8 @@ import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { reconcileChangePublications } from "../../src/application/governance/mandate-change-decisions.ts";
 import { MemoryStateStore } from "../support/memory-state-store.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  SourceModel,
-  type SourceRevision,
-} from "../../src/adapters/model/sources/source-model.ts";
-import { sourceLiterals } from "../../src/adapters/model/projections/graph/source.ts";
+import { type SourceRevision } from "../../src/domain/model/records/source-revision.ts";
+import { sourceLiterals } from "../../src/domain/model/projections/source-facts.ts";
 import type { ChatDecision } from "../../src/domain/work/dialogue.ts";
 import { SystemGovernance } from "../../src/domain/governance/policies/governance.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
@@ -66,7 +64,7 @@ Deno.test({
     const store = new MemoryStateStore();
     try {
       const repository = new FileRepository(directory);
-      const model = new SourceModel({
+      const model = createSourceModel({
         tooling: new SysmlToolkitAdapter({
           packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
         }),
@@ -124,7 +122,7 @@ Deno.test({
       let writes = 0;
       const host = {
         state: structuredClone(before),
-        ports: { model },
+        ports: { model, clock: { now: () => "2026-11-03T00:00:00.000Z" } },
         update: () => {
           writes++;
           return Promise.resolve();
@@ -180,7 +178,7 @@ Deno.test({
     const store = new MemoryStateStore();
     try {
       const repository = new FileRepository(directory);
-      const model = new SourceModel({
+      const model = createSourceModel({
         tooling: new SysmlToolkitAdapter({
           packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
         }),
@@ -254,7 +252,7 @@ Deno.test({
       let writes = 0;
       const host = {
         state: structuredClone(before),
-        ports: { model },
+        ports: { model, clock: { now: () => "2026-11-03T00:00:00.000Z" } },
         update: () => {
           writes++;
           return Promise.resolve();
@@ -404,7 +402,7 @@ Deno.test({
     const directory = await Deno.makeTempDir();
     try {
       const repository = new FileRepository(directory);
-      const model = new SourceModel({
+      const model = createSourceModel({
         tooling: new SysmlToolkitAdapter({
           packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
         }),
@@ -687,7 +685,7 @@ Deno.test({
       const tooling = new SysmlToolkitAdapter({
         packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
       });
-      const model = new SourceModel({
+      const model = createSourceModel({
         tooling,
         repository,
         projectId: "git:cdc1ab4f-083e-533c-90ca-953c38b63a92",
@@ -1411,7 +1409,7 @@ Deno.test({
       let writes = 0;
       const host = {
         state: structuredClone(before),
-        ports: { model },
+        ports: { model, clock: { now: () => "2026-11-03T00:00:00.000Z" } },
         update: () => {
           writes++;
           return Promise.resolve();

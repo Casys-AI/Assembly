@@ -2,7 +2,7 @@ import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import {
   materialize,
   sha256,
-} from "../../src/adapters/model/builds/materialization/artifact.ts";
+} from "../../src/domain/model/value-objects/artifact.ts";
 import { ModelRepositoryError } from "../../src/application/model/repository.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import type { CompiledModel } from "../../src/domain/model/records/compiled-model.ts";

@@ -58,6 +58,7 @@ export class CaseModelVersionEvents {
   readonly #last = new Map<string, string>();
   readonly #waiting = new Map<string, Promise<void>>();
   #tail: Promise<void> = Promise.resolve();
+  #closed = false;
 
   constructor(
     private readonly ports: CaseModelVersionPorts,
@@ -66,11 +67,12 @@ export class CaseModelVersionEvents {
   ) {}
 
   observe(caseId: string): Promise<void> {
-    if (!CASE_IDENTITY.test(caseId)) return Promise.resolve();
+    if (this.#closed || !CASE_IDENTITY.test(caseId)) return Promise.resolve();
     const waiting = this.#waiting.get(caseId);
     if (waiting) return waiting;
     const next = this.#tail.then(async () => {
       this.#waiting.delete(caseId);
+      if (this.#closed) return;
       await this.#observe(caseId);
     });
     this.#waiting.set(caseId, next);
@@ -81,6 +83,7 @@ export class CaseModelVersionEvents {
   async #observe(caseId: string): Promise<void> {
     try {
       const read = await this.ports.read(caseId);
+      if (this.#closed) return;
       if (!read) {
         this.#last.delete(caseId);
         return;
@@ -108,5 +111,12 @@ export class CaseModelVersionEvents {
         this.ports.onError?.(error, caseId);
       } catch { /* A diagnostic sink never fails the notification queue. */ }
     }
+  }
+
+  /** Stop new reads and wait for the current read/delivery before stores close. */
+  async close(): Promise<void> {
+    this.#closed = true;
+    await this.#tail;
+    this.#last.clear();
   }
 }

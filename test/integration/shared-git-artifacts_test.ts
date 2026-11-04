@@ -1,6 +1,6 @@
 import { deepStrictEqual, equal, notEqual, rejects } from "node:assert/strict";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 import type { ModelSources as Sources } from "../../src/domain/model/value-objects/sources.ts";
 import { ArtifactSourceError } from "../../src/domain/work/artifacts/source-reference.ts";
 import {

@@ -109,7 +109,8 @@
   padding: 12px 18px 16px;
 }
 .proposal-actions button,
-.proposal-feed-error button {
+.proposal-feed-error button,
+.change-retry {
   padding: 7px 12px;
   border: 1px solid var(--line);
   border-radius: 5px;
@@ -151,24 +152,29 @@
   color: var(--muted);
 }
 
-.operator-authority-facts {
+.operator-authority-facts,
+.fact-list {
   display: grid;
   gap: 0.5rem;
   margin: 0.75rem 0;
 }
-.operator-authority-facts > div {
+.operator-authority-facts > div,
+.fact-list > div {
   display: grid;
   grid-template-columns: 9rem minmax(0, 1fr);
   gap: 0.75rem;
 }
-.operator-authority-facts dt {
+.operator-authority-facts dt,
+.fact-list dt {
   color: var(--muted);
 }
-.operator-authority-facts dd {
+.operator-authority-facts dd,
+.fact-list dd {
   margin: 0;
   overflow-wrap: anywhere;
 }
-.operator-authority-facts dd code {
+.operator-authority-facts dd code,
+.fact-list dd code {
   display: block;
   font-size: 0.85em;
 }
@@ -322,13 +328,20 @@ div.change-heading {
 .change-stats .faint {
   color: #9a9a9f;
 }
+/*
+ * A state is one short word and stays on one line; in a narrow panel it is
+ * the chip that gives way, never the title beside it.
+ */
 .change-chip {
   flex-shrink: 0;
+  max-width: 50%;
+  overflow: hidden;
   padding: 1px 8px;
   border-radius: 999px;
   background: rgb(0 0 0 / 5%);
   color: #4a4a4f;
   font-size: 11.5px;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .change-chip.is-accepted,
@@ -336,8 +349,122 @@ div.change-heading {
   background: #eef4f0;
   color: #245847;
 }
-.change-chip.is-declined {
+header.change-heading > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.change-chip.is-declined,
+.change-chip.is-superseded {
   color: var(--muted);
+}
+.change-chip.is-to-decide {
+  color: var(--blue);
+}
+.change-chip.is-blocked {
+  color: var(--ochre);
+}
+/* Applying: how far it went, one dot per step (decision-state.ts). */
+.chip-steps {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 5px;
+  vertical-align: 1px;
+}
+.chip-steps span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+.chip-steps .is-done {
+  background: currentColor;
+}
+.change-retry {
+  margin: 0 18px 10px;
+}
+/* A line that opens in place on the exact values behind it. */
+.inspector > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.inspector > summary::-webkit-details-marker {
+  display: none;
+}
+.inspector > summary::after {
+  content: "i";
+  display: inline-grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  margin-left: 6px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 9px;
+  font-style: italic;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: 1px;
+  opacity: .7;
+}
+.inspector-body {
+  margin: 6px 0 4px;
+  padding: 2px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 12px;
+}
+/* In a narrow column each label sits above its value, never beside it. */
+.inspector-body .fact-list > div {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+.change-heading .change-inspector > summary {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+/* A member being created: its agent tile (cases.css), a little larger. */
+.agent-tile.member-mark {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  border-radius: 7px;
+  font-size: 11px;
+  vertical-align: 1px;
+}
+.change-heading .member-mission {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  color: var(--ink);
+}
+.member-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  margin: 4px 0 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: 12px;
+  list-style: none;
+}
+.member-facts li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.member-facts .ic {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .change-bar {
   display: flex;
@@ -439,31 +566,33 @@ div.change-heading {
   flex: 0 1 auto;
   min-width: 0;
   max-width: 60%;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .notice-result {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  margin: 0;
-  padding: 0 10px 6px 29px;
+  /* A margin, not a padding: the clamp shows no sliver of a third line. */
+  margin: 0 0 6px;
+  padding: 0 10px 0 29px;
   overflow: hidden;
   color: var(--muted);
   font-size: 12.5px;
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
-.notice-route {
-  margin: 0 10px 6px 29px;
-  color: var(--muted);
-  font-size: 12.5px;
-  overflow-wrap: anywhere;
+/* The result is the safe Markdown of agents' messages, kept to two lines. */
+.notice-result :is(p, ul, ol, pre, blockquote) {
+  margin: 0;
 }
-.notice-route summary {
-  cursor: pointer;
+.notice-result :is(ul, ol) {
+  padding-left: 1.2em;
 }
 .notice-route p {
   margin: 6px 0;
+  color: var(--muted);
 }
 @media (max-width: 700px) {
   .conversation-main .scroll {

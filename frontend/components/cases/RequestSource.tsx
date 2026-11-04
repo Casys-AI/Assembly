@@ -6,20 +6,22 @@ import { useEffect } from "preact/hooks";
 import type { WorkbenchState } from "../../lib/workbench/state.ts";
 
 const MAIN_DETAIL = "Current Main · admitted version at opening";
+const LOCAL_CHECK =
+  "Checked automatically at start: the host verifies exact bundled skills and current authority. Selecting a Release grants no execution rights.";
 
 /** Where a Release comes from, exactly: for the tooltip, not the option. */
 function releaseDetail(release: SavedSystemView): string {
   return [
-    "Release",
-    release.metadata.name,
-    release.source?.branch.kind === "case"
-      ? `Request ${release.source.branch.caseId}`
-      : "Main",
-    release.source?.sourceVersion.replace(/^commit:/, "").slice(0, 8),
-    releaseOpeningKind(release) === "local-validation"
-      ? "checked automatically at start"
-      : undefined,
-  ].filter(Boolean).join(" · ");
+    [
+      "Release",
+      release.metadata.name,
+      release.source?.branch.kind === "case"
+        ? `Request ${release.source.branch.caseId}`
+        : "Main",
+      release.source?.sourceVersion.replace(/^commit:/, "").slice(0, 8),
+    ].filter(Boolean).join(" · "),
+    releaseOpeningKind(release) === "local-validation" && LOCAL_CHECK,
+  ].filter(Boolean).join(". ");
 }
 
 /** Source selection and local credential handoff reuse the existing composer. */
@@ -84,6 +86,7 @@ export function RequestSource(
     )
     : undefined;
   const locked = !requests.context.value || requests.pending.value ||
+    requests.selectingRelease.value ||
     requests.intent.value !== null;
   const detail = selected.kind === "current-main"
     ? MAIN_DETAIL
@@ -115,10 +118,14 @@ export function RequestSource(
       )}
       {!authOnly && (
         <>
+          {requests.selectingRelease.value && (
+            <p class="input-note" role="status">
+              Checking the selected Release. Sending waits for this check.
+            </p>
+          )}
           <label class="request-source-pick">
-            System
+            Start from
             <select
-              aria-label="System for this Request"
               title={detail}
               value={selected.kind === "current-main"
                 ? "main"
@@ -156,14 +163,6 @@ export function RequestSource(
               )}
             </select>
           </label>
-          {selectedRelease &&
-            releaseOpeningKind(selectedRelease) === "local-validation" && (
-            <p class="input-note" role="status">
-              Checked automatically at start: the host verifies exact bundled
-              skills and current authority. Selecting a Release grants no
-              execution rights.
-            </p>
-          )}
           {requests.intent.value && (
             <p class="input-note" role="status">
               Saved opening · retry keeps the same message and system.

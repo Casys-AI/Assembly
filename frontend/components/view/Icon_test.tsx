@@ -20,6 +20,8 @@ const names: IconName[] = [
   "dot",
   "open",
   "lock",
+  "globe",
+  "bubble",
 ];
 
 Deno.test("an icon is an outline on a 24 pixel square, hidden from whoever reads the page", () => {

@@ -12,9 +12,9 @@ The main point of contact serves as the default human conversation. Another
 operator can expose its own human entry if its model provides one. A specialist
 can also receive only requests sent through a native `AgentInbox` entry.
 
-The conversation list represents these possibilities. It does not create agents
-or grant any rights. Pinning an operator keeps its conversation within reach; it
-does not make its entry callable. Similarly, viewing a reviewer's decisions does
+The list of operators represents these possibilities. It does not create
+operators or grant any rights. Pinning a Request keeps its tile in the Dock; it
+does not make any entry callable. Similarly, viewing a reviewer's decisions does
 not automatically expose a human conversation with that reviewer.
 
 A transmission is an admitted behaviour between a specific caller and target.

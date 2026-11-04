@@ -15,10 +15,8 @@ import type { DecisionInformationPort } from "../../src/application/work/context
 import { ClaudeAgents } from "../../src/adapters/out/llm-providers/agents.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  type SourceModel,
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { type SourceModel } from "../../src/application/model/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { openOperatorWorkspace } from "../support/operator-workspace.ts";
 import { DenoToolRunner } from "../../src/adapters/out/sandbox/runner.ts";
 import type { ContextEvidenceReference } from "../../src/domain/work/policies/context-separation.ts";

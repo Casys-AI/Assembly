@@ -1,3 +1,4 @@
+import { ACCEPTED_CASE_CLOSURE } from "../support/case-closure.ts";
 import { unexpectedModelAuthoring } from "../support/model-authoring.ts";
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import { SystemRuntime } from "../support/system-runtime.ts";
@@ -20,7 +21,7 @@ import {
   type OperatorCommandOrigin,
   OperatorCommandPending,
 } from "../../src/application/work/operators/command-delivery.ts";
-import { runtimeRevisionReference } from "../../src/application/work/runtime/execution.ts";
+import { runtimeRevisionReference } from "../../src/application/work/native-execution/contract.ts";
 import {
   caseExecutionContext,
   delegatedCaseContext,
@@ -673,7 +674,7 @@ Deno.test("an unbudgeted successor Case and its reload never read the closed ses
   try {
     await turn(f.owner, "Budgeted Case");
     const first = f.owner.cases.cases[0];
-    await f.owner.closeCase(first.id, "done");
+    await f.owner.closeCase(first.id, "done", ACCEPTED_CASE_CLOSURE);
     const ledger = structuredClone(f.records.get(first.budget!.scopeId));
     delete f.central.model.workBudgetPolicy;
     f.central.model.version.digest = "central-without-budget";
@@ -818,9 +819,12 @@ Deno.test("a native delegated continuation refreshes after reload and reserves i
     const work = f.delegate("Continue the central Case");
     await entered.promise;
     try {
-      await rejects(() => f.owner.closeCase(centralCase.id, "done"), {
-        code: "CASE_BUSY",
-      });
+      await rejects(
+        () => f.owner.closeCase(centralCase.id, "done", ACCEPTED_CASE_CLOSURE),
+        {
+          code: "CASE_BUSY",
+        },
+      );
       await rejects(() => f.owner.closeCase(centralCase.id, "abandoned"), {
         code: "CASE_BUSY",
       });
@@ -836,7 +840,7 @@ Deno.test("a native delegated continuation refreshes after reload and reserves i
     }
     await work;
     equal(f.specialist.snapshot.workBudget?.consumed, 4);
-    await f.owner.closeCase(centralCase.id, "done");
+    await f.owner.closeCase(centralCase.id, "done", ACCEPTED_CASE_CLOSURE);
     equal(f.owner.cases.cases[0].status, "closed-done");
   } finally {
     await f.manager.dispose();
@@ -858,9 +862,12 @@ Deno.test("native delegated work reserves its central Case until the contributio
     const work = f.delegate("Contribute to the central Case");
     await entered.promise;
     try {
-      await rejects(() => f.owner.closeCase(centralCase.id, "done"), {
-        code: "CASE_BUSY",
-      });
+      await rejects(
+        () => f.owner.closeCase(centralCase.id, "done", ACCEPTED_CASE_CLOSURE),
+        {
+          code: "CASE_BUSY",
+        },
+      );
       await rejects(() => f.owner.closeCase(centralCase.id, "abandoned"), {
         code: "CASE_BUSY",
       });
@@ -868,7 +875,7 @@ Deno.test("native delegated work reserves its central Case until the contributio
       release.resolve();
     }
     await work;
-    await f.owner.closeCase(centralCase.id, "done");
+    await f.owner.closeCase(centralCase.id, "done", ACCEPTED_CASE_CLOSURE);
     equal(f.owner.cases.cases[0].status, "closed-done");
   } finally {
     await f.manager.dispose();
@@ -993,7 +1000,11 @@ Deno.test("delegation and human inputs select their own Case objective and budge
         3,
       );
       deepStrictEqual(f.records.get(local.budget!.scopeId), localLedger);
-      await f.owner.closeCase(central.id, outcome);
+      await f.owner.closeCase(
+        central.id,
+        outcome,
+        outcome === "done" ? ACCEPTED_CASE_CLOSURE : undefined,
+      );
       await f.human("Continue local Request L after C closes", local.id);
       await f.specialist.idle();
       const resumed = f.worker.contexts.at(-1)!;
@@ -1008,7 +1019,11 @@ Deno.test("delegation and human inputs select their own Case objective and budge
         budgetState(f.records.get(central.budget!.scopeId)!).view.consumed,
         3,
       );
-      await f.specialist.closeCase(local.id, outcome);
+      await f.specialist.closeCase(
+        local.id,
+        outcome,
+        outcome === "done" ? ACCEPTED_CASE_CLOSURE : undefined,
+      );
       equal(f.specialist.cases.cases[0].status, `closed-${outcome}`);
     } finally {
       await f.manager.dispose();
@@ -1026,8 +1041,12 @@ Deno.test("closing or abandoning a local Request is independent of the last dele
       await turn(f.owner, "Central Request C");
       const central = f.owner.cases.cases[0];
       await f.delegate("Contribute to central objective");
-      await f.owner.closeCase(central.id, "done");
-      await f.specialist.closeCase(local.id, outcome);
+      await f.owner.closeCase(central.id, "done", ACCEPTED_CASE_CLOSURE);
+      await f.specialist.closeCase(
+        local.id,
+        outcome,
+        outcome === "done" ? ACCEPTED_CASE_CLOSURE : undefined,
+      );
       equal(f.specialist.cases.cases[0].status, `closed-${outcome}`);
     } finally {
       await f.manager.dispose();
@@ -1132,7 +1151,7 @@ Deno.test("human candidate admission selects its open local Request after anothe
     const central = f.owner.cases.cases[0];
     f.worker.answer({ kind: "reply", text: "Central contribution finished" });
     await f.delegate("Contribute to C");
-    await f.owner.closeCase(central.id, "done");
+    await f.owner.closeCase(central.id, "done", ACCEPTED_CASE_CLOSURE);
     const ledgers = structuredClone(f.records);
     const providerCalls = f.worker.contexts.length;
     const decision = () =>
@@ -1182,7 +1201,7 @@ Deno.test("human candidate admission selects its open local Request after anothe
       f.records.get(central.budget!.scopeId),
       ledgers.get(central.budget!.scopeId),
     );
-    await f.specialist.closeCase(local.id, "done");
+    await f.specialist.closeCase(local.id, "done", ACCEPTED_CASE_CLOSURE);
     const closed = f.specialist.snapshot;
     await rejects(decision, { code: "WORK_CASE_INACTIVE" });
     deepStrictEqual(f.specialist.snapshot, closed);
@@ -1217,7 +1236,11 @@ Deno.test("closing an idle local Request does not interrupt another Case's runni
       equal(before.workBudget?.scopeId, central.budget!.scopeId);
       equal(before.workBudget?.reserved, 1);
       try {
-        await f.specialist.closeCase(local.id, outcome);
+        await f.specialist.closeCase(
+          local.id,
+          outcome,
+          outcome === "done" ? ACCEPTED_CASE_CLOSURE : undefined,
+        );
         const during = f.specialist.snapshot;
         equal(f.specialist.cases.cases[0].status, `closed-${outcome}`);
         equal(during.busy, true);
@@ -1246,7 +1269,7 @@ Deno.test("closing an idle local Request does not interrupt another Case's runni
       equal(f.specialist.snapshot.workBudget?.scopeId, central.budget!.scopeId);
       equal(f.specialist.snapshot.workBudget?.consumed, 2);
       equal(f.specialist.snapshot.workBudget?.reserved, 0);
-      await f.owner.closeCase(central.id, "done");
+      await f.owner.closeCase(central.id, "done", ACCEPTED_CASE_CLOSURE);
     } finally {
       release.resolve();
       await f.manager.dispose();
@@ -1403,10 +1426,10 @@ Deno.test("a completed operator command replays as already-done while a queued r
 
 Deno.test("continuation fingerprint tracks the waiting execution and diverges after a checkpoint advance", async (t) => {
   const { nativeExecutionIdentity } = await import(
-    "../../src/application/work/runtime/execution.ts"
+    "../../src/application/work/native-execution/contract.ts"
   );
   type Snapshot =
-    import("../../src/application/work/runtime/execution.ts").NativeExecutionSnapshot;
+    import("../../src/application/work/native-execution/contract.ts").NativeExecutionSnapshot;
   const model = nativeCaseFixtureModel("central", {
     admissionAuthority: "human",
     primary: true,

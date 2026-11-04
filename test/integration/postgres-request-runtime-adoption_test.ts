@@ -1,3 +1,4 @@
+import { createRequestRuntimeReaders } from "../../src/adapters/out/postgres/request-runtime-readers.ts";
 /** Owned normal Toolkit/PostgreSQL witness. Controlled provider; no live server,
  * deployment, external provider or user database participates. */
 import assert from "node:assert/strict";
@@ -20,7 +21,7 @@ import {
   Prisma,
 } from "../../src/adapters/out/postgres/client.ts";
 import { PostgresRequestSpaceStore } from "../../src/adapters/out/postgres/request-space-store.ts";
-import { RequestSpaceRuntime } from "../../src/adapters/work/request-space-runtime.ts";
+import { RequestSpaceRuntime } from "../../src/application/work/request-spaces/runtime.ts";
 import { RequestCaseConversations } from "../../src/application/work/request-spaces/conversations.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import type { ModelWriteQueueEntry } from "../../src/application/model/publication/ports/out/model-write-queue.port.ts";
@@ -484,8 +485,13 @@ Deno.test({
         "Continue this same Request with the adopted warm instruction",
       );
       const cold = new RequestSpaceRuntime({
+        ...createRequestRuntimeReaders(host.storage.client),
+        onNoticeError: () => {},
         storage: host.storage,
-        native: host.stage.nativeRuntime,
+        native: {
+          scope: host.stage.nativeRuntime.ledger.options.scope,
+          forCaseSpace: host.stage.nativeRuntime.forCaseSpace,
+        },
         openings: new PostgresRequestSpaceStore(
           host.storage.client,
           record.scope,

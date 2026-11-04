@@ -298,8 +298,7 @@ export class RequestSupervision implements RequestSupervisionReadPort {
         entry.executionModel?.identity.builderId === operatorId
       );
       const model = state?.executionModel;
-      const team = model?.operatorTeam?.requestId === record.caseId &&
-          model.operatorTeam.requestOwnerId === owner
+      const team = model?.operatorTeam?.requestOwnerId === owner
         ? model.operatorTeam
         : undefined;
       let source: SupervisionSource | null = null;

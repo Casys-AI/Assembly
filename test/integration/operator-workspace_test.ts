@@ -16,19 +16,22 @@ import type {
   ModelDiagnosticsPort,
 } from "../../src/application/work/runtime/ports.ts";
 import {
+  sourceExecutablesCompilation,
   validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { openOperatorWorkspace } from "../support/operator-workspace.ts";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import type { PostgresSystemStateStore } from "../../src/adapters/out/postgres/system-state-store.ts";
 import { DenoToolRunner } from "../../src/adapters/out/sandbox/runner.ts";
-import { SourceModelDiagnosticsReader } from "../../src/adapters/model/diagnostics/source.ts";
+import { SourceModelDiagnosticsReader } from "../../src/application/model/diagnostics/source-diagnostics-reader.ts";
 import { ModelDiagnosticsService } from "../../src/application/model/diagnostics/service.ts";
 import type {
   ChatContext,
   SystemRuntimeState,
 } from "../../src/domain/work/dialogue.ts";
 import type { AgentConversation } from "../../src/domain/work/records/conversations.ts";
+import { canonical } from "../../src/domain/primitives/canonical-json.ts";
+import { recordedOperatorWork } from "../../src/application/work/operators/journal.ts";
 import type {
   NetworkImpactConsultationPage,
   NetworkImpactConsultationSummary,
@@ -281,182 +284,197 @@ Deno.test({
   name:
     "a registered secondary without endpoint metadata cannot read or address diagnostics",
   ignore: !toolkitIntegrationEnabled,
-  async fn() {
-    const directory = await Deno.makeTempDir({
-      prefix: "ase-secondary-diagnostics-",
-    });
-    let postgres:
-      | Awaited<ReturnType<typeof openPostgresRuntimeFixture>>
-      | undefined;
-    let workspace:
-      | Awaited<ReturnType<typeof openOperatorWorkspace>>
-      | undefined;
-    try {
-      const sources = await mandateSources({ raw: true });
-      const endpointMetadata = `
+  async fn(t) {
+    // A fatal native refusal leaves an uncertain contribution whose failed
+    // key_strict_fifo job blocks later deliveries for the same operator.
+    // Each independent authority check therefore owns a fresh runtime/queue.
+    for (const kind of ["raw", "targeted"] as const) {
+      await t.step(kind, async () => {
+        const directory = await Deno.makeTempDir({
+          prefix: "ase-secondary-diagnostics-",
+        });
+        let postgres:
+          | Awaited<ReturnType<typeof openPostgresRuntimeFixture>>
+          | undefined;
+        let workspace:
+          | Awaited<ReturnType<typeof openOperatorWorkspace>>
+          | undefined;
+        try {
+          const sources = await mandateSources({ raw: true });
+          const endpointMetadata = `
  attribute operatorName : String = "Scoped peer";
  attribute operatorInstruction : String = "Edit only the delegated beta root.";
  attribute primaryContact : Boolean = false;
  attribute humanInputEnabled : Boolean = false;`;
-      assert(sources["configuration.sysml"]!.includes(endpointMetadata));
-      sources["configuration.sysml"] = sources["configuration.sysml"]!
-        .replace(endpointMetadata, "");
-      postgres = await openPostgresRuntimeFixture({
-        dataDir: directory,
-        sources,
-      });
-      const projectId = postgres.backend.projectId;
-      const repository = postgres.repository;
-      const tooling = postgres.backend.tooling;
-      const primaryModel = postgres.backend.model;
-      const store = postgres.primary.state;
-      const initial = await repository.current();
-      const peerModel = await validateSourceExecutable(
-        initial,
-        projectId,
-        "AssemblyLiveBuilder::mandatePeer",
-      );
-      assert.equal(peerModel.operator, undefined);
-      const diagnostics = new ModelDiagnosticsService(
-        new SourceModelDiagnosticsReader(repository, projectId),
-        { list: () => Promise.resolve([]), set: () => Promise.resolve() },
-      );
-      const finding = (await diagnostics.list(initial.version)).diagnostics
-        .find((entry) =>
-          entry.code === "LOOP_WITHOUT_BUDGET" &&
-          entry.elementId === peerModel.identity.systemId
-        );
-      assert(finding?.elementId);
-      const addresses = [{ code: finding.code, elementId: finding.elementId }];
-      const targetId = nativeId(initial, "Work::beta::value");
-      const reads: string[] = [];
-      const modelDiagnostics: ModelDiagnosticsPort = {
-        async read(model, version) {
-          reads.push(model.identity.builderId);
-          return (await diagnostics.list(
-            version ?? model.version.repositoryVersion,
-          )).diagnostics;
-        },
-      };
-      const contexts: ChatContext[] = [];
-      let proposal: "raw" | "targeted" | undefined;
-      const agents: AgentPort = {
-        label: "secondary-without-endpoint-metadata",
-        decide(context) {
-          contexts.push(structuredClone(context));
-          if (!proposal) {
-            return Promise.resolve({ kind: "reply", text: "Ready" });
-          }
-          assert(context.modelContext);
-          const common = {
-            text: "Propose a delegated correction",
-            reason: "Address the existing diagnostic from a secondary",
-            baseVersion: context.modelContext.version,
-            addresses,
-          };
-          if (proposal === "targeted") {
-            return Promise.resolve({
-              ...common,
-              kind: "propose_sysml_edit",
-              sourceDigest: context.modelContext.sourceDigest,
-              edits: [{
-                kind: "set-value",
-                elementId: targetId,
-                expression: "12",
-              }],
-            });
-          }
-          const mission = context.modelSources?.sources["mission.sysml"];
-          if (!mission) {
-            return Promise.resolve({
-              kind: "consult_model",
-              text: "Read the delegated source before proposing its revision",
-              inputJson: JSON.stringify({
-                operation: "read_source",
-                version: context.modelContext.version,
-                path: "mission.sysml",
-              }),
-            });
-          }
-          return Promise.resolve({
-            ...common,
-            kind: "propose_sysml_revision",
-            sources: {
-              "mission.sysml": mission.replace(
-                "attribute value : Integer = 2;",
-                "attribute value : Integer = 12;",
-              ),
-            },
+          assert(sources["configuration.sysml"]!.includes(endpointMetadata));
+          sources["configuration.sysml"] = sources["configuration.sysml"]!
+            .replace(endpointMetadata, "");
+          postgres = await openPostgresRuntimeFixture({
+            dataDir: directory,
+            sources,
           });
-        },
-        review() {
-          throw new Error("No candidate review is expected");
-        },
-      };
-      const executors: BehaviorInvocationPort[] = [];
-      const service = new SystemRuntime({
-        ...postgres.runtimePorts,
-        agents,
-        model: primaryModel,
-        modelDiagnostics,
-        store,
-        runner: new DenoToolRunner(),
-        behaviors: new BehaviorInvocationRegistry(executors),
-      });
-      await service.initialize(undefined, {
-        resumeContinuations: false,
-        resumeCandidateContinuations: false,
-      });
-      workspace = await openOperatorWorkspace({
-        ...postgres.workspacePorts,
-        createSourceModel: postgres.backend.createSourceModel,
-        primaryHistory: store,
-        primary: service,
-        primaryModel,
-        repository,
-        tooling,
-        agents,
-        modelDiagnostics,
-        directory,
-        executors,
-      });
-      await postgres.start(workspace);
-      const peer = workspace.runtimeFor(peerModel.identity.builderId)!.runtime;
-      assert.equal(peer.snapshot.executionModel!.operator, undefined);
-      const registered = workspace.conversations.snapshot.conversations.find(
-        (entry) => entry.agentId === peerModel.identity.builderId,
-      );
-      assert(registered);
-      assert.equal(registered.primary, false);
+          const projectId = postgres.backend.projectId;
+          const repository = postgres.repository;
+          const tooling = postgres.backend.tooling;
+          const primaryModel = postgres.backend.model;
+          const store = postgres.primary.state;
+          const initial = await repository.current();
+          const peerModel = await validateSourceExecutable(
+            initial,
+            projectId,
+            "AssemblyLiveBuilder::mandatePeer",
+          );
+          assert.equal(peerModel.operator, undefined);
+          const diagnostics = new ModelDiagnosticsService(
+            new SourceModelDiagnosticsReader(
+              repository,
+              projectId,
+              sourceExecutablesCompilation,
+            ),
+            { list: () => Promise.resolve([]), set: () => Promise.resolve() },
+          );
+          const finding = (await diagnostics.list(initial.version)).diagnostics
+            .find((entry) =>
+              entry.code === "LOOP_WITHOUT_BUDGET" &&
+              entry.elementId === peerModel.identity.systemId
+            );
+          assert(finding?.elementId);
+          const addresses = [{
+            code: finding.code,
+            elementId: finding.elementId,
+          }];
+          const targetId = nativeId(initial, "Work::beta::value");
+          const reads: string[] = [];
+          const modelDiagnostics: ModelDiagnosticsPort = {
+            async read(model, version) {
+              reads.push(model.identity.builderId);
+              return (await diagnostics.list(
+                version ?? model.version.repositoryVersion,
+              )).diagnostics;
+            },
+          };
+          const contexts: ChatContext[] = [];
+          let proposal: "raw" | "targeted" | undefined = undefined;
+          const agents: AgentPort = {
+            label: "secondary-without-endpoint-metadata",
+            decide(context) {
+              contexts.push(structuredClone(context));
+              if (!proposal) {
+                return Promise.resolve({ kind: "reply", text: "Ready" });
+              }
+              assert(context.modelContext);
+              const common = {
+                text: "Propose a delegated correction",
+                reason: "Address the existing diagnostic from a secondary",
+                baseVersion: context.modelContext.version,
+                addresses,
+              };
+              const mission = context.modelSources?.sources["mission.sysml"];
+              if (!mission) {
+                return Promise.resolve({
+                  kind: "consult_model",
+                  text:
+                    "Read the delegated source before proposing its revision",
+                  inputJson: JSON.stringify({
+                    operation: "read_source",
+                    version: context.modelContext.version,
+                    path: "mission.sysml",
+                  }),
+                });
+              }
+              if (proposal === "targeted") {
+                return Promise.resolve({
+                  ...common,
+                  kind: "propose_sysml_edit",
+                  sourceDigest: context.modelContext.sourceDigest,
+                  edits: [{
+                    kind: "set-value",
+                    elementId: targetId,
+                    expression: "12",
+                  }],
+                });
+              }
+              return Promise.resolve({
+                ...common,
+                kind: "propose_sysml_revision",
+                sources: {
+                  "mission.sysml": mission.replace(
+                    "attribute value : Integer = 2;",
+                    "attribute value : Integer = 12;",
+                  ),
+                },
+              });
+            },
+            review() {
+              throw new Error("No candidate review is expected");
+            },
+          };
+          const executors: BehaviorInvocationPort[] = [];
+          const service = new SystemRuntime({
+            ...postgres.runtimePorts,
+            agents,
+            model: primaryModel,
+            modelDiagnostics,
+            store,
+            runner: new DenoToolRunner(),
+            behaviors: new BehaviorInvocationRegistry(executors),
+          });
+          await service.initialize(undefined, {
+            resumeContinuations: false,
+            resumeCandidateContinuations: false,
+          });
+          workspace = await openOperatorWorkspace({
+            ...postgres.workspacePorts,
+            createSourceModel: postgres.backend.createSourceModel,
+            primaryHistory: store,
+            primary: service,
+            primaryModel,
+            repository,
+            tooling,
+            agents,
+            modelDiagnostics,
+            directory,
+            executors,
+          });
+          await postgres.start(workspace);
+          const peer =
+            workspace.runtimeFor(peerModel.identity.builderId)!.runtime;
+          assert.equal(peer.snapshot.executionModel!.operator, undefined);
+          const registered = workspace.conversations.snapshot.conversations
+            .find(
+              (entry) => entry.agentId === peerModel.identity.builderId,
+            );
+          assert(registered);
+          assert.equal(registered.primary, false);
 
-      await peer.submit("Read the current diagnostics");
-      await postgres.idle(peer);
-      assert.equal(peer.snapshot.error, undefined);
-      assert.equal(contexts.at(-1)!.modelDiagnostics, undefined);
-      assert.deepEqual(reads, []);
+          await peer.submit("Read the current diagnostics");
+          await postgres.idle(peer);
+          assert.equal(peer.snapshot.error, undefined);
+          assert.equal(contexts.at(-1)!.modelDiagnostics, undefined);
+          assert.deepEqual(reads, []);
 
-      for (const kind of ["raw", "targeted"] as const) {
-        proposal = kind;
-        const before = contexts.length;
-        await peer.submit(`Propose a ${kind} correction`);
-        await postgres.idle(peer);
-        assert(contexts.length > before);
-        assert.match(
-          peer.snapshot.error ?? "",
-          /Only the primary operator may address model diagnostics/,
-        );
-        assert(
-          contexts.slice(before).every((context) =>
-            context.modelDiagnostics === undefined
-          ),
-        );
-        assert.deepEqual(reads, []);
-        assert.deepEqual(await repository.listProposals(), []);
-      }
-      assert.equal((await repository.current()).version, initial.version);
-    } finally {
-      await postgres?.close();
-      await Deno.remove(directory, { recursive: true });
+          proposal = kind;
+          const before = contexts.length;
+          await peer.submit(`Propose a ${kind} correction`);
+          await postgres.idle(peer);
+          assert(contexts.length > before);
+          assert.match(
+            peer.snapshot.error ?? "",
+            /Only the primary operator may address model diagnostics/,
+          );
+          assert(
+            contexts.slice(before).every((context) =>
+              context.modelDiagnostics === undefined
+            ),
+          );
+          assert.deepEqual(reads, []);
+          assert.deepEqual(await repository.listProposals(), []);
+          assert.equal((await repository.current()).version, initial.version);
+        } finally {
+          await postgres?.close();
+          await Deno.remove(directory, { recursive: true });
+        }
+      });
     }
   },
 });
@@ -475,7 +493,11 @@ Deno.test({
     try {
       const initial = await f.repository.current();
       const diagnostics = new ModelDiagnosticsService(
-        new SourceModelDiagnosticsReader(f.repository, f.projectId),
+        new SourceModelDiagnosticsReader(
+          f.repository,
+          f.projectId,
+          sourceExecutablesCompilation,
+        ),
         { list: () => Promise.resolve([]), set: () => Promise.resolve() },
       );
       const reads: Array<{ sourceVersion?: string; baseVersion?: string }> = [];
@@ -636,23 +658,42 @@ Deno.test({
           );
           assert.equal(
             context.modelVersion!.repositoryVersion,
-            published.version,
+            initial.version,
           );
           assert.equal(
             context.admittedModelVersion!.repositoryVersion,
             initial.version,
           );
+          assert.equal(context.modelContext!.version, published.version);
+          assert.equal(context.modelSources!.version, published.version);
         }
-        assert.deepEqual(service.snapshot.executionModel, admitted);
+        assert(service.snapshot.executionModel);
+        // Compare the full persisted model: JSON omits optional undefined values.
+        assert.equal(
+          canonical(service.snapshot.executionModel),
+          canonical(admitted),
+        );
         assert.equal(service.snapshot.availableExecutionModel, undefined);
       }
       const proposals = await f.repository.listProposals();
-      assert.equal(proposals.length, 2);
-      for (const proposed of proposals) {
+      const publication = proposals.find((entry) =>
+        entry.acceptedVersion === published.version
+      );
+      assert(publication);
+      assert.equal(publication.status, "accepted");
+      assert.equal(publication.author, "local-owner");
+      assert.equal(publication.baseVersion, initial.version);
+      const operatorProposals = proposals.filter((entry) =>
+        entry.id !== publication.id
+      );
+      assert.equal(operatorProposals.length, 2);
+      for (const proposed of operatorProposals) {
+        assert.equal(proposed.status, "proposed");
+        assert.equal(proposed.author, `agent:${f.primaryIdentity.builderId}`);
         assert.equal(proposed.baseVersion, published.version);
         assert.deepEqual(proposed.addresses, [address]);
       }
-      assert(reads.every((read) => read.sourceVersion === published.version));
+      assert(reads.every((read) => read.sourceVersion === initial.version));
       assert.equal(
         reads.filter((read) => read.baseVersion === published.version).length,
         2,
@@ -677,7 +718,11 @@ Deno.test({
       | undefined;
     try {
       const diagnostics = new ModelDiagnosticsService(
-        new SourceModelDiagnosticsReader(f.repository, f.projectId),
+        new SourceModelDiagnosticsReader(
+          f.repository,
+          f.projectId,
+          sourceExecutablesCompilation,
+        ),
         { list: () => Promise.resolve([]), set: () => Promise.resolve() },
       );
       const reads: Array<{ operatorId: string; version?: string }> = [];
@@ -758,6 +803,7 @@ Deno.test({
       });
       const peer = workspace.runtimeFor(f.peerIdentity.builderId)!.runtime;
       assert.equal(peer.snapshot.executionModel!.operator!.primary, false);
+      await postgres.start(workspace);
       await service.submit("Read the current diagnostics");
       await postgres.idle(service);
       assert.equal(service.snapshot.error, undefined);
@@ -838,8 +884,24 @@ Deno.test({
       await postgres.idle();
       assert.equal(peer.snapshot.error, undefined);
       const proposals = await f.repository.listProposals();
-      assert.equal(proposals.length, 1);
-      assert.deepEqual(proposals[0]!.addresses, [{
+      const publication = proposals.find((entry) =>
+        entry.acceptedVersion === next.version
+      );
+      assert(publication);
+      assert.equal(publication.status, "accepted");
+      assert.equal(publication.author, "local-owner");
+      assert.equal(publication.baseVersion, initial.version);
+      const operatorProposals = proposals.filter((entry) =>
+        entry.id !== publication.id
+      );
+      assert.equal(operatorProposals.length, 1);
+      assert.equal(operatorProposals[0]!.status, "proposed");
+      assert.equal(
+        operatorProposals[0]!.author,
+        `agent:${f.peerIdentity.builderId}`,
+      );
+      assert.equal(operatorProposals[0]!.baseVersion, next.version);
+      assert.deepEqual(operatorProposals[0]!.addresses, [{
         code: "LOOP_WITHOUT_BUDGET",
         elementId: peer.snapshot.executionModel!.identity.systemId,
       }]);
@@ -886,14 +948,50 @@ Deno.test({
         ),
       );
       let planned = false;
+      let planChoices = 0;
       const calls = new Map<string, number>();
+      const completionViews = (messages: ChatContext["messages"]) =>
+        messages.flatMap((message) => {
+          const value = message.observation?.value as
+            | Record<string, unknown>
+            | undefined;
+          if (value?.format !== "operator-contribution-completion/v1") {
+            return [];
+          }
+          return [{
+            completionId: value.completionId,
+            agentId: value.agentId,
+            correlationId: value.correlationId,
+            invocationId: value.invocationId,
+            status: value.status,
+            revision: value.revision,
+            modelVersion: value.modelVersion,
+          }];
+        });
+      const coordinatorDecisions: Array<{
+        inputId: ChatContext["activeInputMessageId"];
+        modelVersion: ChatContext["modelVersion"];
+        admittedModelVersion: ChatContext["admittedModelVersion"];
+        completions: unknown[];
+      }> = [];
       const agents: AgentPort = {
         label: "three-operator-qualification",
         decide(context) {
           const id = context.operator!.nativeId;
           calls.set(id, (calls.get(id) ?? 0) + 1);
+          if (context.operator!.name === "Coordinateur veille") {
+            coordinatorDecisions.push({
+              inputId: context.activeInputMessageId,
+              modelVersion: context.modelVersion,
+              admittedModelVersion: context.admittedModelVersion,
+              completions: completionViews(context.messages).map((value) =>
+                value.completionId
+              ),
+            });
+          }
           if (context.operator!.name === "Coordinateur veille" && !planned) {
             planned = true;
+            planChoices++;
             const plan = context.modeledBehaviors!.find((entry) =>
               entry.name === "PlanifierTravail"
             )!;
@@ -1012,13 +1110,98 @@ Deno.test({
       await current.workspace.conversations.idle();
       await current.postgres.idle();
       assert.equal(current.service.snapshot.error, undefined);
-      assert.equal(calls.get(coordinator.agentId), 2);
+      assert.equal(planChoices, 1);
       assert.equal(calls.get(collector.agentId), 1);
       assert.equal(calls.get(analyst.agentId), 1);
+      const completions = completionViews(current.service.snapshot.messages);
+      assert.equal(completions.length, 2);
+      assert.equal(
+        new Set(completions.map((value) => value.completionId)).size,
+        2,
+      );
+      const firstDecision = coordinatorDecisions[0]!;
+      assert(firstDecision.inputId);
+      assert.deepEqual(firstDecision.completions, []);
+      const coordinatorPin = {
+        digest: coordinator.modelDigest,
+        repositoryVersion: s0.version,
+      };
+      // Each child has its own wake. Depending on when it arrives, a wake can
+      // still wait for the other child or let the coordinator answer again.
+      assert(coordinatorDecisions.length >= 2);
+      let previousCompletions: unknown[] = [];
+      for (const decision of coordinatorDecisions) {
+        assert.equal(decision.inputId, firstDecision.inputId);
+        assert.deepEqual(decision.modelVersion, coordinatorPin);
+        assert.deepEqual(decision.admittedModelVersion, coordinatorPin);
+        if (decision !== firstDecision) {
+          assert(decision.completions.length > previousCompletions.length);
+          assert(
+            previousCompletions.every((id) =>
+              decision.completions.includes(id)
+            ),
+          );
+          assert(
+            decision.completions.every((id) =>
+              completions.some((value) => value.completionId === id)
+            ),
+          );
+          assert.equal(
+            new Set(decision.completions).size,
+            decision.completions.length,
+          );
+        }
+        previousCompletions = decision.completions;
+      }
+      assert.deepEqual(
+        new Set(coordinatorDecisions.at(-1)!.completions),
+        new Set(completions.map((value) => value.completionId)),
+      );
       for (const id of [collector.agentId, analyst.agentId]) {
         const state: SystemRuntimeState =
           current.workspace.runtimeFor(id)!.runtime.snapshot;
         assert.equal(state.events.at(-1)!.kind, "operator-work-completed");
+        const work = state.messages.flatMap((message) =>
+          message.work ? [message.work] : []
+        );
+        assert.equal(work.length, 1);
+        assert.equal(work[0]!.callerId, coordinator.agentId);
+        assert.deepEqual(work[0]!.modelVersion, coordinatorPin);
+        assert.equal(
+          work[0]!.parentInvocation!.operatorId,
+          coordinator.agentId,
+        );
+        assert.equal(
+          work[0]!.parentInvocation!.inputMessageId,
+          firstDecision.inputId,
+        );
+        const recorded = recordedOperatorWork(
+          state,
+          id,
+          coordinator.agentId,
+          work[0]!.correlationId,
+        )!;
+        assert.equal(recorded.settled, true);
+        assert.equal(recorded.result.status, "completed");
+        const {
+          agentId,
+          correlationId,
+          invocationId,
+          status,
+          revision,
+          modelVersion,
+        } = recorded.result;
+        assert.deepEqual(completions.filter((value) => value.agentId === id), [{
+          completionId: state.events.at(-1)!.id,
+          agentId,
+          correlationId,
+          invocationId,
+          status,
+          revision,
+          modelVersion,
+        }]);
+        assert.equal(modelVersion.repositoryVersion, s0.version);
+        assert.equal(modelVersion.digest, state.executionModel!.version.digest);
       }
 
       // A semantic change in one worker does not adopt it in another session.

@@ -16,6 +16,8 @@
   --panel-radius: 28px;
   --panel-shadow: 0 24px 60px rgb(0 0 0 / 10%), 0 2px 6px rgb(0 0 0 / 4%);
   --quiet: rgb(0 0 0 / 5%);
+  --chip: rgb(0 0 0 / 5%);
+  --chip-hover: rgb(0 0 0 / 9%);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -47,7 +49,40 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 8px;
   min-width: 0;
+}
+/* Share the Request's quiet action pill with navigation actions elsewhere. */
+.desk .button,
+.cases-page .decide button,
+.cases-page .decide a {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #4a4a4f;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.desk .button:hover,
+.cases-page .decide button:hover,
+.cases-page .decide a:hover {
+  background: var(--chip-hover);
+  color: var(--ink);
+}
+.desk .button:disabled,
+.cases-page .decide button:disabled {
+  cursor: default;
+  opacity: .5;
+}
+.desk .button:focus-visible,
+.cases-page .decide :is(a, button):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 .workspace-identity {
   display: flex;
@@ -55,16 +90,6 @@
   justify-content: center;
   gap: 8px;
   min-width: 0;
-}
-.workspace-identity h1 {
-  min-width: 0;
-  overflow: hidden;
-  color: #3a3a3c;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: -.01em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .workspace-model-version {
   flex: 0 1 auto;
@@ -78,6 +103,71 @@
 .workspace-model-version::before {
   content: "·";
   margin-right: 8px;
+}
+/* One version disclosure, using the existing chip and fact-list vocabulary. */
+.version-pill {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  font-size: 12px;
+}
+.version-pill > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.version-pill > summary::-webkit-details-marker {
+  display: none;
+}
+.version-pill > summary:focus-visible {
+  outline: 2px solid var(--focus);
+  border-radius: 999px;
+}
+.version-pill .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.version-pill > .detail-facts {
+  position: absolute;
+  z-index: 40;
+  top: 100%;
+  inset-inline-start: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 12px;
+  width: min(380px, 75vw);
+  margin: 6px 0 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--panel-shadow);
+  font-size: 12px;
+  white-space: normal;
+}
+.version-pill > .detail-facts dt {
+  color: var(--muted);
+}
+.version-pill > .detail-facts dd {
+  display: block;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.agent-panel .version-pill > .detail-facts {
+  position: static;
+  box-sizing: border-box;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+}
+.sysml-footer .version-pill > .detail-facts {
+  top: auto;
+  bottom: 100%;
 }
 .desk .connection {
   gap: 8px;
@@ -516,6 +606,16 @@
   align-self: flex-end;
   max-width: 78%;
 }
+/* In a split pane, use the available reading width before wrapping a line. */
+.desk-stage.has-item > .desk-conversation .scroll {
+  padding-inline: 20px;
+}
+.desk-stage.has-item > .desk-conversation .message {
+  max-width: 100%;
+}
+.desk-stage.has-item > .desk-conversation .message.user {
+  max-width: 88%;
+}
 .desk-panel .message.user .message-body {
   padding: 10px 15px;
   border-radius: 18px;
@@ -548,6 +648,11 @@
 }
 .desk-panel .message.tool .message-body {
   font-size: 13px;
+}
+.desk-panel .tool-steps {
+  align-self: flex-start;
+  max-width: 92%;
+  margin: 0;
 }
 .desk-panel .empty {
   margin: 0;

@@ -2,30 +2,31 @@
 
 This guide is for people using the workshop. It shows how to read the admitted
 SysML model in the System place, its history in the Model place, and what awaits
-a decision in the To decide place. It assumes that a system is running and its
+a decision in the Activity place. It assumes that a system is running and its
 interface is open: see [start a system](../atelier/demarrer-un-systeme.md).
 Labels match the interface and are in English. Things you click are in bold.
 Text displayed by the page is in quotation marks.
 
 System pages do not change anything. In Model, **Accept**, **Decline**, **Admit
 and integrate**, **Adjust**, and **Put in service** act on the host when the
-card offers them. To decide makes no decisions: each row leads to the page where
+card offers them. Activity makes no decisions: each row leads to the page where
 you decide.
 
 ## Open a place
 
 1. In the Dock, at the bottom of the screen, find the three tiles to the right
-   of the logo: **System**, **Model**, and **To decide**.
-2. Clicking a tile opens the place in the main panel. **To decide** shows the
+   of the logo: **System**, **Model**, and **Activity**.
+2. Clicking a tile opens the place in the main panel. **Activity** shows the
    number of items waiting. **Model** shows an indicator when a proposal is
    waiting.
 3. Clicking the tile again, or the panel's close button (tooltip "Close System",
-   "Close Model", or "Close To decide"), closes the place. **System** reopens on
+   "Close Model", or "Close Activity"), closes the place. **System** reopens on
    Team. **Model** reopens on the last page read, with its revision or file.
 4. Switch pages using the tabs at the top of the panel. Each page has its own
    address, such as `/system?page=rights` or `/model?page=files`. Team and
-   Activity use the bare address (`/system`, `/model`). `/revisions`, Model's
-   former address, still opens Model.
+   Model’s Activity use the bare address (`/system`, `/model`). Dock Activity
+   opens at `/activity`. `/revisions`, Model's former address, still opens
+   Model.
 5. Copying the address shares the view. In System, it carries the open element
    (`?select=`) and the version being read (`?version=`). In Model, `?commit=`
    or `?proposal=` opens Revisions on a revision; `?file=`, `?line=`, and
@@ -35,48 +36,43 @@ you decide.
 
 ### Identify the conversation and version being viewed
 
-**30 October 2026 navigation update:** System/Model support split and page-only
-views. A selected conversation's Dock tile hides the split chat without changing
-its scoped page/inspection; a conversation click from page-only opens full chat.
-A different conversation clicked in split changes context while retaining the
-right page. Internal links preserve `conversation=hidden`; full-chat entry opens
-split. Full Main now fills its existing ChatView container like a Request. The
-Dock keeps +N only for actual capacity overflow and recalculates on growth and
-shrink. These are locally implemented and tested changes, with ROOT's bounded
-Main/Request/draft/Dock browser observations recorded in the UX qualification of
-30 October 2026; other historical/subagent/viewport paths remain separate. See
-the
-[dated navigation guide](../atelier/parcourir-le-bureau-et-les-cases.md#keep-a-conversation-beside-system-or-model).
+The title bar shows a **version pill** for the model the page describes: “Main”
+with the date of the commit, “Request n” (“Request n · modified” once its branch
+moved from its base) or the name of a Release. Its dot is filled when that
+version is in service, and a lock marks a read-only version. Open it to read the
+exact status (In service, Not in service, Past version, Version unavailable or
+Service status unavailable) and the identities behind it. The same pill replaces
+identifiers in lists and headers.
 
-**Current scope rule — 31 October 2026:** System and Model describe the
-explicitly selected system. A selected Case means its own branch; global context
-means main. Selecting the Main conversation while keeping a Case view open does
-not silently replace that view's branch. Read the page's branch and version;
-Dock monograms are secondary context cues. The conversation on the left,
-including a selected suboperator, keeps its own identity and execution pin.
-**Open full Request** restores its agent tree and details panel.
+System and Model describe the explicitly selected system. A selected Case means
+its own branch; global context means main. Selecting the Main conversation while
+keeping a Case view open does not silently replace that view's branch. Read the
+page's branch and version. **Leave Request** in the title bar returns to the
+Main conversation. The conversation on the left, including a selected
+sub-operator, keeps its own identity and execution pin. **Open full Request**
+restores its operator tree and details panel. The split and page-only layouts
+are described in
+[Keep a conversation beside System or Model](../atelier/parcourir-le-bureau-et-les-cases.md#keep-a-conversation-beside-system-or-model).
 
-In a Case, its principal is **Branch Operator (BO)** because it runs in that
+In a Case, its principal is the **Branch Operator (BO)** because it runs in that
 non-main execution space, regardless of the name retained in its source model.
-Team connects BO to a muted, read-only external **Main Operator** reference.
-**System main** explicitly opens the actual current main system for inspection.
-The branch's Main reference and Main rights must come from that actual model,
+Team joins it to a muted **Main Operator** node, a link to the actual main
+system. The branch's Main reference and Main rights come from that actual model,
 with their own source version. Unavailable Main reads stay unavailable. A Main
 reference or graph connection grants no approval authority. See the
 [scope and evidence contract](../../explanation/modeles/pages-system-et-model.md#selected-system-scope).
-These are the current owner rules; the dated browser evidence above covers only
-the paths it actually exercised.
 
-An explicitly selected source version is read-only. Outside Release creation,
-the inspection banner offers a return to the current model without changing the
-conversation or adopting the inspected version. During Release creation, the
-exact selected source stays fixed: the title identifies it as current or
-historical only when the current source has been read. If that comparison is
-unavailable, the source is identified without guessing. A proven historical
-selection keeps the inspection notice. Historical Activity and Revisions views
-that cannot be read at that source version show an unavailable message and an
-**Inspect Files** link; they do not present current activity as historical data.
-Revisions' existing commit-detail links remain available.
+An explicitly selected source version is read-only. Outside Release creation, a
+banner reads “Read-only inspection” with the version, says that the conversation
+keeps its current model, and offers **Return to current model**. It neither
+changes the conversation nor adopts the inspected version. During Release
+creation, the exact selected source stays fixed: the title identifies it as
+current or historical only when the current source has been read. If that
+comparison is unavailable, the source is identified without guessing. A proven
+historical selection keeps the inspection notice. Historical Activity and
+Revisions views that cannot be read at that source version show an unavailable
+message and an **Inspect Files** link; they do not present current activity as
+historical data. Revisions' existing commit-detail links remain available.
 
 A Request uses its resolved branch and exact version when its scoped reader is
 available. If the scoped reader is unavailable, System and Model say so rather
@@ -84,30 +80,15 @@ than showing main under the Request's name.
 
 ## Read the System place
 
-### Diagnostics
-
-Open **System > Diagnostics** to inspect existing Doctor and SHACL findings for
-the exact version shown by System. Main and Request scopes remain distinct;
-missing or inaccessible reports show unavailable rather than borrowing Main or
-showing zero. Doctor and SHACL can overlap, so their counts are separate.
-Severity/finding are textual; masked findings remain in a separate disclosure.
-Known locations offer exact source links; no repair or masking command is added
-by this read-only page. ROOT observed Main and Request reports; lower SHACL,
-narrow layout and source-click browser checks remain open in the UX
-qualification of 30 October 2026.
-
-**Later 30 October owner steer:** the next bounded UI delta merges Doctor/SHACL
-findings into one list, deduplicating only identical full diagnostic content;
-producer provenance moves into details. Existing separate API reports and
-unavailable/mismatch/unmapped indicators remain. The earlier browser screenshots
-precede that delta. Product scope is desktop only; no mobile-product acceptance
-gate is added.
-
-The tabs are **Team**, **Explore**, **Flows**, **Requirements**, and **Rights**
+The tabs are **Team**, **Performance**, **Explore**, **Flows**,
+**Requirements**, **Rights** and **Diagnostics**
 ([`desk.ts:8`](../../../frontend/lib/workbench/desk.ts)). The **More** menu
 lists **Parts** and **Allocations**
-([`desk.ts:17`](../../../frontend/lib/workbench/desk.ts)); it takes the page's
-name when either is displayed.
+([`desk.ts:19`](../../../frontend/lib/workbench/desk.ts)); it takes the page's
+name when either is displayed. In a Request, only **Team**, **Performance** and
+**Rights** are tabs; **More** also holds **Explore**, **Flows**,
+**Requirements** and **Diagnostics**. **Search** at the right of the tabs, or
+the `/` key, opens a field that finds an element by name and links to its page.
 
 The ordinary pages come from the selected system's board at its displayed
 commit. Rights reads that commit's matrix. A read-only external Main reference
@@ -139,23 +120,26 @@ view.
 
 ### Read the displayed version
 
-1. Below the tabs, read the version line: the short commit code (its full
-   identity is in the tooltip), then the "main" indicator when the address does
-   not name a version.
-2. If the model in service for the central agent is a different commit, the "In
-   service:" indicator followed by its code is added. The page then describes
-   something that is not yet running.
+1. Below the tabs, read the version line: the version pill, as in the title bar.
+   On main it reads “Main” and the commit's date; open it for the full commit
+   code and its status.
+2. If the model in service for the central operator is a different commit, the
+   pill says so (“Not in service” or “Past version”) and its inspection lists
+   the “In service” commit. The page then describes something that is not yet
+   running.
 3. To read a past version, add `?version=` followed by `commit:` and the
-   commit's 40 hexadecimal digits. Page links keep that version, and the **Show
-   main** link replaces the "main" indicator.
+   commit's 40 hexadecimal digits. Page links keep that version, a lock marks
+   the pill as read-only, and the **Show current model** link returns to the
+   head.
 4. A rejected version is reported as "This is not the identity of a version of
    the model." (malformed identity) or "This version is not in the model's
-   history." (unknown commit). **Show main** returns to the head.
+   history." (unknown commit). **Show current model** returns to the head.
 
 ### Choose the wording: Readable or SysML
 
-1. On every page except Team, find the **Readable** / **SysML** group to the
-   right of the tabs.
+1. On Explore, Flows, Requirements, Rights, Parts and Allocations, find the
+   **Readable** / **SysML** group to the right of the tabs. Team, Performance
+   and Diagnostics do not have it.
 2. **Readable**, the default choice, describes the model in everyday language: a
    unit carries the name the team gives it, an identifier becomes a phrase
    (`maxAgentDecisions` becomes "Max agent decisions"), and an element has an
@@ -163,7 +147,7 @@ view.
    keywords, types, identifiers, expressions, source file.
 3. The choice stays in this browser, under the `assembly:view:mode` key (an
    older `ase:view:mode` value is copied only when the new key is absent)
-   ([`view-prefs.ts:15`](../../../frontend/lib/system/view-prefs.ts)). It is not
+   ([`view-prefs.ts:19`](../../../frontend/lib/system/view-prefs.ts)). It is not
    included in the address. Without storage, it only applies to the open page.
 
 ### Open an element's details
@@ -177,11 +161,11 @@ Team and Rights have their own, described below.
 2. Read the details: the element's kind, name, summary, the values the model
    gives it, then its relationships, grouped by meaning. Up to six values are
    shown, fourteen in **SysML**, then "+N more"
-   ([`element-detail.ts:242`](../../../frontend/lib/system/board/detail.ts)).
-   The first three relationship groups are listed; "N more" opens the others. A
-   group names eight elements, then "+N". Each referenced element is a link to
-   its page. In an Explore column, the details are limited to the summary and
-   action links.
+   ([`detail.ts:242`](../../../frontend/lib/system/board/detail.ts)). The first
+   three relationship groups are listed; "N more" opens the others. A group
+   names eight elements, then "+N". Each referenced element is a link to its
+   page. In an Explore column, the details are limited to the summary and action
+   links.
 3. Follow an action link. One carries the name of the element's home page
    (**Parts**, **Flows**…; **Explore** for a concept without its own page) and
    leads there; it is absent when you are already there. **Source** opens the
@@ -195,31 +179,41 @@ Team and Rights have their own, described below.
 ### See who acts: Team
 
 1. Open **System** in the Dock. Team opens.
-2. Read the network. Each agent is a node, surrounded by what it uses: tools,
-   skills, contexts, memories, information. A dark line connects "You" to agents
-   that talk with you; "You" only appears if there is one. A light line goes
-   from the agent to what it uses. A shared resource is a single node marked
-   "×N". Nodes can be moved with the mouse.
-3. Read the profile below the network. Selecting an agent (`?select=<id>`)
-   changes the profile; without a selection, it shows the first agent that talks
-   with you, otherwise the first agent. It says "Talks with you" or "Not in
-   direct contact with you" when the model or runtime says so, and "working now"
-   when the agent is working.
+2. Read the network. By default it shows only the operators, a dark line joining
+   "You" to those that talk with you ("You" only appears if there is one), and
+   its nodes can be moved with the mouse. The **Resources** switch above it adds
+   what they use (tools, skills, contexts, memories, information), a shared
+   resource being a single node marked "×N". An arrow goes from an operator to
+   each operator it may call, such as a member its Request created.
+3. Read the profile below the network. Selecting an operator (`?select=<id>`)
+   changes the profile; without a selection, it shows the first operator that
+   talks with you, otherwise the first operator. It says "Talks with you" or
+   "Not in direct contact with you" when the model or runtime says so, and
+   "working now" when the operator is working.
 4. Read the profile sections: "Context", "Tools & skills", "Memory", "Mandate",
    and "Works on" (the flows it executes; absent if it executes none). A section
    the model does not declare becomes a dotted line saying so, such as "No
    memory declared".
 5. Under "Tools & skills", read the "Servers" row: the tool servers the runtime
-   provides to the agent, with their tool count (the list is in the tooltip).
+   provides to the operator, with their tool count (the list is in the tooltip).
    This appears alongside what the model declares, never in its place.
 
-Beyond twelve agents, the agent list replaces the network, to the left of the
-profile
-([`TeamPage.tsx:18`](../../../frontend/components/system/team/TeamPage.tsx)).
-With no declared agent, the page says "No agent declared". If the projector
+On the main system, the Branch Operators of the open Requests join the network
+beside the Main Operator, newest first and joined by a “supervises” line; each
+leads to its Request's Team. Beyond six, the oldest fold into one “+N earlier”
+node. In a Request, the network shows its own operators and a muted Main
+Operator node that links to the main system.
+
+A **Performance** summary stands beside the network, with its **Open
+Performance** link.
+
+Beyond twelve operators, the operator list replaces the network, to the left of
+the profile
+([`TeamPage.tsx:30`](../../../frontend/components/system/team/TeamPage.tsx)).
+With no declared operator, the page says "No agent declared". If the projector
 could not place any, it says "No agent could be read". Host notes, with their
 code and instruction, are also displayed: all of them below this message when
-there is no agent, otherwise only warnings and errors above the page.
+there is no operator, otherwise only warnings and errors above the page.
 
 ### Browse the whole model: Explore
 
@@ -334,15 +328,70 @@ A matrix without actors or rights says "No rights declared". A sentence below
 the table says which version the rights belong to and that pending proposals are
 not counted. The other limits are in the legend's tooltip.
 
+### Measure the work: Performance
+
+1. Open **Performance**. In a Request it measures that Request; on the main
+   system it measures the Main. While the measurements are read, the page says
+   “Reading measurements…”. If they cannot be read, it says “Measurements
+   unavailable”, with the reason in the tooltip.
+2. Read the two headline figures. **Duration** runs from the Request's opening
+   to its closing, and reads `N/A` while it is open. **Tokens** adds input,
+   output and cache tokens, with the number of calls and the mean per call. The
+   main system has no duration.
+3. Read the facts under them: the share of input read **from cache**, the
+   **failed calls** (failed or timed out), and, in a Request, **your messages**
+   and **your decisions**, which count what you sent after the opening message
+   and the cards you accepted or declined.
+4. Read **By agent**: one row per operator, with its calls, tokens, tokens per
+   call and cache share, most calls first. The name links to its profile in
+   Team. Calls whose operator is no longer in the team read “Former member”, and
+   calls with no operator link read “Unattributed”. Past twenty rows, **Next**
+   and **Previous** turn the pages.
+5. Open **Details** for the tokens by kind, the provider time summed (calls can
+   overlap, so it is not the duration) and the model version read.
+
+A figure that is defined but lacks data reads `N/A`, with the reason in its
+tooltip; `N/A` is never zero. Totals are a minimum: calls that cannot be linked
+to the scope are not counted. The page does not judge a Request: it has no
+verdict. Definitions are in the
+[Desktop and Cases reference](../../reference/atelier/bureau-et-cases.md#performance).
+
+### Read the model's findings: Diagnostics
+
+1. Open **Diagnostics**, in a Request under **More**. It lists the model
+   findings of the exact version System shows. Main and Request scopes stay
+   distinct.
+2. Read **Findings**. Doctor and SHACL findings form one list, sorted by
+   severity: each row has its severity, its message, the element it concerns (a
+   link to Explore) and, when known, `file:line:column`, a link to that line in
+   Files. Findings that are exactly identical in both checks appear once.
+   **Finding details** gives the code and the checks that reported it. The list
+   shows 25 findings; **Show more findings** reveals more.
+3. Open **Checks** to see whether Doctor and SHACL were read for this version. A
+   check that cannot be read says so, and the page notes “Partial checks: the
+   count covers only available results.” It never borrows Main's report or shows
+   zero in its place.
+4. **Masked findings** keeps the findings that a Doctor mask hides from
+   attention. A mask hides a finding; it does not resolve it. **Related
+   attention** lists Rights and other System items, with an **Inspect** link. It
+   is another view, not an additional total.
+
+The page is read-only: it adds no repair or masking command. A new system starts
+without a Doctor warning.
+
 ## Read the Model place
 
 The tabs are **Activity**, **Revisions**, **Files**, **Releases**, and **SysML**
-([`desk.ts:70`](../../../frontend/lib/workbench/desk.ts)). Activity opens first.
+([`desk.ts:74`](../../../frontend/lib/workbench/desk.ts)). Activity opens first.
 An address with `?commit=` or `?proposal=` opens Revisions on that revision. The
 former `?page=graph` address opens SysML. An address with
 `?modelVersion=commit:…` reads that source commit there. Numeric revision links
-`?revision=N`, including those from chat, keep the historical execution graph;
-they are not included in the usual tabs.
+`?revision=N` keep the historical execution graph; they are not included in the
+usual tabs.
+
+In a Request, Model offers only **Files**, **SysML** and **Releases**, on the
+Request's own branch. The other pages say “This view is unavailable for a
+Request branch.”
 
 ### Follow activity: Activity
 
@@ -446,62 +495,56 @@ Away from the start of the file, the **First lines** link returns to the
 beginning ([`files.ts:132`](../../../frontend/lib/model/sources/files.ts)). A
 file missing from the version says "… is not in this version.", an empty file
 "This file is empty.", a version without files "No files in this version." A
-rejected version is reported as in System, with **Show main**.
+rejected version is reported as in System, with **Show current model**.
 
 ### Create and inspect a release
 
-**30 October 2026 presentation update:** publication and Request availability
-are separate. The publication badge identifies the immutable creation/tag
-result; it is not a fresh-opening approval or a complete-retention claim.
-Selecting a Release runs the server's read-only exact-source/asset/skill/host
-inspection. Only a ready result displays **Ready at last check**; absent or
-failed inspection cannot remain green. Opening a Request rechecks current
-conditions/authority. No second approval or catalogue-wide host probing is
-introduced. Existing skill prerequisite metadata does not alone prove its local
-bytes are missing. The code paths have focused qualification; ROOT also observed
-one selected Main Release published and green Ready at last check without
-retention retry or a second approval. The dated UX report records that bounded
-result; readiness is still rechecked when opening.
+A Release keeps one exact source version so that a Request can start from it.
+Publishing and starting a Request are separate. The publication badge says that
+the tag and source were retained; it does not claim that a Request can start.
+Selecting a Release runs the server's read-only inspection of its exact source,
+assets, skills and host. Only a Release that a Request can start from shows
+**Ready** (a check mark in its inspection, and “Ready at last check” in the
+tooltip). **Ready** is a reading, not a grant: opening a Request rechecks
+current conditions and authority, and asks for no second approval.
 
 1. Open **Model → Files** and check the displayed branch and exact version. The
    **Releases** panel on the right offers **Create release** for an eligible
-   source. The action is also available from the Releases catalogue.
-2. In the creation page, check the source and choose **Create a new tag** or
-   **Choose an existing tag**. Existing choices are limited to available tags
-   pointing to that exact source. Enter a valid new tag name if creating one,
-   then enter the release **Title** and optional **Notes**. Opening the form or
-   refreshing its lists creates nothing; choose **Create release** to submit.
-3. A new Release requires a tag. The tag and the source remain fixed to the
-   selected commit if the branch advances; the tag does not switch a running
-   model or confer execution rights. Inspect the result and its asset and tag
-   availability separately. An externally moved or deleted tag is reported as
-   unavailable; Assembly does not silently follow it to another commit.
-4. If an acknowledgement is lost, the original source, tag and details remain as
-   an unconfirmed intention. Reopening the page does not submit it again: use
-   the explicit retry on the same source. When a matching terminal response
-   reports that a tag is unavailable, that failed attempt remains visible and
-   the page permits a new attempt with another tag. Other uncertain errors do
-   not automatically clear the original intention.
-5. Select a Release in the catalogue to inspect its source and retained
-   contents. Historical untagged Releases remain readable as recorded; no tag is
-   invented for them. Older runtime captures remain identified separately.
+   source. The action is also available from the Releases catalogue and, in a
+   Request, from its header.
+2. A Release needs a tag on that exact commit. If there is none, choose **Create
+   tag**, enter a **Tag name** (a valid Git tag name) and choose **Create tag**
+   again. This tags the source only: it publishes no Release and changes nothing
+   in service. In a Request, only its current admitted version can be tagged.
+3. In the form, check the source, choose the tag under **Existing tag** (the
+   list holds only the tags that point to that exact source), then enter the
+   release **Title** and optional **Notes**. Opening the form or refreshing its
+   lists creates nothing; choose **Create release** to submit.
+4. The tag and the source stay fixed to the selected commit if the branch
+   advances. The tag does not switch a running model or confer execution rights.
+   Inspect the result and its asset and tag availability separately. A tag moved
+   or deleted outside Assembly is reported as unavailable; Assembly does not
+   silently follow it to another commit.
+5. If an acknowledgement is lost, the original source, tag and details remain as
+   an unconfirmed intention (**Not confirmed**). Reopening the page does not
+   submit it again: use **Retry release creation** on the same source. When a
+   matching terminal response reports that a tag is unavailable, that failed
+   attempt remains visible and the page permits a new attempt with another tag.
+   After an acknowledged creation whose retention is incomplete, **Retry
+   retention for this release** reuses the original request.
+6. Select a Release in the catalogue to inspect its source and retained
+   contents. The inspection lists its operators by name, what it needs (skills,
+   a tool sandbox, private resources) and, under **Details**, the exact
+   identities. When it is **Ready**, **New Request from this Release** opens
+   Requests with it preselected under **Start from**. Historical untagged
+   Releases remain readable as recorded; no tag is invented for them. Older
+   runtime captures remain identified separately.
 
-Release creation belongs to **Model**. Main supports eligible exact admitted
-versions. A Request can retain its unchanged eligible initial base (B0), subject
-to current authority and source visibility. An evolved Request version (A1)
-remains refused until its separate local-admission and provenance work is
-qualified. A fresh Request can select an eligible retained Release through its
-source selector; default Release selection is separate and is not connected.
-**Pin** on a Case only keeps its Dock tile visible.
-
-**30 October 2026, current implementation checkpoint:** the B0-only refusal
-above records the earlier qualified baseline. The current source implements
-Release creation from the verified current admitted Request source while its
-runtime may execute an older version. It preserves exact tags, authority,
-retention/prerequisite status and independent fresh-opening controls. Joined
-native and A1 browser qualification remain pending; the older port-4399 browser
-build and its successful Main-tag creation do not qualify this new path. No
-acceptance or deployment is implied.
+Main supports eligible exact admitted versions. A Request can retain its current
+admitted source even while its runtime executes an older version, under current
+authority and source visibility. **Keep in Dock** on a Case only keeps its Dock
+tile visible. A fresh Request selects a retained Release with **Start from**; a
+default Release selection is not connected.
 
 ### Read diagrams: SysML
 
@@ -517,8 +560,9 @@ acceptance or deployment is implied.
    **Source**, when available, opens Files at the line in the same commit.
    Escape clears the selection.
 5. Copying the address shares the version (`?version=commit:…`), view
-   (`?view=`), and element (`?select=`). **Show main** returns to the head from
-   a pinned commit. The System "In SysML views" chips are not yet available.
+   (`?view=`), and element (`?select=`). **Show current model** returns to the
+   head from a pinned commit. The System "In SysML views" chips are not yet
+   available.
 6. **SVG** downloads the displayed diagram, with its filters and collapsed
    contents. **PlantUML** requests the view's text only when opened; **Copy**
    copies it and **Download .puml** downloads it. **.sysml** downloads this
@@ -528,23 +572,38 @@ An action view may be missing branches or decision guards because of the
 Toolkit. Check the sources or Flows to verify the declaration; the viewer does
 not reconstruct these links.
 
-## Find what is waiting: To decide
+## Find what is waiting and what happened: Activity
 
-1. Open **To decide**. The page lists items awaiting a decision, one per row:
-   proposals first, then authorizations, then tools.
-2. Read a row: a dot, the text, the requesting agent, an arrow. The tooltip
-   gives the text and agent.
-3. Follow the row. "Review model proposal" followed by the identifier leads to
-   the proposal in Revisions. "Authorize reviewer creation", "Authorize operator
-   creation", "Authorize model editing", and "Authorize mandate change" lead to
-   the operator's Case or conversation. A native "Authorize tool:" admission
-   opens the exact notification in **Model → Activity**; older instances without
-   an operator catalog keep their conversation destination.
+1. Open **Activity**. **Waiting for you** lists Main and open-Request decisions,
+   one per row; its count matches the Dock badge.
+2. Read a row: a dot, the text, the requesting operator, an arrow. The tooltip
+   gives the text and operator.
+3. Follow the row. "Review model proposal" leads to the proposal in Revisions.
+   "Authorize reviewer creation", "Authorize operator creation", "Authorize
+   model editing", and "Authorize mandate change" lead to the operator's Case or
+   conversation. A native "Authorize tool:" admission opens the exact
+   notification in **Model → Activity**; older instances without an operator
+   catalog keep their conversation destination.
 4. Decide where the row takes you.
 
 The page says "Updating decisions…" during the first read and "Nothing to
 decide" when nothing is waiting. If the queue could not be read, it says so with
-**Try again** instead of claiming nothing is waiting.
+**Try again** instead of claiming nothing is waiting. Before the session is
+ready, "Connect to the system…" explains that the full queue and history cannot
+be read.
+
+**What happened** follows, newest first: opened and finished Requests with their
+Branch Operators, dated decisions and operator handoffs, proven member
+creations, and retained Releases. **Details** exposes identities, full reports
+and receipts. The first 30 events are shown; **Show more** reveals 30 more.
+**Read again** refreshes the catalogues, Request conversations and visible
+decision statuses. Events without a recorded date or sufficient proof are
+omitted. Partial reads and truncated model history are reported.
+
+Main keeps the conversation, human decisions, unresolved escalations and
+abandoned Request reports. Routine completion notices and member returns appear
+in Activity. Already decided human cards remain folded in Main. Model > Activity
+continues to show the model's version history.
 
 ## Follow the model head live
 
@@ -560,15 +619,18 @@ reloading.
   again** rereads; it waits for the delay the host requests (**Try again in N
   s**). It is absent when rereading cannot change anything, for example for a
   rejected version.
-- Activity and Revisions reread history, Files the head's file list, SysML its
-  views, and To decide the queue.
-- For System, Activity, Revisions, Files, and SysML, a decision made elsewhere
-  (in chat, for example) has the same effect as an announcement.
+- Model > Activity and Revisions reread model history; Files rereads the head's
+  file list, and SysML its views. Dock Activity rereads only the source that
+  changed: model history when the Main head advances, Releases on catalogue
+  invalidation. Existing Request snapshots are reused; a newly discovered
+  Request is read once, and a new authority notice rereads that Request only.
+- For System, Model > Activity, Revisions, Files, and SysML, a decision made
+  elsewhere (in chat, for example) has the same effect as an announcement.
 - A version named in the address (`?version=`) never moves: a commit does not
   change.
 
 ## What this guide does not cover
 
-Building blocks in System, search, and the To decide health group are not yet in
-the interface. The Toolkit view and attention routes available on the host are
-not enough to make them usable from these pages.
+Building blocks in System and the Activity health group are not yet in the
+interface. The Toolkit view and attention routes available on the host are not
+enough to make them usable from these pages.

@@ -145,7 +145,7 @@ The backend in `src` has five folders. Each imports only what is listed here;
 - `infrastructure/` holds technical services shared by every context: clock,
   environment, logging, schema validation, SSE, the Fresh frontend dispatch,
   local HTTP security and the native Toolkit process client. It implements
-  `application/` ports, so it may import `application/` and `domain/`. Seven
+  `application/` ports, so it may import `application/` and `domain/`. Six
   imports of `adapters/` remain, tracked by a warn-list in the test that may
   only shrink.
 - `composition/` is the composition root: it builds the adapters and use cases,
@@ -155,21 +155,24 @@ The backend in `src` has five folders. Each imports only what is listed here;
 - Fresh components consume read and command APIs. The interface grants no
   execution rights and does not regenerate the SysML model.
 
-Where to look in `adapters/`, which is grouped two ways at once:
+Where to look in `adapters/`:
 
-- By technical system. `in/` receives calls: `in/http/<context>/` for routes,
-  `in/local/` for local space controls. `out/<system>/` is what Assembly calls:
-  `postgres`, `git`, `sysml-toolkit`, `llm-providers`, `oxigraph`, `filesystem`
-  and so on.
-- By business context. `work/`, `model/`, `governance/` and `skills/` hold the
-  adapters of one context that build on `out/`: the execution runtime in
-  `work/runtime/`, the source-authoritative model in `model/sources/`, access
-  checks in `governance/`.
+- `in/` receives calls: `in/http/<context>/` for routes and `in/local/` for
+  local space controls.
+- `out/<system>/` adapts the technical system Assembly calls: `postgres`, `git`,
+  `sysml-toolkit`, `llm-providers`, `oxigraph`, `filesystem` and so on. Toolkit
+  compilation, runtime and projections share the `sysml-toolkit/` family;
+  use-case orchestration and domain policies live in their owning application
+  and domain contexts.
+- The architecture test permits only `in/`, `out/` and the frozen
+  `sysml-toolkit-pin.ts` at the top level. Workspace decisions live in
+  `application/`; `composition/operator-workspace.ts` owns their assembly and
+  lifecycle.
 
-Start from the system (`out/`) or the route (`in/http/`); if neither fits, look
-in the context folder. Postgres stores mostly sit in `out/postgres/`, but the
-execution ledger stays beside its runtime in `work/runtime/`. These groupings
-import each other and no test governs those imports.
+Most Postgres stores sit in `out/postgres/`. The native execution ensemble stays
+under `out/native-execution/`, including `postgres-ledger.ts`, wait-evidence and
+native-observation journals. Its files stay together because they share the
+native execution contract, even when their storage uses PostgreSQL.
 
 The admitted model and its identities remain the source of truth. Refactoring
 does not change canonical encodings, digests or historical journals. An observed
@@ -178,18 +181,19 @@ execution trace remains distinct from a scenario declared in the model.
 ## Tests
 
 All maintained test tasks use `tools/test-runner.ts` and the pinned Deno
-executable. One launcher runs at a time across this repository's worktrees: a
-second one prints the holder's profile, folder and process, then waits for the
-lock up to 15 minutes (`--wait=SECONDS`; `--wait=0` fails at once). Unit, setup
-and interface stages run on Deno's `--parallel` workers (half the CPUs, at most
-four; `--jobs=N` overrides); integration and the slow profiles keep one worker.
-The launcher runs at low scheduling priority, limits native worker-pool
-settings, and places owned temporary files in the checkout's `.data/test-runs/`.
-Every run retains per-stage JUnit reports in its run directory, with test-case
-durations and source-file grouping (file totals sum case times and exclude
-module loading). A successful run removes only its owned `tmp/` directory; a
-failed run retains it and prints the run directory for diagnosis. It does not
-delete unrelated temporary files or database schemas.
+executable. Only slow profiles share an exclusive lock across this repository's
+worktrees; normal profiles can run alongside them. A second slow launcher prints
+the holder's profile, folder and process, then waits for the lock up to 15
+minutes (`--wait=SECONDS`; `--wait=0` fails at once). Unit, setup and interface
+stages run on Deno's `--parallel` workers (half the CPUs, at most four;
+`--jobs=N` overrides); integration and the slow profiles keep one worker. The
+launcher runs at low scheduling priority, limits native worker-pool settings,
+and places owned temporary files in the checkout's `.data/test-runs/`. Every run
+retains per-stage JUnit reports in its run directory, with test-case durations
+and source-file grouping (file totals sum case times and exclude module
+loading). A successful run removes only its owned `tmp/` directory; a failed run
+retains it and prints the run directory for diagnosis. It does not delete
+unrelated temporary files or database schemas.
 
 | Command                              | Runs                                               | Measured (before) | Budget       |
 | ------------------------------------ | -------------------------------------------------- | ----------------- | ------------ |

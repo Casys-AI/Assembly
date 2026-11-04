@@ -8,7 +8,7 @@ import {
   postgresQualifiedTable,
   Prisma,
 } from "../../src/adapters/out/postgres/client.ts";
-import { CryptographicSpaceSecrets } from "../../src/adapters/work/space-control-secrets.ts";
+import { CryptographicSpaceSecrets } from "../../src/infrastructure/space-control-secrets.ts";
 import { createRequestSpaceControls } from "../../src/composition/space-controls.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { sha256 } from "../../src/domain/primitives/execution-digest.ts";

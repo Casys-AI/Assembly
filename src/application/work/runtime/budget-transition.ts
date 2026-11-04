@@ -33,8 +33,8 @@ import {
   type NativeExecutionSnapshot,
   runtimeRevisionReference,
   type RuntimeStateHistoryPort,
-} from "./execution.ts";
-import { nativeCatalogAdvanceEvidence } from "./model-advance.ts";
+} from "../native-execution/contract.ts";
+import { nativeCatalogAdvanceEvidence } from "../native-execution/model-advance.ts";
 import { emptyEvolutionAwait, emptyNativeEvolutionAwait } from "./evolution.ts";
 import { hasActivationIntent } from "../../../domain/work/policies/candidate-activation.ts";
 import { activeBatchCall } from "../conversation/batches.ts";
@@ -1083,7 +1083,7 @@ export interface BudgetCeilingAdoptionHost {
         version?: string,
       ): Promise<ExecutableModel>;
     };
-    execution?: import("./execution.ts").NativeExecutionPort;
+    execution?: import("../native-execution/contract.ts").NativeExecutionPort;
     workBudget?: import("../budget/ports.ts").WorkBudgetPort;
     clock: { now(): string };
   };

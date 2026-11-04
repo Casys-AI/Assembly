@@ -722,6 +722,7 @@ Deno.test("an explicit plan resume observes human admission without executing th
   const plans = new Map<string, WorkPlanRecord>();
   let observations = 0;
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store: {
       load(id) {
         return Promise.resolve(structuredClone(plans.get(id) ?? null));

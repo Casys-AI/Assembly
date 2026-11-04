@@ -1,7 +1,8 @@
-import { RequestNetworkChangePublisher } from "../adapters/model/request-network-change-publisher.ts";
+import { createSourceModel } from "./source-model-services.ts";
+import { RequestNetworkChangePublisher } from "../application/model/publication/request-network-change-publisher.ts";
 import { RequestChangeDecision } from "../application/work/request-spaces/request-change-decision.ts";
 import type { RequestCaseChangeDecisionPort } from "../application/work/request-spaces/conversations.ts";
-import { bindHostBackgroundTask } from "../adapters/work/runtime/host-background-task.ts";
+import { bindHostBackgroundTask } from "../infrastructure/host-background-task.ts";
 
 /** Construct the real decision service (the person's and the MO's) from the
  * same production ports. Construction alone does not expose a route or start
@@ -13,7 +14,10 @@ export function createRequestChangeDecision(
       "publisher"
     >
     & {
-      publisher: ConstructorParameters<typeof RequestNetworkChangePublisher>[0];
+      publisher: Omit<
+        ConstructorParameters<typeof RequestNetworkChangePublisher>[0],
+        "createSourceModel"
+      >;
     },
 ): RequestChangeDecision {
   const adoption = options.adoption;
@@ -43,7 +47,10 @@ export function createRequestChangeDecision(
         ...args: Parameters<typeof adoption.resumeCreationGrant>
       ) => adoption.resumeCreationGrant(...args)),
     },
-    publisher: new RequestNetworkChangePublisher(options.publisher),
+    publisher: new RequestNetworkChangePublisher({
+      ...options.publisher,
+      createSourceModel,
+    }),
   });
 }
 

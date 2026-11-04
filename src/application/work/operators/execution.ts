@@ -3,7 +3,7 @@
 import type {
   NativeExecutionIdentity,
   RuntimeRevisionReference,
-} from "../runtime/execution.ts";
+} from "../native-execution/contract.ts";
 
 export interface OperatorExecutionCommandOrigin {
   businessRevision: RuntimeRevisionReference;

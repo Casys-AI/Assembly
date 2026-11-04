@@ -86,8 +86,8 @@ export interface SemanticIndexBuildInfo {
   abi: "napi8";
   rustc: string;
   napiCli: string;
-  oxigraph: "0.4.11";
-  spargebra: "0.3.5";
+  oxigraph: "0.5.12";
+  spargebra: "0.4.8";
   sourceSha256: string;
   addonFile: typeof SEMANTIC_INDEX_ADDON_FILE;
   addonSha256: string;
@@ -119,8 +119,8 @@ export async function verifySemanticIndexPackage(
     info.platform !== platform ||
     info.target !== TOOLKIT_NATIVE_PLATFORMS[platform].target ||
     info.abi !== "napi8" || info.rustc !== `rustc ${RUST_TOOLCHAIN_VERSION}` ||
-    info.napiCli !== NAPI_CLI_VERSION || info.oxigraph !== "0.4.11" ||
-    info.spargebra !== "0.3.5" ||
+    info.napiCli !== NAPI_CLI_VERSION || info.oxigraph !== "0.5.12" ||
+    info.spargebra !== "0.4.8" ||
     info.sourceSha256 !== sourceSha256 ||
     info.addonFile !== SEMANTIC_INDEX_ADDON_FILE ||
     info.addonSha256 !== await sha256(bytes) ||
@@ -225,8 +225,8 @@ export async function installSemanticIndex(
   ) throw new Error("Semantic-index npm source pin mismatch");
   const cargoToml = decoder.decode(await file(`${crateDir}/Cargo.toml`));
   if (
-    !/oxigraph\s*=\s*\{\s*version\s*=\s*"=0\.4\.11"/.test(cargoToml) ||
-    !/spargebra\s*=\s*\{\s*version\s*=\s*"=0\.3\.5"/.test(cargoToml)
+    !/oxigraph\s*=\s*\{\s*version\s*=\s*"=0\.5\.12"/.test(cargoToml) ||
+    !/spargebra\s*=\s*\{\s*version\s*=\s*"=0\.4\.8"/.test(cargoToml)
   ) throw new Error("Semantic-index Rust source pin mismatch");
   const distributedName = semanticNativeDirectory(platform, sourceSha256);
   const distributedTarget = `${root}/${distributedName}`;
@@ -503,8 +503,8 @@ export async function installSemanticIndex(
       abi: "napi8",
       rustc: `rustc ${RUST_TOOLCHAIN_VERSION}`,
       napiCli: NAPI_CLI_VERSION,
-      oxigraph: "0.4.11",
-      spargebra: "0.3.5",
+      oxigraph: "0.5.12",
+      spargebra: "0.4.8",
       sourceSha256,
       addonFile: SEMANTIC_INDEX_ADDON_FILE,
       addonSha256: await sha256(bytes),

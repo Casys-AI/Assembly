@@ -16,6 +16,7 @@
  *     --allow-slow test/integration/postgres-request-branch-team_test.ts
  */
 import assert from "node:assert/strict";
+import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { type LogRecord, reset } from "@logtape/logtape";
 import { configureTechnicalLogging } from "../../src/infrastructure/logging.ts";
 import { sourcePublicationError } from "../support/request-source-publication-diagnostics.ts";
@@ -28,14 +29,18 @@ import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import {
   openInitialNormalRequest,
   openNormalAdmissionWitnessHost,
+  readCompletedNormalRequest,
 } from "../support/request-source-admission-normal-host.ts";
+import { PostgresRequestSpaceStore } from "../../src/adapters/out/postgres/request-space-store.ts";
 import {
   retainedWitnessDrafts,
   retainedWitnessRunner,
 } from "../support/request-retained-tool-witness.ts";
 import { eventually } from "../support/eventually.ts";
+import { observeMemberRightTransactions } from "../support/request-member-transaction-observer.ts";
 import { decodePostgresRuntimeState } from "../../src/adapters/out/postgres/runtime-state-snapshot.ts";
 import { parseRequestOwnerAdoptionDossier } from "../../src/application/model/evolution/request-adoption-invariants.ts";
+import { RequestAdoptionError } from "../../src/application/model/evolution/request-adoption-ports.ts";
 import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
 import { MAX_BRANCH_TEAM } from "../../src/domain/work/records/conversations.ts";
 import {
@@ -45,6 +50,7 @@ import {
 
 import {
   branchTeamAgent,
+  CREATION_GRANT_REPLY,
   observingMain,
   PRIMARY_NAME,
 } from "../support/request-branch-team-provider.ts";
@@ -66,6 +72,10 @@ async function branchTeamWitness(
     maxDelegationDepth?: number;
     mode?: "per-creation";
   },
+  team = branchTeamAgent(),
+  networkAdoptionFault?: NonNullable<
+    Parameters<typeof openNormalAdmissionWitnessHost>[1]
+  >["networkAdoptionFault"],
 ) {
   const technicalErrors: LogRecord[] = [];
   // Registered before host resources: LIFO cleanup keeps the sink until they stop.
@@ -77,7 +87,6 @@ async function branchTeamWitness(
       if (technicalErrors.length > 16) technicalErrors.shift();
     },
   });
-  const team = branchTeamAgent();
   const runner = retainedWitnessRunner();
   const mo = observingMain();
   const host = await openNormalAdmissionWitnessHost(database, {
@@ -92,8 +101,9 @@ async function branchTeamWitness(
     mainAgents: mo.agent,
     creationPolicy,
     observeSettledContributions: true,
+    networkAdoptionFault,
   });
-  const conversations = host.networkConversationsForWitness();
+  let conversations = host.networkConversationsForWitness();
   async function diagnose(request: Opened) {
     const state = await request.stores.state.load();
     const main = host.workspace?.runtimeFor(host.primaryOperatorId)?.runtime
@@ -327,7 +337,18 @@ async function branchTeamWitness(
     host,
     team,
     mo,
-    conversations,
+    get conversations() {
+      return conversations;
+    },
+    async restoreRequestRuntime(request: Opened) {
+      const cold = host.coldAuthorityRuntimeForWitness();
+      await cold.provision(request.record);
+      host.useRuntimeForWitness(cold);
+      conversations = host.networkConversationsForWitness(
+        cold,
+        host.adoptionForRuntime(cold),
+      );
+    },
     diagnose,
     ask,
     admittedTeam,
@@ -338,16 +359,58 @@ async function branchTeamWitness(
 
 Deno.test({
   name:
-    "BO asks for its creation grant, the person approves, and the BO creates in its branch",
+    "BO asks for its creation grant and replies before approval, then resumes and creates in its branch",
   ignore: Deno.build.os !== "darwin" ||
     !postgresTestEnabled || !toolkitIntegrationEnabled,
   async fn() {
     await withPostgresDatabase(async (database) => {
-      const w = await branchTeamWitness(database);
-      const { host, team, mo, conversations } = w;
+      let interruptGrant = true;
+      const interrupted = new Error("Controlled grant adoption interruption");
+      const w = await branchTeamWitness(
+        database,
+        undefined,
+        branchTeamAgent({
+          replyAfterCreationGrant: true,
+        }),
+        (phase) => {
+          if (interruptGrant && phase === "before-commit") throw interrupted;
+        },
+      );
+      const { host, team, mo } = w;
       const main = host.workspace!.runtimeFor(host.primaryOperatorId)!.runtime;
-      const a = await openInitialNormalRequest(host);
       const b = await openInitialNormalRequest(host);
+      // Main's opening is a tool input, unlike the person's user input in B.
+      await main.idle();
+      mo.armOpening({
+        objective: "Suggest three opening lines.",
+        openingId: "grant-review-request",
+      });
+      await main.submit("Open a Request for three opening lines.");
+      const opening = await eventually(async () => {
+        const row = await host.storage.client.spaceOpening.findFirst({
+          where: {
+            ...host.storage.scope,
+            phase: "dispatched",
+            commandJson: { contains: '"grant-review-request"' },
+          },
+        });
+        return row
+          ? await new PostgresRequestSpaceStore(
+            host.storage.client,
+            host.storage.scope,
+          ).get(row.id)
+          : undefined;
+      }, { label: "Main opens the reviewer Request", timeoutMs: 90_000 });
+      assert(opening, "the dispatched Main opening has a durable record");
+      const a = { ...b, ...await readCompletedNormalRequest(host, opening.id) };
+      const mainTurns = mo.turns();
+      assert.equal(
+        a.state.messages.find((message) =>
+          message.id === a.record.initialContributionId
+        )?.role,
+        "tool",
+      );
+      assert(a.state.messages.some((message) => message.role === "assistant"));
       const sourceB = await host.sourceAdmission.admittedSource(b.record);
       const beforeB = await b.stores.state.load();
       assert(beforeB?.executionModel);
@@ -368,13 +431,39 @@ Deno.test({
       );
       const requestedRights = {
         operatorCreation: {
-          networkHosts: ["example.net"],
-          maxChildren: 3,
-          mode: "autonomous" as const,
+          networkHosts: [],
+          maxChildren: 1,
+          mode: "per-creation" as const,
         },
       };
+      await w.ask(
+        a,
+        "I would like a reviewer; explain whether you need creation rights.",
+      );
+      await eventually(async () => {
+        const state = await a.stores.state.load();
+        const input = state?.messages.findIndex((message) =>
+          message.role === "user" &&
+          message.text ===
+            "I would like a reviewer; explain whether you need creation rights."
+        ) ?? -1;
+        return state && !state.busy && input >= 0 &&
+            state.messages.slice(input + 1).some((message) =>
+              message.role === "assistant"
+            )
+          ? state
+          : undefined;
+      }, {
+        label: "BO replies to the ordinary turn before asking for a grant",
+        timeoutMs: 60_000,
+        diagnose: () =>
+          w.diagnose(a),
+      });
       team.armCreationGrant(caseId);
-      await w.ask(a, "Ask for the right to create sub-operators.");
+      await w.ask(
+        a,
+        "Ask for the right to create sub-operators, then create Granted reviewer.",
+      );
       const pending = await eventually(async () => {
         const state = await a.stores.state.load();
         if (!state || state.busy) return undefined;
@@ -391,6 +480,13 @@ Deno.test({
       assert.deepEqual(pending.change.requestedRights, requestedRights);
       assert.equal(pending.change.requestedBy, host.primaryOperatorId);
       assert.equal(pending.change.caseId, caseId);
+      assert(
+        pending.state.messages.some((message) =>
+          message.role === "assistant" && message.caseId === caseId &&
+          message.text === CREATION_GRANT_REPLY
+        ),
+        "the BO's final reply precedes the human decision",
+      );
       assert.equal(
         pending.state.requestNetworkDecisions?.[pending.change.id],
         undefined,
@@ -405,20 +501,40 @@ Deno.test({
       assert.equal(notice.decisionAuthority, "human");
       assert.equal(notice.changeKind, "mandate-change");
       assert.deepEqual(notice.requestedRights, requestedRights);
-      assert.equal(mo.turns(), 0, "a notice grants Main no decision authority");
+      assert.equal(
+        mo.turns(),
+        mainTurns,
+        "a notice grants Main no decision authority",
+      );
 
-      const result = await conversations.decideChange(a.session.secret, {
+      // The decision/publication survive an interrupted transaction. Resume
+      // through cold Request/adoption factories and the same recorded key.
+      await assert.rejects(
+        () =>
+          w.conversations.decideChange(a.session.secret, {
+            caseId,
+            agentId: host.primaryOperatorId,
+            changeId: pending.change.id,
+            expectedRevision: pending.state.revision,
+            configurationRevision: pending.change.baseRevision,
+            verdict: "approve",
+          }),
+        (error) =>
+          error instanceof RequestAdoptionError && error.cause === interrupted,
+      );
+      interruptGrant = false;
+      await w.restoreRequestRuntime(a);
+      const result = await w.conversations.resumeNetworkDecision(
+        a.session.secret,
         caseId,
-        agentId: host.primaryOperatorId,
-        changeId: pending.change.id,
-        expectedRevision: pending.state.revision,
-        configurationRevision: pending.change.baseRevision,
-        verdict: "approve",
-      });
+        host.primaryOperatorId,
+        pending.change.id,
+      );
       assert.deepEqual(result, {
         status: "adopted",
         caseId,
         changeId: pending.change.id,
+        canResume: true,
       });
       const adopted = await a.stores.state.load();
       const decided = adopted?.configuration?.changes.find((entry) =>
@@ -433,12 +549,152 @@ Deno.test({
         policy,
         "the BO's adopted branch model carries its approved grant",
       );
-      assert.deepEqual(policy.networkHosts, ["example.net"]);
-      assert.equal(policy.maxChildren, 3);
+      assert.deepEqual(policy.networkHosts, []);
+      assert.equal(policy.maxChildren, 1);
       assert.equal(policy.maxDelegationDepth, 0);
-      assert.equal(policy.mode, "autonomous");
-      const created = await w.create(a, "Granted reviewer", 1);
-      assert.equal(created.ids.length, 2);
+      assert.equal(policy.mode, "per-creation");
+      await eventually(async () => {
+        const state = await a.stores.state.load();
+        const index = state?.messages.findIndex((message) =>
+          message.text.startsWith("Request creation policy outcome")
+        ) ?? -1;
+        if (
+          !state || state.busy || index < 0 ||
+          !state.messages.slice(index + 1).some((message) =>
+            message.role === "assistant"
+          )
+        ) {
+          return undefined;
+        }
+        const outcome = state.messages[index].observation?.value as Record<
+          string,
+          unknown
+        >;
+        assert.equal(outcome.inForce, true);
+        assert.equal(outcome.verdict, "approved");
+        const delivered = team.seen.flatMap((entry) =>
+          entry.caseId === caseId ? entry.hostObservations ?? [] : []
+        ).find((observed) =>
+          observed.messageId === state.messages[index].id
+        );
+        assert.deepEqual(
+          delivered?.value,
+          outcome,
+          "the provider receives the complete recorded grant outcome",
+        );
+        assert.deepEqual(
+          outcome.requestedGrant,
+          requestedRights.operatorCreation,
+        );
+        return true;
+      }, {
+        label: "BO resumed with the adopted grant outcome",
+        timeoutMs: 60_000,
+        diagnose: () => w.diagnose(a),
+      });
+      // Real repeat: the member is proposed in a new ordinary input after the
+      // grant continuation has itself replied and become an empty native wait.
+      team.armCreation(caseId, "Granted reviewer");
+      await w.ask(
+        a,
+        "Your creation right is adopted. Create Granted reviewer now.",
+      );
+      const member = await eventually(async () => {
+        const state = await a.stores.state.load();
+        const change = teamCreations(state).find((entry) =>
+          entry.name === "Granted reviewer"
+        );
+        return state && !state.busy && change?.status === "pending"
+          ? { state, change }
+          : undefined;
+      }, {
+        label: "resumed BO requests its reviewer",
+        timeoutMs: 60_000,
+        diagnose: () => w.diagnose(a),
+      });
+      assert.equal(
+        member.state.changeDecisionContinuations?.[pending.change.id],
+        "resumed",
+      );
+      assert.deepEqual(await w.admittedTeam(a), [host.primaryOperatorId]);
+      team.armContribution(caseId, "Granted reviewer");
+      assert.deepEqual(
+        await w.conversations.decideChange(a.session.secret, {
+          caseId,
+          agentId: host.primaryOperatorId,
+          changeId: member.change.id,
+          expectedRevision: member.state.revision,
+          configurationRevision: member.change.baseRevision,
+          verdict: "approve",
+        }),
+        { status: "adopted", caseId, changeId: member.change.id },
+      );
+      const created = await eventually(() => w.admittedTeamAtSize(a, 2), {
+        label: "approved reviewer admitted",
+        timeoutMs: 120_000,
+        diagnose: () => w.diagnose(a),
+      });
+      assert.equal(created.length, 2);
+      await eventually(async () => {
+        const state = await a.stores.state.load();
+        if (
+          !state || state.busy ||
+          state.changeDecisionContinuations?.[member.change.id] !== "resumed"
+        ) return undefined;
+        assert.equal(state.error, undefined);
+        assert(
+          state.messages.some((message) =>
+            message.text.startsWith("Request team creation outcome") &&
+            message.text.includes("Granted reviewer")
+          ),
+        );
+        return true;
+      }, {
+        label: "BO resumes after member adoption",
+        timeoutMs: 60_000,
+        diagnose: () => w.diagnose(a),
+      });
+      const reviewerId = created.find((id) => id !== host.primaryOperatorId)!;
+      await eventually(async () => {
+        const reviewer = await host.storage.readCaseRuntimeState(
+          a.record.executionSpaceId,
+          caseId,
+          reviewerId,
+        );
+        const state = await a.stores.state.load();
+        const reply = reviewer?.messages.find((message) =>
+          message.role === "assistant" &&
+          message.text === "Observed by Granted reviewer"
+        );
+        const completion = state?.messages.find((message) =>
+          message.text.startsWith("Correlated contribution completion") &&
+          message.text.includes('"status":"completed"') &&
+          message.text.includes(reviewerId)
+        );
+        if (
+          !reviewer?.messages.some((message) =>
+            message.text === "Extract the first passage."
+          ) || !reply || !completion || !state || state.busy
+        ) return undefined;
+        const delivered = team.seen.flatMap((entry) =>
+          entry.caseId === caseId && entry.operator === PRIMARY_NAME
+            ? entry.hostObservations ?? []
+            : []
+        ).find((outcome) => outcome.messageId === completion.id);
+        if (!delivered) return undefined;
+        assert.deepEqual(delivered.value, completion.observation?.value);
+        return state.messages.slice(state.messages.indexOf(completion) + 1)
+            .some((message) =>
+              message.role === "assistant" &&
+              message.text === `Reviewer response: ${reply.text}`
+            )
+          ? true
+          : undefined;
+      }, {
+        label: "resumed BO uses its reviewer's reply from provider context",
+        timeoutMs: 60_000,
+        diagnose: () => w.diagnose(a),
+      });
       assert.equal(
         (await host.backend.repository.current()).version,
         mainVersion,
@@ -466,7 +722,7 @@ Deno.test({
         false,
         "the same native BO identity acquires no creation grant in another branch",
       );
-      assert.equal(mo.turns(), 0);
+      assert.equal(mo.turns(), mainTurns);
       assert.deepEqual(host.workerErrors, []);
     });
   },
@@ -1043,7 +1299,25 @@ Deno.test({
         intent.candidate.source.version,
         sourceA.head.source.version,
       );
-      assert.equal(intent.candidate.source.version, child.publishedCommit);
+      // Request adoption preserves the approved local change. Its publication
+      // is proved by the exact source-admission receipt, not a local marker.
+      const publications =
+        (await w.host.sourceAdmission.admittedSource(a.record)).receipts.filter(
+          ({ payload }) => payload.command.commandId === child.id,
+        );
+      assert.equal(publications.length, 1, "one publication for this creation");
+      const publication = publications[0];
+      assert.deepEqual(intent.team!.sourceAdmission, {
+        revision: publication.revision,
+        manifestDigest: publication.manifestDigest,
+        commandId: child.id,
+        publicationReceiptDigest: publication.payload.publication.receiptDigest,
+        resultVersion: publication.payload.result.source.version,
+      });
+      assert.deepEqual(
+        intent.candidate.source,
+        publication.payload.result.source,
+      );
       w.team.armCreation(caseId, "Over bound", "Granted parent");
       const overBoundInstruction = "Ask Granted parent for another teammate.";
       w.team.armContribution(caseId, "Granted parent", overBoundInstruction);
@@ -1174,35 +1448,120 @@ Deno.test({
       );
       assert.equal(notice.route?.status, "actor-decision");
       assert.equal(notice.route?.requester.operatorId, member);
-      await eventually(async () => {
+      const transactionObserver = observeMemberRightTransactions(
+        w.host.storage.client,
+        (summary) =>
+          console.error(
+            "Case 8 member-right transaction failures:",
+            JSON.stringify(summary),
+          ),
+      );
+      database.registerCleanup(() => transactionObserver.restore());
+      try {
+        await eventually(async () => {
+          const state = await transactionObserver.read(() =>
+            w.host.storage.readCaseRuntimeState(
+              a.record.executionSpaceId,
+              a.record.caseId,
+              member,
+            )
+          );
+          return state?.executionModel?.configuration.network?.allowedHosts
+              .includes("example.org")
+            ? true
+            : undefined;
+        }, {
+          label: "member adopts its network right",
+          timeoutMs: 120_000,
+          diagnose: () => w.diagnose(a),
+        });
+      } finally {
+        transactionObserver.restore();
+      }
+      const networkAdoptions =
+        (await w.host.sourceAdmission.admittedSource(a.record)).execution
+          .adoptions.filter(({ manifest }) =>
+            manifest.intent.target.operatorId === member &&
+            manifest.intent.target.caseId === a.record.caseId &&
+            manifest.intent.network?.changeId === changed.id
+          );
+      assert.equal(networkAdoptions.length, 1);
+      const adoption = networkAdoptions[0];
+      const deliveryId = `network-adoption:${adoption.receipt.receiptDigest}`;
+      const resumed = await eventually(async () => {
         const state = await w.host.storage.readCaseRuntimeState(
           a.record.executionSpaceId,
           a.record.caseId,
           member,
         );
-        return state?.executionModel?.configuration.network?.allowedHosts
-            .includes("example.org")
-          ? true
-          : undefined;
-      }, {
-        label: "member adopts its network right",
-        timeoutMs: 120_000,
-        diagnose: () => w.diagnose(a),
-      });
-      await eventually(async () => {
-        const state = await w.host.storage.readCaseRuntimeState(
-          a.record.executionSpaceId,
-          a.record.caseId,
-          member,
+        if (!state || state.busy) return undefined;
+        const origin = state.changeWorkContinuations?.[changed.id];
+        const input = origin &&
+          state.messages.find((message) =>
+            message.id === origin.inputMessageId
+          );
+        const work = input && workReceipt(input);
+        const completion = work && recordedWorkCompletion(state, work);
+        const outcomeIndex = state.messages.findIndex((message) =>
+          message.id === `request-network-outcome:${deliveryId}`
         );
-        return state?.changeDecisionContinuations?.[changed.id] === "resumed"
-          ? true
-          : undefined;
+        if (
+          !input || !work || outcomeIndex < 0 ||
+          completion?.id !== `accepted-work-completion:${deliveryId}` ||
+          completion.work.status !== "completed"
+        ) return undefined;
+        return { state, input, work, completion, outcomeIndex };
       }, {
-        label: "member resumes its own adopted continuation",
+        label:
+          "member completes its original work after the exact network adoption",
         timeoutMs: 120_000,
         diagnose: () => w.diagnose(a),
       });
+      assert.equal(resumed.state.error, undefined);
+      assert.equal(resumed.state.budgetSuspension, undefined);
+      assert.equal(resumed.work.callerId, w.host.primaryOperatorId);
+      assert.equal(resumed.work.caseId, a.record.caseId);
+      assert.equal(resumed.state.activeInputMessageId, resumed.input.id);
+      assert.equal(resumed.state.caseInvocation?.kind, "delegated");
+      if (resumed.state.caseInvocation?.kind === "delegated") {
+        assert.deepEqual(resumed.state.caseInvocation.work, resumed.work);
+      }
+      const outcomeMessage = resumed.state.messages[resumed.outcomeIndex];
+      assert.equal(outcomeMessage.caseId, a.record.caseId);
+      assert.equal(outcomeMessage.observation?.kind, "tool-result");
+      const outcome = outcomeMessage.observation!.value as Record<
+        string,
+        unknown
+      >;
+      assert.equal(outcome.kind, "request-network-change-outcome");
+      assert.equal(outcome.changeId, changed.id);
+      assert.equal(outcome.verdict, "approved");
+      assert.equal(outcome.inForce, true);
+      assert.deepEqual(outcome.decidedBy, {
+        kind: "main-operator",
+        operatorId: w.host.primaryOperatorId,
+      });
+      assert.deepEqual(outcome.modelVersion, {
+        digest: adoption.manifest.intent.candidate.model.version.digest,
+        repositoryVersion: adoption.manifest.intent.candidate.source.version,
+      });
+      const replyIndex = resumed.state.messages.findIndex((message, index) =>
+        index > resumed.outcomeIndex && message.role === "assistant" &&
+        message.text === "Observed by Covered reader"
+      );
+      assert(
+        replyIndex > resumed.outcomeIndex &&
+          resumed.completion.work.messageRanges?.some((range) =>
+            range.start <= resumed.outcomeIndex && replyIndex < range.end
+          ),
+        "the exact adoption outcome and reply belong to the original work's completed segment",
+      );
+      // Network outcomes preserve this legacy marker; the correlated completion
+      // above proves resumption. A later evolution checkpoint is not qualified here.
+      assert.equal(
+        resumed.state.changeDecisionContinuations?.[changed.id],
+        "pending",
+      );
       assert.notEqual(
         (await w.host.sourceAdmission.admittedSource(a.record)).head.source
           .version,
@@ -1233,12 +1592,13 @@ Deno.test({
       const models = await executed.currentModels(a.record, binding);
       assert.equal(models.length, 2);
       for (const expected of [owner!.executionModel!, memberModel]) {
-        assert.deepEqual(
-          models.find((model) =>
-            model.identity.builderId === expected.identity.builderId
-          ),
-          expected,
+        const actual = models.find((model) =>
+          model.identity.builderId === expected.identity.builderId
         );
+        assert(actual);
+        // Use the same complete-model contract as RequestExecutedModels.exact:
+        // persisted JSON omits optional properties whose value is undefined.
+        assert.equal(canonical(actual), canonical(expected));
       }
       const scope = scopedOperator({
         ...w.host.storage.scope,
@@ -1248,7 +1608,9 @@ Deno.test({
         digest: memberModel.version.digest,
         repositoryVersion: memberModel.version.repositoryVersion!,
       };
-      assert.deepEqual(await executed.historical(scope, version), memberModel);
+      const historical = await executed.historical(scope, version);
+      assert(historical);
+      assert.equal(canonical(historical), canonical(memberModel));
       await assert.rejects(
         () =>
           executed.historical({ ...scope, operatorId: "unadmitted" }, version),

@@ -28,6 +28,9 @@ function fixture() {
   } as unknown as ConversationsApplication;
   let fail = false;
   const scoped: RequestCaseConversationsPort = {
+    closeCase: () => {
+      throw new Error("unexpected close");
+    },
     cases(secret, caseId) {
       scopedCalls.push({ kind: "cases", secret, caseId });
       if (fail) throw new RequestSpaceError("FORBIDDEN", "unavailable");

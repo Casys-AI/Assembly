@@ -1,9 +1,10 @@
+import { sourceExecutablesCompilation } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import assert from "node:assert/strict";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 import { JsonModelDiagnosticMaskStore } from "../../src/adapters/out/filesystem/diagnostic-masks.ts";
 import { createModelDiagnosticsHandler } from "../../src/adapters/in/http/diagnostics/diagnostics.ts";
-import { SourceModelDiagnosticsReader } from "../../src/adapters/model/diagnostics/source.ts";
+import { SourceModelDiagnosticsReader } from "../../src/application/model/diagnostics/source-diagnostics-reader.ts";
 import { ModelDiagnosticsService } from "../../src/application/model/diagnostics/service.ts";
 import { ModelRepositoryError } from "../../src/application/model/repository.ts";
 import type { ModelDiagnosticFacts } from "../../src/domain/model/policies/diagnostics.ts";
@@ -45,7 +46,11 @@ Deno.test("diagnostics HTTP distinguishes missing Git versions from damaged repo
     });
     const handler = createModelDiagnosticsHandler(
       new ModelDiagnosticsService(
-        new SourceModelDiagnosticsReader(repository, repository.projectId),
+        new SourceModelDiagnosticsReader(
+          repository,
+          repository.projectId,
+          sourceExecutablesCompilation,
+        ),
         await JsonModelDiagnosticMaskStore.open(
           `${directory}/model-diagnostic-masks.json`,
         ),

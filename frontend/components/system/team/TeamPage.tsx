@@ -1,5 +1,5 @@
 import { ModelContextLink } from "../../view/ModelContextLink.tsx";
-import { useMemo } from "preact/hooks";
+import { useMemo, useState } from "preact/hooks";
 import type { ModelBoard } from "../../../../src/domain/model/records/board.ts";
 import { monogram } from "../../../lib/workbench/desk.ts";
 import {
@@ -11,6 +11,7 @@ import {
 } from "../../../lib/system/tools/candidates.ts";
 import type { ToolServer } from "../../../lib/system/tools/servers.ts";
 import {
+  agentsOnly,
   boardNotes,
   type BranchRef,
   profileOf,
@@ -34,8 +35,10 @@ const NO_BRANCHES: readonly BranchRef[] = [];
  * System > Team: who acts in the model, what each works with, and one agent
  * at a time in full. Up to a dozen agents the team is a network and the agent
  * shown is under it; with more, the agents are a list at the left of the
- * profile. Every agent is a link: choosing one is following it. Nothing here
- * changes the model.
+ * profile. The network shows the agents first; "Resources" adds what they work
+ * with, a choice of the person looking that changes the page in place. Every
+ * agent is a link: choosing one is following it. Nothing here changes the
+ * model.
  */
 export function TeamPage(
   {
@@ -87,6 +90,7 @@ export function TeamPage(
     branches,
     branchesHref,
   ]);
+  const [withResources, setWithResources] = useState(false);
   const agent = shownAgent(team, selected);
   const profile = useMemo(
     () => agent ? profileOf(board, agent.id) : undefined,
@@ -126,12 +130,26 @@ export function TeamPage(
       <>
         <BoardNotes notes={notes} />
         <div class="team-page">
-          <TeamNetwork
-            team={team}
-            selected={agent.id}
-            hrefOf={hrefOf}
-            mainHref={mainHref}
-          />
+          <div class="tmap-pane">
+            {team.resources.length > 0 && (
+              <div class="seg">
+                <button
+                  type="button"
+                  aria-pressed={withResources ? "true" : "false"}
+                  title="Tools, skills and policies the agents work with"
+                  onClick={() => setWithResources((on) => !on)}
+                >
+                  Resources
+                </button>
+              </div>
+            )}
+            <TeamNetwork
+              team={withResources ? team : agentsOnly(team)}
+              selected={agent.id}
+              hrefOf={hrefOf}
+              mainHref={mainHref}
+            />
+          </div>
           {detail}
         </div>
       </>

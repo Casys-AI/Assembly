@@ -158,3 +158,32 @@ Deno.test("observations of a Case asked while one waits join it; a failed delive
   deepStrictEqual(sent, ["slow", "other", "broken"]);
   equal(errors.length, 1);
 });
+
+Deno.test("closing waits for an in-flight model read and ignores later observations", async () => {
+  const entered = Promise.withResolvers<void>();
+  const gate = Promise.withResolvers<void>();
+  let reads = 0, deliveries = 0, closed = false;
+  const events = new CaseModelVersionEvents({
+    async read() {
+      reads++;
+      entered.resolve();
+      await gate.promise;
+      return { ownerId: "owner", branchVersion: a, executionVersion: a };
+    },
+    deliver() {
+      deliveries++;
+    },
+  });
+  const first = events.observe("case-1");
+  await entered.promise;
+  const closing = events.close().then(() => {
+    closed = true;
+  });
+  await events.observe("case-2");
+  equal(closed, false);
+  gate.resolve();
+  await Promise.all([first, closing]);
+  equal(reads, 1);
+  equal(deliveries, 0);
+  equal(closed, true);
+});

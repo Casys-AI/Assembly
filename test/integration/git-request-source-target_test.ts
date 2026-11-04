@@ -3,7 +3,7 @@
 import type { RequestSourceOwnerAuthorityEnvelope } from "../../src/application/model/source-admission/request-source-owner.ts";
 import assert from "node:assert/strict";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 import { requestPublicationFixture } from "../support/request-source-publication-fixture.ts";
 import { buildModelWriteDossierV2 } from "../../src/application/model/publication/write-command-v2.ts";
 import type { ModelSourceAuthorizationPort } from "../../src/application/governance/ports/out/model-source-authorization.port.ts";

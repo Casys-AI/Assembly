@@ -114,6 +114,7 @@ async function invokeBehavior(
     s.phase = "Exécution du comportement " + behavior.name;
     s.events.push({
       ...makeEvent(
+        this.ports.clock,
         "behavior-called",
         "Appel du comportement " + behavior.name,
       ),
@@ -285,9 +286,18 @@ async function invokeActiveTool(
     s.phase = "Le tool actif lit la page";
     s.events.push(
       selected.kind === "local-candidate"
-        ? makeEvent("tool-called", `Appel réel de ${tool.name}`, selected.tool)
+        ? makeEvent(
+          this.ports.clock,
+          "tool-called",
+          `Appel réel de ${tool.name}`,
+          selected.tool,
+        )
         : {
-          ...makeEvent("tool-called", `Appel réel de ${tool.name}`),
+          ...makeEvent(
+            this.ports.clock,
+            "tool-called",
+            `Appel réel de ${tool.name}`,
+          ),
           elementId: activeCatalogEntry(current, tool)!.nativeId,
         },
     );

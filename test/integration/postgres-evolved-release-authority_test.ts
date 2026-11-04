@@ -16,7 +16,7 @@ import {
 } from "../../src/adapters/out/postgres/release-creation-guard.ts";
 import { PostgresSavedSystemStore } from "../../src/adapters/out/postgres/saved-system-store.ts";
 import { ModeledSpaceControlAuthority } from "../../src/application/work/request-spaces/space-control-authority.ts";
-import { CryptographicSpaceSecrets } from "../../src/adapters/work/space-control-secrets.ts";
+import { CryptographicSpaceSecrets } from "../../src/infrastructure/space-control-secrets.ts";
 import { SpaceControls } from "../../src/application/work/request-spaces/control.ts";
 import { ReleaseCreationAuthority } from "../../src/application/work/saved-systems/creation-authorization.ts";
 import type { ReleaseRetentionAuthorization } from "../../src/domain/work/release-retention.ts";

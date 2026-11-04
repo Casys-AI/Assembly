@@ -10,7 +10,7 @@ import {
   PostgresSpaceCredentials,
 } from "../adapters/out/postgres/request-space-control-store.ts";
 import { ModeledSpaceControlAuthority } from "../application/work/request-spaces/space-control-authority.ts";
-import { CryptographicSpaceSecrets } from "../adapters/work/space-control-secrets.ts";
+import { CryptographicSpaceSecrets } from "../infrastructure/space-control-secrets.ts";
 import { RequestSpaceError } from "../domain/work/request-spaces.ts";
 
 /** Uses the configured PRIMARY handle, never a second locator or policy default.

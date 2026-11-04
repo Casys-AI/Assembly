@@ -7,16 +7,14 @@ import {
 } from "node:assert/strict";
 import { CaseError } from "../../../../../domain/work/errors/case.ts";
 import type { NativeCaseType } from "../../../../../domain/work/records/case-types.ts";
-import {
-  compileNativeAuthority,
-  isPrimaryDesigner,
-  type NativeLiteral,
-} from "./execution-model.ts";
+import { compileNativeAuthority } from "./execution-model.ts";
+import { isPrimaryDesigner } from "../../../../../domain/model/records/primary-designer.ts";
+import { type NativeLiteral } from "../../../../../domain/model/records/native-literal.ts";
 import type {
   ElementRecord,
   ModelSnapshot,
 } from "../../../../../domain/model/records/snapshot.ts";
-import type { ModelIdentity } from "../../../../../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../../../domain/shared-kernel/model-identity.ts";
 function assert(value: unknown, message = "Assertion failed"): asserts value {
   if (!value) throw new Error(message);
 }

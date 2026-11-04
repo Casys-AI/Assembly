@@ -238,13 +238,14 @@ corpus. The optional artifact contains report metadata, not page or skill text.
 
 Colocated application tests cover comparisons, joins, independent recorded skill
 policy selection, limits and an uncooperative reader stopped by the deadline.
-The colocated `live-extraction_test.ts` preserves complete page-result checks,
-consistent refusal metadata, provenance, deduplication, immutable captures and
-content exclusion. Live reader tests cover cancellation, timeouts, source bounds
-and partial reads; PostgreSQL adapter tests cover persisted snapshots and their
-decoding budgets. Model and Git readers retain their own suites. Run native
-qualification with explicit `ASSEMBLY_SEMANTIC_INTEGRATION=1`,
-`ASSEMBLY_POSTGRES_TEST_URL`, `SYSML_TOOLKIT_DIR` and `nice -n 15`, following
+The colocated `live-evidence-extraction_test.ts` preserves complete page-result
+checks, consistent refusal metadata, provenance, deduplication, immutable
+captures and content exclusion. Live reader tests cover cancellation, timeouts,
+source bounds and partial reads; PostgreSQL adapter tests cover persisted
+snapshots and their decoding budgets. Model and Git readers retain their own
+suites. Run native qualification with explicit
+`ASSEMBLY_SEMANTIC_INTEGRATION=1`, `ASSEMBLY_POSTGRES_TEST_URL`,
+`SYSML_TOOLKIT_DIR` and `nice -n 15`, following
 [CONTRIBUTING.md](../../../CONTRIBUTING.md).
 
 The native consultation qualification in

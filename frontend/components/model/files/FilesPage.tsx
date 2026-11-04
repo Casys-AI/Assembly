@@ -1,4 +1,5 @@
 import { RequestSourceEdit } from "./RequestSourceEdit.tsx";
+import type { VersionInfo } from "../../../lib/workbench/version-label.ts";
 import { CreateTag } from "../CreateTag.tsx";
 import { ModelContextLink } from "../../view/ModelContextLink.tsx";
 import { modelHref } from "../../../lib/workbench/desk.ts";
@@ -31,6 +32,13 @@ export function FilesPage(props: FilesPageProps) {
   } = useFilesPage(props);
   const requestCurrent = props.caseReadOnly && version !== undefined &&
     version === props.requestExecutionVersion;
+  const versionInfo: VersionInfo = {
+    ...props.versionInfo,
+    headVersion: props.versionInfo.source.kind === "main" && !asked
+      ? version
+      : props.versionInfo.headVersion,
+    readOnly: props.versionInfo.readOnly || Boolean(asked),
+  };
   // The Case facade supplies the verified admitted source independently of
   // execution. Retention revalidates its exact admission and current authority.
   const canCreateRelease = !props.caseReadOnly ||
@@ -60,27 +68,11 @@ export function FilesPage(props: FilesPageProps) {
             pinned={props.caseReadOnly
               ? props.releases && canCreateRelease ? false : !requestCurrent
               : Boolean(asked)}
-            currentLabel={props.caseReadOnly
-              ? props.releases && canCreateRelease
-                ? "Current admitted Request source"
-                : "Request model"
-              : undefined}
+            info={versionInfo}
             home={props.releases
               ? modelHref("releases")
               : filesHref({ file: named, line })}
-          >
-            {props.caseReadOnly && canCreateRelease && !requestCurrent && (
-              <span
-                class="chip release-source-context"
-                role="status"
-                title={`Release source ${version} · execution remains ${
-                  props.requestExecutionVersion ?? "unavailable"
-                }. Creating a Release does not adopt this source.`}
-              >
-                not running
-              </span>
-            )}
-          </VersionLine>
+          />
           {props.releases
             ? (
               props.caseReadOnly &&
@@ -92,11 +84,16 @@ export function FilesPage(props: FilesPageProps) {
                 )
                 : (
                   <SavedSystems
+                    versionInfo={versionInfo}
+                    requests={props.requestNames}
+                    inService={props.versionInfo?.inService ??
+                      props.requestExecutionVersion}
                     catalogueInvalidation={props.catalogueInvalidation}
                     catalogueConnection={props.catalogueConnection}
                     sessionGeneration={props.sessionGeneration}
                     key={version}
                     api={props.releaseApi}
+                    roster={props.releaseRoster}
                     source={{
                       branch: props.releaseBranch ?? { kind: "main" },
                       sourceVersion: version,

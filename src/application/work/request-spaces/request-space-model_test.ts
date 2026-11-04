@@ -283,9 +283,8 @@ Deno.test("Case model previews only the exact owner's network proposal and never
   const port = new RequestSpaceModel({
     base,
     model,
-    caseId: "case-a",
     executionSpaceId: "space-a",
-    branchTeamSize: 0,
+    requestTeam: { caseId: "case-a", memberIds: [] },
     networkChangePreview: (identity, proposal, digest) => {
       calls++;
       deepStrictEqual(identity, model.identity);
@@ -299,6 +298,7 @@ Deno.test("Case model previews only the exact owner's network proposal and never
     operatorId: model.identity.builderId,
     executionSpaceId: "space-a",
     branchTeamSize: 0,
+    memberIds: [],
   });
   deepStrictEqual(
     await port.previewApprovedChange(
@@ -378,9 +378,8 @@ Deno.test("Request previews refuse unsupported effects with a coded domain error
   const port = new RequestSpaceModel({
     base,
     model,
-    caseId: "case-a",
     executionSpaceId: "space-a",
-    branchTeamSize: 0,
+    requestTeam: { caseId: "case-a", memberIds: [] },
     networkChangePreview: () => {
       previews++;
       throw new Error("Unsupported changes must not prepare sources");

@@ -58,6 +58,8 @@ export function startPausedCurrentRead(options: {
     mainExecutionSpaceId: "main",
     main: () => null,
     cases: {
+      requestKpis: (secret, caseId) =>
+        options.cases.requestKpis(secret, caseId),
       execution(secret, caseId) {
         stats.executionCalls++;
         return options.cases.execution(secret, caseId);

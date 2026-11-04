@@ -60,7 +60,7 @@ checks, in order: the method, parameter set, version format, then a non-empty
 The head is the commit returned by `repository.current()`. A single read is
 shared by the four non-diagram routes. An in-progress read is reused, and a
 result is retained for one second
-([model-board-reader.ts:9](../../../src/adapters/model/projections/board-reader.ts#L9)).
+([board-reader.ts](../../../src/application/model/projections/board-reader.ts)).
 An error is never retained. The read head may therefore lag Git by one second.
 
 A successful head response carries the `x-model-version` header. It identifies
@@ -93,7 +93,7 @@ including details not apparent from its name.
 `mode`, `toolkit.version`, `sourceDigest`, `modeRule`, `anchors`, `linkLabels`,
 `counts`, `packages`, `diagnostics`, `fieldSources`, `timingMs` and `digest`.
 `model` is `model`: the reader does not pass a project name
-([model-board-reader.ts:48](../../../src/adapters/model/projections/board-reader.ts#L48)).
+([board-reader.ts](../../../src/adapters/out/sysml-toolkit/projections/board-reader.ts)).
 It sends no options to the Toolkit, so the projection uses `ase` mode
 ([toolkit-board.ts:760](../../../src/adapters/out/sysml-toolkit/projections/board.ts#L760)).
 The `generic` mode cannot be reached through HTTP.
@@ -248,7 +248,7 @@ from the Toolkit.
 
 The diagram is recomputed on demand from the list summary. An unknown view fails
 before opening a Toolkit session
-([model-views-reader.ts:112](../../../src/adapters/model/projections/views/readers.ts#L112)).
+([model-views-reader.ts:112](../../../src/adapters/out/sysml-toolkit/projections/views-readers.ts#L112)).
 
 The local `0.10.10+ase.2` bundle fixes the implicit-source defect in transitions
 and the omission of `TransitionUsage` elements from the action graph, reproduced

@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { isPlainRecord as isRecord } from "../../../domain/primitives/is-plain-record.ts";
 /** Deterministic RDF projection of verified `A.elements` (W5).
  *
@@ -10,7 +11,7 @@ import { isPlainRecord as isRecord } from "../../../domain/primitives/is-plain-r
  */
 import { compareCodeUnits } from "../../../domain/primitives/canonical-json.ts";
 import type { JsonObject } from "../../../domain/model/records/compiled-model.ts";
-import { sha256 } from "../../../domain/primitives/execution-digest.ts";
+import { sha256Bytes } from "../../../domain/primitives/sha256-bytes.ts";
 import {
   buildGraphIri,
   type BuildRef,
@@ -24,7 +25,7 @@ import { contextualProjectorVersion } from "../../../application/model/semantic/
 import type { ModelRdfProjector } from "../../../application/model/semantic/ports/out/rdf-projector.port.ts";
 
 export const RDF_QUADS_KIND = "rdf-quads";
-export const RDF_QUADS_PROJECTOR_VERSION = "ase-rdf-quads-v2";
+export const RDF_QUADS_PROJECTOR_VERSION = "ase-rdf-quads-v4";
 
 export const ASE_VOCAB = Object.freeze({
   base: "urn:ase:vocab:",
@@ -48,15 +49,25 @@ export const XSD = Object.freeze({
   boolean: "http://www.w3.org/2001/XMLSchema#boolean",
 });
 
-/** Canonical Toolkit property name → reversible predicate IRI. */
+export const SYSML_VOCAB = "https://www.omg.org/spec/SysML#";
+export const ASE_PROPERTY_VOCAB = "urn:ase:vocab:prop:";
+
+/** Canonical Toolkit property name → reversible predicate IRI. Source annotations
+ * are Assembly extensions, not SysML properties. */
 export function propPredicate(property: string): string {
-  return `urn:ase:vocab:prop:${encodeIriSegment(property)}`;
+  return `${property.startsWith("sysx:") ? ASE_PROPERTY_VOCAB : SYSML_VOCAB}${
+    encodeIriSegment(property)
+  }`;
+}
+/** Members of a JSON string-array literal, retaining the original literal. */
+export function stringArrayMemberPredicate(property: string): string {
+  return `urn:ase:vocab:string-array-member:${encodeIriSegment(property)}`;
 }
 export function listPredicate(property: string): string {
   return `urn:ase:vocab:list:${encodeIriSegment(property)}`;
 }
 export function metaclassIri(metaclass: string): string {
-  return `urn:ase:metaclass:${encodeIriSegment(metaclass)}`;
+  return `${SYSML_VOCAB}${encodeIriSegment(metaclass)}`;
 }
 
 export class RdfProjectionError extends Error {
@@ -106,27 +117,6 @@ export function literalTerm(value: string, datatype: string): string {
 }
 
 const utf8 = new TextEncoder();
-/** Blank-node-safe, injective segment encoding (`_` introduces escapes). */
-function blankSegment(value: string): string {
-  let out = "";
-  for (const byte of utf8.encode(value)) {
-    const char = String.fromCharCode(byte);
-    out += /^[A-Za-z0-9-]$/.test(char)
-      ? char
-      : `_x${byte.toString(16).toUpperCase().padStart(2, "0")}_`;
-  }
-  return out;
-}
-/** Length-frame the escaped segments: `_` also occurs inside an escape,
- * so it cannot by itself separate paths such as ["a_b"] and ["a","x5F","b"]. */
-const blankLabel = (path: readonly string[]): string =>
-  `b${
-    path.map((segment) => {
-      const encoded = blankSegment(segment);
-      return `_${encoded.length}_${encoded}`;
-    }).join("")
-  }`;
-
 // --- Projection core ---
 
 interface ProjectionContext {
@@ -134,6 +124,21 @@ interface ProjectionContext {
   readonly libraryIds: ReadonlySet<string>;
   readonly graph: string;
   readonly lines: string[];
+  readonly blankLabels: Map<string, string>;
+}
+
+/** Keep repeated visits to the same structural path on the same blank node. */
+function blankNode(
+  context: ProjectionContext,
+  path: readonly string[],
+): string {
+  const key = JSON.stringify(path);
+  let label = context.blankLabels.get(key);
+  if (label === undefined) {
+    label = `b${context.blankLabels.size}`;
+    context.blankLabels.set(key, label);
+  }
+  return blankTerm(label);
 }
 
 function quad(
@@ -198,7 +203,7 @@ function termForValue(
       }
       return term;
     }
-    const term = blankTerm(blankLabel(path));
+    const term = blankNode(context, path);
     for (const key of Object.keys(value).sort(compareCodeUnits)) {
       emitProperty(context, term, key, value[key], [...path, key]);
     }
@@ -217,7 +222,7 @@ function emitList(
   items: readonly unknown[],
   path: readonly string[],
 ): string {
-  const list = blankTerm(blankLabel(path));
+  const list = blankNode(context, path);
   quad(context, list, ASE_VOCAB.rdfType, iriTerm(ASE_VOCAB.occurrenceList));
   quad(
     context,
@@ -226,7 +231,7 @@ function emitList(
     literalTerm(String(items.length), XSD.integer),
   );
   items.forEach((item, index) => {
-    const occurrence = blankTerm(blankLabel([...path, `#${index}`]));
+    const occurrence = blankNode(context, [...path, `#${index}`]);
     quad(context, list, ASE_VOCAB.occurrence, occurrence);
     quad(
       context,
@@ -273,6 +278,26 @@ function emitProperty(
     propPredicate(property),
     termForValue(context, value, path),
   );
+  if (typeof value === "string" && value.trimStart().startsWith("[")) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      return;
+    }
+    if (
+      Array.isArray(parsed) && parsed.every((item) => typeof item === "string")
+    ) {
+      for (const item of parsed) {
+        quad(
+          context,
+          subject,
+          stringArrayMemberPredicate(property),
+          scalarTerm(item),
+        );
+      }
+    }
+  }
 }
 
 export interface ModelProjectionInput {
@@ -281,12 +306,7 @@ export interface ModelProjectionInput {
   readonly libraryNativeIds: readonly string[];
 }
 
-/** Sorted canonical N-Quads for one verified build. Pure and synchronous
- * so tests and tools can pin the exact bytes. */
-export function projectModelToNQuads(input: ModelProjectionInput): {
-  readonly nquads: string;
-  readonly quadCount: number;
-} {
+function canonicalLines(input: ModelProjectionInput): string[] {
   const build = parseBuildRef(input.build);
   if (!Array.isArray(input.elements)) invalid("elements is not an array");
   if (
@@ -300,6 +320,7 @@ export function projectModelToNQuads(input: ModelProjectionInput): {
     libraryIds: new Set(input.libraryNativeIds),
     graph: iriTerm(buildGraphIri(build)),
     lines: [],
+    blankLabels: new Map(),
   };
   const seen = new Set<string>();
   for (const element of input.elements) {
@@ -314,6 +335,14 @@ export function projectModelToNQuads(input: ModelProjectionInput): {
     }
     if (seen.has(nativeId)) invalid("duplicate element @id", { nativeId });
     seen.add(nativeId);
+  }
+  // Allocation follows a canonical traversal, independent of input order.
+  const orderedElements = [...input.elements].sort((a, b) =>
+    compareCodeUnits(a["@id"] as string, b["@id"] as string)
+  );
+  for (const element of orderedElements) {
+    const nativeId = element["@id"] as string;
+    const metaclass = element["@type"] as string;
     const subject = elementTerm(context, nativeId);
     quad(context, subject, ASE_VOCAB.rdfType, iriTerm(metaclassIri(metaclass)));
     quad(
@@ -351,11 +380,56 @@ export function projectModelToNQuads(input: ModelProjectionInput): {
       emitProperty(context, subject, key, element[key], [nativeId, key]);
     }
   }
-  const lines = [...new Set(context.lines)].sort(compareCodeUnits);
-  return {
-    nquads: lines.length ? `${lines.join("\n")}\n` : "",
-    quadCount: lines.length,
-  };
+  return [...new Set(context.lines)].sort(compareCodeUnits);
+}
+
+const DEFAULT_BATCH_BYTES = 1024 * 1024;
+
+/** Canonical complete-quad batches. The OpenClaw export plugin suggested
+ * batching, using projection helpers originally derived from Assembly. Global
+ * sorting is retained here to preserve Assembly's existing byte identity. */
+export function projectModelToNQuadBatches(
+  input: ModelProjectionInput,
+  targetBytes = DEFAULT_BATCH_BYTES,
+): {
+  readonly batches: Iterable<string>;
+  readonly quadCount: number;
+  readonly byteLength: number;
+} {
+  if (!Number.isSafeInteger(targetBytes) || targetBytes <= 0) {
+    invalid("batch limit must be a positive safe integer", { targetBytes });
+  }
+  const lines = canonicalLines(input);
+  const ends: number[] = [];
+  let byteLength = 0;
+  let batchBytes = 0;
+  for (let index = 0; index < lines.length; index++) {
+    const lineBytes = Buffer.byteLength(lines[index]!, "utf8") + 1;
+    if (batchBytes && batchBytes + lineBytes > targetBytes) {
+      ends.push(index);
+      batchBytes = 0;
+    }
+    batchBytes += lineBytes;
+    byteLength += lineBytes;
+  }
+  if (batchBytes) ends.push(lines.length);
+  function* batches(): Generator<string> {
+    let start = 0;
+    for (const end of ends) {
+      yield `${lines.slice(start, end).join("\n")}\n`;
+      start = end;
+    }
+  }
+  return { batches: batches(), quadCount: lines.length, byteLength };
+}
+
+/** Sorted canonical N-Quads text for explicit tools and tests. */
+export function projectModelToNQuads(input: ModelProjectionInput): {
+  readonly nquads: string;
+  readonly quadCount: number;
+} {
+  const { batches, quadCount } = projectModelToNQuadBatches(input);
+  return { nquads: [...batches].join(""), quadCount };
 }
 
 /** W2 projection keyed by kind, contextual version and A. The contextual
@@ -365,10 +439,17 @@ export class DeterministicRdfModelProjector implements ModelRdfProjector {
   readonly projectorVersion = RDF_QUADS_PROJECTOR_VERSION;
 
   async project(input: ModelProjectionInput) {
-    const { nquads, quadCount } = projectModelToNQuads(input);
-    const projectionDigest = await sha256(nquads);
+    const { batches, quadCount, byteLength } = projectModelToNQuadBatches(
+      input,
+    );
+    const quads = new Uint8Array(byteLength);
+    let offset = 0;
+    for (const batch of batches) {
+      offset += utf8.encodeInto(batch, quads.subarray(offset)).written;
+    }
+    const projectionDigest = await sha256Bytes(quads);
     return {
-      quads: utf8.encode(nquads),
+      quads,
       projection: parseProjectionRef({
         kind: this.kind,
         projectorVersion: await contextualProjectorVersion(

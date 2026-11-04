@@ -30,14 +30,14 @@ export interface DockWork {
   detail?: string;
 }
 
-/** A persistent place at the end of the Dock: System, Model or To decide. */
+/** A persistent place at the end of the Dock: System, Model or Activity. */
 export interface DockPlace {
-  id: "system" | "model" | "decide";
+  id: "system" | "model" | "activity";
   label: string;
   href: string;
   pending: boolean;
   active: boolean;
-  /** How many points wait in the place, shown on its tile; To decide has one. */
+  /** How many points wait in the place, shown on its tile; Activity has one. */
   count?: number;
   /** The selected conversation supplies context, not execution authority. */
   context?: { name: string; tint: "designer" | "request" };
@@ -123,7 +123,7 @@ const placeIcons = {
       <path d="M7 7.8v8.4M17 10.8v.7a5 5 0 0 1-5 5H7.2" />
     </svg>
   ),
-  decide: (
+  activity: (
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <path d="M4 13.5 6.5 5h11l2.5 8.5V19H4v-5.5Z" />
       <path d="M4 13.5h4.5l1 2h5l1-2H20" />

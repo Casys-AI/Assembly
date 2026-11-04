@@ -465,7 +465,7 @@ Deno.test("semantic page composition forwards default20/max50/lower limits and e
             ? "in" as const
             : "out" as const,
           property: "ownedMember",
-          predicate: "urn:ase:vocab:prop:ownedMember",
+          predicate: "https://www.omg.org/spec/SysML#ownedMember",
           otherIri: `urn:ase:element:${i}`,
         }),
       ),

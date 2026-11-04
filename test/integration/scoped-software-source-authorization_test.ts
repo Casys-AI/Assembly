@@ -10,11 +10,15 @@ import {
 import { nativeId } from "../fixtures/model-edit-mandate.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
-import { resolveModelEdits } from "../../src/adapters/model/sources/editing/tooling.ts";
-import { validateSourceExecutable } from "../../src/adapters/model/sources/source-model.ts";
+import { resolveModelEdits } from "../../src/domain/model/editing/source-index.ts";
+import {
+  sourceCompilation,
+  sourceEvolutionCompilation,
+  validateSourceExecutable,
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { buildEvolutionPolicyEdits } from "../support/evolution-policy/writer.ts";
-import { NativeEvolutionSourceAssessment } from "../../src/adapters/model/evolution/assessment.ts";
-import { NativeModelSourceAuthorization } from "../../src/adapters/governance/model-access/source-authorization.ts";
+import { NativeEvolutionSourceAssessment } from "../../src/application/model/evolution/assessment.ts";
+import { NativeModelSourceAuthorization } from "../../src/application/governance/model-access/source-authorization.ts";
 import { recipeDigest } from "../../src/domain/model/value-objects/build.ts";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 
@@ -134,6 +138,7 @@ Deno.test({
         edits,
       };
       const assessed = await new NativeEvolutionSourceAssessment({
+        compilation: sourceEvolutionCompilation,
         projectId,
         admittedActor: () => Promise.resolve(actorR),
         validateSettings: () => Promise.resolve(),
@@ -152,7 +157,12 @@ Deno.test({
         author: `agent:${actorR.identity.builderId}`,
         phase: "proposal" as const,
       };
-      const authorizer = new NativeModelSourceAuthorization(projectId, tooling);
+      const authorizer = new NativeModelSourceAuthorization(
+        projectId,
+        sourceCompilation,
+        sourceEvolutionCompilation,
+        tooling,
+      );
       // Legacy Main validation resolves S and therefore cannot substitute for the
       // explicit software Request path; actual R admits the exact same edit.
       await assert.rejects(() => authorizer.validate(input));

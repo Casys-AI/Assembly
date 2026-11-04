@@ -152,7 +152,7 @@ Deno.test("graph selectors stay independent and endpoint sources are verified or
   const endpoint = (nativeId: string, scope: "user" | "library" = "user") => ({
     direction: "out" as const,
     property: "ownedMember",
-    predicate: "urn:ase:vocab:prop:ownedMember",
+    predicate: "https://www.omg.org/spec/SysML#ownedMember",
     iri: "urn:" + nativeId,
     ref: { build, nativeId },
     scope,

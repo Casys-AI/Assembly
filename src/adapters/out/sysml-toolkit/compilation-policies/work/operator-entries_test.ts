@@ -1,5 +1,5 @@
 import { deepStrictEqual, equal, throws } from "node:assert/strict";
-import type { ModelIdentity } from "../../../../../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../../../domain/shared-kernel/model-identity.ts";
 import { compileOperatorEntries } from "./operator-entries.ts";
 
 type Native = Record<string, unknown>;

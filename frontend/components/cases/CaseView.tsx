@@ -1,3 +1,4 @@
+import { shortDate } from "../../lib/dates.ts";
 import {
   caseKindLabel,
   type CaseRecord,
@@ -5,14 +6,9 @@ import {
   caseTitle,
   groupWakes,
   isOpenCase,
+  timeLabel,
 } from "../../lib/cases/cases.ts";
 import type { WorkbenchState } from "../../lib/workbench/state.ts";
-
-/** "Rules of 24 Oct": the model version frozen when the Case was opened. */
-export function rulesDate(at: string): string {
-  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" })
-    .format(new Date(at));
-}
 
 /**
  * The page of a Job or a Watch: what it is for, where it stands, its steps or
@@ -63,7 +59,7 @@ export function CaseView(
           <span
             title={record.modelPin.repositoryVersion || record.modelPin.digest}
           >
-            Rules of {rulesDate(record.createdAt)}
+            Rules of {shortDate(record.createdAt)}
           </span>
         </p>
         {/* A Watch ends with Stop, a Request closes on the Requests page. */}
@@ -110,15 +106,6 @@ export interface CaseActions {
   busy?: string | null;
 }
 const notYet = "Not available yet";
-
-export function timeLabel(at: string): string {
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(at));
-}
 
 const stepStates: Record<string, string> = {
   done: "Done",

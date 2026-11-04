@@ -15,7 +15,7 @@ import { PostgresReleaseCreationGuard } from "../../src/adapters/out/postgres/re
 import { PostgresRequestSourceAdmissionStore } from "../../src/adapters/out/postgres/request-source-admission-store.ts";
 import { TAG_MUTATION_MIN_VALIDITY_MS } from "../../src/adapters/out/postgres/tag-mutation-budget.ts";
 import { ModeledSpaceControlAuthority } from "../../src/application/work/request-spaces/space-control-authority.ts";
-import { CryptographicSpaceSecrets } from "../../src/adapters/work/space-control-secrets.ts";
+import { CryptographicSpaceSecrets } from "../../src/infrastructure/space-control-secrets.ts";
 import { SpaceControls } from "../../src/application/work/request-spaces/control.ts";
 import { ReleaseCreationAuthority } from "../../src/application/work/saved-systems/creation-authorization.ts";
 import { releaseRetentionIntentDigest } from "../../src/domain/work/release-retention.ts";

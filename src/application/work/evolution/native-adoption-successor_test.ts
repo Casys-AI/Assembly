@@ -6,9 +6,11 @@ import type { RequestAdoptionManifest } from "../../model/evolution/request-adop
 import { requestAdoptionFixture } from "../../../../test/support/request-adoption-fixture.ts";
 import {
   type NeverStartedAdoptionSource,
+  ownerAdoptionChange,
   parseNeverStartedAdoptionSource,
   parseRequestNeverStartedSuccessorContext,
   type RequestNeverStartedSuccessorContext,
+  verifyPriorNativeRetirementDigest,
 } from "./native-adoption-successor.ts";
 
 function marker(): NeverStartedAdoptionSource {
@@ -171,4 +173,66 @@ Deno.test("never-started context captures current facts before asynchronous vali
   const pending = parseRequestNeverStartedSuccessorContext(mutable);
   mutable.currentPin.modelDigest = "0".repeat(64);
   assert.deepEqual(await pending, proof);
+});
+
+Deno.test("owner change projection retains creation-policy then network then team precedence", () => {
+  const proof = (changeId: string) => ({
+    changeId,
+    proposalIntentDigest: "proposal",
+    approvedChangeDigest: "approved",
+    sourceAdmission: { revision: 2 },
+  });
+  const value = {
+    kind: "owner-adoption",
+    creationPolicy: proof("creation"),
+    network: proof("network"),
+    team: proof("team"),
+    creationPolicyCompatibilityDigest: "creation-compatible",
+    networkCheckpointDigest: "network-checkpoint",
+  };
+  assert.deepEqual(ownerAdoptionChange(value), {
+    kind: "network",
+    creationPolicy: true,
+    proof: value.creationPolicy,
+    compatibilityDigest: "creation-compatible",
+    checkpointDigest: "network-checkpoint",
+  });
+  const { creationPolicy: _creationPolicy, ...network } = value;
+  assert.equal(ownerAdoptionChange(network)?.proof.changeId, "network");
+  const { network: _network, ...team } = network;
+  assert.equal(ownerAdoptionChange(team)?.kind, "team");
+  assert.equal(
+    ownerAdoptionChange({ ...value, kind: "evolution-adoption" }),
+    undefined,
+  );
+});
+
+Deno.test("prior native lineage refuses changed exact bytes before reading another successor", async () => {
+  const retained = await context();
+  const read: string[] = [];
+  const entry = retained.adoptions[0];
+  const withLater = {
+    ...retained,
+    adoptions: [{
+      ...entry,
+      manifest: {
+        ...entry.manifest,
+        nativeRetirement: {
+          ...entry.manifest.nativeRetirement,
+          successorThreadIds: ["never-started", "later"],
+        },
+      },
+    }],
+  };
+  await assert.rejects(
+    () =>
+      verifyPriorNativeRetirementDigest(withLater, (threadId) => {
+        read.push(threadId);
+        return Promise.resolve(
+          '{ "authorization": {}, "source": {}, "target": {} }',
+        );
+      }),
+    /authorization bytes are noncanonical/,
+  );
+  assert.deepEqual(read, ["never-started"]);
 });

@@ -1,3 +1,13 @@
+import {
+  isSessionFailure,
+  RequestSourceApiError,
+  responseError,
+} from "../../api-error.ts";
+export {
+  isSessionFailure as isRequestSourceSessionFailure,
+  RequestSourceApiError,
+} from "../../api-error.ts";
+
 /** Public human commands only. Cookies are same-origin; no scope/ref/actor/proof
  * is accepted from this client. Immutable Case model fetch remains GET-only. */
 export interface RequestSourceProposal {
@@ -19,23 +29,6 @@ export interface RequestSourceReceipt {
   caseId: string;
   version: string;
   sourceDigest: string;
-}
-export class RequestSourceApiError extends Error {
-  constructor(
-    message: string,
-    readonly status?: number,
-    readonly code?: string,
-  ) {
-    super(message);
-    this.name = "RequestSourceApiError";
-  }
-}
-/** Only a failed control channel disconnects the local session. An action's
- * own 403 refusal does not establish that the control channel is invalid. */
-export function isRequestSourceSessionFailure(error: unknown): boolean {
-  return error instanceof RequestSourceApiError &&
-    (error.status === 401 ||
-      (error.status === 403 && error.code === "FORBIDDEN"));
 }
 const object = (v: unknown): v is Record<string, unknown> =>
   Boolean(v && typeof v === "object" && !Array.isArray(v));
@@ -68,15 +61,12 @@ export function createRequestSourceRevisionApi(
     });
     const body: unknown = await response.json().catch(() => null);
     if (!response.ok) {
-      const error = new RequestSourceApiError(
-        object(body) && typeof body.error === "string" &&
-          body.error.length <= 1000
-          ? body.error
-          : "The Request source command could not be confirmed.",
+      const error = responseError(
         response.status,
-        object(body) && typeof body.code === "string" ? body.code : undefined,
+        body,
+        "The Request source command could not be confirmed.",
       );
-      if (isRequestSourceSessionFailure(error)) options.onUnauthorized?.();
+      if (isSessionFailure(error)) options.onUnauthorized?.();
       throw error;
     }
     if (!object(body) || body.caseId !== caseId) return invalid();

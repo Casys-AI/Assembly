@@ -11,7 +11,7 @@ import {
   KvModelBuildReadLimitError,
   KvModelBuildStore,
 } from "../../src/adapters/out/deno-kv/kv-store.ts";
-import { sha256 } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { sha256 } from "../../src/domain/model/value-objects/artifact.ts";
 import { MAX_PRIVATE_PAYLOAD_BYTES } from "../../src/infrastructure/native/private-payload.ts";
 import { semanticProcessCommandArgs } from "../../src/adapters/out/oxigraph/oxigraph.ts";
 import { DeterministicRdfModelProjector } from "../../src/adapters/out/oxigraph/rdf.ts";

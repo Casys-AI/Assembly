@@ -1,28 +1,28 @@
-# Why System, Model and To decide are separate places
+# Why System, Model and Activity are separate places
 
 The three places provide three ways to read the same system. **System**
 describes the model at a commit: team, capabilities, flows, requirements and
 rights. **Model** shows the sources versioned in Git, proposed changes and their
-adoption for execution. **To decide** gathers items awaiting a decision and
-leads to the page where that decision can be made. This separation helps readers
-understand the system without confusing its model, history and pending work.
+adoption for execution. **Activity** gathers items awaiting a decision, links to
+where they can be decided, and lists recorded events below them. The Dock badge
+counts only the waiting queue, including open Requests. Model > Activity remains
+the version history of the model. This separation helps readers understand the
+system without confusing its model, history and pending work.
 
 The [places guide](../../how-to/modeles/parcourir-system-et-model.md) describes
 the interactions and addresses. The
 [projection reference](../../reference/modeles/projections-du-modele.md)
-describes their data. This explanation covers the shared rules of the pages
-whose earlier implementation observations were recorded on `main` at `73b3ed6`
-and for the SysML page on October 25, 2026. The owner correction below governs
-current System/Model scope; those dated observations do not qualify later work.
+describes their data. This explanation covers the shared rules of the pages and
+the scope rule below, which governs System and Model.
 
 <a id="selected-system-scope"></a>
 
-## Selected system, Main and Branch Operator — owner correction, 31 October 2026
+## Selected system, Main and Branch Operator
 
-This contract supersedes earlier current instructions that treated a workbench
-as one shared model, called a Case's principal merely “Operator”, resolved its
-role from a display name, or borrowed its Main reference and rights from the
-Case's model. Dated reports retain their original evidence and scope.
+This contract replaces the earlier reading of a workbench as one shared model. A
+Case's principal is named by its role, never resolved from a display name, and
+its Main reference and rights are never borrowed from the Case's model. Dated
+reports retain their original evidence and scope.
 
 System always describes the currently selected system. A selected Case means
 that Case's branch and resolved source version; global context means `main`.
@@ -35,20 +35,22 @@ The principal instance in a non-main execution space
 (`executionSpaceId != "main"`) is the **Branch Operator (BO)**, the isolated
 root of that branch. Identify the instance by project, system, execution space
 and operator ID. Do not match “Main”, “Operator” or any custom name to determine
-its role, and do not rename persisted/model identities. Additional suboperators
-retain their own identities; the scope rule does not turn every branch member
-into its principal.
+its role, and do not rename persisted/model identities. The interface names the
+Branch Operator with a two-word name drawn from its Case; a custom name from the
+model is kept. Additional suboperators retain their own identities; the scope
+rule does not turn every branch member into its principal.
 
 There is one global **Main Operator (MO)** in Main's execution scope. In a
-Case's Team graph, show it as a muted, read-only external reference connected to
-the BO, with an explicit **System main** link. Read the reference from the
-actual current main model, never from a reused component or name in the Case
-source. The same provenance rule applies in Rights: Main's displayed rights come
-from Main's actual current model and controls, separately identified from the
-branch's rights and version. If that Main read is unavailable, show unavailable.
-This external reference does not merge Main into the branch or create another
-MO. An explicitly followed System main link selects Main for inspection; it
-grants no authority and changes no BO runtime pin.
+Case's Team graph, it is a muted, read-only external node connected to the BO.
+The node is a link to the main system. The reference is read from the actual
+current main model, never from a reused component or name in the Case source. On
+the main system, Team draws the BOs of the open Requests beside the MO, each
+leading to its Request's Team. The same provenance rule applies in Rights:
+Main's displayed rights come from Main's actual current model and controls,
+separately identified from the branch's rights and version. If that Main read is
+unavailable, show unavailable. This external reference does not merge Main into
+the branch or create another MO. Following the link to the main system selects
+Main for inspection; it grants no authority and changes no BO runtime pin.
 
 A BO starts from its selected exact model/Release and may independently evolve
 its branch through the governed software-evolution path. Its source, admitted
@@ -79,8 +81,9 @@ supervision” panel.
 The **Readable / SysML** switch changes how the same elements are named. It
 belongs to the reader: the choice is stored in the browser under
 `assembly:view:mode`, never in the model or address. The System frame only
-displays it on pages that use it; Team has no inactive switch. The placement of
-this control remains a design decision.
+displays it on the pages that use it (Explore, Flows, Requirements, Rights,
+Parts and Allocations); Team, Performance and Diagnostics have no inactive
+switch. The placement of this control remains a design decision.
 
 ## Detail stays close to its object
 
@@ -95,6 +98,9 @@ The pages follow the rules adopted for the shared frame:
   width or the entire panel.
 - Attach state to its object: `main` and `running` on the commit, proposal
   counts on their tab, Accept and Decline on the proposal.
+- Name a version once, as a readable pill (Main with its date, a Request, a
+  Release) with its status; exact commits, digests and identifiers stay in its
+  inspection.
 - Only display a control when it has an effect on the page.
 
 [`PageFrame`](../../../frontend/components/view/PageFrame.tsx) and
@@ -129,14 +135,15 @@ filters and collapsed sections remain diagram-reading choices. The inspector
 leads to sources from the same commit. SVG exports, on-demand PlantUML and
 `.sysml` exports do not modify the model.
 
-The Model tabs are Activity, Revisions, Files and SysML. The earlier
-`?page=graph` address opens SysML; `?modelVersion=` reads the named source
-commit there. Numeric `?revision=N` links retain the historical execution graph
-under the active SysML tab. Removing this compatibility remains open.
+The Model tabs are Activity, Revisions, Files, Releases and SysML; in a Request,
+only Files, SysML and Releases. The earlier `?page=graph` address opens SysML;
+`?modelVersion=` reads the named source commit there. Numeric `?revision=N`
+links retain the historical execution graph under the active SysML tab. Removing
+this compatibility remains open.
 
-Building blocks, the To decide health group and the System “In SysML views”
-chips remain open. The element → views index required by these chips is not
-served yet.
+Building blocks, the Activity health group and the System “In SysML views” chips
+remain open. The element → views index required by these chips is not served
+yet.
 
 ## Accepting a design and putting it into service
 
@@ -169,5 +176,5 @@ Accept button even when the current command comes from chat.
 
 The pages do not write SysML themselves. Accept, Decline and adoption go through
 the host's commands; any future graphical editing must follow the same boundary.
-To decide remains an entry point: its row leads to the proposal, Case or
+Activity remains an entry point: its row leads to the proposal, Case or
 conversation that carries the decision.

@@ -97,6 +97,7 @@ async function setup() {
       invocationId: "import-one",
       modelVersion: structuredClone(proof.modelVersion),
     },
+    ports: { clock: { now: () => "2026-11-03T00:00:00.000Z" } },
     artifactImports: new Map(),
     currentModel: () => Promise.resolve(structuredClone(native)),
     candidate: (id: string) => state.candidates.find((c) => c.id === id)!,

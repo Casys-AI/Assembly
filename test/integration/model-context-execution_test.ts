@@ -7,9 +7,7 @@ import { editPolicy } from "../fixtures/model-edit-mandate.ts";
 import assert from "node:assert/strict";
 import { ClaudeAgents } from "../../src/adapters/out/llm-providers/agents.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { openOperatorWorkspace } from "../support/operator-workspace.ts";
 import { DenoToolRunner } from "../../src/adapters/out/sandbox/runner.ts";
 import {

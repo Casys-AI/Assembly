@@ -4,7 +4,7 @@ import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import { FileBuildVault } from "../../src/adapters/out/filesystem/build-vault.ts";
 import { KvModelBuildStore } from "../../src/adapters/out/deno-kv/kv-store.ts";
 import { ModelBuildService } from "../../src/application/model/builds/service.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 import type { ModelSources as Sources } from "../../src/domain/model/value-objects/sources.ts";
 
 Deno.test("saved commit and verified vault survive HEAD advance and a cold read-only process; corrupt/missing bytes never rebuild", async () => {

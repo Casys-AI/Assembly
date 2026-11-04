@@ -1,3 +1,4 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 import assert from "node:assert/strict";
 import type { HostEdit } from "../../src/domain/model/editing/host-edit.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
@@ -5,21 +6,22 @@ import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilatio
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import {
-  SourceModel,
-  sourceModelIdentity,
-  type SourceRevision,
+  sourceCompilation,
   validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
-import {
-  operatorAuthorityRequests,
-  requestOperatorSystemName,
-} from "../../src/adapters/governance/authority/operator/writer.ts";
-import { applyEdits } from "../../src/adapters/model/sources/editing/host-writer.ts";
-import { modelToolingTarget } from "../../src/adapters/model/sources/editing/tooling.ts";
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { sourceModelIdentity } from "../../src/domain/model/records/source-identity.ts";
+import { type SourceRevision } from "../../src/domain/model/records/source-revision.ts";
+import { operatorAuthorityRequests } from "../../src/composition/source-model-services.ts";
+import { requestOperatorSystemName } from "../../src/application/governance/operator-authority-values.ts";
+import { applyEdits } from "../../src/application/model/editing/host-writer.ts";
+import { modelToolingTarget } from "../../src/domain/model/editing/source-index.ts";
 import { MemorySourceRepository } from "../support/memory-source-repository.ts";
 import { SystemGovernance } from "../../src/domain/governance/policies/governance.ts";
 import { changePublication } from "../../src/domain/model/publication/change.ts";
-import { NativeModelPublicationRevalidator } from "../../src/adapters/governance/model-access/publication/policy.ts";
+import {
+  createSelectedSystemValidator,
+  NativeModelPublicationRevalidator,
+} from "../../src/application/model/publication/revalidation.ts";
 import type {
   OperatorCreationGrant,
   OperatorCreationSpec,
@@ -59,7 +61,7 @@ Deno.test({
     const projectId = "git:a7094f0f-2bd8-5810-8c1f-e2675497acbf";
     const mainScope = "AssemblyLiveBuilder::liveBuilder";
     const repository = new MemorySourceRepository(compiler);
-    const mainSource = new SourceModel({
+    const mainSource = createSourceModel({
       repository,
       projectId,
       tooling,
@@ -73,7 +75,7 @@ Deno.test({
       spec: OperatorCreationSpec,
       teamOrigin?: { operatorId: string; requestId: string },
     ) => {
-      const source = new SourceModel({
+      const source = createSourceModel({
         repository,
         projectId,
         tooling,
@@ -144,7 +146,11 @@ Deno.test({
         "format" in edit && edit.format === 1
       );
       assert.equal(nativeEdits.length, approval.edits.length);
-      await new NativeModelPublicationRevalidator(projectId).revalidate({
+      await new NativeModelPublicationRevalidator(
+        projectId,
+        createSelectedSystemValidator(sourceCompilation),
+        sourceCompilation,
+      ).revalidate({
         approval: originalApproval,
         executionBase,
         candidate: { ...candidate, version: executionBase.version },

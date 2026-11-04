@@ -3,7 +3,7 @@ import {
   recordBudgetContinuationSelection,
 } from "../runtime/budget-transition.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import { nativeSettledActionAdvanceEvidence } from "../runtime/model-advance.ts";
+import { nativeSettledActionAdvanceEvidence } from "../native-execution/model-advance.ts";
 import {
   activeBatchCall,
   completeBatchCall,
@@ -27,7 +27,7 @@ import {
   nativeExecutionIdentity,
   type NativeExecutionSnapshot,
   runtimeRevisionReference,
-} from "../runtime/execution.ts";
+} from "../native-execution/contract.ts";
 import type {
   FlowExecutionEvent,
   FlowValues,
@@ -69,7 +69,11 @@ export async function runTurn(
         event.actionId ?? event.edgeId
       }`;
     events.push({
-      ...makeEvent(`flow-${event.kind}`, `Conversation : ${event.kind}`),
+      ...makeEvent(
+        this.ports.clock,
+        `flow-${event.kind}`,
+        `Conversation : ${event.kind}`,
+      ),
       ...(firstRecordedAt ? { at: firstRecordedAt } : {}),
       id,
       execution: {

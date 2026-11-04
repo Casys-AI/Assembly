@@ -6,7 +6,7 @@ import { type ActivationResumeHost, settleActivation } from "./activation.ts";
 import type {
   NativeExecutionPort,
   NativeExecutionSnapshot,
-} from "../runtime/execution.ts";
+} from "../native-execution/contract.ts";
 import { prepareSiblingCatalogRefresh } from "./sibling-refresh.ts";
 import {
   activate,
@@ -146,6 +146,7 @@ async function fixture() {
       return state;
     },
     ports: {
+      clock: { now: () => "2026-11-03T00:00:00.000Z" },
       execution,
       model: {
         readExecutableModel: () => Promise.resolve(structuredClone(model)),

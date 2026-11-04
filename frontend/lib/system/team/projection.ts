@@ -117,7 +117,7 @@ export interface TeamEdge {
   id: string;
   from: string;
   to: string;
-  kind: "talk" | "uses" | "supervises";
+  kind: "talk" | "calls" | "uses" | "supervises";
   /** What the line says, for its tooltip. */
   title?: string;
 }
@@ -287,6 +287,38 @@ function* usedBy(
   }
 }
 
+/**
+ * Who may call whom among the agents: the model's accesses (`can-call`) from
+ * the operator of one agent to what another performs, such as the inbox of a
+ * member its Request created. One call per direction: two accesses from A
+ * to B are one arrow, and B calling A is another. An access within one agent
+ * is a tool it uses, and a disabled one allows no call.
+ */
+function callsBetween(
+  board: ModelBoard,
+  agents: readonly TeamAgent[],
+): TeamEdge[] {
+  const index = indexBoard(board);
+  const ids = new Set(agents.map((agent) => agent.id));
+  const calls = new Map<string, TeamEdge>();
+  for (const { link, from, to } of index.linked("can-call")) {
+    const caller = index.unitOf(from), callee = index.unitOf(to);
+    if (
+      link.enabled === false || !caller || !callee || caller === callee ||
+      !ids.has(caller) || !ids.has(callee)
+    ) continue;
+    const id = `${caller}>${callee}`;
+    calls.set(id, {
+      id,
+      from: caller,
+      to: callee,
+      kind: "calls",
+      title: "may call",
+    });
+  }
+  return [...calls.values()];
+}
+
 export function teamOf(
   board: ModelBoard,
   roster: readonly RosterEntry[] = [],
@@ -327,6 +359,7 @@ export function teamOf(
       to: agent.id,
       kind: "talk" as const,
     })),
+    ...callsBetween(board, agents),
     ...resources.flatMap((resource) =>
       resource.agents.map(({ agentId, how }) => ({
         id: `${agentId}>${resource.key}`,
@@ -338,6 +371,25 @@ export function teamOf(
     ),
   ];
   return { agents, resources, edges, talks: talkers.length > 0 };
+}
+
+/**
+ * The agent each operator identity belongs to, named as in `teamOf`. Provider
+ * calls name the operator by its element, one of its unit's identities; an
+ * identity the board does not hold (a former member) has no agent.
+ */
+export function agentsByOperator(
+  board: ModelBoard,
+  roster: readonly RosterEntry[] = [],
+  requestOwnerId?: string,
+  branchName?: string,
+): ReadonlyMap<string, TeamAgent> {
+  const out = new Map<string, TeamAgent>();
+  for (const unit of agentUnits(indexBoard(board))) {
+    const agent = agentOf(unit, roster, requestOwnerId, branchName);
+    for (const id of identities(unit)) out.set(id, agent);
+  }
+  return out;
 }
 
 /**
@@ -423,6 +475,19 @@ export function withMain(team: Team): Team {
 }
 
 /**
+ * The team as its network shows it at first: the agents and who talks with,
+ * calls or supervises whom, without what they work with (each agent's profile
+ * still lists it).
+ */
+export function agentsOnly(team: Team): Team {
+  return {
+    ...team,
+    resources: [],
+    edges: team.edges.filter((edge) => edge.kind !== "uses"),
+  };
+}
+
+/**
  * The agent a page shows: the one it is told to, else the first the person
  * talks with, else the first. None only when the model declares no agent.
  */
@@ -467,6 +532,8 @@ export interface ProfileStat {
   id: string;
   value: string;
   label: string;
+  /** A ceiling the model declares (`max…`), not a measurement. */
+  limit?: true;
 }
 /** A word about the agent: a skill, a rule, a flow it works on. */
 export interface ProfileChip {
@@ -507,6 +574,7 @@ const statOf = (
       value: figure(entry.value, entry.name).replace(" ", ""),
       label: humanize(withoutUnit(entry.name.replace(/^max/, "")))
         .toLowerCase(),
+      ...(/^max[A-Z]/.test(entry.name) ? { limit: true as const } : {}),
     }
     : undefined;
 

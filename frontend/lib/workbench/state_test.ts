@@ -60,6 +60,26 @@ function deferred<T>() {
 async function settle() {
   for (let i = 0; i < 20; i++) await Promise.resolve();
 }
+function requestConversation(): ConversationsSnapshot {
+  return {
+    systemId: "fixture",
+    version: "v",
+    defaultAgentId: "a",
+    conversations: [{
+      agentId: "a",
+      nativeId: "a",
+      name: "a",
+      responsibility: "",
+      primary: true,
+      canSend: true,
+      revision: 1,
+      busy: false,
+      phase: "Ready",
+      modelDigest: "digest",
+      messages: [],
+    }],
+  };
+}
 class Events implements WorkbenchEventSource {
   listeners = new Map<string, Array<(event: { data?: string }) => void>>();
   closed = false;
@@ -337,11 +357,13 @@ Deno.test("SSE reconnect coalesces reads, rejects stale snapshots and never subm
     },
   });
   const stop = store.start();
+  equal(store.connectionGeneration.value, 0);
   for (let i = 0; i < 8; i++) {
     events.emit("error");
     events.emit("open");
   }
   equal(store.connection.value, "live");
+  equal(store.connectionGeneration.value, 8);
   equal(counts.get("/api/state"), 1);
   equal(counts.get("/api/history"), 1);
   events.emit("state", snapshot(20));
@@ -352,6 +374,8 @@ Deno.test("SSE reconnect coalesces reads, rejects stale snapshots and never subm
   equal(counts.get("/api/history"), 2);
   stop();
   events.emit("state", snapshot(30));
+  events.emit("open");
+  equal(store.connectionGeneration.value, 8);
   equal(store.current.value?.revision, 20);
   equal(store.connection.value, "closed");
 });
@@ -598,34 +622,27 @@ Deno.test("the decision menu reads the global repository through the existing en
   store.dispose();
 });
 
-Deno.test("the decision count observes decisions in another tab without SSE and stops polling on dispose", async () => {
+Deno.test("proposal journal events reconcile decisions, coalesce in-flight changes and stop at disposal", async () => {
   const original = snapshot(10);
   original.candidates = [];
-  const events = new Events();
-  const intervals = new Map<number, () => void>();
-  const realSetInterval = globalThis.setInterval;
-  const realClearInterval = globalThis.clearInterval;
-  let nextInterval = 0;
-  globalThis.setInterval = ((callback: () => void, delay?: number) => {
-    equal(delay, 30_000);
-    const id = ++nextInterval;
-    intervals.set(id, callback);
-    return id;
-  }) as typeof setInterval;
-  globalThis.clearInterval = (id: unknown) => {
-    if (typeof id === "number") intervals.delete(id);
-  };
+  const sources: Events[] = [];
   let status = "proposed";
   let proposalReads = 0;
   let slowRead: ReturnType<typeof deferred<Response>> | null = null;
   const store = createWorkbenchState({
     initialState: original,
-    eventSourceFactory: () => events,
+    eventSourceFactory: () => {
+      const events = new Events();
+      sources.push(events);
+      return events;
+    },
     fetch: (path, init) => {
       equal(init?.method, undefined);
       if (path === "/api/model-revisions") {
         proposalReads++;
-        return slowRead?.promise ?? Promise.resolve(json({
+        const waiting = slowRead;
+        slowRead = null;
+        return waiting?.promise ?? Promise.resolve(json({
           proposals: [{ id: "other-tab-proposal", status }],
         }));
       }
@@ -638,40 +655,88 @@ Deno.test("the decision count observes decisions in another tab without SSE and 
       );
     },
   });
+  const announce = (events: Events, digest: string) =>
+    events.emit("model-version", {
+      head: `commit:${"a".repeat(40)}`,
+      proposals: { pending: 0, digest: digest.repeat(64) },
+    });
+  const delivered = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    await settle();
+  };
   try {
     const stop = store.start();
     await settle();
     equal(store.pendingDecisionCount.value, 1);
-    equal(intervals.size, 1);
+    const initialReads = proposalReads;
     store.start();
-    equal(intervals.size, 1);
-    const tick = [...intervals.values()][0];
+    equal(sources.length, 1);
+    const events = sources[0];
+    for (
+      const invalid of [null, {}, { proposals: null }, {
+        proposals: { digest: "bad" },
+      }, { proposals: { digest: 42 } }]
+    ) events.emit("model-version", invalid);
+    for (const listener of events.listeners.get("model-version") ?? []) {
+      listener({ data: "{" });
+    }
+    await delivered();
+    equal(proposalReads, initialReads);
 
-    // Only the repository changes: neither state nor conversations emits an event.
+    // The journal changes without a runtime state or conversation change.
     status = "rejected";
-    tick();
+    announce(events, "b");
+    await delivered();
+    equal(store.pendingDecisionCount.value, 0);
+    equal(proposalReads, initialReads + 1);
+    announce(events, "b");
+    await delivered();
+    equal(proposalReads, initialReads + 1);
+
+    const pendingRead = deferred<Response>();
+    slowRead = pendingRead;
+    announce(events, "c");
+    await delivered();
+    const readsWhilePending = proposalReads;
+    announce(events, "d");
+    announce(events, "e");
+    equal(proposalReads, readsWhilePending);
+    pendingRead.resolve(json({
+      proposals: [{ id: "other-tab-proposal", status: "proposed" }],
+    }));
     await settle();
+    equal(proposalReads, readsWhilePending + 1);
     equal(store.pendingDecisionCount.value, 0);
 
-    slowRead = deferred<Response>();
-    tick();
-    const readsWhilePending = proposalReads;
-    tick();
-    tick();
-    equal(proposalReads, readsWhilePending);
-    slowRead.resolve(json({ proposals: [] }));
-    await settle();
-    equal(proposalReads, readsWhilePending);
+    // A same-digest reconnect still catches up on decisions missed offline.
+    status = "proposed";
+    events.emit("error");
+    events.emit("open");
+    announce(events, "e");
+    await delivered();
+    equal(store.pendingDecisionCount.value, 1);
+    equal(proposalReads, readsWhilePending + 2);
 
     stop();
-    equal(intervals.size, 0);
-    tick();
+    const stoppedReads = proposalReads;
+    announce(events, "f");
+    events.emit("open");
+    await delivered();
+    equal(proposalReads, stoppedReads);
+
+    const stopAgain = store.start();
     await settle();
-    equal(proposalReads, readsWhilePending);
+    const restartedReads = proposalReads;
+    announce(events, "a");
+    await delivered();
+    equal(proposalReads, restartedReads);
+    status = "rejected";
+    announce(sources[1], "a");
+    await delivered();
+    equal(store.pendingDecisionCount.value, 0);
+    stopAgain();
   } finally {
     store.dispose();
-    globalThis.setInterval = realSetInterval;
-    globalThis.clearInterval = realClearInterval;
   }
 });
 
@@ -878,6 +943,7 @@ Deno.test("reload reads durable Case status and retries without reconstructing a
     },
   });
   store.requests.sessionReady.value = true;
+  store.requests.snapshots.value = new Map([["C", requestConversation()]]);
   await store.loadCaseChangeStatus("C", "a", "ch");
   equal(store.caseChangeStatus("C", "a", "ch")?.status, "blocked");
   equal(await store.resumeCaseChange("C", "a", "ch"), true);
@@ -923,6 +989,7 @@ Deno.test("late Case status and retry responses cannot cross a session or host c
       ),
   });
   retryStore.requests.sessionReady.value = true;
+  retryStore.requests.snapshots.value = new Map([["C", requestConversation()]]);
   await retryStore.loadCaseChangeStatus("C", "a", "ch");
   const retry = retryStore.resumeCaseChange("C", "a", "ch");
   retryStore.requests.context.value = { projectId: "other", systemId: "other" };
@@ -998,6 +1065,7 @@ Deno.test("retry fences pre-existing and in-flight status reads before loading i
     },
   });
   store.requests.sessionReady.value = true;
+  store.requests.snapshots.value = new Map([["C", requestConversation()]]);
   await store.loadCaseChangeStatus("C", "a", "ch");
   const preMutation = store.loadCaseChangeStatus("C", "a", "ch");
   const retry = store.resumeCaseChange("C", "a", "ch");

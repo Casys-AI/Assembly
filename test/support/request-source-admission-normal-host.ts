@@ -1,14 +1,17 @@
+import type { OperatorStorage } from "../../src/adapters/out/postgres/host-storage.ts";
+import { createRequestRuntimeReaders } from "../../src/adapters/out/postgres/request-runtime-readers.ts";
+import { sourceExecutablesCompilation } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { createScopedSoftwareEvolutionComposition } from "../../src/composition/scoped-software-evolution.ts";
 import type { OperatorNotice } from "../../src/domain/governance/operator-authority.ts";
 import { PostgresRequestNetworkHumanDecision } from "../../src/adapters/out/postgres/request-network-human-decision.ts";
 import { RequestCaseConversations } from "../../src/application/work/request-spaces/conversations.ts";
-import { RequestNetworkChangeSources } from "../../src/adapters/work/request-network-change-sources.ts";
+import { RequestNetworkChangeSources } from "../../src/application/work/request-spaces/request-network-change-sources.ts";
 import {
   createRequestChangeDecision,
   personRequestChangeDecision,
 } from "../../src/composition/request-change-decision.ts";
-import { createRequestSpaceDispatcher } from "../../src/adapters/work/request-space-dispatch.ts";
-import { RequestSpaceRuntime } from "../../src/adapters/work/request-space-runtime.ts";
+import { createRequestSpaceDispatcher } from "../../src/application/work/request-spaces/dispatch.ts";
+import { RequestSpaceRuntime } from "../../src/application/work/request-spaces/runtime.ts";
 import {
   createRequestSpaceAuthorityBridge,
   requestAuthorityLifecycleBindings,
@@ -16,7 +19,7 @@ import {
 import { PostgresEvolutionStore } from "../../src/adapters/out/postgres/evolution-store.ts";
 import { PostgresRequestAdoptionTransition } from "../../src/adapters/out/postgres/request-adoption-transition.ts";
 import { PostgresRequestSourceAdmissionStore } from "../../src/adapters/out/postgres/request-source-admission-store.ts";
-import { RequestAdoptionContexts } from "../../src/adapters/work/request-adoption-context.ts";
+import { RequestAdoptionContexts } from "../../src/adapters/out/postgres/request-adoption-context.ts";
 import { RequestRuntimeAdoptionService } from "../../src/application/model/evolution/request-adoption-service.ts";
 import type { BehaviorModelVersion } from "../../src/domain/shared-kernel/behavior-model-version.ts";
 /** One focused real-factory host for the separate PG + normal-Toolkit witness.
@@ -31,7 +34,7 @@ import { postgresClientConfiguration } from "../../src/adapters/out/postgres/con
 import { PostgresRequestSpaceStore } from "../../src/adapters/out/postgres/request-space-store.ts";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import { ModelContextReader } from "../../src/application/model/consultation/source-reader.ts";
-import { queryModelRevision } from "../../src/adapters/model/sources/editing/tooling.ts";
+import { queryModelRevision } from "../../src/application/model/editing/query-revision.ts";
 import { bundledSkillReader } from "../../src/adapters/out/filesystem/skill-bundles.ts";
 import { DenoToolRunner } from "../../src/adapters/out/sandbox/runner.ts";
 import { AjvSchemaValidator } from "../../src/infrastructure/ajv-schema-validation.ts";
@@ -213,53 +216,61 @@ export async function openNormalAdmissionWitnessHost(
     }
   > = [];
   const installedSkillPins = new Map<string, BehaviorModelVersion>();
+  function observeDecision(context: Parameters<AgentPort["decide"]>[0]) {
+    // A Request's sub-operator (4.8e) works by its parent's contribution in
+    // that Case at its admitted pin. Its template grants no revision right
+    // (no model context), no skill installation and no initial observation.
+    if (context.operator?.nativeId !== primaryOperatorId) {
+      assert(context.case?.id && context.admittedModelVersion);
+      return;
+    }
+    assert(
+      context.case?.id && context.admittedModelVersion &&
+        context.modelContext && context.memoryGuidance,
+    );
+    assert.equal(context.skills?.loaded.length, 1);
+    assert.equal(context.skills!.loaded[0].digest, seed.digest);
+    assert.equal(context.skills!.loaded[0].content, seedContent);
+    const installedPin = context.skills!.loaded[0].source.modelVersion;
+    if (options.enableRuntimeAdoption) {
+      const original = installedSkillPins.get(context.case.id);
+      if (!original) {
+        assert.deepEqual(installedPin, context.admittedModelVersion);
+        installedSkillPins.set(
+          context.case.id,
+          structuredClone(installedPin),
+        );
+      } else {assert.deepEqual(
+          installedPin,
+          original,
+          "Loaded skill installation retains its original model pin after adoption",
+        );}
+    } else assert.deepEqual(installedPin, context.admittedModelVersion);
+    providerObservations.push({
+      caseId: context.case.id,
+      digest: context.admittedModelVersion.digest,
+      version: context.admittedModelVersion.repositoryVersion,
+      instruction: context.operator?.instruction,
+      contextVersion: context.modelContext.version,
+    });
+  }
   const agents: AgentPort = {
     label: "Controlled provider; real Request context/skill/memory",
     decide(context) {
-      // A Request's sub-operator (4.8e) works by its parent's contribution in
-      // that Case at its admitted pin. Its template grants no revision right
-      // (no model context), no skill installation and no initial observation.
-      if (context.operator?.nativeId !== primaryOperatorId) {
-        assert(context.case?.id && context.admittedModelVersion);
-        return options.agent?.decide(context) ?? Promise.resolve({
-          kind: "reply",
-          text: `Qualification reply ${context.case.id}`,
-        });
-      }
-      assert(
-        context.case?.id && context.admittedModelVersion &&
-          context.modelContext && context.memoryGuidance,
-      );
-      assert.equal(context.skills?.loaded.length, 1);
-      assert.equal(context.skills!.loaded[0].digest, seed.digest);
-      assert.equal(context.skills!.loaded[0].content, seedContent);
-      const installedPin = context.skills!.loaded[0].source.modelVersion;
-      if (options.enableRuntimeAdoption) {
-        const original = installedSkillPins.get(context.case.id);
-        if (!original) {
-          assert.deepEqual(installedPin, context.admittedModelVersion);
-          installedSkillPins.set(
-            context.case.id,
-            structuredClone(installedPin),
-          );
-        } else {assert.deepEqual(
-            installedPin,
-            original,
-            "Loaded skill installation retains its original model pin after adoption",
-          );}
-      } else assert.deepEqual(installedPin, context.admittedModelVersion);
-      providerObservations.push({
-        caseId: context.case.id,
-        digest: context.admittedModelVersion.digest,
-        version: context.admittedModelVersion.repositoryVersion,
-        instruction: context.operator?.instruction,
-        contextVersion: context.modelContext.version,
-      });
+      observeDecision(context);
       return options.agent?.decide(context) ?? Promise.resolve({
         kind: "reply",
-        text: `Qualification reply ${context.case.id}`,
+        text: `Qualification reply ${context.case?.id}`,
       });
     },
+    ...(options.agent?.decideBatch
+      ? {
+        decideBatch(context: Parameters<AgentPort["decide"]>[0]) {
+          observeDecision(context);
+          return options.agent!.decideBatch!(context);
+        },
+      }
+      : {}),
     review() {
       throw new Error("Review is not part of this witness");
     },
@@ -623,8 +634,11 @@ export async function openNormalAdmissionWitnessHost(
     });
   }
   /** The production network decision over this host's real ports. */
-  function createNetworkDecision() {
-    if (!networkChanges || !readyStage.adoption) {
+  function createNetworkDecision(
+    runtime = readyStage.runtime,
+    adoption = readyStage.adoption,
+  ) {
+    if (!networkChanges || !adoption) {
       throw new Error(
         "Network witness requires explicit network and adoption options",
       );
@@ -633,10 +647,10 @@ export async function openNormalAdmissionWitnessHost(
       repositoryId: backend!.project.id,
       access: sourceAdmission.access,
       authority: sourceAdmission.authorization,
-      runtime: readyStage.runtime,
+      runtime,
       decisionCommit: new PostgresRequestNetworkHumanDecision({
         storage,
-        runtime: readyStage.runtime,
+        runtime,
         binding: readyStage.executionBindings,
         beforeAuthorityLock: options.beforeNetworkDecisionTransaction,
         main: primaryStorage.state,
@@ -663,7 +677,7 @@ export async function openNormalAdmissionWitnessHost(
       preparation: networkChanges,
       queue: backend!.queue,
       admittedSource: sourceAdmission.admittedSource,
-      adoption: readyStage.adoption,
+      adoption,
       publisher: {
         repositoryId: backend!.project.id,
         projectId: backend!.projectId,
@@ -682,10 +696,14 @@ export async function openNormalAdmissionWitnessHost(
     workspace = await composeMainOperator({
       primaryOperatorId,
       storage,
-      requestSpaces: readyStage,
+      requestSpaces: {
+        ...readyStage,
+        dispatchAccepted: (...args) => selectedDispatch(...args),
+      },
       releases: releases.releases,
       bindArtifactSourceAuthority: backend.bindArtifactSourceAuthority,
       workspace: {
+        sourceExecutablesCompilation,
         execution: readyStage.nativeRuntime.execution,
         dispatch: readyStage.nativeRuntime.dispatch,
         artifactSources: backend.artifactSources,
@@ -958,8 +976,13 @@ export async function openNormalAdmissionWitnessHost(
         },
       });
       const cold = new RequestSpaceRuntime({
+        ...createRequestRuntimeReaders(storage.client),
+        onNoticeError: () => {},
         storage,
-        native: readyStage.nativeRuntime,
+        native: {
+          scope: readyStage.nativeRuntime.ledger.options.scope,
+          forCaseSpace: readyStage.nativeRuntime.forCaseSpace,
+        },
         openings,
         source: openingSources.source,
         branches: openingSources.branches,
@@ -983,8 +1006,13 @@ export async function openNormalAdmissionWitnessHost(
         main: () => mainRuntime,
       });
       return new RequestSpaceRuntime({
+        ...createRequestRuntimeReaders(storage.client),
+        onNoticeError: () => {},
         storage,
-        native: readyStage.nativeRuntime,
+        native: {
+          scope: readyStage.nativeRuntime.ledger.options.scope,
+          forCaseSpace: readyStage.nativeRuntime.forCaseSpace,
+        },
         openings,
         source: openingSources.source,
         branches: openingSources.branches,
@@ -993,7 +1021,11 @@ export async function openNormalAdmissionWitnessHost(
         executionBindings: readyStage.executionBindings,
         networkChanges,
         ...(readyStage.executedModels
-          ? { resolveExecutionModel: readyStage.executedModels.current }
+          ? {
+            resolveExecutionModel: readyStage.executedModels.current,
+            resolveTeamModels: readyStage.executedModels.currentModels,
+            resolveTeamCreationModels: readyStage.executedModels.creationModels,
+          }
           : {}),
         ...requestAuthorityLifecycleBindings(bridge),
       });
@@ -1030,17 +1062,22 @@ export async function openNormalAdmissionWitnessHost(
     /** Explicit witness-only construction; production route remains unbound
      * until the native R1 successor transition is complete. */
     networkDecisionForWitness: createNetworkDecision,
-    networkConversationsForWitness() {
+    networkConversationsForWitness(
+      runtime = readyStage.runtime,
+      adoption = readyStage.adoption,
+    ) {
       return new RequestCaseConversations({
         scope,
         control: controls.controls,
         store: new PostgresRequestSpaceStore(storage.client, scope),
         admissions: controls.admissions,
-        runtime: readyStage.runtime,
-        changeDecision: personRequestChangeDecision(createNetworkDecision()),
+        runtime,
+        changeDecision: personRequestChangeDecision(
+          createNetworkDecision(runtime, adoption),
+        ),
       });
     },
-    useRuntimeForWitness(runtime: RequestSpaceRuntime): void {
+    useRuntimeForWitness(runtime: RequestSpaceRuntime<OperatorStorage>): void {
       if (!options.enableRuntimeAdoption) {
         throw new Error(
           "Runtime selection is limited to the explicit adoption witness",
@@ -1048,7 +1085,7 @@ export async function openNormalAdmissionWitnessHost(
       }
       selectedDispatch = createRequestSpaceDispatcher(scope, runtime);
     },
-    adoptionForRuntime(runtime: RequestSpaceRuntime) {
+    adoptionForRuntime(runtime: RequestSpaceRuntime<OperatorStorage>) {
       if (!evolutionStore) {
         throw new Error("Adoption is limited to the explicit adoption witness");
       }
@@ -1065,8 +1102,17 @@ export async function openNormalAdmissionWitnessHost(
           journal,
           repositoryId: backend!.project.id,
           reader: () => Promise.resolve(sourceReader),
+          creationModels: readyStage.executedModels?.creationModels,
         }),
         store: evolutionStore.requestAdoptions,
+        networkContinuation: {
+          ensure: (opening, dossier) =>
+            runtime.ensureNetworkContinuation(opening, dossier),
+        },
+        teamContinuation: {
+          ensure: (opening, dossier) =>
+            runtime.ensureTeamContinuation(opening, dossier),
+        },
         transition: new PostgresRequestAdoptionTransition({
           client: storage.client,
           primary: storage.primarySpaceControl,

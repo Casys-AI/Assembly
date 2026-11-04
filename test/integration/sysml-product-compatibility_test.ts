@@ -1,8 +1,8 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 import assert from "node:assert/strict";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import { SourceModel } from "../../src/adapters/model/sources/source-model.ts";
 import { MemorySourceRepository } from "../support/memory-source-repository.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import { applyApprovedSourceChange } from "../support/approved-source-change.ts";
@@ -32,7 +32,11 @@ Deno.test({
       const sourceDigest = await modelSourceDigest(sources);
       const repository = new MemorySourceRepository(compiler);
       await repository.initialize(sources);
-      const model = new SourceModel({ repository, tooling, projectId });
+      const model = createSourceModel({
+        repository,
+        tooling,
+        projectId,
+      });
       const identity = await model.initialize();
       const executable = await model.readExecutableModel(identity);
       assert.equal(
@@ -50,7 +54,11 @@ Deno.test({
         await modelSourceDigest((await repository.current()).sources),
         sourceDigest,
       );
-      const reopened = new SourceModel({ repository, tooling, projectId });
+      const reopened = createSourceModel({
+        repository,
+        tooling,
+        projectId,
+      });
       assert.deepEqual(await reopened.initialize(), identity);
       assert.equal(
         (await reopened.readExecutableModel(identity)).version.digest,

@@ -31,8 +31,12 @@ function Stats({ stats }: { stats: readonly ProfileStat[] }) {
     ? (
       <div class="stats">
         {stats.map((stat) => (
-          <div key={stat.id} class="stat" title={stat.label}>
-            <b>{stat.value}</b>
+          <div
+            key={stat.id}
+            class="stat"
+            title={stat.limit ? "Limit declared in the model" : stat.label}
+          >
+            <b>{stat.limit ? `≤ ${stat.value}` : stat.value}</b>
             <span>{stat.label}</span>
           </div>
         ))}

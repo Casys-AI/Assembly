@@ -34,7 +34,7 @@ import {
   RDF_QUADS_KIND,
   RDF_QUADS_PROJECTOR_VERSION,
 } from "./rdf.ts";
-import { assertStoredBuildCompatible } from "../../model/builds/materialization/stored.ts";
+import { assertStoredBuildCompatible } from "../sysml-toolkit/compilation/stored-materializer.ts";
 
 export interface SemanticProjectionPreparationInput {
   readonly build: BuildRef;

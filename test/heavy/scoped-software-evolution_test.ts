@@ -1,6 +1,7 @@
 // deno-lint-ignore-file require-await -- Controlled provider implements the async production port.
 /** One joined BO software witness. Real Toolkit/Git/PG/native execution and
  * production composition; only the provider's decisions are scripted. */
+import { sourceEvolutionCompilation } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import assert from "node:assert/strict";
 import {
   postgresTestEnabled,
@@ -29,10 +30,10 @@ import {
 } from "../../src/domain/model/editing/request-source-publication.ts";
 import { RequestCaseConversations } from "../../src/application/work/request-spaces/conversations.ts";
 import { PostgresRequestSpaceStore } from "../../src/adapters/out/postgres/request-space-store.ts";
-import { ScopedSoftwareCurrentAuthority } from "../../src/adapters/model/evolution/scoped-authority.ts";
+import { ScopedSoftwareCurrentAuthority } from "../../src/adapters/out/postgres/scoped-software-current-authority.ts";
 import { PostgresRequestSourceAdmissionStore } from "../../src/adapters/out/postgres/request-source-admission-store.ts";
 import { RequestSpaceError } from "../../src/domain/work/request-spaces.ts";
-import { modelToolingTarget } from "../../src/adapters/model/sources/editing/tooling.ts";
+import { modelToolingTarget } from "../../src/domain/model/editing/source-index.ts";
 import { PostgresScopedSoftwareSourcePublicationParticipant } from "../../src/adapters/out/postgres/scoped-software-source-publication-participant.ts";
 import { PostgresScopedSoftwareAdoptionTransition } from "../../src/adapters/out/postgres/scoped-software-adoption-transition.ts";
 import { eventually } from "../support/eventually.ts";
@@ -333,6 +334,7 @@ Deno.test({
         // The revocation is deliberately transaction-local and rolled back: no
         // privileged resurrection or second host/scenario is introduced.
         const authority = new ScopedSoftwareCurrentAuthority({
+          compilation: sourceEvolutionCompilation,
           client: host.storage.client,
           primaryControl: host.storage.primarySpaceControl,
           sqlAdmissions: host.controls.sqlAdmissions,

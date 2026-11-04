@@ -1,13 +1,14 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 import assert from "node:assert/strict";
 import { openPostgresRuntimeFixture } from "../support/postgres-runtime-fixture.ts";
 import type { ModelWriteSubmissionPort } from "../../src/application/model/publication/submission.ts";
 import {
   applyEdits,
   verifyEdits,
-} from "../../src/adapters/model/sources/editing/host-writer.ts";
+} from "../../src/application/model/editing/host-writer.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import { SourceModel } from "../../src/adapters/model/sources/source-model.ts";
-import type { SourceRevision } from "../../src/adapters/model/sources/source-model.ts";
+import type { SourceModel } from "../../src/application/model/source-model.ts";
+import type { SourceRevision } from "../../src/domain/model/records/source-revision.ts";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
 import { CandidateActivationError } from "../../src/domain/work/policies/candidate-activation.ts";
 import { ChangePublicationError } from "../../src/domain/model/publication/change.ts";
@@ -315,13 +316,13 @@ Deno.test({
           return await fixture.backend.writer.publish(dossier);
         },
       });
-      const modelA = new SourceModel({
+      const modelA = createSourceModel({
         repository,
         tooling,
         projectId,
         writer: gated(enteredA, releaseA),
       });
-      const modelB = new SourceModel({
+      const modelB = createSourceModel({
         repository,
         tooling,
         projectId,
@@ -556,7 +557,7 @@ Deno.test({
     let edit: (() => Promise<void>) | undefined;
     // The model reads HEAD, then a foreign edit lands just before the lock.
     const writer = f.fixture.backend.writer;
-    const raced = new SourceModel({
+    const raced = createSourceModel({
       tooling: f.fixture.backend.tooling,
       repository: f.repository,
       projectId: f.fixture.backend.projectId,

@@ -1,3 +1,4 @@
+import type { VersionInfo } from "../../../lib/workbench/version-label.ts";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import type {
   ModelView,
@@ -14,6 +15,7 @@ import { useModelLive } from "../../view/useModelLive.ts";
 import type { ModelLive } from "../../../lib/model/live.ts";
 
 export interface SysmlPageProps {
+  versionInfo: VersionInfo;
   location: { search: string };
   generation?: number;
   api?: ViewsApi;

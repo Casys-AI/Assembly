@@ -1,10 +1,8 @@
 import { readAssemblyEnv } from "../../src/infrastructure/environment.ts";
 import assert from "node:assert/strict";
 import { openModelBackend } from "../../src/composition/model-backend.ts";
-import {
-  discoverConversationUnits,
-  type SourceModel,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { type SourceModel } from "../../src/application/model/source-model.ts";
+import { discoverConversationUnits } from "../../src/domain/model/records/source-identity.ts";
 import { DenoToolRunner } from "../../src/adapters/out/sandbox/runner.ts";
 import { toolDraftDigest } from "../../src/application/work/artifacts/catalog.ts";
 import { SystemGovernance } from "../../src/domain/governance/policies/governance.ts";
@@ -15,7 +13,7 @@ import {
 import { ModelPublicationError } from "../../src/application/model/publication/service.ts";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
 import { changePublication } from "../../src/domain/model/publication/change.ts";
-import { sha256 } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { sha256 } from "../../src/domain/model/value-objects/artifact.ts";
 import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";
 import {
   modelWriteCommandDigest,

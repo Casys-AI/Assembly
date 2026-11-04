@@ -6,6 +6,7 @@ import {
   ok,
 } from "node:assert/strict";
 import { renderToString } from "preact-render-to-string";
+import { act } from "preact/test-utils";
 import type { ModelBoard } from "../../../../src/domain/model/records/board.ts";
 import {
   ANALYST,
@@ -16,11 +17,13 @@ import {
   crowdBoard,
   initialBoard,
   item,
+  link,
   policy,
   rosterEntry,
   tool,
   unit,
   watchBoard,
+  withLinks,
 } from "../../../test/support/board-fixture.ts";
 import {
   edgesOf,
@@ -29,6 +32,7 @@ import {
   TEAM_ROOM,
 } from "../../../lib/system/team/layout.ts";
 import {
+  agentsOnly,
   BRANCH_LIMIT,
   type BranchRef,
   MAIN,
@@ -40,6 +44,8 @@ import {
 import type { ToolServer } from "../../../lib/system/tools/servers.ts";
 import type { CandidateRead } from "../../../lib/system/tools/candidates.ts";
 import { snapshot } from "../../../test/support/workbench-fixture.ts";
+import { probeRoot } from "../../../test/support/hook-probe.ts";
+import { press } from "../../../test/support/press.ts";
 import { TeamPage } from "./TeamPage.tsx";
 import { tidy } from "../../../test/support/markup.ts";
 
@@ -267,26 +273,14 @@ Deno.test("a team of a few is a network: the person, the agents as links, what t
     html,
     /<span class="tavatar">An<\/span><span class="tname">Analyste<\/span>/,
   );
-  // What is used by three is one node, counted; what is used by one is not.
-  const pills = [
-    ...html.matchAll(
-      /<div class="tres( is-shared)?"[^>]*title="([^"]*)"[^>]*data-resource="([^"]*)"/g,
-    ),
-  ]
-    .map(([, shared, title, key]) => [key, Boolean(shared), title]);
-  equal(pills.length, 6);
-  deepStrictEqual(pills[0], [
-    "tool:read_web_page",
-    true,
-    "Coordinateur veille has\nAnalyste has\nCollecteur has",
-  ]);
-  equal(
-    (html.match(/<span class="times" aria-label="3 agents">×3<\/span>/g) || [])
-      .length,
-    2,
+  // The agents come first: what they work with waits behind "Resources".
+  doesNotMatch(html, /class="tres/);
+  match(
+    html,
+    /<div class="seg"><button type="button" aria-pressed="false"[^>]*>Resources<\/button><\/div>/,
   );
   // One wire for each edge, the person's dark: the coordinator, and nobody else.
-  const edges = edgesOf(teamOf(watchBoard()));
+  const edges = edgesOf(agentsOnly(teamOf(watchBoard())));
   equal((html.match(/<line /g) || []).length, edges.length);
   equal((html.match(/<line class="wire talk"/g) || []).length, 1);
   equal(edges.filter((edge) => edge.kind === "talk").length, 1);
@@ -299,7 +293,7 @@ Deno.test("a team of a few is a network: the person, the agents as links, what t
 });
 
 Deno.test("the network is drawn where the layout puts it: every node at its box, the frame as high as the layout", () => {
-  const team = teamOf(watchBoard());
+  const team = agentsOnly(teamOf(watchBoard()));
   const layout = layoutTeam(nodesOf(team), edgesOf(team), TEAM_ROOM);
   const html = page(watchBoard());
   match(html, new RegExp(`class="tmap"[^>]*style="height:${layout.height}px"`));
@@ -311,6 +305,96 @@ Deno.test("the network is drawn where the layout puts it: every node at its box,
   }
   // The same page is the same markup: nothing in it is chance or time.
   equal(page(watchBoard()), html);
+});
+
+Deno.test("Resources brings back what the agents work with, and the profile lists it either way", async () => {
+  const probe = probeRoot();
+  let view: ReturnType<typeof press> | undefined;
+  function Probe() {
+    view = press(() =>
+      TeamPage({ board: watchBoard(), roster: [], selected: null, hrefOf })
+    );
+    return null;
+  }
+  const drawn = () => tidy(view!.html);
+  try {
+    await probe.show(Probe, {});
+    const agents = drawn();
+    doesNotMatch(agents, /class="tres|wire uses/);
+    match(sections(agents)["Tools & skills"], /read_web_page/);
+
+    await act(() => view!.click("Resources"));
+    const all = drawn();
+    match(all, /aria-pressed="true"[^>]*>Resources/);
+    // What is used by three is one node, counted; what is used by one is not.
+    const pills = [
+      ...all.matchAll(
+        /<div class="tres( is-shared)?"[^>]*title="([^"]*)"[^>]*data-resource="([^"]*)"/g,
+      ),
+    ].map(([, shared, title, key]) => [key, Boolean(shared), title]);
+    equal(pills.length, 6);
+    deepStrictEqual(pills[0], [
+      "tool:read_web_page",
+      true,
+      "Coordinateur veille has\nAnalyste has\nCollecteur has",
+    ]);
+    equal(
+      (all.match(/<span class="times" aria-label="3 agents">×3<\/span>/g) ||
+        []).length,
+      2,
+    );
+    equal(
+      (all.match(/<line class="wire uses"/g) || []).length,
+      teamOf(watchBoard()).edges.filter((edge) => edge.kind === "uses").length,
+    );
+
+    await act(() => view!.click("Resources"));
+    doesNotMatch(drawn(), /class="tres/);
+  } finally {
+    await probe.restore();
+  }
+});
+
+Deno.test("a member the Branch Operator may call is drawn with an arrow from it", () => {
+  const model = withLinks(
+    board({
+      team: [
+        unit({
+          id: "owner-unit",
+          title: "Owner",
+          operator: "owner-op",
+          declared: { operatorName: "Main Operator" },
+        }),
+        unit({
+          id: "reviewer-unit",
+          title: "Reviewer",
+          declared: { operatorName: "Relecteur d'accroches" },
+        }),
+      ],
+      cando: [item("reviewer-unit.inbox", "capability", "inbox", {
+        scope: "reviewer-unit",
+      })],
+    }),
+    [link("can-call", "owner-op", "reviewer-unit.inbox")],
+  );
+  const html = tidy(renderToString(
+    <TeamPage
+      board={model}
+      roster={[]}
+      selected={null}
+      hrefOf={hrefOf}
+      requestOwnerId="owner-op"
+      branchName="Remurin Talvrek"
+      mainHref="/system"
+    />,
+  ));
+  const calls = [...html.matchAll(/<line class="wire calls"[^>]*>/g)];
+  equal(calls.length, 1);
+  match(calls[0][0], /marker-end="url\(#tmap-call\)"/);
+  match(html, /<marker id="tmap-call"/);
+  match(html, /<span class="tname">Relecteur d'accroches<\/span>/);
+  // With no resource on the board, there is nothing to switch.
+  doesNotMatch(html, />Resources</);
 });
 
 Deno.test("choosing an agent changes the profile and the one marked, and nothing of the network", () => {
@@ -376,8 +460,15 @@ Deno.test("the profile has a section for each part the model declares, with its 
     "Mandate",
     "Works on",
   ]);
-  match(found.Context, /<b>8<\/b><span>recent messages<\/span>/);
-  match(found.Context, /<b>250k<\/b><span>context characters<\/span>/);
+  // A measured figure reads as itself; a declared ceiling says it is one.
+  match(
+    found.Context,
+    /title="recent messages"><b>8<\/b><span>recent messages<\/span>/,
+  );
+  match(
+    found.Context,
+    /title="Limit declared in the model"><b>≤ 250k<\/b><span>context characters<\/span>/,
+  );
   match(
     found["Tools & skills"],
     /<span class="chip" title="Return the actual[^"]*">read_web_page<\/span>/,
@@ -386,7 +477,7 @@ Deno.test("the profile has a section for each part the model declares, with its 
     found["Tools & skills"],
     /<span class="rule">allowed hosts: raw\.githubusercontent\.com<\/span>/,
   );
-  match(found.Memory, /<b>24h<\/b><span>validity<\/span>/);
+  match(found.Memory, /<b>≤ 24h<\/b><span>validity<\/span>/);
   match(found.Memory, /<span class="rule">require source refs: yes<\/span>/);
   // The agent's own mandate, in the model's words, its name on hover, the limits as figures.
   match(
@@ -394,7 +485,7 @@ Deno.test("the profile has a section for each part the model declares, with its 
     /<p class="mandate" title="builderMandate">Propose read_web_page and read_web_page_outline; invoke active catalog tools<\/p>/,
   );
   doesNotMatch(found.Mandate, /Stable authority identity/);
-  match(found.Mandate, /<b>12<\/b><span>agent decisions<\/span>/);
+  match(found.Mandate, /<b>≤ 12<\/b><span>agent decisions<\/span>/);
   // The flows it performs are named, and are words: nothing to press until
   // the page they would lead to exists.
   match(found["Works on"], /<span class="chip"[^>]*>Promotion<\/span>/);
@@ -614,16 +705,24 @@ Deno.test("what the model says is shown as text and never as markup", () => {
   equal((html.match(/&lt;img/g) || []).length > 8, true);
 });
 
-Deno.test("the page changes nothing: it has links and words, no form control", () => {
+Deno.test("the page changes nothing: it has links and words, and only the Resources switch", () => {
   for (
-    const html of [
-      page(watchBoard()),
-      page(crowdBoard(14)),
-      page(initialBoard()),
-    ]
+    const [html, switches] of [
+      [page(watchBoard()), 1],
+      [page(crowdBoard(14)), 0],
+      [page(initialBoard()), 1],
+    ] as const
   ) {
+    // The one control shows more of the network; it writes nothing.
+    equal(
+      (html.match(
+        /<button type="button" aria-pressed="false"[^>]*>Resources<\/button>/g,
+      ) ||
+        []).length,
+      switches,
+    );
     doesNotMatch(
-      html,
+      html.replace(/<button[^>]*>Resources<\/button>/, ""),
       /<button|<input|<select|<textarea|<form|onclick|contenteditable/i,
     );
     // Every link goes to a page of the System place, and says where it leads.

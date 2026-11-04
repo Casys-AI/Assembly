@@ -27,6 +27,7 @@ export function readAgentDetails(
    * legacy primary fallback); `null` is an operator that is no longer available.
    */
   given?: AgentConversation | null,
+  requestCaseId?: string,
 ) {
   const conversation = given !== undefined
     ? given
@@ -60,6 +61,7 @@ export function readAgentDetails(
     ? candidatesFor(toolRead, [conversation.agentId])
     : [];
   const context = conversation?.proposalContext?.before;
+  const request = state.requests.cases.byId(requestCaseId);
   return {
     conversation,
     unavailable,
@@ -68,7 +70,11 @@ export function readAgentDetails(
     name,
     legacy,
     context,
-    mission: conversation?.responsibility ||
+    mission:
+      (request?.owner === conversation?.nativeId
+        ? request?.objective
+        : undefined) ||
+      conversation?.responsibility ||
       (primaryFallback ? legacy?.executionModel?.operator?.instruction : null),
     hosts: context?.network.allowedHosts ??
       legacy?.configuration?.network?.allowedHosts,

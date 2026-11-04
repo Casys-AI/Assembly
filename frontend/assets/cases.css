@@ -20,6 +20,7 @@
   --line-strong: #d6d2c9;
   --hover: rgb(0 0 0 / 4%);
   --chip: rgb(0 0 0 / 5%);
+  --chip-hover: rgb(0 0 0 / 9%);
   --warn: #8a642a;
   --warn-bg: #f6eedd;
   --bad: #8f3a30;
@@ -64,8 +65,8 @@
 }
 /*
  * One Request: its agents, the selected conversation, then the agent's panel.
- * The three widen together, until the frame stops at 1600px; the conversation
- * keeps at least 528px, its width when the panel first gets its own column.
+ * The three widen together, until the frame stops at 1600px; narrower frames
+ * reduce the side columns before stacking them below 760px.
  */
 .is-case .cases-body {
   grid-template-columns:
@@ -239,7 +240,7 @@
   font-size: 12.5px;
 }
 
-/* A Request's agents, like the files of a sidebar: one line each, indented. */
+/* A Request's agents, like the files of a sidebar: indented rows. */
 .case-tree {
   align-self: start;
   max-height: 100%;
@@ -337,8 +338,9 @@ button.tree-toggle {
   font-variant-numeric: tabular-nums;
 }
 
-/* The square tile of an agent, as in the Dock. */
-.cases-page .agent-tile {
+/* The square tile of an agent, as in the Dock; a member card reuses it. */
+.cases-page .agent-tile,
+.agent-tile:where(.member-mark) {
   display: grid;
   flex: none;
   place-items: center;
@@ -521,23 +523,8 @@ button.tree-toggle {
   gap: 6px;
   margin-left: auto;
 }
-.cases-page .decide button {
-  all: unset;
-  box-sizing: border-box;
-  cursor: pointer;
-  padding: 3px 12px;
-  border-radius: 999px;
-  background: var(--chip);
-  color: #4a4a4f;
-  font-size: 12px;
-}
-.cases-page .decide button:hover {
-  background: rgb(0 0 0 / 9%);
-  color: var(--ink);
-}
-.cases-page .decide button:disabled {
-  cursor: default;
-  opacity: .5;
+.cases-page .decide button[aria-pressed="true"] {
+  background: var(--chip-hover);
 }
 .cases-error {
   margin: 6px 0 0;
@@ -678,28 +665,29 @@ button.tree-toggle {
 }
 
 /*
- * Narrower than 1100px the panel goes under the tree, in the left column,
- * which widens with the page. Without a panel the same columns apply.
+ * Beside Main, keep the agent's details at the right. The auxiliary columns
+ * yield space to the conversation before the page needs to stack.
  */
 @container cases (max-width: 1100px) {
-  .is-case .cases-body,
-  .is-case .cases-body.no-panel {
-    grid-template-columns: clamp(240px, 30%, 320px) minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
-    grid-template-areas: "tree conversation" "panel conversation";
-    gap: 16px 24px;
+  .is-case .cases-body {
+    grid-template-columns: minmax(160px, 18%) minmax(0, 1fr) minmax(200px, 24%);
+    gap: 16px;
   }
   .is-case .cases-body.no-panel {
-    grid-template-rows: minmax(0, 1fr);
-    grid-template-areas: "tree conversation";
+    grid-template-columns: minmax(160px, 22%) minmax(0, 1fr);
   }
-  .is-case .case-tree {
-    max-height: 40dvh;
+  .tree-row {
+    height: auto;
+    min-height: 26px;
+    padding-block: 4px;
+  }
+  .tree-name,
+  .agent-panel-head h2 {
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
   .agent-panel {
-    padding: 14px 0 8px;
-    border-top: 1px solid var(--line);
-    border-left: 0;
+    padding-left: 16px;
   }
 }
 
@@ -718,6 +706,11 @@ button.tree-toggle {
   .is-case .case-tree,
   .agent-panel {
     max-height: 20dvh;
+  }
+  .agent-panel {
+    padding: 14px 0 8px;
+    border-top: 1px solid var(--line);
+    border-left: 0;
   }
 }
 

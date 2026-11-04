@@ -6,7 +6,12 @@ import type {
 } from "../../../src/domain/work/records/conversations.ts";
 import type { SystemRuntimeState } from "../../../src/domain/work/dialogue.ts";
 import { proposalOwner } from "../conversations/proposals.ts";
-import { caseHref, type CaseRecord, messageCaseId } from "../cases/cases.ts";
+import {
+  caseAgentHref,
+  caseHref,
+  type CaseRecord,
+  messageCaseId,
+} from "../cases/cases.ts";
 import {
   revisionInspectionHref,
   type SourceRevisions,
@@ -132,7 +137,7 @@ export function aggregatePendingDecisions(input: {
     decisions.set(id, {
       id,
       kind: "proposal",
-      label: `Review model proposal ${proposal.id}`,
+      label: "Review model proposal",
       ...(agent ? { agentId: agent.agentId, agentName: agent.name } : {}),
       ...originContext(proposal),
       href: revisionInspectionHref({
@@ -205,8 +210,13 @@ export function aggregatePendingDecisions(input: {
 export function aggregateRequestDecisions(
   snapshots: ReadonlyMap<string, ConversationsSnapshot>,
 ): PendingDecision[] {
-  return [...snapshots.values()].flatMap((snapshot) =>
-    authorizationDecisions(snapshot.conversations)
+  return [...snapshots].flatMap(([caseId, snapshot]) =>
+    authorizationDecisions(snapshot.conversations).map((decision) => ({
+      ...decision,
+      id: JSON.stringify([caseId, decision.id]),
+      caseId,
+      href: caseAgentHref(caseId, decision.agentId!),
+    }))
   );
 }
 

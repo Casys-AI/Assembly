@@ -1,3 +1,5 @@
+import type { RequestInformationScopeValidationPort } from "../../../application/work/context/request-information-scope-validation.ts";
+
 /** Explicit host-resolved scope; none of these identities grants authority. */
 export interface PostgresSystemScope {
   readonly projectId: string;
@@ -29,3 +31,8 @@ export function assertPostgresRuntimeScope(
     }
   }
 }
+
+export const postgresScopeValidation: RequestInformationScopeValidationPort = {
+  assertSystemScope: assertPostgresSystemScope,
+  assertRuntimeScope: assertPostgresRuntimeScope,
+};

@@ -35,7 +35,7 @@ function fixture() {
     get snapshot() {
       return structuredClone(state);
     },
-    ports: {},
+    ports: { clock: { now: () => "2026-11-03T00:00:00.000Z" } },
     update: (change: (state: SystemRuntimeState) => void) => {
       change(state);
       return Promise.resolve();
@@ -158,7 +158,8 @@ Deno.test("native actions reuse the exact model checked at their authority bound
     execution: {
       run: async (
         _request: unknown,
-        handlers: import("../runtime/execution.ts").NativeExecutionHandlers,
+        handlers:
+          import("../native-execution/contract.ts").NativeExecutionHandlers,
       ) => {
         await handlers.assertBoundary(node);
         await handlers.handle(node, {}, {}, {

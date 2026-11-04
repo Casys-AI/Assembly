@@ -158,6 +158,16 @@ Deno.test("resource generations refresh only active surfaces and remount with a 
     await settle(1);
     equal(calls, 2);
     equal(seen.read?.readout?.execution.caseId, "caseA");
+    // Closing the Request reads it again, once.
+    for (const _ of [1, 2]) {
+      await probe.show<PerformanceProps>(Probe, {
+        ...selected,
+        refreshGeneration: 2,
+        closedAt: "2026-11-03T11:51:50.000Z",
+      });
+      await settle(1);
+    }
+    equal(calls, 3);
     await probe.show<PerformanceProps>(Probe, {
       ...selected,
       page: "rights",
@@ -170,14 +180,14 @@ Deno.test("resource generations refresh only active surfaces and remount with a 
       refreshGeneration: 4,
     });
     await settle(1);
-    equal(calls, 2);
+    equal(calls, 3);
     equal(seen.read?.readout, undefined);
     await probe.show<PerformanceProps>(Probe, {
       ...selected,
       refreshGeneration: 4,
     });
     await settle(1);
-    equal(calls, 3);
+    equal(calls, 4);
   } finally {
     store.dispose();
     await probe.restore();

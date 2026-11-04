@@ -17,7 +17,7 @@ import {
   type ToolkitBundleProvenance,
 } from "../../src/adapters/out/sysml-toolkit/runtime/loader.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
-import { ToolkitModelBoardReader } from "../../src/adapters/model/projections/board-reader.ts";
+import { ToolkitModelBoardReader } from "../../src/adapters/out/sysml-toolkit/projections/board-reader.ts";
 import { ModelBoardService } from "../../src/application/model/projections/board.ts";
 import { createModelBoardHandler } from "../../src/adapters/in/http/model/board.ts";
 import type { ModelBoard } from "../../src/domain/model/records/board.ts";

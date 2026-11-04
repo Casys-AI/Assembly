@@ -1,4 +1,4 @@
-import type { NativeExecutionSession } from "../../src/adapters/work/runtime/conversation.ts";
+import type { NativeExecutionSession } from "../../src/adapters/out/native-execution/conversation.ts";
 /** Short PostgreSQL protocol witness. Prisma state/history, pg-boss claims,
  * ledger, official saver, fork, selection and stop/reopen are real. Model
  * compilation, retained source bytes and catalog publication are explicit

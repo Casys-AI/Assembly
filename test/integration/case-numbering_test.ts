@@ -1,3 +1,4 @@
+import { ACCEPTED_CASE_CLOSURE } from "../support/case-closure.ts";
 import { unexpectedModelAuthoring } from "../support/model-authoring.ts";
 import assert from "node:assert/strict";
 import { OperatorCases } from "../../src/application/work/cases/operators.ts";
@@ -125,7 +126,7 @@ Deno.test({
       );
       assert.equal(new Set(snapshot.cases.map((entry) => entry.id)).size, 2);
       for (const record of snapshot.cases) {
-        await system.cases.closeCase(record.id, "done");
+        await system.cases.closeCase(record.id, "done", ACCEPTED_CASE_CLOSURE);
       }
       await system.close();
       system = await openSystem(database);

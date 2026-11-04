@@ -19,7 +19,6 @@ import type {
   CaseInvocation,
   OperatorWorkReceipt,
 } from "../../../domain/work/execution/case-context.ts";
-export type { OperatorWorkReceipt } from "../../../domain/work/execution/case-context.ts";
 
 export type OperatorWorkMessage = Message & { work: OperatorWorkReceipt };
 export interface OperatorWorkMessageRange {
@@ -134,6 +133,13 @@ export function isLocalRequestInput(
     !record || message.role !== "tool" ||
     (!record.openedFrom.openingId && !record.openedFrom.changeId)
   ) return false;
+  // A branch opening by Main is a tool input whose exact contribution ID is
+  // recorded in this runtime's immutable Case birth, not a synthetic objective.
+  if (
+    record.openedFrom.openingId &&
+    record.openedFrom.conversationId === state.id &&
+    record.openedFrom.messageId === message.id
+  ) return true;
   if (message.id === `${caseId}:objective`) {
     return message.text.trim() === record.objective;
   }
@@ -482,6 +488,7 @@ export function hasHostRequestChangeCase(
 ): boolean {
   const model = current.executionModel;
   if (!model) return false;
+  // RequestSpaceAuthorityBridge verifies the roster before this origin check.
   const team = model.operatorTeam;
   if (!team) {
     return current.cases?.some((record) =>
@@ -492,7 +499,7 @@ export function hasHostRequestChangeCase(
   }
   const work = changeWorkReceipt(current, change);
   const record = work?.caseContext?.record;
-  return !!team && !!record && team.requestId === input.caseId &&
+  return !!record &&
     team.parentOperatorId !== model.identity.builderId &&
     !!team.parentOperatorId &&
     team.requestOwnerId !== model.identity.builderId &&
@@ -502,7 +509,7 @@ export function hasHostRequestChangeCase(
     record.openedFrom.openingId === input.openingId && isOpenCase(record) &&
     (!change.teamOrigin ||
       change.teamOrigin.operatorId === team.requestOwnerId &&
-        change.teamOrigin.requestId === team.requestId);
+        change.teamOrigin.requestId === input.caseId);
 }
 
 /** The invocation a decided Request change continues. A member's work
@@ -544,7 +551,7 @@ export function requestChangeInvocation(
     if (
       team &&
       (!record || record.id !== caseId ||
-        record.owner !== team.requestOwnerId || team.requestId !== caseId ||
+        record.owner !== team.requestOwnerId ||
         !isOpenCase(record))
     ) return refuse("CASE_NOT_OWNED");
     return {

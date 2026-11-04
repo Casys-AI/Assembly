@@ -1,3 +1,4 @@
+import type { ClockPort } from "../work/runtime/ports.ts";
 import {
   activeTools,
   type RetainedToolsPort,
@@ -76,7 +77,9 @@ export function userSuppliedUrl(
 }
 
 export async function observeToolFailure(
-  this: Pick<ToolInvocationAdmissionHost, "update" | "feedback">,
+  this: Pick<ToolInvocationAdmissionHost, "update" | "feedback"> & {
+    readonly ports: { clock: ClockPort };
+  },
   failure: ToolFailure,
 ): Promise<void> {
   const safe = new ToolInvocationError(failure).failure;
@@ -84,7 +87,11 @@ export async function observeToolFailure(
     s.lastToolFailure = safe;
     s.phase = "L’agent examine le retour de l’outil";
     s.events.push(
-      makeEvent("tool-call-refused", `${safe.code} : ${safe.message}`),
+      makeEvent(
+        this.ports.clock,
+        "tool-call-refused",
+        `${safe.code} : ${safe.message}`,
+      ),
     );
   });
   await this.feedback(

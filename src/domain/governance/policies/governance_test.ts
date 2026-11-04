@@ -791,6 +791,7 @@ Deno.test("a Request cannot use mayCreateReviewer as an operator creation grant"
   const scope = {
     space: { projectId: "p", systemId: "s", executionSpaceId: "branch" },
     branchTeamSize: 0,
+    currentCaseId: "request",
   };
   const legacy: Extract<ChatDecision, { kind: "propose_agent_creation" }> = {
     kind: "propose_agent_creation",
@@ -828,6 +829,7 @@ Deno.test("a BO grant proposal and human approval record no creation authority b
       executionSpaceId: "branch",
     },
     branchTeamSize: 0,
+    currentCaseId: "request",
   };
   const decision: typeof mandate = {
     kind: "propose_mandate_change",

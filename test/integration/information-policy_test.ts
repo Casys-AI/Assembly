@@ -1,17 +1,17 @@
 /** Real Toolkit source contracts; no repository, provider or server. */
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import assert from "node:assert/strict";
-import { compileInformationPolicies } from "../../src/adapters/work/information/policy.ts";
+import { compileInformationPolicies } from "../../src/adapters/out/sysml-toolkit/compilation-policies/work/information-policy.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import {
   sourceLiterals,
   sourceRefs,
   sourceSnapshot,
-} from "../../src/adapters/model/projections/graph/source.ts";
+} from "../../src/domain/model/projections/source-facts.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import {
   sourceModelIdentity,
-} from "../../src/adapters/model/sources/source-model.ts";
+} from "../../src/domain/model/records/source-identity.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");
 const contextPart = `

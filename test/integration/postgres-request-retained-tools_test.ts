@@ -1,9 +1,14 @@
+import { createRequestRuntimeReaders } from "../../src/adapters/out/postgres/request-runtime-readers.ts";
 import { Client } from "pg";
 /** A+ joined A1/Release/Request witness. The provider and page fetch are
  * controlled; generated tool modules execute in the real Darwin sandbox. */
 import assert from "node:assert/strict";
 import type { Candidate, ToolDraft } from "../../src/domain/work/candidates.ts";
-import { RequestSpaceRuntime } from "../../src/adapters/work/request-space-runtime.ts";
+import {
+  artifactSourcePublicationFromDossier,
+  type ModelWriteDossier,
+} from "../../src/domain/model/editing/write-command.ts";
+import { RequestSpaceRuntime } from "../../src/application/work/request-spaces/runtime.ts";
 import { RequestSpaceOpenings } from "../../src/application/work/request-spaces/opening.ts";
 import { bundledSkillReader } from "../../src/adapters/out/filesystem/skill-bundles.ts";
 import {
@@ -138,6 +143,72 @@ Deno.test({
       mark("host-ready");
       assert(host.retainedTool?.sourceBinding);
       assert.equal(host.retainedTool.stage, "active");
+      // Recover the actual published W4 dossier for this retained source after
+      // the native preparation and its job have settled. No source or queue
+      // receipt is constructed by the test.
+      const sourceBinding = host.retainedTool.sourceBinding;
+      const sourceRows = await host.storage.client.modelWriteCommand.findMany({
+        where: {
+          ...host.storage.scope,
+          repositoryId: host.backend.project.id,
+          state: "published",
+        },
+        select: { dossierJson: true },
+      });
+      const sourcePublications = sourceRows.map((row) =>
+        JSON.parse(row.dossierJson) as ModelWriteDossier
+      ).filter((dossier) =>
+        dossier.v === 1 && dossier.operations.kind === "artifact-source" &&
+        dossier.decision.kind === "retain-artifact-source"
+      ).map(artifactSourcePublicationFromDossier).filter((publication) =>
+        publication.target.invocationId === sourceBinding.invocationId &&
+        publication.target.localArtifactId === sourceBinding.localArtifactId
+      );
+      assert.equal(sourcePublications.length, 1);
+      const sourcePublication = sourcePublications[0];
+      const sourceEffect = await host.storage.client.executionEffect.findMany({
+        where: {
+          ...host.storage.scope,
+          executionSpaceId: sourcePublication.target.executionSpaceId,
+          operatorId: sourcePublication.target.operatorId,
+          effectKey: sourcePublication.target.invocationId,
+        },
+      });
+      assert.equal(sourceEffect.length, 1);
+      assert.equal(sourceEffect[0].status, "completed");
+      const producerDeadline = Date.now() + 10_000;
+      let producerJob = await host.stage.nativeRuntime.dispatch.boss.getJobById(
+        host.stage.nativeRuntime.ledger.options.queueName,
+        sourceEffect[0].jobId,
+      );
+      while (
+        producerJob?.state !== "completed" && Date.now() < producerDeadline
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+        producerJob = await host.stage.nativeRuntime.dispatch.boss.getJobById(
+          host.stage.nativeRuntime.ledger.options.queueName,
+          sourceEffect[0].jobId,
+        );
+      }
+      assert.equal(producerJob?.state, "completed");
+      const assertOrigin = host.stage.nativeRuntime.assertArtifactSourceOrigin;
+      await assertOrigin(sourcePublication);
+      const altered = structuredClone(sourcePublication);
+      assert.equal(altered.source.kind, "tool-draft");
+      if (altered.source.kind !== "tool-draft") {
+        throw new Error("Expected tool draft");
+      }
+      altered.source.content.description += " changed";
+      await assert.rejects(
+        () => assertOrigin(altered),
+        /Artifact source recovery differs from its immutable accepted W4 publication bytes or proof/,
+      );
+      const fresh = structuredClone(sourcePublication);
+      fresh.publicationId += ":fresh";
+      await assert.rejects(
+        () => assertOrigin(fresh),
+        /Expired or settled artifact producer has no exact preaccepted W4 intent/,
+      );
       mark("origin-opening");
       const origin = await openInitialNormalRequest(host);
       const { record, session } = origin;
@@ -487,8 +558,13 @@ Deno.test({
       const beforeCalls = actualRunner.fetched.length;
       const beforeDecisions = controlled.decisions.get(first.record.caseId);
       const cold = new RequestSpaceRuntime({
+        ...createRequestRuntimeReaders(host.storage.client),
+        onNoticeError: () => {},
         storage: host.storage,
-        native: host.stage.nativeRuntime,
+        native: {
+          scope: host.stage.nativeRuntime.ledger.options.scope,
+          forCaseSpace: host.stage.nativeRuntime.forCaseSpace,
+        },
         openings: store,
         source: host.openingSources.source,
         branches: host.openingSources.branches,

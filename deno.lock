@@ -18,17 +18,17 @@
     "npm:@langchain/langgraph@1.5.3": "1.5.3_@langchain+core@1.2.17_zod@4.6.7_@opentelemetry+api@1.10.0",
     "npm:@prisma/adapter-pg@7.10.1": "7.10.1",
     "npm:@prisma/client@7.10.1": "7.10.1_prisma@7.10.1_@types+node@24.10.1_@types+react@19.3.0_react@19.3.1_react-dom@19.3.1",
-    "npm:@rdfjs/dataset@2.0.1": "2.0.1",
     "npm:@rdfjs/parser-n3@2.1.0": "2.1.0",
     "npm:@types/node@24.10.1": "24.10.1",
     "npm:@types/pg@8.23.1": "8.23.1",
+    "npm:@types/sparqljs@3.1.12": "3.1.12",
     "npm:ajv@8.20.0": "8.20.0",
     "npm:diff@9.0.0": "9.0.0",
     "npm:ldkit@2.10.1": "2.10.1",
     "npm:pg-boss@12.38.0": "12.38.0_@opentelemetry+api@1.10.0",
     "npm:pg@8.23.1": "8.23.1",
     "npm:prisma@7.10.1": "7.10.1_@types+node@24.10.1_@types+react@19.3.0_react@19.3.1_react-dom@19.3.1",
-    "npm:rdf-validate-shacl@0.6.0": "0.6.0"
+    "npm:sparqljs@3.7.4": "3.7.4"
   },
   "jsr": {
     "@deno/kv-utils@0.1.4": {
@@ -400,19 +400,6 @@
       "integrity": "sha512-yoSVlyCltqbaCTse3uSdf5Vo3q4UskcTm+3klaUQTwOq7Z5aCZLtLPZatXTPzr+S0WEcjTZvD++A+r3QmgamsA==",
       "bin": true
     },
-    "@rdfjs/dataset@2.0.1": {
-      "integrity": "sha512-hDIaXpUmU/ZdofX/BMFDAchkhN/AjmP5dMCOuVL2VCqWuFjeQxd2KV84E4+7S2Biw8tjEFhPBeQZP7KW+ARV7Q==",
-      "bin": true
-    },
-    "@rdfjs/environment@1.0.0": {
-      "integrity": "sha512-+S5YjSvfoQR5r7YQCRCCVHvIEyrWia7FJv2gqM3s5EDfotoAQmFeBagApa9c/eQFi5EiNhmBECE5nB8LIxTaHg=="
-    },
-    "@rdfjs/namespace@2.0.1": {
-      "integrity": "sha512-U85NWVGnL3gWvOZ4eXwUcv3/bom7PAcutSBQqmVWvOaslPy+kDzAJCH1WYBLpdQd4yMmJ+bpJcDl9rcHtXeixg==",
-      "dependencies": [
-        "@rdfjs/data-model"
-      ]
-    },
     "@rdfjs/parser-n3@2.1.0": {
       "integrity": "sha512-/DiosB+0vPzgAs1WXcCB8MbA5hqq0fIh9VhMg7fBmoJ/I8Xl6Op/AOxVu9x1XZCHSNwO/VsJT/HYKEctZVRKSQ==",
       "dependencies": [
@@ -425,21 +412,6 @@
     },
     "@rdfjs/sink@2.0.1": {
       "integrity": "sha512-smzIFGF6EH1sLAJR9F3p2wMNrN44JjPeYAoITTJLqtuNC319K7IXaJ+qNLBGTtapZ/jvpx2Tks0TjcH9KrAvEA=="
-    },
-    "@rdfjs/term-map@2.0.2": {
-      "integrity": "sha512-EJ2FmmdEUsSR/tU1nrizRLWzH24YzhuvesrbUWxC3Fs0ilYNdtTbg0RaFJDUnJF3HkbNBQe8Zrt/uvU/hcKnHg==",
-      "dependencies": [
-        "@rdfjs/to-ntriples"
-      ]
-    },
-    "@rdfjs/term-set@2.0.3": {
-      "integrity": "sha512-DyXrKWEx+mtAFUZVU7bc3Va6/KZ8PsIp0RVdyWT9jfDgI/HCvNisZaBtAcm+SYTC45o+7WLkbudkk1bfaKVB0A==",
-      "dependencies": [
-        "@rdfjs/to-ntriples"
-      ]
-    },
-    "@rdfjs/to-ntriples@3.0.1": {
-      "integrity": "sha512-gjoPAvh4j7AbGMjcDn/8R4cW+d/FPtbfbMM0uQXkyfBFtNUW2iVgrqsgJ65roLc54Y9A2TTFaeeTGSvY9a0HCQ=="
     },
     "@rdfjs/types@1.1.2": {
       "integrity": "sha512-wqpOJK1QCbmsGNtyzYnojPU8gRDPid2JO0Q0kMtb4j65xhCK880cnKAfEOwC+dX85VJcCByQx5zOwyyfCjDJsg==",
@@ -500,16 +472,6 @@
     },
     "@standard-schema/spec@1.1.0": {
       "integrity": "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="
-    },
-    "@tpluscode/rdf-ns-builders@5.1.0": {
-      "integrity": "sha512-gVH5Mc4tNWZD+SALr0OqgDH+MaMjjdNfiUfEGmsgEjgLokNzxQSf+Co8COvl+RSngUPNelx8BrqA+izE34Ttwg==",
-      "dependencies": [
-        "@rdfjs/data-model",
-        "@rdfjs/namespace",
-        "@rdfjs/types@2.0.1",
-        "@types/rdfjs__namespace",
-        "@zazuko/prefixes"
-      ]
     },
     "@traqula/algebra-transformations-1-1@1.4.0": {
       "integrity": "sha512-j0D00Sy4kkBil5Zbl4gy0tfVIWVaT4/UMclOoMup9DmC6Fqkxfa7+ZnqBAtY/TPqMUN+T8Y8LC382tCS6aZpdg==",
@@ -671,12 +633,6 @@
     "@types/qs@6.15.1": {
       "integrity": "sha512-GZHUBZR9hckSUhrxmp1nG6NwdpM9fCunJwyThLW1X3AyHgd9IlHb6VANpQQqDr2o/qQp6McZ3y/IA2rVzKzSbw=="
     },
-    "@types/rdfjs__namespace@2.0.10": {
-      "integrity": "sha512-xoVzEIOxcpyteEmzaj94MSBbrBFs+vqv05joMhzLEiPRwsBBDnhkdBCaaDxR1Tf7wOW0kB2R1IYe4C3vEBFPgA==",
-      "dependencies": [
-        "@rdfjs/types@2.0.1"
-      ]
-    },
     "@types/react@19.3.0": {
       "integrity": "sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==",
       "dependencies": [
@@ -691,6 +647,12 @@
     },
     "@types/shexj@2.1.7": {
       "integrity": "sha512-pu/0vIZxFTMPVjTlo5MJKFkBL/EbAuFhtCXpmBB7ZdUiyNpc6pt8GxfyRPqdf6q2SsWu71a/vbhvGK2IZN2Eug=="
+    },
+    "@types/sparqljs@3.1.12": {
+      "integrity": "sha512-zg/sdKKtYI0845wKPSuSgunyU1o/+7tRzMw85lHsf4p/0UbA6+65MXAyEtv1nkaqSqrq/bXm7+bqXas+Xo5dpQ==",
+      "dependencies": [
+        "@rdfjs/types@2.0.1"
+      ]
     },
     "@types/yargs-parser@21.0.3": {
       "integrity": "sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ=="
@@ -795,15 +757,6 @@
         "internmap"
       ]
     },
-    "@vocabulary/sh@1.1.6_@rdfjs+types@1.1.2": {
-      "integrity": "sha512-8IfAQoKh57THz8LA2+n1jaY/VC2XaqMNSsJgzBKSSrj20y5PSMAawb6dMsxoLxqDIPBDs1TFRl/9CijUnwbBUA==",
-      "dependencies": [
-        "@rdfjs/types@1.1.2"
-      ]
-    },
-    "@zazuko/prefixes@2.6.4": {
-      "integrity": "sha512-5T5b8EWg/rgKpp8JoRqnoSZl/jRzEgJU1fTemb4kzsk26AoIn7LEMYr8S3QQUlGX8odZcvWgIfAhsksarW368A=="
-    },
     "abort-controller@3.0.0": {
       "integrity": "sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==",
       "dependencies": [
@@ -892,14 +845,6 @@
     },
     "classnames@2.5.1": {
       "integrity": "sha512-saHYOzhIQs6wy2sVxTM6bUDsQO4F50V9RQ22qBpEdCW+I+/Wmke2HOl6lS6dTpdxVhb88/I6+Hs+438c3lfUow=="
-    },
-    "clownface@2.0.3": {
-      "integrity": "sha512-E76TBJ7CgU9+/5paSAvuNdMO+fzFThnvRVtidosktYppYkXM8V7tid8Ezzo8S1OmoWxKUam3yfkZlfCid4OiJQ==",
-      "dependencies": [
-        "@rdfjs/data-model",
-        "@rdfjs/environment",
-        "@rdfjs/namespace"
-      ]
     },
     "combined-stream@1.0.8": {
       "integrity": "sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==",
@@ -1012,12 +957,6 @@
         "d3-array@3.2.4"
       ]
     },
-    "debug@4.4.3": {
-      "integrity": "sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==",
-      "dependencies": [
-        "ms"
-      ]
-    },
     "deepmerge-ts@8.0.2": {
       "integrity": "sha512-uqbvqLUMrc6p0MO+WBRtTxY55hmyh94WRwI5a++PZe54X+bfVh59FSN7uWCBCW1CCVjzjnrwzfI8zidE2obMMw=="
     },
@@ -1035,9 +974,6 @@
     },
     "destr@2.0.5": {
       "integrity": "sha512-ugFTXCtDZunbzasqBxrK93Ik/DRYsO6S/fedkWEMKqt04xZ4csmnmwGDBAb07QWNaGMAmnTIemsYZCksjATwsA=="
-    },
-    "detect-libc@2.1.2": {
-      "integrity": "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ=="
     },
     "diff@9.0.0": {
       "integrity": "sha512-svtcdpS8CgJyqAjEQIXdb3OjhFVVYjzGAPO8WGCmRbrml64SPw/jJD4GoE98aR7r25A0XcgrK3F02yw9R/vhQw=="
@@ -1329,7 +1265,7 @@
         "jsonld-context-parser",
         "n3",
         "rdf-data-factory@2.1.0",
-        "rdf-literal@2.0.0",
+        "rdf-literal",
         "rdf-string",
         "readable-from-web"
       ],
@@ -1361,9 +1297,6 @@
       "dependencies": [
         "mime-db"
       ]
-    },
-    "ms@2.1.3": {
-      "integrity": "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA=="
     },
     "mustache@4.2.0": {
       "integrity": "sha512-71ippSywq5Yb7/tVYyGbkBggbU8H3u5Rz56fH60jGFgr8uHwxs+aSKeqmluIVzM0m0kB7xQjKS6qPfd0b2ZoqQ==",
@@ -1585,12 +1518,6 @@
         "destr"
       ]
     },
-    "rdf-canonize@3.4.0": {
-      "integrity": "sha512-fUeWjrkOO0t1rg7B2fdyDTvngj+9RlUyL92vOdiB7c0FPguWVsniIMjEtHH+meLBO9rzkUlUzBVXgWrjI8P9LA==",
-      "dependencies": [
-        "setimmediate"
-      ]
-    },
     "rdf-data-factory@1.1.3": {
       "integrity": "sha512-ny6CI7m2bq4lfQQmDYvcb2l1F9KtGwz9chipX4oWu2aAtVoXjb7k3d8J1EsgAsEbMXnBipB/iuRen5H2fwRWWQ==",
       "dependencies": [
@@ -1603,27 +1530,12 @@
         "@rdfjs/types@2.0.1"
       ]
     },
-    "rdf-dataset-ext@1.1.0": {
-      "integrity": "sha512-CH85RfRKN9aSlbju8T7aM8hgCSWMBsh2eh/tGxUUtWMN+waxi6iFDt8/r4PAEmKaEA82guimZJ4ISbmJ2rvWQg==",
-      "dependencies": [
-        "rdf-canonize",
-        "readable-stream@4.8.0"
-      ],
-      "deprecated": true
-    },
     "rdf-isomorphic@2.0.1": {
       "integrity": "sha512-8pfA3PeDs1sVrZ2R3dCR4KRM69m3pQGhzviNQq5Az/+Zch4I+fKstjGxCZ5ADAFPsm9zxHk8zMEQ/BFcqlnLKw==",
       "dependencies": [
         "imurmurhash",
         "rdf-string",
         "rdf-terms"
-      ]
-    },
-    "rdf-literal@1.3.2": {
-      "integrity": "sha512-79Stlu3sXy0kq9/decHFLf3xNPuY6sfhFPhd/diWErgaFr0Ekyg38Vh9bnVcqDYu48CFRi0t+hrFii49n92Hbw==",
-      "dependencies": [
-        "@rdfjs/types@2.0.1",
-        "rdf-data-factory@1.1.3"
       ]
     },
     "rdf-literal@2.0.0": {
@@ -1643,30 +1555,6 @@
       "dependencies": [
         "rdf-data-factory@2.1.0",
         "rdf-string"
-      ]
-    },
-    "rdf-validate-datatype@0.2.2": {
-      "integrity": "sha512-mH9qL8i0WBbZ6HJCA26BB6V+WV2MraKvitez3SV0QegBWVQ4wYO49CgfFBzoAYg6tlnhFXl9MkrOAQ07X2N1FA==",
-      "dependencies": [
-        "@rdfjs/term-map",
-        "@tpluscode/rdf-ns-builders"
-      ]
-    },
-    "rdf-validate-shacl@0.6.0": {
-      "integrity": "sha512-hWo4ah391KwmAHPoq6Ggv2mnKUwVEwzW0kPoTt5s8e3lq9LHt8eziVJkhDAMnQ2Oh+pcuLcyj5HDviVlouedBg==",
-      "dependencies": [
-        "@rdfjs/data-model",
-        "@rdfjs/dataset",
-        "@rdfjs/environment",
-        "@rdfjs/namespace",
-        "@rdfjs/term-set",
-        "@rdfjs/types@1.1.2",
-        "@vocabulary/sh",
-        "clownface",
-        "debug",
-        "rdf-dataset-ext",
-        "rdf-literal@1.3.2",
-        "rdf-validate-datatype"
       ]
     },
     "react-dom@19.3.1_react@19.3.1": {
@@ -1764,9 +1652,6 @@
         "type-fest"
       ]
     },
-    "setimmediate@1.0.5": {
-      "integrity": "sha512-MATJdZp8sLqDl/68LfQmbP8zKPLQNV6BIZoIgrscFDQ+RsvK/BxeDQOgyxKKoh0y/8h3BqVFnCqQ/gd+reiIXA=="
-    },
     "shebang-command@2.0.0": {
       "integrity": "sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==",
       "dependencies": [
@@ -1817,6 +1702,14 @@
     },
     "signal-exit@4.1.0": {
       "integrity": "sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw=="
+    },
+    "sparqljs@3.7.4": {
+      "integrity": "sha512-hb4C84gf7KM7vz+iG595mPwvqxOvBJCm9L3dCxtV2zZDht6ZMmMG0tHeeqFeqwb9875yU9U4lhYe4LYRvWj0BQ==",
+      "dependencies": [
+        "rdf-data-factory@1.1.3"
+      ],
+      "deprecated": true,
+      "bin": true
     },
     "split2@4.2.0": {
       "integrity": "sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg=="
@@ -1938,17 +1831,17 @@
       "npm:@langchain/langgraph@1.5.3",
       "npm:@prisma/adapter-pg@7.10.1",
       "npm:@prisma/client@7.10.1",
-      "npm:@rdfjs/dataset@2.0.1",
       "npm:@rdfjs/parser-n3@2.1.0",
       "npm:@types/node@24.10.1",
       "npm:@types/pg@8.23.1",
+      "npm:@types/sparqljs@3.1.12",
       "npm:ajv@8.20.0",
       "npm:diff@9.0.0",
       "npm:ldkit@2.10.1",
       "npm:pg-boss@12.38.0",
       "npm:pg@8.23.1",
       "npm:prisma@7.10.1",
-      "npm:rdf-validate-shacl@0.6.0"
+      "npm:sparqljs@3.7.4"
     ]
   }
 }

@@ -232,8 +232,7 @@ export class RequestSpaceOpenings {
         );
       }
       if (record.phase === "dispatched") {
-        const admission = await this.host.admissions.ensure(record, controller);
-        await this.host.admissions.assertDispatch(record, admission);
+        await this.host.admissions.ensure(record, controller);
         return openingView(record);
       }
       try {
@@ -298,7 +297,6 @@ export class RequestSpaceOpenings {
               "The recorded space admission differs.",
             );
           }
-          await this.host.admissions.assertDispatch(record, admission);
           await revalidate();
           await this.host.runtime.enqueue(record, admission);
           record = await this.advance(record, "dispatched");

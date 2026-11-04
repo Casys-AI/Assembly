@@ -3,8 +3,9 @@
 This reference describes the path from a verified build to Oxigraph and LDkit
 reads. It complements the
 [pipeline explanation and decisions](../../explanation/modeles/pipeline-modele-natif.md).
-Observed performance, versions and limits remain in the October 26 qualification
-report.
+Active versions and limits are described here; the
+[qualification measurements](#qualification-measurements) retain their dates,
+corpora and measurement boundaries.
 
 ## Identities
 
@@ -17,7 +18,7 @@ report.
 `A`, or `artifactDigest`, authenticates the uncompressed canonical artifact. The
 projection digest authenticates the N-Quads and must be distinct from `A`.
 
-The RDF kind is `rdf-quads`. The projector's base version is `ase-rdf-quads-v2`.
+The RDF kind is `rdf-quads`. The projector's base version is `ase-rdf-quads-v4`.
 Its contextual version adds the canonical digest of the repository and verified
 library identifiers. `S`, `R` and `K` describe build provenance; they are not
 inputs to the RDF bytes when `A` and the projection context are identical.
@@ -30,6 +31,23 @@ The persisted key is therefore conceptually:
 
 The resident graph is addressed by the complete `BuildRef`. Reusing a projection
 does not merge two build identities.
+
+## Vocabulary profile
+
+SysML metaclasses and native properties use `https://www.omg.org/spec/SysML#`,
+with encoded local names. Private `sysx:` source annotations remain under
+`urn:ase:vocab:prop:`. Assembly also retains scoped user and library identities,
+build graph names, provenance, null markers and `urn:ase:vocab:list:` occurrence
+lists for order and duplicates; direct properties alone are sets. Original JSON
+literals remain intact. For a JSON literal that parses as an array of strings,
+`urn:ase:vocab:string-array-member:<encoded-property>` exposes its string
+members as additional set-valued facts. This is a vocabulary compatibility
+profile, not a claim of graph identity with OpenSysML or Flexo.
+
+Generic LDkit relation lenses read direct set-valued properties. The qualified
+ordered, duplicate-preserving surface is `BoundModelReader.orderedMembers`,
+which reads the occurrence-list extension. A direct lens array alone does not
+provide that ordering contract.
 
 ## Components
 
@@ -76,8 +94,37 @@ the exact verified vault copy, without compiling or rewriting the artifact.
 
 Explicit byte-based service callers and tests retain the existing projector and
 private-file load path. Production composition chooses reference preparation; an
-error does not switch it back to the byte path. The public awaited index API and
-the exact RDF encoding are unchanged.
+error does not switch it back to the byte path. The awaited index API is
+unchanged; the derived RDF encoding has its own explicit projector version.
+
+### Canonical batch encoding
+
+Projection retains all facts in the `ase-rdf-quads-v4` encoding: lines are still
+globally deduplicated and sorted, and each complete quad ends in a newline.
+Blank nodes receive short opaque labels allocated by a canonical traversal;
+these labels are local to the projection and do not encode source paths. The
+vocabulary migration changes the contextual version, digest and cache identity;
+earlier immutable entries, including v3, remain available under their old keys.
+The global path-to-label map remains in memory for the duration of projection.
+The OpenClaw export plugin inspired batching, building on projection helpers
+originally derived from Assembly; its narrower export and ordering are not used
+for the full index.
+
+The projector encodes batches directly into the final byte array instead of
+joining a complete N-Quads string. This removes that whole-graph string
+allocation, but sorting still holds the complete set of lines, and the final
+byte array, KV compression and native loading retain whole-graph boundaries. It
+is not an end-to-end bounded-memory pipeline.
+
+Before the vocabulary migration, on 4 November 2026, one local synthetic
+observation used 3,000 elements with repeated references, nested lists,
+documentation and Unicode (93,000 quads, 17,780,640 bytes). Before and after
+produced the same SHA-256
+`845e4a65ebe3343d50d78c90dae8beedf57aaa17f85ffec63264ad3e16223677`. The
+projection took 174 ms before and 167 ms after; maximum resident set size was
+292,028,416 and 276,660,224 bytes respectively. These single observations
+include uncontrolled runtime and OS effects and do not establish a speedup or
+memory reduction for other models.
 
 ## States
 
@@ -198,6 +245,11 @@ Before startup, the runtime verifies the platform, manifest, package version,
 and SHA. The module is then copied to a private epoch-specific directory and
 loaded by the child process with bounded permissions.
 
+The current native pins are Oxigraph 0.5.12 and spargebra 0.4.8, built with the
+shared pinned Rust toolchain. Source installations use a fingerprinted directory
+and a verified active pointer; an older package is not selected just because its
+package version is also `0.1.0`.
+
 There is no fallback. A missing installation, unsupported platform or
 inconsistent provenance makes the index unavailable.
 
@@ -211,8 +263,9 @@ inconsistent provenance makes the index unavailable.
 | New `A`                                                 | Recomputed and persisted          | Loaded                        |
 | New projector version or changed library classification | Recomputed under another identity | Loaded                        |
 
-Finalization does not necessarily invoke this chain. System and diagram
-projections have their own cycle and can advance before the first semantic read.
+System and diagram projections have their own cycle and can advance before RDF
+is ready. The background SHACL refresh after publication is also a semantic
+consumer and can invoke this chain before a user or agent makes a graph query.
 
 ## Errors
 
@@ -264,14 +317,50 @@ approximately 34 ms resident ASK/SELECT observations describe simple queries,
 not complete agent consultations. Keep those observations separate from the
 reference-path run above.
 
+### Component comparison on 4 November 2026
+
+These informative observations use the complete initial Assembly model with an
+admitted WorkPlan and network policy: 9,377 elements and approximately 1.25
+million quads. The real pinned Toolkit compiled a fixed artifact once. Old and
+new components then consumed the same input on Apple M4 / 16 GiB RAM / Deno
+2.9.7. Historical modules were relocated into one isolated harness; this is not
+a comparison of complete application executables.
+
+| Measured component                           |     Before | Full implementation |
+| -------------------------------------------- | ---------: | ------------------: |
+| Median RDF projection, three fresh processes |    5.690 s |             3.180 s |
+| Complete N-Quads size                        | 297.11 MiB |          251.33 MiB |
+| Warm SHACL service, one finding              |   8.211 ms |            3.523 ms |
+| Warm SHACL service, three findings           |   4.662 ms |            2.633 ms |
+
+Batches alone measured 3.678 s with exactly the baseline RDF bytes and SHA. The
+full v4 encoding adds eight string-array-member quads, preserves all model
+elements and changes only the derived projection identity. The old 297.11 MiB
+payload exceeds the unchanged 256 MiB client input budget and is refused before
+native dispatch. The new graph loads successfully; observed byte-path native
+loads took 4.0–4.7 s, excluding projection and KV processing.
+
+SHACL medians use twenty calls in one process after five warm-ups, without a
+report cache and with the native graph already loaded. Parsing, binding, RPC and
+mapping are included; compilation, fact extraction and graph preparation are
+excluded. The old engine checked eleven TypeScript-derived triples; the new
+service queries the model itself. These observations do not isolate an Oxigraph
+version speedup or measure the complete Doctor HTTP path.
+
+Projection samples ranged from 4.723–7.069 s before and 3.064–3.739 s after.
+Peak process RSS was variable, including a baseline run below every new run; no
+reliable general memory reduction follows from these three samples. These
+figures precede the later missing-network-attribute correctness fix and remain
+dated information, not a performance acceptance gate.
+
 ## Missing surfaces
 
 There is no public route to purge, rebuild or force prewarming of the index. No
-operating guide should invent these actions. Building a targeted index remains
-an open decision and does not change the current contract.
+operating guide should invent these actions. An additional purpose-specific
+index would require a separate decision; the complete-index contract is
+retained.
 
-The asynchronous stored-reference increment is a foundation for the
-index-readiness follow-up. It adds no startup/publication prewarming,
-availability UI, retry control or notification bus. Callers still await their
-exact build; a missing or failed index never silently degrades into a
-source-only consultation.
+Dedicated prewarming controls, index-availability UI and retry remain follow-up
+work. The current background SHACL refresh can already request the index after
+publication. Every semantic consumer awaits its exact build; a missing or failed
+index never silently degrades into a source-only consultation.

@@ -1,6 +1,6 @@
 import { parseConversationsSnapshot } from "../conversations/state.ts";
 import { localSkillRelease } from "../../test/support/release-opening-fixture.ts";
-import { deepStrictEqual, equal, ok, throws } from "node:assert/strict";
+import { deepStrictEqual, equal, match, ok, throws } from "node:assert/strict";
 import {
   capabilitySecretFromFile,
   createRequests,
@@ -309,7 +309,11 @@ Deno.test("A/B reuse one native identity but keep their selected reads and exact
         body: init?.body ? JSON.parse(String(init.body)) : null,
       });
       if (refuse) {
-        return Response.json({ error: "Session expired" }, { status: 403 });
+        return Response.json({
+          code: "FORBIDDEN",
+          error: "Session expired",
+          context: { session: "invalid" },
+        }, { status: 403 });
       }
       if (path === "/api/cases?space=requests") {
         return Response.json({
@@ -365,6 +369,203 @@ Deno.test("A/B reuse one native identity but keep their selected reads and exact
   );
 });
 
+Deno.test("a stale Request contribution is reread and retried once with the fresh revision", async () => {
+  for (const secondStale of [false, true]) {
+    const events: Array<{ path: string; body?: unknown }> = [];
+    let revision = 17;
+    let writes = 0;
+    const f = fixture((path, init) => {
+      const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+      events.push({ path, ...(body ? { body } : {}) });
+      if (path === "/api/cases?space=requests") {
+        return Promise.resolve(Response.json({
+          systemId: host.systemId,
+          cases: [record("caseA")],
+        }));
+      }
+      if (path === "/api/conversations?caseId=caseA") {
+        return Promise.resolve(Response.json(read("caseA", revision)));
+      }
+      if (path === "/api/conversations/same-native/messages?space=requests") {
+        writes++;
+        revision = 18;
+        if (writes === 1 || secondStale) {
+          return Promise.resolve(Response.json({
+            code: "STALE_CONVERSATION",
+            error: "Conversation changed",
+          }, { status: 409 }));
+        }
+        return Promise.resolve(
+          Response.json({ accepted: true, caseId: "caseA" }),
+        );
+      }
+      throw new Error(`Unexpected route ${path}`);
+    });
+    await f.requests.cases.refresh();
+    await f.requests.refresh("caseA");
+    const start = events.length;
+    const draft = "Keep this contribution";
+    const sent = await f.requests.send(
+      "caseA",
+      f.requests.conversation("caseA")!,
+      draft,
+    );
+    equal(sent, !secondStale);
+    const action = events.slice(start);
+    const posts = action.filter((event) => event.body);
+    deepStrictEqual(posts.map((event) => event.body), [
+      { caseId: "caseA", text: draft, expectedRevision: 17 },
+      { caseId: "caseA", text: draft, expectedRevision: 18 },
+    ]);
+    ok(
+      action.findIndex((event) =>
+        event.path === "/api/conversations?caseId=caseA"
+      ) > 0,
+    );
+    ok(
+      action.findIndex((event) =>
+        event.path === "/api/conversations?caseId=caseA"
+      ) < action.indexOf(posts[1]),
+    );
+    if (secondStale) {
+      match(
+        f.requests.writeErrors.peek().get("caseA") ?? "",
+        /STALE_CONVERSATION/,
+      );
+    }
+  }
+});
+
+Deno.test("a stale Request never retries after its runtime or owner identity changes", async () => {
+  for (const changed of ["owner", "system"] as const) {
+    let afterRefusal = false;
+    const posts: string[] = [];
+    const f = fixture(async (path) => {
+      if (path === "/api/cases?space=requests") {
+        return Response.json({
+          systemId: host.systemId,
+          cases: [
+            afterRefusal && changed === "owner"
+              ? { ...record("caseA"), owner: "new-native" }
+              : record("caseA"),
+          ],
+        });
+      }
+      if (path === "/api/conversations?caseId=caseA") {
+        const value = read("caseA", afterRefusal ? 18 : 17);
+        if (afterRefusal && changed === "system") {
+          value.systemId = "other-runtime";
+        }
+        if (afterRefusal && changed === "owner") {
+          value.conversations[0].nativeId = "new-native";
+        }
+        return Response.json(value);
+      }
+      if (path.includes("/messages?space=requests")) {
+        posts.push(path);
+        afterRefusal = true;
+        if (changed === "owner") await f.requests.cases.refresh();
+        return Response.json({
+          code: "STALE_CONVERSATION",
+          error: "Conversation changed",
+        }, { status: 409 });
+      }
+      throw new Error(`Unexpected route ${path}`);
+    });
+    await f.requests.cases.refresh();
+    await f.requests.refresh("caseA");
+    equal(
+      await f.requests.send(
+        "caseA",
+        f.requests.conversation("caseA")!,
+        "Keep message",
+      ),
+      false,
+    );
+    deepStrictEqual(posts, [
+      "/api/conversations/same-native/messages?space=requests",
+    ]);
+    match(
+      f.requests.writeErrors.peek().get("caseA") ?? "",
+      /STALE_CONVERSATION/,
+    );
+  }
+});
+
+Deno.test("a stale Request waits for an older poll then reads again before retrying", async () => {
+  let resolvePoll!: (response: Response) => void;
+  const poll = new Promise<Response>((resolve) => resolvePoll = resolve);
+  let reads = 0;
+  let pendingSignal: AbortSignal | undefined;
+  const events: Array<
+    string | { caseId: string; text: string; expectedRevision: number }
+  > = [];
+  const f = fixture((path, init) => {
+    if (path === "/api/cases?space=requests") {
+      return Promise.resolve(
+        Response.json({ systemId: host.systemId, cases: [record("caseA")] }),
+      );
+    }
+    if (path === "/api/conversations?caseId=caseA") {
+      reads++;
+      events.push(`read-${reads}`);
+      if (reads === 2) {
+        pendingSignal = init?.signal ?? undefined;
+        return poll;
+      }
+      return Promise.resolve(
+        Response.json(read("caseA", reads === 1 ? 17 : 18)),
+      );
+    }
+    if (path === "/api/conversations/same-native/messages?space=requests") {
+      events.push(JSON.parse(String(init?.body)));
+      const writes = events.filter((event) => typeof event !== "string").length;
+      return Promise.resolve(
+        writes === 1
+          ? Response.json({
+            code: "STALE_CONVERSATION",
+            error: "Conversation changed",
+          }, { status: 409 })
+          : Response.json({ accepted: true, caseId: "caseA" }),
+      );
+    }
+    throw new Error(`Unexpected route ${path}`);
+  });
+  await f.requests.cases.refresh();
+  await f.requests.refresh("caseA");
+  const release = f.requests.retain("caseA");
+  const oldPoll = f.requests.refresh("caseA");
+  const sending = f.requests.send(
+    "caseA",
+    f.requests.conversation("caseA")!,
+    "Keep message",
+  );
+  // The rejection is handled while the already-running poll remains unresolved.
+  for (let i = 0; i < 10; i++) await Promise.resolve();
+  deepStrictEqual(events, ["read-1", "read-2", {
+    caseId: "caseA",
+    text: "Keep message",
+    expectedRevision: 17,
+  }]);
+  release();
+  equal(
+    pendingSignal?.aborted,
+    false,
+    "ordinary send awaits keep the shared read alive",
+  );
+  resolvePoll(Response.json(read("caseA", 17)));
+  await oldPoll;
+  equal(await sending, true);
+  deepStrictEqual(events.slice(0, 5), [
+    "read-1",
+    "read-2",
+    { caseId: "caseA", text: "Keep message", expectedRevision: 17 },
+    "read-3",
+    { caseId: "caseA", text: "Keep message", expectedRevision: 18 },
+  ]);
+  equal(events.filter((event) => typeof event !== "string").length, 2);
+});
+
 Deno.test("a foreign Case conversation response is terminal and never becomes the selected Request", async () => {
   const f = fixture(() => Promise.resolve(Response.json(read("foreign"))));
   await f.requests.refresh("caseA");
@@ -398,6 +599,36 @@ Deno.test("browser import uses static host context instead of a runtime projecti
     false,
   );
   ok(calls.every((path) => path === "/api/request-space-openings/context"));
+});
+
+Deno.test("a remembered exact Release opens without consulting the catalogue or inspecting it again", async () => {
+  const calls: { path: string; body: unknown }[] = [];
+  const f = fixture((path, init) => {
+    calls.push({
+      path,
+      body: init?.body ? JSON.parse(String(init.body)) : null,
+    });
+    if (path === "/api/request-space-openings/open") {
+      throw new TypeError("Lost acknowledgement");
+    }
+    throw new Error(`Unexpected route ${path}`);
+  });
+  const source = {
+    kind: "release" as const,
+    releaseId: "remembered",
+    digest: "d".repeat(64),
+  };
+  f.requests.sessionReady.value = true;
+  f.requests.source.value = source;
+  equal(await f.requests.open("Use remembered Release"), null);
+  deepStrictEqual(calls, [{
+    path: "/api/request-space-openings/open",
+    body: {
+      openingKey: "one-stable-intention",
+      text: "Use remembered Release",
+      source,
+    },
+  }]);
 });
 
 Deno.test("an exact Release is inspected and verified before its immutable digest becomes the opening source", async () => {
@@ -505,6 +736,49 @@ Deno.test("fresh Request source choice includes truthful owned local-skill Relea
     false,
   );
   equal(f.requests.intent.peek()?.source.kind, "release");
+});
+
+Deno.test("the Release a new Request starts from is selected once by the next complete catalogue read, or refused when unlisted", async () => {
+  const owned = localSkillRelease("ownedRelease", "caseA");
+  let ownedListed = false;
+  const f = fixture((path) => {
+    if (path === "/api/saved-systems/list") {
+      return Promise.resolve(Response.json([]));
+    }
+    if (path === "/api/saved-systems/list?space=requests") {
+      return Promise.resolve(
+        ownedListed
+          ? Response.json([owned])
+          : Response.json({ code: "FORBIDDEN" }, { status: 403 }),
+      );
+    }
+    if (path === "/api/saved-systems/ownedRelease/inspect?space=requests") {
+      return Promise.resolve(
+        Response.json({ ...owned, assetAvailability: "verified" }),
+      );
+    }
+    throw new Error(`Unexpected route ${path}`);
+  });
+  const release = {
+    kind: "release",
+    releaseId: owned.id,
+    digest: owned.digest,
+  };
+  f.requests.startFrom(owned.id);
+  // A partial catalogue cannot tell: the wish waits for a complete read.
+  await f.requests.loadReleases();
+  deepStrictEqual(f.requests.source.peek(), { kind: "current-main" });
+  ownedListed = true;
+  await f.requests.loadReleases();
+  deepStrictEqual(f.requests.source.peek(), release);
+  // Taken once: a later read keeps the person's own choice.
+  f.requests.source.value = { kind: "current-main" };
+  await f.requests.loadReleases();
+  deepStrictEqual(f.requests.source.peek(), { kind: "current-main" });
+  f.requests.startFrom("missing");
+  await f.requests.loadReleases();
+  equal(f.requests.error.peek(), "Select an exact listed Release.");
+  deepStrictEqual(f.requests.source.peek(), { kind: "current-main" });
 });
 
 Deno.test("failed exact Request Release inspection never retries Main or changes a pinned selection", async () => {
@@ -738,23 +1012,304 @@ Deno.test("scope replies from an expired session or intervening host context rem
   }
 });
 
-Deno.test("late conversation refresh cannot populate a different session", async () => {
-  let resolve!: (response: Response) => void;
-  const pending = new Promise<Response>((done) => {
-    resolve = done;
+Deno.test("cached Request conversations and read errors expire with their session", async () => {
+  const requests = createRequests({
+    host: () => host,
+    fetch: () => Promise.resolve(Response.json(read("caseA"))),
   });
-  const requests = createRequests({ host: () => host, fetch: () => pending });
+  await requests.refresh("caseA");
+  requests.readErrors.value = new Map([["caseB", "unavailable"]]);
+  requests.context.value = { ...host };
+  equal(requests.snapshots.peek().size, 1, "same host keeps the cache");
+  requests.sessionGeneration.value++;
+  equal(requests.snapshots.peek().size, 0);
+  equal(requests.readErrors.peek().size, 0);
+  requests.dispose();
+});
+
+Deno.test("frequent invalidations show intermediate progress while callers await the final Request response", async () => {
+  const replies: Array<(response: Response) => void> = [];
+  const requests = createRequests({
+    host: () => host,
+    fetch: () => new Promise<Response>((done) => replies.push(done)),
+  });
+  requests.sessionReady.value = true;
+  let completed = false;
+  const opening = requests.refresh("caseA").then(() => completed = true);
+  const notice = requests.refresh("caseA", true);
+  for (const revision of [1, 2]) {
+    requests.refresh("caseA", true);
+    replies[revision - 1](Response.json(read("caseA", revision)));
+    while (replies.length < revision + 1) await Promise.resolve();
+    equal(
+      requests.snapshots.peek().get("caseA")?.conversations[0].revision,
+      revision,
+    );
+    equal(completed, false);
+  }
+  replies[2](Response.json(read("caseA", 3)));
+  await Promise.all([opening, notice]);
+  equal(replies.length, 3);
+  equal(completed, true);
+  equal(requests.snapshots.peek().get("caseA")?.conversations[0].revision, 3);
+  requests.dispose();
+});
+
+Deno.test("a conversation reply from an older session never lands; the Request is read again in the new one", async () => {
+  const replies: Array<(response: Response) => void> = [];
+  const requests = createRequests({
+    host: () => host,
+    fetch: () => new Promise<Response>((done) => replies.push(done)),
+  });
   requests.sessionReady.value = true;
   const refresh = requests.refresh("caseA");
+  let concurrentFinished = false;
+  const concurrent = requests.refresh("caseA").then(() => {
+    concurrentFinished = true;
+  });
   requests.sessionGeneration.value++;
-  resolve(
-    Response.json({
-      systemId: host.systemId,
-      version: "v",
-      defaultAgentId: "same-native",
-      conversations: [conversation("caseA")],
-    }),
-  );
-  await refresh;
+  replies[0](Response.json(read("caseA", 1)));
+  while (replies.length < 2) await Promise.resolve();
   equal(requests.snapshots.value.has("caseA"), false);
+  await Promise.resolve();
+  equal(concurrentFinished, false);
+  replies[1](Response.json(read("caseA", 2)));
+  await Promise.all([refresh, concurrent]);
+  equal(concurrentFinished, true);
+  equal(requests.snapshots.value.get("caseA")?.conversations[0].revision, 2);
+  // A session that is no longer ready is not read again.
+  const stopped = requests.refresh("caseB");
+  requests.sessionReady.value = false;
+  replies[2](Response.json(read("caseB")));
+  await stopped;
+  equal(replies.length, 3);
+  equal(requests.snapshots.value.has("caseB"), false);
+});
+
+Deno.test("Request closure sends explicit accepted and rejected judgments only to the scoped endpoint", async () => {
+  for (const verdict of ["accepted", "rejected"] as const) {
+    let closed = false;
+    const commands: unknown[] = [];
+    const f = fixture((path, init) =>
+      fixtureResponse(() => {
+        if (init?.method === "POST") {
+          equal(path, "/api/cases/caseA/close?space=requests");
+          equal(init.credentials, "same-origin");
+          commands.push(JSON.parse(String(init.body)));
+          closed = true;
+          return Response.json({ closed: true });
+        }
+        equal(path, "/api/cases?space=requests");
+        return Response.json({
+          systemId: host.systemId,
+          cases: [{
+            ...record("caseA"),
+            ...(closed
+              ? {
+                status: "closed-done",
+                closedAt: "2026-11-03T00:00:00Z",
+                closedBy: "host-owner",
+                verdict,
+              }
+              : {}),
+          }],
+        });
+      })
+    );
+    await f.requests.cases.refresh();
+    equal(await f.requests.cases.close("caseA", "done", verdict), true);
+    deepStrictEqual(commands, [{ outcome: "done", verdict }]);
+    equal(f.requests.cases.byId("caseA")?.verdict, verdict);
+    equal(f.requests.cases.byId("caseA")?.closedBy, "host-owner");
+    f.requests.dispose();
+  }
+});
+
+Deno.test("held Request readers share ownership; released historical caches stay passive on reconcile", async () => {
+  const reads: string[] = [];
+  const f = fixture((path) => {
+    reads.push(path);
+    return Promise.resolve(Response.json(
+      path === "/api/cases?space=requests"
+        ? { systemId: host.systemId, cases: [] }
+        : read(new URL(path, origin).searchParams.get("caseId")!),
+    ));
+  });
+  f.requests.sessionReady.value = true;
+  await f.requests.refresh("historical");
+  const badge = f.requests.retain("caseA");
+  const selection = f.requests.retain("caseA");
+  await f.requests.refresh("caseA");
+  deepStrictEqual(reads, [
+    "/api/conversations?caseId=historical",
+    "/api/conversations?caseId=caseA",
+  ]);
+  badge();
+  badge();
+  reads.length = 0;
+  await f.requests.reconcile();
+  deepStrictEqual(reads.sort(), [
+    "/api/cases?space=requests",
+    "/api/conversations?caseId=caseA",
+  ]);
+  selection();
+  reads.length = 0;
+  await f.requests.invalidateConversation("caseA");
+  await f.requests.invalidateConversation("unknown");
+  await f.requests.reconcile();
+  deepStrictEqual(reads, Array(3).fill("/api/cases?space=requests"));
+  equal(f.requests.snapshots.peek().size, 2);
+  f.requests.dispose();
+  reads.length = 0;
+  f.requests.retain("caseA")();
+  await f.requests.invalidateConversation("caseA");
+  await f.requests.reconcile();
+  deepStrictEqual(reads, []);
+});
+
+Deno.test("last reader release aborts its in-flight read and fences its late failure from a new reader", async () => {
+  const replies = [
+    Promise.withResolvers<Response>(),
+    Promise.withResolvers<Response>(),
+  ];
+  const signals: AbortSignal[] = [];
+  const f = fixture((path, init) => {
+    if (path === "/api/cases?space=requests") {
+      return Promise.resolve(
+        Response.json({ systemId: host.systemId, cases: [] }),
+      );
+    }
+    signals.push(init!.signal!);
+    return replies[signals.length - 1].promise;
+  });
+  f.requests.sessionReady.value = true;
+  const release = f.requests.retain("caseA");
+  const old = f.requests.invalidateConversation("caseA");
+  release();
+  equal(signals[0].aborted, true);
+  const releaseCurrent = f.requests.retain("caseA");
+  const current = f.requests.refresh("caseA");
+  replies[1].resolve(Response.json(read("caseA", 2)));
+  await current;
+  replies[0].resolve(Response.json({
+    code: "FORBIDDEN",
+    context: { session: "invalid" },
+  }, { status: 403 }));
+  await old;
+  equal(
+    signals.length,
+    2,
+    "released invalidation cannot schedule another read",
+  );
+  equal(f.requests.snapshots.peek().get("caseA")?.conversations[0].revision, 2);
+  equal(f.requests.sessionReady.peek(), true);
+  releaseCurrent();
+  f.requests.dispose();
+});
+
+Deno.test("scoped collection replies cannot restore an obsolete session or replace its current data", async () => {
+  for (const nextReady of [false, true]) {
+    const replies = [
+      Promise.withResolvers<Response>(),
+      Promise.withResolvers<Response>(),
+    ];
+    let calls = 0;
+    const f = fixture(() => replies[calls++].promise);
+    f.requests.sessionReady.value = true;
+    f.requests.cases.accept({
+      systemId: host.systemId,
+      cases: [record("retained")],
+    });
+    const old = f.requests.cases.refresh();
+    f.requests.sessionGeneration.value++;
+    f.requests.sessionReady.value = nextReady;
+    replies[0].resolve(
+      Response.json({ systemId: host.systemId, cases: [record("obsolete")] }),
+    );
+    if (nextReady) {
+      while (calls < 2) await Promise.resolve();
+      deepStrictEqual(
+        f.requests.cases.snapshot.peek()?.cases.map((entry) => entry.id),
+        ["retained"],
+      );
+      replies[1].resolve(
+        Response.json({ systemId: host.systemId, cases: [record("current")] }),
+      );
+    }
+    await old;
+    equal(f.requests.sessionReady.peek(), nextReady);
+    equal(calls, nextReady ? 2 : 1);
+    deepStrictEqual(
+      f.requests.cases.snapshot.peek()?.cases.map((entry) => entry.id),
+      [nextReady ? "current" : "retained"],
+    );
+    equal(f.requests.cases.error.peek().length > 0, !nextReady);
+    f.requests.dispose();
+  }
+});
+
+Deno.test("known Request events coalesce targeted Case reads and preserve closure in the Dock", async () => {
+  const replies = [
+    Promise.withResolvers<Response>(),
+    Promise.withResolvers<Response>(),
+  ];
+  const paths: string[] = [];
+  let calls = 0;
+  const f = fixture((path) => {
+    paths.push(path);
+    return path === "/api/cases?space=requests"
+      ? Promise.resolve(Response.json({ systemId: host.systemId, cases: [] }))
+      : replies[calls++].promise;
+  });
+  f.requests.sessionReady.value = true;
+  f.requests.cases.accept({
+    systemId: host.systemId,
+    cases: [record("caseA"), record("caseB", 2)],
+  });
+  const first = f.requests.invalidateConversation("caseA");
+  const again = f.requests.invalidateConversation("caseA");
+  deepStrictEqual(paths, ["/api/cases/caseA?space=requests"]);
+  replies[0].resolve(
+    Response.json({ systemId: host.systemId, case: record("caseA") }),
+  );
+  while (calls < 2) await Promise.resolve();
+  replies[1].resolve(Response.json({
+    systemId: host.systemId,
+    case: {
+      ...record("caseA"),
+      status: "closed-done",
+      closedAt: new Date().toISOString(),
+    },
+  }));
+  await Promise.all([first, again]);
+  deepStrictEqual(paths, Array(2).fill("/api/cases/caseA?space=requests"));
+  deepStrictEqual(f.requests.cases.open.peek().map((entry) => entry.id), [
+    "caseB",
+  ]);
+  deepStrictEqual(
+    f.requests.cases.recentlyClosed.peek().map((entry) => entry.id),
+    ["caseA"],
+  );
+  await f.requests.invalidateConversation("unknown");
+  equal(paths.at(-1), "/api/cases?space=requests");
+  equal(paths.length, 3);
+  f.requests.dispose();
+});
+
+Deno.test("disposing Requests aborts collection reads and ignores a fetcher that returns after abort", async () => {
+  const reply = Promise.withResolvers<Response>();
+  let signal: AbortSignal | undefined;
+  const f = fixture((_path, init) => {
+    signal = init?.signal ?? undefined;
+    return reply.promise;
+  });
+  const pending = f.requests.cases.refresh();
+  f.requests.dispose();
+  equal(signal?.aborted, true);
+  reply.resolve(
+    Response.json({ systemId: host.systemId, cases: [record("obsolete")] }),
+  );
+  await pending;
+  equal(f.requests.sessionReady.peek(), false);
+  equal(f.requests.cases.snapshot.peek(), null);
 });

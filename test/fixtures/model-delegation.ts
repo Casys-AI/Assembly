@@ -1,13 +1,18 @@
+import {
+  sourceCompilation,
+  sourceEvolutionCompilation,
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 /** Native three-operator fixture for administration without direct editing rights. */
 import assert from "node:assert/strict";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
-import { NativeModelSourceAuthorization } from "../../src/adapters/governance/model-access/source-authorization.ts";
-import { SourceModel } from "../../src/adapters/model/sources/source-model.ts";
+import { NativeModelSourceAuthorization } from "../../src/application/governance/model-access/source-authorization.ts";
+import type { SourceModel } from "../../src/application/model/source-model.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import type { ModelDelegationChange } from "../../src/domain/governance/records/model-delegation-request.ts";
-import type { ModelIdentity } from "../../src/domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import { editPolicy, mandateSources } from "./model-edit-mandate.ts";
 
 export const delegationSystems = {
@@ -85,23 +90,27 @@ export async function openDelegationFixture(packageDir: string) {
   const repository = await GitModelRepository.open({
     projectDir: directory,
     compiler: new ToolkitCompiler({ packageDir }),
-    sourceAuthorization: new NativeModelSourceAuthorization(projectId),
+    sourceAuthorization: new NativeModelSourceAuthorization(
+      projectId,
+      sourceCompilation,
+      sourceEvolutionCompilation,
+    ),
   });
   const tooling = new SysmlToolkitAdapter({ packageDir });
-  const primary = new SourceModel({
+  const primary = createSourceModel({
     repository,
     projectId,
     tooling,
     initialSources: await delegationSources(),
   });
   const primaryIdentity = await primary.initialize();
-  const peer = new SourceModel({
+  const peer = createSourceModel({
     repository,
     projectId,
     tooling,
     systemQualifiedName: delegationSystems.peer,
   });
-  const leaf = new SourceModel({
+  const leaf = createSourceModel({
     repository,
     projectId,
     tooling,

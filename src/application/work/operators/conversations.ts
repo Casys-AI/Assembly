@@ -1,3 +1,7 @@
+import {
+  operatorTeamInRequest,
+  type VerifiedRequestTeam,
+} from "../../../domain/work/request-spaces.ts";
 import { persistedOrder } from "../../../domain/primitives/persisted-order.ts";
 /**
  * Supports APE 4.1 Operator Identity & Mandate and 4.2 Centralized Supervision
@@ -371,6 +375,7 @@ export function projectOperatorConversation(
   state: SystemRuntimeState,
   systemQualifiedName: string,
   primaryId: string | undefined,
+  team: ExecutableModel["operatorTeam"],
 ): AgentConversation {
   const model = state.executionModel;
   if (!model) throw new Error("The admitted operator model is unavailable");
@@ -400,9 +405,7 @@ export function projectOperatorConversation(
       ? { designerScopeId: state.designer.scopeId }
       : {}),
     effectiveModelUpdates: effectiveModelUpdates(state.events, agentId),
-    ...(model.operatorTeam
-      ? { operatorTeam: structuredClone(model.operatorTeam) }
-      : {}),
+    ...(team ? { operatorTeam: structuredClone(team) } : {}),
     modelDigest: model.version.digest,
     repositoryVersion: model.version.repositoryVersion,
     ...(state.configuration
@@ -474,6 +477,7 @@ function validateText(text: string) {
  * Reading the aggregate does not construct agents or invoke an LLM.
  */
 export class OperatorConversations {
+  readonly #requestTeam?: VerifiedRequestTeam;
   #registered = new Map<string, RegisteredUnit>();
   readonly #mainOrders = new WeakSet<OperatorWorkAdmission>();
   readonly #pendingOrderNotices = new Map<string, { retry: boolean }>();
@@ -496,6 +500,8 @@ export class OperatorConversations {
   constructor(
     readonly options: {
       primary: ConversationRuntime;
+      /** Immutable roster verified at Request opening; absent in Main. */
+      requestTeam?: VerifiedRequestTeam;
       factory?: ConversationRuntimeFactory;
       skillStore?: Pick<SkillStorePort, "load">;
       /** Edge hook for best-effort order-notice failures; never throws. */
@@ -505,7 +511,15 @@ export class OperatorConversations {
         | undefined
       >;
     },
-  ) {}
+  ) {
+    this.#requestTeam = options.requestTeam;
+  }
+
+  #teamOf(model: ExecutableModel): ExecutableModel["operatorTeam"] {
+    return this.#requestTeam
+      ? operatorTeamInRequest(model, this.#requestTeam)
+      : model.operatorTeam;
+  }
 
   async initialize(manifest?: OperatorConversationManifest): Promise<void> {
     if (manifest) return await this.reconcileUnits(manifest);
@@ -1195,6 +1209,7 @@ export class OperatorConversations {
         state,
         entry.unit.systemQualifiedName,
         primaryId,
+        this.#teamOf(model),
       ));
       const audit = reviewerConversation(state);
       if (audit && !this.#registered.has(audit.agentId)) {
@@ -2080,8 +2095,10 @@ export class OperatorConversations {
     text: string,
     proof: OperatorWorkAdmission,
   ): Promise<boolean> {
-    const team = this.#registered.get(agentId)?.runtime.snapshot.executionModel
-      ?.operatorTeam;
+    const targetModel = this.#registered.get(agentId)?.runtime.snapshot
+      .executionModel;
+    const team = targetModel &&
+      this.#teamOf(targetModel);
     if (
       !team || (!proof.mainOrder && team.parentOperatorId === proof.callerId)
     ) return true;
@@ -2157,9 +2174,11 @@ export class OperatorConversations {
     const callerModel = callerState?.executionModel;
     const target = this.#registered.get(agentId);
     requireValue(target, "UNKNOWN_AGENT", "Opérateur introuvable.", 404);
+    const targetModel = target.runtime.snapshot.executionModel;
+    const team = targetModel &&
+      this.#teamOf(targetModel);
     if (proof.kind === "mainOrder") {
       const crossing = proof.mainOrder;
-      const team = target.runtime.snapshot.executionModel?.operatorTeam;
       const parent = team &&
         this.#registered.get(team.requestOwnerId)?.runtime.snapshot;
       const record = parent?.cases?.find((entry) =>
@@ -2175,7 +2194,7 @@ export class OperatorConversations {
             [target.unit.model.flows.conversation.rootNativeId]).includes(
               proof.targetNativeId,
             ) &&
-          !!team && team.requestId === proof.caseId &&
+          !!team && proof.caseId === team.requestId &&
           proof.caseContext?.caseId === proof.caseId &&
           proof.caseContext.record?.owner === team.requestOwnerId &&
           !!record && isOpenCase(record) && record.type === "request" &&
@@ -2208,19 +2227,18 @@ export class OperatorConversations {
     );
     const context = callerState && caseExecutionContext(callerState);
     const designer = callerState && designerExecutionContext(callerState);
-    const team = target.runtime.snapshot.executionModel?.operatorTeam;
-    if (team) {
+    if (targetModel?.operatorTeam) {
       // The explicit exposure above is the rule that lets a caller order this
       // member: its parent's, or another one the source declares (4.8e E6).
-      // The order stays inside the member's originating Request.
+      // The order stays inside the member's current admitted Request.
       requireValue(
-        team.requestId === proof.caseId &&
-          team.requestId === context?.caseId &&
+        team !== undefined && proof.caseId === team.requestId &&
+          proof.caseId === context?.caseId &&
           team.requestOwnerId ===
             (context?.record?.owner ?? context?.budget?.ownerId) &&
           proof.designerContext === undefined,
         "WORK_CASE_MISMATCH",
-        "This team operator can only contribute to its originating Request",
+        "This team operator can only contribute to its admitted Request",
         403,
       );
     }

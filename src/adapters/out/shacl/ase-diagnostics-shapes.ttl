@@ -1,27 +1,39 @@
-# ASE diagnostic shapes, versioned file (sha256 = shapesDigest in reports).
-# Two rules only: this is NOT a claim of complete SHACL coverage.
-# Facts come from the TypeScript diagnostics fact projection
-# (ase-diagnostic-facts-v1): exposure and the host set difference are
-# computed there; SHACL Core verifies the resulting constats. The
-# Toolkit validates the language; the domain grants/refuses rights.
+# Parameterized constraint-only SHACL-SPARQL profile. Compiler associations
+# bind this, ownerSystem and (when present) budgetPolicy; no verdict RDF exists.
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix asef: <urn:ase:facts:> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 asef:LoopWithoutBudgetShape a sh:NodeShape ;
-  sh:targetClass asef:DiagnosticUnit ;
-  sh:property [
-    sh:path asef:hasInvocationBudget ;
-    sh:hasValue true ;
-    sh:severity sh:Warning ;
+  sh:severity sh:Warning ;
+  sh:sparql [
     sh:message "LOOP_WITHOUT_BUDGET" ;
+    sh:select """
+      PREFIX sysml: <https://www.omg.org/spec/SysML#>
+      SELECT DISTINCT ?this ?ownerSystem WHERE {
+        FILTER (!BOUND(?budgetPolicy) || NOT EXISTS {
+          ?budgetPolicy a sysml:PartUsage ; sysml:owner ?ownerSystem ; sysml:type ?budgetType .
+          ?budgetType a sysml:PartDefinition ; sysml:qualifiedName "APEWorkBudget::InvocationBudgetPolicy" .
+        })
+      }
+    """ ;
   ] .
 
 asef:CapabilityBeyondMandateShape a sh:NodeShape ;
-  sh:targetClass asef:NetworkCapability ;
-  sh:property [
-    sh:path asef:outsideHost ;
-    sh:maxCount 0 ;
-    sh:severity sh:Warning ;
+  sh:severity sh:Warning ;
+  sh:sparql [
     sh:message "CAPABILITY_BEYOND_MANDATE" ;
+    sh:select """
+      PREFIX sysml: <https://www.omg.org/spec/SysML#>
+      PREFIX members: <urn:ase:vocab:string-array-member:>
+      SELECT DISTINCT ?this ?ownerSystem ?value WHERE {
+        ?allowedHostsAttribute a sysml:AttributeUsage ; sysml:owner ?this .
+        ?featureValue a sysml:FeatureValue ; sysml:featureWithValue ?allowedHostsAttribute ; sysml:value ?literal .
+        ?literal a sysml:LiteralString ; members:value ?value .
+        FILTER (!BOUND(?networkHostsAttribute) || NOT EXISTS {
+          ?networkHostsAttribute a sysml:AttributeUsage ; sysml:owner ?ownerSystem .
+          ?networkValue a sysml:FeatureValue ; sysml:featureWithValue ?networkHostsAttribute ; sysml:value ?networkLiteral .
+          ?networkLiteral a sysml:LiteralString ; members:value ?value .
+        })
+      }
+    """ ;
   ] .

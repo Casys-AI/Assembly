@@ -4,11 +4,9 @@
 import type { ClockPort } from "../application/work/runtime/ports.ts";
 import { SystemClock } from "../infrastructure/clock.ts";
 import { createModelGraphHandler } from "../adapters/in/http/model/graph.ts";
-import {
-  projectSourceGraph,
-  type SourceGraph,
-} from "../adapters/model/projections/graph/source.ts";
-import { sourceModelIdentity } from "../adapters/model/sources/source-model.ts";
+import { projectSourceGraph } from "../domain/model/projections/source-graph.ts";
+import { type SourceGraph } from "../domain/model/records/source-graph.ts";
+import { sourceModelIdentity } from "../domain/model/records/source-identity.ts";
 import {
   digestProjection,
   graphReadSnapshot,
@@ -16,7 +14,7 @@ import {
   type ProjectionDigestScope,
   recordNativeProjection,
 } from "../application/model/projections/read-snapshot.ts";
-import { projectExecutionSequence } from "../adapters/work/execution-sequence.ts";
+import { projectExecutionSequence } from "../application/model/projections/execution-sequence.ts";
 import { broadcastSse as send } from "../infrastructure/http/sse.ts";
 import type { SystemRuntime } from "../application/work/runtime/system.ts";
 import type { OperatorStorage } from "../adapters/out/postgres/host-storage.ts";

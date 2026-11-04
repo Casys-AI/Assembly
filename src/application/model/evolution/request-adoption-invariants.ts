@@ -1,4 +1,4 @@
-import { nativeFlowContractDigest } from "../../work/runtime/model-advance.ts";
+import { nativeFlowContractDigest } from "../../../domain/model/execution/flow-contract.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import {
   canonicalDigest,
@@ -640,15 +640,15 @@ function exactChangeBase(
   model: ExecutableModel,
 ): boolean {
   const base = change.diff?.base;
+  // RequestSpaceAuthorityBridge verifies member admission before publication.
+  const team = model.operatorTeam;
   return change.requestedBy === model.identity.builderId &&
     change.baseRevision === model.configuration.revision &&
     change.baseModelDigest === model.version.digest &&
     base?.modelDigest === model.version.digest &&
     exactSourceVersion(base.repositoryVersion) &&
     (change.authority !== "human" &&
-        model.operatorTeam !== undefined &&
-        model.operatorTeam.requestId === change.caseId &&
-        model.operatorTeam.requestOwnerId !== model.identity.builderId ||
+        !!team && team.requestOwnerId !== model.identity.builderId ||
       base.repositoryVersion === model.version.repositoryVersion);
 }
 
@@ -854,10 +854,11 @@ export async function requestTeamCompatibility(
       change.diff?.base.repositoryVersion ?? "",
       { identity: before.identity, version: before.version },
     );
+    // RequestSpaceAuthorityBridge verifies the roster before this pin comparison.
+    const memberTeam = before.operatorTeam;
     if (
-      change.authority !== "builder" || !before.operatorTeam ||
-      before.operatorTeam.requestId !== change.caseId ||
-      before.operatorTeam.requestOwnerId === before.identity.builderId ||
+      change.authority !== "builder" || !memberTeam ||
+      memberTeam.requestOwnerId === before.identity.builderId ||
       published.version.repositoryVersion ===
         before.version.repositoryVersion ||
       published.version.repositoryVersion === after.version.repositoryVersion ||
@@ -1194,6 +1195,7 @@ export async function parseRequestAdoptionIntent(
       "compatibilityDigest",
     ]),
     candidateSource = source(candidate.source, target.repositoryId);
+  const model = executableModel(candidate.model);
   const sourceAdmission = object(candidate.sourceAdmission, [
     "revision",
     "manifestDigest",
@@ -1325,6 +1327,7 @@ export async function parseRequestAdoptionIntent(
     ) invalid("team source receipt differs");
     if (team.publicationBase !== undefined) {
       const publicationBase = executableModel(team.publicationBase);
+      const publicationTeam = publicationBase.operatorTeam;
       if (
         decision.kind !== "request-creation-grant-adoption-decision" ||
         (permission.operatorIds as string[]).indexOf(target.operatorId) <= 0 ||
@@ -1332,8 +1335,10 @@ export async function parseRequestAdoptionIntent(
         publicationBase.version.digest !== oldPin.modelDigest ||
         publicationBase.version.repositoryVersion === oldPin.source.version ||
         publicationBase.version.repositoryVersion === candidateSource.version ||
-        publicationBase.operatorTeam?.requestId !== target.caseId ||
-        publicationBase.operatorTeam.requestOwnerId !==
+        canonical(publicationBase.operatorTeam) !==
+          canonical(model.operatorTeam) ||
+        !publicationTeam ||
+        publicationTeam.requestOwnerId !==
           (permission.operatorIds as string[])[0]
       ) invalid("exact admitted member publication base required");
     }
@@ -1347,7 +1352,6 @@ export async function parseRequestAdoptionIntent(
     await recipeDigest(build.recipe) !== build.recipe.digest ||
     await buildKey(build.sourceDigest, build.recipe.digest) !== build.buildKey
   ) invalid("exact candidate build required");
-  const model = executableModel(candidate.model);
   if (
     !model || typeof model !== "object" || !model.version || !model.operator ||
     !model.ownerAuthority

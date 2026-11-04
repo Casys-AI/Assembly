@@ -2,7 +2,7 @@
 import { getHeapStatistics } from "node:v8";
 import { resourceUsage } from "node:process";
 import { projectAuthorityMatrix } from "./projection.ts";
-import { validateSourceExecutables } from "../../../../model/sources/source-model.ts";
+import { validateSourceExecutables } from "../../compilation/source-executables.ts";
 import { TOOLKIT_COMPILER_DESCRIPTOR } from "../../compilation/compiler.ts";
 import { modelSourceDigest } from "../../../../../domain/model/value-objects/sources.ts";
 import type { AuthorityMatrixProcessInput } from "./worker-client.ts";

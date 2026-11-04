@@ -9,8 +9,8 @@ import {
 } from "../../src/adapters/out/postgres/client.ts";
 import type { PostgresRuntimeScope } from "../../src/adapters/out/postgres/scope.ts";
 import type { RequestAdoptionStatus } from "../../src/application/model/evolution/request-adoption-ports.ts";
-import type { PostgresNativeExecutionLedger } from "../../src/adapters/work/runtime/postgres-ledger.ts";
-import type { RequestSpaceRuntime } from "../../src/adapters/work/request-space-runtime.ts";
+import type { PostgresNativeExecutionLedger } from "../../src/adapters/out/native-execution/postgres-ledger.ts";
+import type { RequestSpaceRuntime } from "../../src/application/work/request-spaces/runtime.ts";
 
 /** Read only the owned fixture's exact named ref, never a mutable HEAD default. */
 export async function readOwnedAdoptionRef(

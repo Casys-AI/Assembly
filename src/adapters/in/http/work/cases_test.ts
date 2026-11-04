@@ -1,4 +1,5 @@
 import { deepStrictEqual, equal, match } from "node:assert/strict";
+import { CaseError } from "../../../../domain/work/errors/case.ts";
 import type { CasesSnapshot } from "../../../../domain/work/entities/cases.ts";
 import { type CasesApplication, createCasesHandler } from "./cases.ts";
 
@@ -60,7 +61,7 @@ function fixture() {
   const get = (path = "/api/cases", method = "GET") =>
     handler(new Request(`http://127.0.0.1:4311${path}`, { method }));
   const close = (
-    input: unknown = { outcome: "done" },
+    input: unknown = { outcome: "done", verdict: "accepted" },
     headers: HeadersInit = {},
     id = snapshot.cases[0]!.id,
   ) =>
@@ -253,7 +254,10 @@ Deno.test("Case detail reports a structured not-found error", async () => {
 Deno.test("local closure forwards the exact Case and explicit outcome and returns persisted state", async () => {
   for (const outcome of ["done", "abandoned"] as const) {
     const { snapshot, commands, close } = fixture();
-    const response = await close({ outcome }, {
+    const response = await close({
+      outcome,
+      ...(outcome === "done" ? { verdict: "accepted" } : {}),
+    }, {
       origin: "http://127.0.0.1:4311",
     });
     equal(response?.status, 200);
@@ -460,7 +464,11 @@ Deno.test("every Case POST requires loopback Host served Origin and JSON before 
           {
             method: "POST",
             headers,
-            body: JSON.stringify(action === "close" ? { outcome: "done" } : {}),
+            body: JSON.stringify(
+              action === "close"
+                ? { outcome: "done", verdict: "accepted" }
+                : {},
+            ),
           },
         ),
       );
@@ -501,4 +509,95 @@ Deno.test("Cases reject DNS rebinding origins and unserved ports and accept loca
       equal((await response!.json()).error.code, "HOST_REFUSED");
     }
   }
+});
+
+Deno.test("Request closure refuses browser-supplied author before dispatch", async () => {
+  const { close, commands } = fixture();
+  const forged = await close({
+    outcome: "done",
+    verdict: "accepted",
+    closedBy: "human",
+  });
+  equal(forged?.status, 400);
+  deepStrictEqual(commands, []);
+});
+
+Deno.test("scoped closure preserves semantic refusal code and recovery", async () => {
+  const f = fixture();
+  const handler = createCasesHandler(f.application, "http://127.0.0.1:4311", {
+    cases: () => Promise.resolve(f.snapshot),
+    closeCase: () =>
+      Promise.reject(
+        new CaseError("CASE_VERDICT_REQUIRED", "Choose a judgment", {
+          outcome: "done",
+        }, "Choose accepted or rejected."),
+      ),
+  });
+  const response = await handler(
+    new Request(
+      "http://127.0.0.1:4311/api/cases/system-1:case:1/close?space=requests",
+      {
+        method: "POST",
+        headers: {
+          host: "127.0.0.1:4311",
+          origin: "http://127.0.0.1:4311",
+          "content-type": "application/json",
+          cookie: `assembly-space-session=${"a".repeat(64)}`,
+        },
+        body: JSON.stringify({ outcome: "done" }),
+      },
+    ),
+  );
+  equal(response?.status, 400);
+  deepStrictEqual((await response!.json()).error, {
+    code: "CASE_VERDICT_REQUIRED",
+    message: "Choose a judgment",
+    context: { outcome: "done" },
+    recovery: "Choose accepted or rejected.",
+  });
+});
+
+Deno.test("scoped closure dispatches the session and judgment and returns its updated Request", async () => {
+  const f = fixture();
+  const commands: unknown[] = [];
+  const handler = createCasesHandler(f.application, "http://127.0.0.1:4311", {
+    cases: () => Promise.resolve(f.snapshot),
+    closeCase: (secret, id, outcome, verdict) => {
+      commands.push({ secret, id, outcome, verdict });
+      Object.assign(f.snapshot.cases[0], {
+        status: "closed-done",
+        closedBy: "authenticated-owner",
+        verdict,
+      });
+      return Promise.resolve();
+    },
+  });
+  const secret = "a".repeat(64);
+  const response = await handler(
+    new Request(
+      "http://127.0.0.1:4311/api/cases/system-1:case:1/close?space=requests",
+      {
+        method: "POST",
+        headers: {
+          host: "127.0.0.1:4311",
+          origin: "http://127.0.0.1:4311",
+          "content-type": "application/json",
+          cookie: `assembly-space-session=${secret}`,
+        },
+        body: JSON.stringify({ outcome: "done", verdict: "rejected" }),
+      },
+    ),
+  );
+  equal(response?.status, 200);
+  deepStrictEqual(commands, [{
+    secret,
+    id: "system-1:case:1",
+    outcome: "done",
+    verdict: "rejected",
+  }]);
+  const record = (await response!.json()).case;
+  equal(record.status, "closed-done");
+  equal(record.closedBy, "authenticated-owner");
+  equal(record.verdict, "rejected");
+  deepStrictEqual(f.commands, []);
 });

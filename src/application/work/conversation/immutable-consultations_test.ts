@@ -15,7 +15,7 @@ import { invocationKey } from "../operators/journal.ts";
 import {
   nativeExecutionIdentity,
   runtimeRevisionReference,
-} from "../runtime/execution.ts";
+} from "../native-execution/contract.ts";
 import type { ConversationTurnHost } from "./turn-context.ts";
 import {
   createImmutableConsultationHandlers,

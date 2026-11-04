@@ -4,9 +4,13 @@ import {
   createModelRevisionHandler,
   type ModelRevisionHandlerOptions,
 } from "../../src/adapters/in/http/model/revisions.ts";
-import { NativeModelSourceAuthorization } from "../../src/adapters/governance/model-access/source-authorization.ts";
-import { resolveModelEdits } from "../../src/adapters/model/sources/editing/tooling.ts";
-import { validateSourceExecutable } from "../../src/adapters/model/sources/source-model.ts";
+import { NativeModelSourceAuthorization } from "../../src/application/governance/model-access/source-authorization.ts";
+import { resolveModelEdits } from "../../src/domain/model/editing/source-index.ts";
+import {
+  sourceCompilation,
+  sourceEvolutionCompilation,
+  validateSourceExecutable,
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import type {
@@ -31,7 +35,11 @@ async function fixture(directory: string) {
   const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR")!;
   const compiler = new ToolkitCompiler({ packageDir });
   const tooling = new SysmlToolkitAdapter({ packageDir });
-  const authorization = new NativeModelSourceAuthorization(projectId);
+  const authorization = new NativeModelSourceAuthorization(
+    projectId,
+    sourceCompilation,
+    sourceEvolutionCompilation,
+  );
   const initial = {
     ...await compiler.compile(await mandateSources()),
     version: "branch:initial",

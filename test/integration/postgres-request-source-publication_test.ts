@@ -14,7 +14,7 @@ import { requestPublicationFixture } from "../support/request-source-publication
 import {
   PostgresModelWriteQueue,
   requestSqlUnavailable,
-} from "../../src/adapters/model/repository/writing/postgres-write-queue.ts";
+} from "../../src/adapters/out/postgres/model-write-queue.ts";
 import { repositoryWriterLock } from "../../src/adapters/out/git/writer-lock.ts";
 import { Prisma } from "../../src/adapters/out/postgres/client.ts";
 

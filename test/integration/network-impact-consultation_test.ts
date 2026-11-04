@@ -4,12 +4,13 @@ import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilatio
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import { KvModelBuildStore } from "../../src/adapters/out/deno-kv/kv-store.ts";
 import { FileBuildVault } from "../../src/adapters/out/filesystem/build-vault.ts";
-import { storedBuildMaterializer } from "../../src/adapters/model/builds/materialization/stored.ts";
+import { storedBuildMaterializer } from "../../src/adapters/out/sysml-toolkit/compilation/stored-materializer.ts";
 import { ModelBuildService } from "../../src/application/model/builds/service.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import {
+  sourceExecutablesCompilation,
   validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import type { PostgresSystemStateStore } from "../../src/adapters/out/postgres/system-state-store.ts";
 import {
   openPostgresFixtureHost,
@@ -21,7 +22,7 @@ import { skillContentDigest } from "../../src/domain/skills/context-skills.ts";
 import { HttpsSkillDownloader } from "../../src/adapters/out/http-client/download.ts";
 import { ModelContextReader } from "../../src/application/model/consultation/source-reader.ts";
 import { ModelContextInformation } from "../../src/application/model/consultation/context-information.ts";
-import { CompiledNetworkImpactModelReader } from "../../src/adapters/model/impact/compiled-model-reader.ts";
+import { CompiledNetworkImpactModelReader } from "../../src/application/model/impact/compiled-model-reader.ts";
 import { LiveNetworkImpactEvidenceReader } from "../../src/application/model/impact/live-evidence-reader.ts";
 import { NetworkImpactService } from "../../src/application/model/impact/analysis.ts";
 import {
@@ -31,7 +32,7 @@ import {
   type NetworkImpactConsultationView,
 } from "../../src/application/model/impact/consultation.ts";
 import { DEFAULT_NETWORK_IMPACT_LIMITS } from "../../src/domain/model/consultation/network-impact.ts";
-import { sha256 } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { sha256 } from "../../src/domain/model/value-objects/artifact.ts";
 import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
 import type { NetworkImpactEvidenceMatch } from "../../src/domain/model/consultation/network-impact.ts";
 import { SystemRuntime } from "../../src/application/work/runtime/system.ts";
@@ -103,6 +104,9 @@ Deno.test({
       sources["configuration.sysml"] = sources["configuration.sysml"].replace(
         'attribute networkHosts : String = "[]";',
         `attribute networkHosts : String = ${hostLiteral};`,
+      ).replace(
+        'attribute :>> allowedHosts = "[]";',
+        `attribute :>> allowedHosts = ${hostLiteral};`,
       ).replace(
         "part catalog : ToolCatalog {",
         `part catalog : ToolCatalog {
@@ -310,6 +314,7 @@ Deno.test({
       const analysis = new NetworkImpactService({
         lineage: history,
         models: new CompiledNetworkImpactModelReader({
+          compilation: sourceExecutablesCompilation,
           repository: history,
           projectId,
         }),

@@ -1,6 +1,7 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
-import { NativeModelSourceAuthorization } from "../../src/adapters/governance/model-access/source-authorization.ts";
+import { NativeModelSourceAuthorization } from "../../src/application/governance/model-access/source-authorization.ts";
 import { mandateSources } from "../fixtures/model-edit-mandate.ts";
 /** Entire agent-proposal path against real Toolkit and an isolated Git
  * repository. The recording agent supplies a decision; no external model or
@@ -10,9 +11,10 @@ import { SystemRuntime } from "../support/system-runtime.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import {
-  SourceModel,
+  sourceCompilation,
+  sourceEvolutionCompilation,
   validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");
@@ -26,7 +28,11 @@ Deno.test({
     const sourceCompiler = new ToolkitCompiler({ packageDir: packageDir! });
     const repository = await GitModelRepository.open({
       projectDir: directory,
-      sourceAuthorization: new NativeModelSourceAuthorization(projectId),
+      sourceAuthorization: new NativeModelSourceAuthorization(
+        projectId,
+        sourceCompilation,
+        sourceEvolutionCompilation,
+      ),
       compiler: {
         compile: async (sources) => {
           const compiled = await sourceCompiler.compile(sources);
@@ -40,7 +46,7 @@ Deno.test({
       },
     });
     // Isolate the historical source-proposal path from optional information services.
-    const model = new SourceModel({
+    const model = createSourceModel({
       tooling: new SysmlToolkitAdapter({ packageDir: packageDir! }),
       repository,
       projectId,

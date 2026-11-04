@@ -6,7 +6,7 @@ import { WorkBudgetService } from "../budget/service.ts";
 import {
   nativeExecutionIdentity,
   type NativeExecutionSnapshot,
-} from "./execution.ts";
+} from "../native-execution/contract.ts";
 import {
   adoptBudgetCeiling,
   type BudgetCeilingAdoptionHost,

@@ -382,3 +382,28 @@ Deno.test("selection plans only the first unprepared seed and detects conflicts 
     /sélection initiale a changé/,
   );
 });
+
+Deno.test("admission birth digest excludes closure author and judgment", async () => {
+  const record = {
+    id: "case",
+    number: 1,
+    type: "request" as const,
+    objective: "Request",
+    owner: "operator",
+    openedBy: "operator",
+    openedFrom: { conversationId: "conversation" },
+    modelPin: { digest: "pin" },
+    status: "open" as const,
+    createdAt: "2026-11-03T00:00:00Z",
+  };
+  assert.equal(
+    await initialAdmissionTargetCaseDigest(record),
+    await initialAdmissionTargetCaseDigest({
+      ...record,
+      status: "closed-done",
+      closedAt: record.createdAt,
+      closedBy: "person",
+      verdict: "rejected",
+    }),
+  );
+});

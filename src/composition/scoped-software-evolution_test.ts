@@ -1,8 +1,9 @@
 // deno-lint-ignore-file require-await -- Read-only port doubles.
+import type { OperatorStorage } from "../adapters/out/postgres/host-storage.ts";
 import assert from "node:assert/strict";
 import { requestAdoptionFixture } from "../../test/support/request-adoption-fixture.ts";
 import type { OpeningRecord } from "../domain/work/request-spaces.ts";
-import type { ScopedSoftwareRuntimeTarget } from "../adapters/work/scoped-software-evolution.ts";
+import type { ScopedSoftwareRuntimeTarget } from "../application/model/evolution/ports.ts";
 import { captureScopedSoftwarePreparationScope } from "./scoped-software-evolution.ts";
 
 Deno.test("each scoped preparation captures current admitted S without replacing the unchanged runtime R", async () => {
@@ -22,7 +23,7 @@ Deno.test("each scoped preparation captures current admitted S without replacing
     base: { manifest: { source: { repositoryId: f.target.repositoryId } } },
   } as OpeningRecord;
   let admissionRevision = 2;
-  const actor: ScopedSoftwareRuntimeTarget = {
+  const actor: ScopedSoftwareRuntimeTarget<OperatorStorage> = {
     ref,
     opening,
     runtime: undefined!,

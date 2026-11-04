@@ -1,3 +1,4 @@
+import type { OperatorStorage } from "./host-storage.ts";
 import { reservedBranchTeamSize } from "../../../application/governance/request-space-authority-bridge.ts";
 import {
   assertRequestCreationGrantAuthorityCurrent,
@@ -16,7 +17,7 @@ import { PostgresRequestSourceAdmissionStore } from "./request-source-admission-
 import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import type { SystemRuntime } from "../../../application/work/runtime/system.ts";
-import type { RequestSpaceRuntime } from "../../work/request-space-runtime.ts";
+import type { RequestSpaceRuntime } from "../../../application/work/request-spaces/runtime.ts";
 import type { PostgresHostStorage } from "./host-storage.ts";
 import type { PostgresRequestExecutionBindingReader } from "./request-execution-binding.ts";
 import { PostgresSpaceCredentials } from "./request-space-control-store.ts";
@@ -39,7 +40,7 @@ export class PostgresRequestNetworkHumanDecision {
   constructor(
     private readonly options: {
       storage: PostgresHostStorage;
-      runtime: RequestSpaceRuntime;
+      runtime: RequestSpaceRuntime<OperatorStorage>;
       binding: PostgresRequestExecutionBindingReader;
       /** The registered Main's state store; read locked for a delegated decision. */
       main?: Pick<PostgresSystemStateStore, "readLockedInTransaction">;
@@ -67,7 +68,9 @@ export class PostgresRequestNetworkHumanDecision {
             const packet = stores.state.prepareSave(next, expectedRevision);
             let refusal:
               | Awaited<
-                ReturnType<RequestSpaceRuntime["prepareNetworkRefusal"]>
+                ReturnType<
+                  RequestSpaceRuntime<OperatorStorage>["prepareNetworkRefusal"]
+                >
               >
               | undefined;
             if (input.verdict === "refuse") {

@@ -3,7 +3,7 @@ import { deepStrictEqual, equal, ok } from "node:assert/strict";
 import { ClaudeAgents } from "../../src/adapters/out/llm-providers/agents.ts";
 import { createClaudeToolsFake } from "../support/claude-tools-fake.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
-import { validateSourceExecutable } from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { availableBehaviors } from "../../src/application/governance/behavior-call-admission.ts";
 import type { NativeBehaviorContract } from "../../src/domain/model/execution/native-contracts.ts";
 import type { ChatContext } from "../../src/domain/work/dialogue.ts";

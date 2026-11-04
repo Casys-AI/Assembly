@@ -124,7 +124,7 @@ export function caseNetworkWitnessAgent(): {
             checkpoint = "refusal-feedback-text";
             assert.equal(
               feedback[0].text,
-              "Évolution refusée ; droits conservés.",
+              "Change refused; rights kept.",
             );
             refusals.push({
               caseId,

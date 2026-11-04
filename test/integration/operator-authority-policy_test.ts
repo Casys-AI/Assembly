@@ -6,10 +6,8 @@ import { openPostgresRuntimeFixture } from "../support/postgres-runtime-fixture.
 import type { SystemRuntime as Runtime } from "../../src/application/work/runtime/system.ts";
 import { openOperatorWorkspace } from "../support/operator-workspace.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  type SourceRevision,
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { type SourceRevision } from "../../src/domain/model/records/source-revision.ts";
 import {
   type BehaviorInvocationPort,
   BehaviorInvocationRegistry,
@@ -18,8 +16,8 @@ import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
 import type {
   ChatContext,
   ChatDecision,
-  ModelIdentity,
 } from "../../src/domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import type {
   PendingChange,
 } from "../../src/domain/governance/records/pending-change.ts";
@@ -28,7 +26,7 @@ import { compileOperatorAuthorityPolicies } from "../../src/adapters/out/sysml-t
 import {
   sourceLiterals,
   sourceSnapshot,
-} from "../../src/adapters/model/projections/graph/source.ts";
+} from "../../src/domain/model/projections/source-facts.ts";
 import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority.ts";
 import { AuthorityInvariantError } from "../../src/domain/governance/authority.ts";
 import { WorkBudgetService } from "../../src/application/work/budget/service.ts";
@@ -377,8 +375,15 @@ Deno.test({
         (error) =>
           error instanceof ChangePublicationError &&
           error.code === "PUBLICATION_NOT_APPLICABLE" &&
-          error.message === "Execution model changed before source approval",
+          error.message ===
+            "Journal operation 0 no longer applies on the current base (INCARNATION_CHANGED).",
       );
+      const staleWrite = await postgres.backend.queue.get(
+        postgres.backend.writer.repositoryId,
+        staleApproval.id,
+      );
+      assert.equal(staleWrite?.state, "needs-decision");
+      assert.equal(staleWrite?.lastError?.code, "REPLAY_BLOCKED");
       assert.equal(
         (await repository.current()).version,
         publishedPolicy.revision.version,

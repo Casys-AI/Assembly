@@ -1,11 +1,21 @@
+import { CaseError } from "../../../../domain/work/errors/case.ts";
 import type { RequestCaseConversationsPort } from "../../../../application/work/request-spaces/conversations.ts";
 import { spaceHttpError, spaceSessionSecret } from "./space-session.ts";
 import { requireLocalJsonCommand } from "../../../../infrastructure/http/local-security.ts";
-import type { CasesSnapshot } from "../../../../domain/work/entities/cases.ts";
+import {
+  CASE_VERDICTS,
+  type CaseClosureEvidence,
+  type CasesSnapshot,
+  type CaseVerdict,
+} from "../../../../domain/work/entities/cases.ts";
 
 export interface CasesApplication {
   readonly cases: CasesSnapshot;
-  closeCase(id: string, outcome: "done" | "abandoned"): Promise<void>;
+  closeCase(
+    id: string,
+    outcome: "done" | "abandoned",
+    evidence?: CaseClosureEvidence,
+  ): Promise<void>;
   runCase(id: string): Promise<void>;
   pauseCase(id: string): Promise<void>;
   resumeCase(id: string): Promise<void>;
@@ -113,23 +123,32 @@ async function commandInput(request: Request): Promise<unknown> {
   return input;
 }
 
-async function closeOutcome(request: Request): Promise<"done" | "abandoned"> {
+async function closeOutcome(
+  request: Request,
+): Promise<{ outcome: "done" | "abandoned"; verdict?: CaseVerdict }> {
   const input = await commandInput(request);
   requireValue(
     input && typeof input === "object" && !Array.isArray(input) &&
-      Object.keys(input).length === 1 && Object.hasOwn(input, "outcome"),
+      Object.keys(input).every((key) => ["outcome", "verdict"].includes(key)) &&
+      Object.hasOwn(input, "outcome"),
     "INVALID_COMMAND",
     400,
-    "La commande doit contenir uniquement le résultat de clôture.",
+    "The closure command accepts outcome and verdict only.",
   );
-  const outcome = (input as Record<string, unknown>).outcome;
+  const { outcome, verdict } = input as Record<string, unknown>;
   requireValue(
     outcome === "done" || outcome === "abandoned",
     "INVALID_COMMAND",
     400,
-    "Le résultat de clôture doit être done ou abandoned.",
+    "Closure outcome must be done or abandoned.",
   );
-  return outcome;
+  requireValue(
+    verdict === undefined || CASE_VERDICTS.includes(verdict as CaseVerdict),
+    "INVALID_COMMAND",
+    400,
+    "Verdict must be accepted or rejected.",
+  );
+  return { outcome, verdict: verdict as CaseVerdict | undefined };
 }
 
 async function emptyCommand(request: Request): Promise<void> {
@@ -184,7 +203,7 @@ export function createCasesHandler(
   application: CasesApplication,
   servedOrigin:
     import("../../../../infrastructure/http/local-security.ts").LocalHttpOrigin,
-  scoped?: Pick<RequestCaseConversationsPort, "cases">,
+  scoped?: Pick<RequestCaseConversationsPort, "cases" | "closeCase">,
 ) {
   return async (request: Request): Promise<Response | null> => {
     const url = new URL(request.url);
@@ -211,7 +230,7 @@ export function createCasesHandler(
         if (
           url.searchParams.size !== 1 ||
           url.searchParams.get("space") !== "requests" ||
-          request.method !== "GET" || match?.[2] || !scoped
+          (match?.[2] && match[2] !== "close") || !scoped
         ) {
           return json({
             error: {
@@ -221,13 +240,24 @@ export function createCasesHandler(
           }, 400);
         }
         const id = match ? caseId(match[1]!) : undefined;
+        if (match?.[2] === "close") {
+          requireLocalJsonCommand(request, servedOrigin);
+          const command = await closeOutcome(request);
+          await scoped.closeCase(
+            spaceSessionSecret(request),
+            id!,
+            command.outcome,
+            command.verdict,
+          );
+        }
         const snapshot = await scoped.cases(spaceSessionSecret(request), id);
         if (id === undefined) return json(snapshot);
         const record = snapshot.cases.find((entry) => entry.id === id);
         requireValue(record, "NOT_FOUND", 404, "Case introuvable.");
         return json({ systemId: snapshot.systemId, case: record });
       } catch (error) {
-        return error instanceof HttpFailure
+        return error instanceof HttpFailure ||
+            error instanceof CaseError
           ? errorResponse(error)
           : spaceHttpError(error);
       }
@@ -244,7 +274,9 @@ export function createCasesHandler(
       if (allowed === "POST") {
         requireLocalJsonCommand(request, servedOrigin);
         if (match![2] === "close") {
-          await application.closeCase(id, await closeOutcome(request));
+          const command = await closeOutcome(request);
+          // Only the scoped session command can supply a person's judgment.
+          await application.closeCase(id, command.outcome);
         } else {
           await emptyCommand(request);
           const action = match![2] as "run" | "pause" | "resume" | "stop";

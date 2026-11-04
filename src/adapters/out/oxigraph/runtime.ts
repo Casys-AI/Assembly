@@ -22,8 +22,8 @@ import {
 } from "../../../infrastructure/native/runtime-location.ts";
 
 export const SEMANTIC_RUNTIME_VERSION = "0.1.0" as const;
-export const SEMANTIC_OXIGRAPH_VERSION = "0.4.11" as const;
-export const SEMANTIC_SPARGEBRA_VERSION = "0.3.5" as const;
+export const SEMANTIC_OXIGRAPH_VERSION = "0.5.12" as const;
+export const SEMANTIC_SPARGEBRA_VERSION = "0.4.8" as const;
 const ADDON = "native/ase-semantic-index-napi.node";
 const NAME = "ase-semantic-index-napi";
 const decoder = new TextDecoder("utf-8", { fatal: true });

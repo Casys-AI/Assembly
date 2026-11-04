@@ -1,3 +1,4 @@
+import { ACCEPTED_CASE_CLOSURE } from "../support/case-closure.ts";
 import { unexpectedModelAuthoring } from "../support/model-authoring.ts";
 import { isOpenCase } from "../../src/domain/work/entities/cases.ts";
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
@@ -267,7 +268,7 @@ Deno.test("closing done and restarting preserves an unknown publication without 
     /Toolkit worker unavailable/,
   );
   const admitted = runtime.snapshot.candidates[0]!;
-  await runtime.closeCase(caseId, "done");
+  await runtime.closeCase(caseId, "done", ACCEPTED_CASE_CLOSURE);
   equal(runtime.cases.cases[0]!.status, "closed-done");
   f.script(() => {});
   const restarted = f.create();
@@ -501,7 +502,7 @@ Deno.test("terminal refusals after the intent fail the candidate with their code
       "the terminal failure is announced once",
     );
     // The Case closes normally and the next start is not blocked.
-    await runtime.closeCase(caseId, "done");
+    await runtime.closeCase(caseId, "done", ACCEPTED_CASE_CLOSURE);
     const restarted = f.create();
     await restarted.initialize();
     equal(restarted.snapshot.candidates[0]!.stage, "failed");

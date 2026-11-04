@@ -47,12 +47,13 @@ their history.
 The local model adapter implements the application port `ModelPort`. The
 application service consumes an `ExecutableModel` whose version carries the
 digest, native references and repository version. The
-[runtime adapter](../../../src/adapters/work/runtime/native-graph.ts) compiles
-its flows to LangGraph, which schedules transitions and owns interrupts and
-checkpoints. Assembly's TypeScript handlers perform provider calls, sandboxing,
-controlled network access, storage and journaling. Production persists execution
-checkpoints and effect receipts in PostgreSQL, separately from the model's RDF
-index. An uncertain effect requires reconciliation before further dispatch.
+[runtime adapter](../../../src/adapters/out/native-execution/native-graph.ts)
+compiles its flows to LangGraph, which schedules transitions and owns interrupts
+and checkpoints. Assembly's TypeScript handlers perform provider calls,
+sandboxing, controlled network access, storage and journaling. Production
+persists execution checkpoints and effect receipts in PostgreSQL, separately
+from the model's RDF index. An uncertain effect requires reconciliation before
+further dispatch.
 
 SysML Toolkit does not receive every message to run the chat. It compiles the
 design; Assembly uses the resulting contract to handle the case and control the

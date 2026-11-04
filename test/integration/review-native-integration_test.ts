@@ -1,3 +1,4 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import { MemorySourceRepository } from "../support/memory-source-repository.ts";
 import { applyApprovedSourceChange } from "../support/approved-source-change.ts";
@@ -18,7 +19,7 @@ import type {
 } from "../../src/application/work/runtime/ports.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import { SourceModel } from "../../src/adapters/model/sources/source-model.ts";
+import type { SourceModel } from "../../src/application/model/source-model.ts";
 import type {
   AdmissionContext,
   Candidate,
@@ -151,7 +152,7 @@ for (const verdict of ["approve", "refuse"] as const) {
       const repository = new MemorySourceRepository(
         new ToolkitCompiler({ packageDir: packageDir! }),
       );
-      const model = new SourceModel({
+      const model = createSourceModel({
         tooling: new SysmlToolkitAdapter({ packageDir: packageDir! }),
         repository,
         projectId: "git:00000000-0000-4000-8000-000000000001",
@@ -344,7 +345,7 @@ Deno.test({
     const repository = new MemorySourceRepository(
       new ToolkitCompiler({ packageDir: packageDir! }),
     );
-    const model = new SourceModel({
+    const model = createSourceModel({
       tooling: new SysmlToolkitAdapter({
         packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
       }),
@@ -501,7 +502,7 @@ Deno.test({
     const repository = new MemorySourceRepository(
       new ToolkitCompiler({ packageDir: packageDir! }),
     );
-    const real = new SourceModel({
+    const real = createSourceModel({
       tooling: new SysmlToolkitAdapter({ packageDir: packageDir! }),
       repository,
       projectId: "git:00000000-0000-4000-8000-000000000001",

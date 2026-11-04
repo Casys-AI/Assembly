@@ -40,3 +40,17 @@ export interface ContextSkillsPorts extends ClockPort {
     permission: SkillPermission,
   ): Promise<void>;
 }
+
+export type BundledSkillReadErrorCode =
+  | "unavailable"
+  | "invalid-content"
+  | "limit";
+
+/** Expected local asset failures carry a fixed diagnostic, never a host path.
+ * Unexpected filesystem/permission failures retain their original technical error. */
+export class BundledSkillReadError extends Error {
+  constructor(readonly code: BundledSkillReadErrorCode) {
+    super(`Bundled skill: ${code}`);
+    this.name = "BundledSkillReadError";
+  }
+}

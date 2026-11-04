@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { MemorySaver } from "@langchain/langgraph";
-import { compileNativeOperatorGraph } from "../../src/adapters/work/runtime/native-graph.ts";
+import { compileNativeOperatorGraph } from "../../src/adapters/out/native-execution/native-graph.ts";
 import {
   immutableReceiptKey,
   mergeImmutableReceipts,
@@ -8,7 +8,7 @@ import {
 import type {
   ImmutableConsultationGroupManifest,
   ImmutableConsultationMemberOutcome,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import type { CompiledFlow } from "../../src/domain/model/execution/flow.ts";
 import { executableFixture } from "../support/execution-fixture.ts";
 

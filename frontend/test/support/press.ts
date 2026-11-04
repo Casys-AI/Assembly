@@ -8,9 +8,10 @@ import { renderToString } from "preact-render-to-string";
  * the page creates it and tied to its button by a marker in the markup. Handlers
  * are handed out template by template, before those of the components nested in
  * it, so their order is not the order of the buttons: the marker is what ties
- * them. Links are `renderLinks` (links.ts).
+ * them. Links are `renderLinks` (links.ts). A page whose hooks a probe runs is
+ * given as the function that creates it, called while handlers are captured.
  */
-export function press(node: VNode) {
+export function press(node: VNode | (() => VNode)) {
   const clicks: (() => void)[] = [];
   let input: ((event: unknown) => unknown) | undefined;
   let change: ((event: unknown) => unknown) | undefined;
@@ -35,13 +36,14 @@ export function press(node: VNode) {
   };
   let marked: string;
   try {
-    marked = renderToString(node);
+    marked = renderToString(typeof node === "function" ? node() : node);
   } finally {
     options.attr = previous;
   }
   const buttons = [...marked.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)]
     .map(([, attributes, inner]) => ({
-      label: inner.replace(/<[^>]+>/g, "").trim(),
+      label: /aria-label="([^"]+)"/.exec(attributes)?.[1] ??
+        inner.replace(/<[^>]+>/g, "").trim(),
       handler: /data-press="(\d+)"/.exec(attributes)?.[1],
     }));
   return {

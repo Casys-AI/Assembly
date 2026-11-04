@@ -233,3 +233,36 @@ Deno.test("Request update divider shows eight commit hex characters and keeps it
   match(html, new RegExp(`title="${exact}"`));
   doesNotMatch(html, /Version commit:|href=/);
 });
+
+Deno.test("a Request's update divider names the teammate from that Request's roster", () => {
+  const state = createWorkbenchState({
+    initialState: { ...snapshot(), candidates: [] },
+  });
+  const owner = conversation([
+    update({ id: "member", operatorId: "native-reviewer", kind: "model" }),
+  ]);
+  state.requests.snapshots.value = new Map([["request-1", {
+    systemId: "ui-fixture",
+    version: "v1",
+    defaultAgentId: "alpha",
+    conversations: [owner, {
+      ...conversation([]),
+      agentId: "reviewer",
+      nativeId: "native-reviewer",
+      name: "Hook reviewer",
+    }],
+  }]]);
+  const html = renderToString(
+    <ChatTimeline
+      state={state}
+      entries={chatEntries(state, owner).filter((entry) =>
+        entry.kind === "model-update"
+      )}
+      conversation={owner}
+      independentRequest
+      caseId="request-1"
+    />,
+  );
+  match(html, /Model updated<span> · Hook reviewer<\/span>/);
+  doesNotMatch(html, /native-reviewer/);
+});

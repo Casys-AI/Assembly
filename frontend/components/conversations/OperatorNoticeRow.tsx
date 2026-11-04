@@ -3,11 +3,7 @@ import { MAIN_EXECUTION_SPACE_ID } from "../../../src/domain/governance/operator
 import type { WorkbenchState } from "../../lib/workbench/state.ts";
 import { caseHref, caseStatusLabel, caseTitle } from "../../lib/cases/cases.ts";
 import { branchOperatorName } from "../../lib/cases/operator-names.ts";
-import {
-  changeOutcome,
-  operatorName,
-  outcomeLabel,
-} from "../../lib/model/revisions/change.ts";
+import { operatorName } from "../../lib/model/revisions/change.ts";
 import {
   noticeRequest,
   type OperatorNotice,
@@ -17,16 +13,39 @@ import {
 } from "../../lib/conversations/operator-notice.ts";
 import {
   authorityName,
-  delegatedDecisionLabel,
+  decidedBy,
+  decidedByLabel,
   noticeChange,
 } from "../../lib/conversations/operator-authority.ts";
+import type { PendingChange } from "../../../src/domain/governance/records/pending-change.ts";
+import { useChangeDecision } from "./useChangeDecision.ts";
 import { ChangeProposalCard } from "./ChangeProposalCard.tsx";
+import { DecisionChip, FactList } from "./DecisionParts.tsx";
+import { MessageText } from "./MessageText.tsx";
+
+/**
+ * Where the change a line names stands, read where it was decided: in its
+ * Request's application record for a Request's change.
+ */
+function ChangeState(
+  { state, change, record, note }: {
+    state: WorkbenchState;
+    change: PendingChange;
+    record?: Parameters<typeof useChangeDecision>[2];
+    note?: string;
+  },
+) {
+  const { decision } = useChangeDecision(state, change, record);
+  return <DecisionChip decision={decision} note={note} />;
+}
 
 /**
  * What an operator reported to the agent that opened its Request, as one line
  * that leads to that Request. Routing observations and decision receipts stay
- * distinct. The texts come from the operator and are shown as text only;
- * the full result stays in the title.
+ * distinct. The texts come from the operator: a completion's result reads as
+ * the safe Markdown of agents' messages, anything else as text; the full text
+ * stays in the title. A request for a decision is one entry: the line and the
+ * relayed card while it waits, then the card folded on its state.
  *
  * A Request opened from the interface runs apart from main, on its own Branch
  * Operator, which shares its native identity with the Main Operator of the
@@ -66,16 +85,21 @@ export function OperatorNoticeRow(
   if (notice.kind === "authority-escalation") {
     const route = readNoticeRoute(notice);
     const name = nameOf(notice.requestedBy, route?.requester?.executionSpaceId);
-    const requested = noticeRequest(notice);
-    const change = noticeChange(
-      notice,
-      (branch ? branchConversations : roster) ?? [],
+    const holders = (branch ? branchConversations : roster) ?? [];
+    const change = noticeChange(notice, holders);
+    const holder = holders.find((agent) =>
+      agent.nativeId === notice.requestedBy
     );
     const actor = route?.designatedDecider;
     // A Branch Operator's request is relayed with the Case's own card, read
     // in the Request's conversation and decided through the same command.
-    const relayed = branch && route?.version === 2 && change
-      ? branchConversations?.find((agent) => agent.nativeId === branch.owner)
+    const relay = branch && route?.version === 2 && change
+      ? {
+        change,
+        owner: branchConversations?.find((agent) =>
+          agent.nativeId === branch.owner
+        ),
+      }
       : undefined;
     // A closed code reads as a short phrase; the host's reason stays in the detail.
     const why = route?.code ? routeCodeLabel[route.code] : route?.reason;
@@ -96,10 +120,6 @@ export function OperatorNoticeRow(
       : route?.status === "needs-resolution"
       ? `Routing needs resolution${why ? `: ${why}` : ""}`
       : "Decision routing unavailable";
-    const outcome = change && change.status !== "pending"
-      ? delegatedDecisionLabel(change, roster ?? []) ??
-        outcomeLabel[changeOutcome(change)]
-      : routeLabel;
     const trace = route?.trace.map((hop) =>
       `${nameOf(hop.operatorId, hop.executionSpaceId)}: ${
         hop.eligibility === "eligible"
@@ -107,46 +127,72 @@ export function OperatorNoticeRow(
           : "no covering grant"
       }`
     ).join(" → ");
-    const routeDetail = route
-      ? `Route recorded; eligibility is rechecked on decision.${
-        trace ? ` ${trace}.` : ""
-      }${route.reason ? ` ${route.reason}` : ""}`
+    // The exact route, built once: the relayed card lists it in its
+    // inspector; a line without a card carries it on hover.
+    const routeFacts = [
+      { label: "Route", value: routeLabel },
+      ...(trace ? [{ label: "Path", value: trace }] : []),
+      ...(route?.reason ? [{ label: "Host note", value: route.reason }] : []),
+      ...(route
+        ? [
+          { label: "Base revision", value: String(route.baseRevision) },
+          { label: "Model", value: route.modelDigest },
+        ]
+        : []),
+    ];
+    const recorded = route
+      ? "Route recorded; eligibility is rechecked on decision."
       : "No verified decision route is available for this historical notice.";
+    const author = change && decidedBy(change, roster ?? []);
+    // One entry per decision: while it waits, this line and the relayed card;
+    // once decided, the card alone, folded on its state. The line only ever
+    // shows a decision's state, never the route in its place.
+    const decided = change && change.status !== "pending";
     return (
       <article
         class="operator-notice is-escalation"
         data-notice="authority-escalation"
       >
-        <a class="notice-line" href={href} title={notice.reason}>
-          <span class="notice-mark" aria-hidden="true" />
-          <span class="notice-text">
-            <b>{name}</b> asks: {shortSummary(notice.reason)}
-          </span>
-          <span class="notice-state" title={`${outcome}. ${routeDetail}`}>
-            · {outcome}
-          </span>
-        </a>
-        {requested && (
-          <p class="notice-result" title={requested}>{requested}</p>
+        {!(relay?.owner && decided) && (
+          <a
+            class="notice-line"
+            href={href}
+            title={[
+              notice.reason,
+              noticeRequest(notice),
+              ...routeFacts.map((fact) => `${fact.label}: ${fact.value}`),
+              recorded,
+            ].filter(Boolean).join("\n")}
+          >
+            <span class="notice-mark" aria-hidden="true" />
+            <span class="notice-text">
+              <b>{name}</b> asks: {shortSummary(notice.reason)}
+            </span>
+            {change && !relay?.owner && (
+              <ChangeState
+                state={state}
+                change={change}
+                record={branch && holder
+                  ? { caseId: notice.caseId, agentId: holder.agentId }
+                  : undefined}
+                note={author && decidedByLabel(author)}
+              />
+            )}
+          </a>
         )}
-        {route && (
-          <details class="notice-route">
-            <summary>Decision route</summary>
-            <p>{routeDetail}</p>
-            <p>
-              Change {route.changeId} · base revision {route.baseRevision}{" "}
-              · model {route.modelDigest}
-            </p>
-          </details>
-        )}
-        {relayed && change && (
+        {relay?.owner && (
           <ChangeProposalCard
-            change={change}
-            conversation={relayed}
+            change={relay.change}
+            conversation={relay.owner}
             state={state}
             caseId={notice.caseId}
             independentRequest
-            decidedByMain={notice.decisionAuthority === "operator"}
+            route={
+              <div class="notice-route">
+                <FactList facts={routeFacts} />
+                <p>{recorded}</p>
+              </div>
+            }
           />
         )}
       </article>
@@ -191,7 +237,9 @@ export function OperatorNoticeRow(
         <span class="notice-state">· {caseStatusLabel[notice.status]}</span>
       </a>
       {notice.result && (
-        <p class="notice-result" title={notice.result}>{notice.result}</p>
+        <div class="notice-result" title={notice.result}>
+          <MessageText text={notice.result} />
+        </div>
       )}
     </article>
   );

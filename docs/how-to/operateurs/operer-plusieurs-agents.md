@@ -1,4 +1,4 @@
-# Operate several agents in one system
+# Operate several operators in one system
 
 Use this guide to prepare a system with a point of contact and several
 operators, send them work, then evolve their contracts. It uses the workbench’s
@@ -18,7 +18,7 @@ deno task system serve mon-systeme
 ```
 
 The JSON file contains either a map `{ "chemin.sysml": "texte SysML" }` or an
-export containing that map in `sources`. `create` does not call the agent
+export containing that map in `sources`. `create` does not call the LLM
 provider. It prepares `.data/systems/mon-systeme`, a distinct Git model
 directory identity and a distinct port. An existing name is refused; `serve`
 resumes its data. `deno task system list` shows the prepared systems.
@@ -61,8 +61,9 @@ an execution engine for it.
 
 ## Assign work and follow responses
 
-Open **Conversation** and send the request to the point of contact. The side
-list shows the operators actually declared. Selecting or pinning a thread helps
+Click the operator button in the Dock and send the request to the point of
+contact. Click its name to read its **Mission**, **Mandate** and **Tools**;
+**Operators** lists the operators actually declared. Selecting a thread helps
 you inspect it; it changes neither the operator’s mandate nor its permission to
 receive human input. A thread without human input remains readable and refuses
 direct messages.
@@ -97,9 +98,10 @@ usable by this second operator.
 
 ## Evolve the system
 
-Have the agents propose changes, then open **Revisions** to compare the sources,
-decide whether to integrate them and inspect the compiled result. The detailed
-workflow remains [system revision](../evolution/reviser-systeme.md).
+Have the operators propose changes, then open **Model > Revisions** to compare
+the sources, decide whether to integrate them and inspect the compiled result.
+The detailed workflow remains
+[system revision](../evolution/reviser-systeme.md).
 
 Then choose the operator whose contract must change and explicitly adopt the
 reviewed digest and source version. Accepting a source revision does not mean

@@ -86,3 +86,13 @@ export const caseOperatorName = (
   record: Pick<CaseRecord, "id" | "objective"> | null | undefined,
 ): string =>
   name === GENERIC_BRANCH_NAME && record ? branchOperatorName(record) : name;
+
+/** A Request's agents, each by the name its conversation calls it. */
+export const caseRoster = (
+  agents: readonly { nativeId: string; name: string }[],
+  record: Pick<CaseRecord, "id" | "objective"> | null | undefined,
+): { nativeId: string; name: string }[] =>
+  agents.map(({ nativeId, name }) => ({
+    nativeId,
+    name: caseOperatorName(name, record),
+  }));

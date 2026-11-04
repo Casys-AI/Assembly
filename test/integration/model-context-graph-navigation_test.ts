@@ -321,7 +321,7 @@ Deno.test({
                   operation: "query",
                   mode: "sparql",
                   expression:
-                    'PREFIX ase:<urn:ase:vocab:> PREFIX prop:<urn:ase:vocab:prop:> SELECT ?name ?childName WHERE { ?parent ase:qualifiedName "GH13Navigation"; prop:ownedMember ?child . ?child ase:name ?name; prop:ownedMember ?leaf . ?leaf ase:name ?childName . FILTER(?childName = "leaf") }',
+                    'PREFIX ase:<urn:ase:vocab:> PREFIX prop:<https://www.omg.org/spec/SysML#> SELECT ?name ?childName WHERE { ?parent ase:qualifiedName "GH13Navigation"; prop:ownedMember ?child . ?child ase:name ?name; prop:ownedMember ?leaf . ?leaf ase:name ?childName . FILTER(?childName = "leaf") }',
                 }),
               };
             }

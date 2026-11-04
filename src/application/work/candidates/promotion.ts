@@ -1,3 +1,4 @@
+import type { ClockPort } from "../runtime/ports.ts";
 import { budgetCeilingModelEquivalent } from "../runtime/budget-transition.ts";
 import type {
   ExecutableModel,
@@ -15,7 +16,7 @@ import type {
 } from "../../../domain/work/dialogue.ts";
 import { artifactEvidence as describeArtifactEvidence } from "./artifact-evidence.ts";
 import type { CandidateModelPort } from "./ports/out/candidate-model.port.ts";
-import { draftDigest, makeEvent, now, valueDigest } from "../runtime/values.ts";
+import { draftDigest, makeEvent, valueDigest } from "../runtime/values.ts";
 import { settleActivation } from "./activation.ts";
 
 export interface ExactCandidateReview {
@@ -28,8 +29,10 @@ export interface ExactCandidateReview {
 export interface PromotionCandidatesHost {
   readonly state: SystemRuntimeState;
   readonly ports: {
+    clock: ClockPort;
     model: CandidateModelPort;
-    stateHistory?: import("../runtime/execution.ts").RuntimeStateHistoryPort;
+    stateHistory?:
+      import("../native-execution/contract.ts").RuntimeStateHistoryPort;
   };
   currentModel(): Promise<ExecutableModel>;
   update(change: (state: SystemRuntimeState) => void): Promise<void>;
@@ -79,7 +82,7 @@ export async function activate(
     this.state.executionModel!,
     this.state.configuration!.changes,
   )
-    .admission(current, authority, reason, now());
+    .admission(current, authority, reason, this.ports.clock.now());
   // The admission and its activation intent become durable together. From here
   // the intent always has an exit: published, failed with a code, or retried.
   await this.update((s) => {
@@ -91,6 +94,7 @@ export async function activate(
     s.events.push(
       {
         ...makeEvent(
+          this.ports.clock,
           "tool-admitted",
           `${authority} admet ${c.name} : ${reason}`,
           c,
@@ -99,7 +103,12 @@ export async function activate(
           ? { authorityExercise: admission.authorityExercise }
           : {}),
       },
-      makeEvent("tool-activating", "Intégration du tool accepté", c),
+      makeEvent(
+        this.ports.clock,
+        "tool-activating",
+        "Intégration du tool accepté",
+        c,
+      ),
     );
   });
   const outcome = await settleActivation.call(this, id, "admission");
@@ -129,7 +138,7 @@ export async function stage(
     const c = s.candidates.find((c) => c.id === id)!;
     c.stage = stage;
     s.phase = label;
-    s.events.push(makeEvent(`tool-${stage}`, label, c));
+    s.events.push(makeEvent(this.ports.clock, `tool-${stage}`, label, c));
   });
 }
 

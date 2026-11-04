@@ -1,7 +1,12 @@
+import {
+  sourceEvolutionCompilation,
+  sourceExecutablesCompilation,
+} from "../adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { requirePostgresMigrations } from "../adapters/out/postgres/migration-readiness.ts";
 import { reservedBranchTeamSize } from "../application/governance/request-space-authority-bridge.ts";
 import { PostgresRequestNetworkHumanDecision } from "../adapters/out/postgres/request-network-human-decision.ts";
 import { createRequestChangeDecision } from "./request-change-decision.ts";
-import { RequestNetworkChangeSources } from "../adapters/work/request-network-change-sources.ts";
+import { RequestNetworkChangeSources } from "../application/work/request-spaces/request-network-change-sources.ts";
 import { createRequestSupervisionHandler } from "../adapters/in/http/work/request-supervision.ts";
 import {
   compareRequestOperatorSources,
@@ -37,7 +42,7 @@ import { createRequestSourceRevisionsHandler } from "../adapters/in/http/model/r
 import { RequestRuntimeDependencies } from "./request-runtime-dependencies.ts";
 import { createRequestOpeningSourcesComposition } from "./request-opening-sources.ts";
 import { createRequestSpacesComposition } from "./request-spaces.ts";
-import { queryModelRevision } from "../adapters/model/sources/editing/tooling.ts";
+import { queryModelRevision } from "../application/model/editing/query-revision.ts";
 import { createSavedSystemsHandler } from "../adapters/in/http/work/saved-systems.ts";
 import { createModelTagsHandler } from "../adapters/in/http/work/model-tags.ts";
 import {
@@ -75,7 +80,7 @@ import { createModelSemanticBackend } from "../adapters/out/oxigraph/backend.ts"
 import { SemanticProjectionProcessClient } from "../adapters/out/oxigraph/process-client.ts";
 import { ModelContextReader } from "../application/model/consultation/source-reader.ts";
 import { SemanticModelContextReader } from "../application/model/consultation/semantic-reader.ts";
-import { SourceModelDiagnosticsReader } from "../adapters/model/diagnostics/source.ts";
+import { SourceModelDiagnosticsReader } from "../application/model/diagnostics/source-diagnostics-reader.ts";
 import { JsonModelDiagnosticMaskStore } from "../adapters/out/filesystem/diagnostic-masks.ts";
 import { ModelDiagnosticsService } from "../application/model/diagnostics/service.ts";
 import { revalidateModelDiagnostics } from "../application/model/diagnostics/events.ts";
@@ -90,9 +95,9 @@ import { WorkBudgetService } from "../application/work/budget/service.ts";
 import type { DecisionInformationPort } from "../application/work/context/information-ports.ts";
 import { loadFreshFrontend } from "../infrastructure/http/frontend.ts";
 import { PostgresEvolutionStore } from "../adapters/out/postgres/evolution-store.ts";
-import { NativeEvolutionSourceAssessment } from "../adapters/model/evolution/assessment.ts";
-import { NativeEvolutionAuthority } from "../adapters/model/evolution/authority.ts";
-import { createEvolutionSettingsPreflight } from "../adapters/model/evolution/settings-preflight.ts";
+import { NativeEvolutionSourceAssessment } from "../application/model/evolution/assessment.ts";
+import { NativeEvolutionAuthority } from "../application/model/evolution/authority.ts";
+import { createEvolutionSettingsPreflight } from "../application/work/runtime/evolution-settings-preflight.ts";
 import { GitModelRepository } from "../adapters/out/git/repository.ts";
 import { createConversationsHandler } from "../adapters/in/http/work/conversations.ts";
 import { createArtifactSourcesHandler } from "../adapters/in/http/work/artifact-sources.ts";
@@ -150,6 +155,19 @@ export async function assembleAssembly(options: AssemblyOptions) {
     readAssemblyEnv("ASSEMBLY_DATABASE_URL"),
   );
   const storage = new PostgresHostStorage(databaseConfiguration);
+  try {
+    await requirePostgresMigrations(storage.client);
+  } catch (error) {
+    try {
+      await storage.close();
+    } catch (closeError) {
+      throw new AggregateError(
+        [error, closeError],
+        "Startup failed and storage could not close",
+      );
+    }
+    throw error;
+  }
   const providerCalls = new PostgresProviderCallStore(storage.client);
   const clients = new Set<ReadableStreamDefaultController<Uint8Array>>();
   const retainProviderCall = createRetainedProviderCallSink(
@@ -243,6 +261,7 @@ export async function assembleAssembly(options: AssemblyOptions) {
   const diagnosticsReader = new SourceModelDiagnosticsReader(
     repository,
     projectId,
+    sourceExecutablesCompilation,
   );
   const modelDiagnostics = new ModelDiagnosticsService(
     diagnosticsReader,
@@ -483,6 +502,7 @@ export async function assembleAssembly(options: AssemblyOptions) {
   const registeredMain: { current?: SystemRuntime } = {};
   // Bound once the event stream exists: what may have moved a Case's model.
   const caseModelChanges: { observe?(caseId: string): void } = {};
+  const requestConversationChanges: { observe?(caseId: string): void } = {};
   // Keep the existing single native facility and host-owned stop/drain lifecycle.
   const requestSpaces = await createRequestSpacesComposition({
     storage,
@@ -514,11 +534,16 @@ export async function assembleAssembly(options: AssemblyOptions) {
         ),
     },
     onCaseModelChanged: (caseId) => caseModelChanges.observe?.(caseId),
+    onConversationStateChanged: (caseId) =>
+      requestConversationChanges.observe?.(caseId),
     nativeOptions: {
       primaryOperatorId,
       // An operator's settled turn in a Case may have moved its branch.
       onRequestContributionSettled: (_delivery, scope) => {
-        if (scope.caseId) caseModelChanges.observe?.(scope.caseId);
+        if (scope.caseId) {
+          caseModelChanges.observe?.(scope.caseId);
+          requestConversationChanges.observe?.(scope.caseId);
+        }
       },
       connectionString: databaseConfiguration.connectionString,
       queueSchema: "assembly_operator_queue",
@@ -639,6 +664,7 @@ export async function assembleAssembly(options: AssemblyOptions) {
     releases: releaseComposition.releases,
     bindArtifactSourceAuthority,
     workspace: {
+      sourceExecutablesCompilation,
       execution,
       dispatch,
       artifactSources: artifactSourcesFor,
@@ -652,12 +678,14 @@ export async function assembleAssembly(options: AssemblyOptions) {
           repositoryId: project.id,
           store: evolutionStore,
           authority: new NativeEvolutionAuthority({
+            compilation: sourceEvolutionCompilation,
             projectId,
             repository,
             validateSettings,
           }),
           repository: createEvolutionRepository(
             new NativeEvolutionSourceAssessment({
+              compilation: sourceEvolutionCompilation,
               projectId,
               validateSettings,
             }),
@@ -702,7 +730,10 @@ export async function assembleAssembly(options: AssemblyOptions) {
   ) =>
     observeCaseWrites(
       handler,
-      (caseId) => caseModelChanges.observe?.(caseId),
+      (caseId) => {
+        caseModelChanges.observe?.(caseId);
+        requestConversationChanges.observe?.(caseId);
+      },
       applies,
     );
   const handleConversations = observingCaseWrites(
@@ -811,17 +842,20 @@ export async function assembleAssembly(options: AssemblyOptions) {
   projections.projectionReaders.subscribe((status) =>
     send(clients, "model-projection", status)
   );
-  // A Case's model is told to its owner's streams only (case-model-version).
+  // Model versions and conversation invalidations share the owner's audience.
   const caseModelEvents = createCaseModelEvents({
     versions: (caseId) => requestSpaces.caseBranchReader.versions(caseId),
+    conversationOwner: requestSpaces.conversationOwner,
     controls: requestSpaces.controls,
     onError: (error, caseId) =>
-      log.warn("Case model version notification failed", {
+      log.warn("Request notification failed", {
         ...errorLogProperties(error),
         caseId,
       }),
   });
   caseModelChanges.observe = (caseId) => void caseModelEvents.observe(caseId);
+  requestConversationChanges.observe = (caseId) =>
+    void caseModelEvents.observeConversations(caseId);
   const eventAudience = caseModelEvents.eventAudience;
   const modelVersionEvents = new ModelVersionEvents(
     repository,
@@ -938,6 +972,7 @@ export async function assembleAssembly(options: AssemblyOptions) {
     revisionNotifications,
     clients,
     eventAudience,
+    requestEvents: caseModelEvents,
     handleFrontend,
     handleModelDiagnostics,
     handleConversations,

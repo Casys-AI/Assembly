@@ -7,7 +7,7 @@ import { PostgresRequestSpaceStore } from "../../src/adapters/out/postgres/reque
 import { PostgresSpaceCredentials } from "../../src/adapters/out/postgres/request-space-control-store.ts";
 import { PostgresPrimarySpaceControlSource } from "../../src/adapters/out/postgres/primary-space-control-source.ts";
 import { PostgresSystemStateStore } from "../../src/adapters/out/postgres/system-state-store.ts";
-import { requestSpaceSeed } from "../../src/adapters/work/request-space-runtime.ts";
+import { requestSpaceSeed } from "../../src/application/work/runtime/initialization.ts";
 import {
   captureRequestSourceOwnerPhase,
   requestSourceOwnerAuthorityDigest,

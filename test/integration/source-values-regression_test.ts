@@ -6,12 +6,10 @@
  * JSON.stringify deliberately preserves array order and every literal field.
  */
 import assert from "node:assert/strict";
-import { sha256 } from "../../src/adapters/model/builds/materialization/artifact.ts";
-import { sourceLiterals } from "../../src/adapters/model/projections/graph/source.ts";
+import { sha256 } from "../../src/domain/model/value-objects/artifact.ts";
+import { sourceLiterals } from "../../src/domain/model/projections/source-facts.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 

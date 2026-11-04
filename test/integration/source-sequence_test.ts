@@ -2,11 +2,9 @@ import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import { deepStrictEqual, equal, ok } from "node:assert/strict";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { projectSourceSequences } from "../../src/domain/model/projections/sequence.ts";
-import { projectSourceGraph } from "../../src/adapters/model/projections/graph/source.ts";
+import { projectSourceGraph } from "../../src/domain/model/projections/source-graph.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");
 const source = await Deno.readTextFile(

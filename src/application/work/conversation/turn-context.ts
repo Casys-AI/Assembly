@@ -7,7 +7,7 @@ import type { OperatorDeliveryReceipt } from "../operators/execution.ts";
 import type {
   NativeExecutionPort,
   RuntimeStateHistoryPort,
-} from "../runtime/execution.ts";
+} from "../native-execution/contract.ts";
 import type { MessageObservation } from "../../../domain/work/policies/context-separation.ts";
 import type {
   ExecutableModel,
@@ -163,7 +163,7 @@ export interface ConversationProposalHost extends ConversationCaseHost {
   ): Promise<
     import("../../../domain/work/dialogue.ts").OperatorEvolutionSummary
   >;
-  readonly ports: { model: ConversationModelPort };
+  readonly ports: { clock: ClockPort; model: ConversationModelPort };
   /** The registered Main only (4.8d D4): a recipient Case's space. */
   readonly recipientSpaceFor?: (
     caseId: string,
@@ -185,6 +185,7 @@ export interface ConversationProposalHost extends ConversationCaseHost {
 
 export interface ConversationInvocationHost extends ConversationCaseHost {
   readonly ports: {
+    clock: ClockPort;
     behaviors?: BehaviorInvocationPort;
     runner: ToolRunnerPort;
     artifactSources?: ArtifactSourceServicePort;
@@ -205,6 +206,7 @@ export interface ConversationInvocationHost extends ConversationCaseHost {
 }
 
 export interface ConversationObservationHost extends ConversationCaseHost {
+  readonly ports: { clock: ClockPort };
   candidate(id: string): Candidate;
   observeToolFailure(failure: ToolFailure): Promise<void>;
 }

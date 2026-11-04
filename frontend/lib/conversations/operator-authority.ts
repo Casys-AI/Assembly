@@ -20,15 +20,47 @@ export interface AuthorityReading {
 export const sameCommit = (a: string, b: string) =>
   a.replace(/^(commit|branch):/, "") === b.replace(/^(commit|branch):/, "");
 
+/**
+ * The receipt a decided change records for its own base: decided, dated, of
+ * the current schema, a mandate change within mandate. Who exercised it is
+ * for each reader below to check.
+ */
+function decidedReceipt(change: PendingChange): AuthorityExercise | undefined {
+  const receipt = change.authorityExercise;
+  return receipt && ["approved", "refused"].includes(change.status) &&
+      change.decidedAt && receipt.authoritySchema === 2 &&
+      receipt.action === "mandate-change" && !receipt.outOfMandate &&
+      change.baseModelDigest &&
+      receipt.baseModelDigest === change.baseModelDigest
+    ? receipt
+    : undefined;
+}
+
+/** A delegated act names this exact change, its requester, an actor and a policy revision. */
+function bindsDelegation(
+  change: PendingChange,
+  act: {
+    changeId: string;
+    requestedBy: string;
+    caseId?: string;
+    actorId: string;
+    policyId: string;
+    policyRevision: number;
+  },
+): boolean {
+  return act.changeId === change.id && act.requestedBy === change.requestedBy &&
+    act.caseId === change.caseId && Boolean(act.actorId) &&
+    Boolean(act.policyId) && Number.isSafeInteger(act.policyRevision) &&
+    act.policyRevision >= 1;
+}
+
 export function recordedOwnerAuthority(
   change: PendingChange,
 ): AuthorityExercise | undefined {
-  const receipt = change.authorityExercise;
-  return change.authority === "human" && receipt &&
-      ["approved", "refused"].includes(change.status) && change.decidedAt &&
-      receipt.authoritySchema === 2 && receipt.action === "mandate-change" &&
-      !receipt.outOfMandate && !receipt.delegation && change.baseModelDigest &&
-      receipt.baseModelDigest === change.baseModelDigest
+  const receipt = decidedReceipt(change);
+  // A receipt that delegated the act is never the person's own.
+  return change.authority === "human" && !receipt?.delegation &&
+      !receipt?.creationDelegation
     ? receipt
     : undefined;
 }
@@ -37,23 +69,12 @@ export function recordedOwnerAuthority(
 export function recordedDelegation(
   change: PendingChange,
 ): Delegation | undefined {
-  const receipt = change.authorityExercise;
-  const delegated = receipt?.delegation;
+  const delegated = decidedReceipt(change)?.delegation;
   if (
     !delegated || change.authority !== "builder" ||
-    change.kind !== "mandate-change" ||
-    !["approved", "refused"].includes(change.status) || !change.decidedAt ||
-    receipt?.authoritySchema !== 2 || receipt.action !== "mandate-change" ||
-    receipt.outOfMandate ||
-    !change.baseModelDigest ||
-    change.baseModelDigest !== receipt.baseModelDigest ||
-    delegated.changeId !== change.id ||
-    delegated.requestedBy !== change.requestedBy ||
+    change.kind !== "mandate-change" || !bindsDelegation(change, delegated) ||
     !change.caseId || change.designerScopeId ||
-    delegated.caseId !== change.caseId ||
-    !delegated.actorId || delegated.actorId === change.requestedBy ||
-    !delegated.policyId || !Number.isSafeInteger(delegated.policyRevision) ||
-    delegated.policyRevision < 1 ||
+    delegated.actorId === change.requestedBy ||
     canonical(delegated.requestedRights) !==
       canonical(change.requestedRights) ||
     !change.requestedRights || !("addNetworkHosts" in change.requestedRights) ||
@@ -248,16 +269,60 @@ export function recordedCandidateDelegation(
   return proof;
 }
 
-export function delegatedDecisionLabel(
+type CreationDelegation = NonNullable<
+  AuthorityExercise["creationDelegation"]
+>;
+
+/** An operator's own creation under its prior grant, bound to this change. */
+export function recordedCreationDelegation(
+  change: PendingChange,
+): CreationDelegation | undefined {
+  const receipt = decidedReceipt(change);
+  const delegated = receipt?.creationDelegation;
+  return delegated && change.kind === "operator-creation" &&
+      change.authority === "builder" && change.status === "approved" &&
+      !receipt.delegation && bindsDelegation(change, delegated) &&
+      canonical(delegated.operator) === canonical(change.operator)
+    ? delegated
+    : undefined;
+}
+
+/** Who decided a change and under which rule, from its recorded receipt only. */
+export interface DecisionAuthor {
+  by: string;
+  rule: string;
+  revision: number;
+}
+
+/**
+ * The person under their own mandate, or an operator under the policy that
+ * delegated the decision to it. A receipt that does not bind to the change
+ * names no one.
+ */
+export function decidedBy(
   change: PendingChange,
   roster: AuthorityRoster,
-) {
-  const delegated = recordedDelegation(change);
-  return delegated
-    ? `${change.status === "refused" ? "Declined" : "Decided"} by ${
-      authorityName(roster, delegated.actorId)
-    } · ${delegated.policyId} revision ${delegated.policyRevision}`
-    : undefined;
+): DecisionAuthor | undefined {
+  const owner = recordedOwnerAuthority(change);
+  if (owner) {
+    return {
+      by: "you",
+      rule: owner.mandateId,
+      revision: owner.mandateRevision,
+    };
+  }
+  const delegated = recordedDelegation(change) ??
+    recordedCreationDelegation(change);
+  return delegated && {
+    by: authorityName(roster, delegated.actorId),
+    rule: delegated.policyId,
+    revision: delegated.policyRevision,
+  };
+}
+
+/** "Decided by you · rule owner · rev. 1". */
+export function decidedByLabel({ by, rule, revision }: DecisionAuthor): string {
+  return `Decided by ${by} · rule ${rule} · rev. ${revision}`;
 }
 
 /** A notice may only point at the exact recorded change of its native owner. */

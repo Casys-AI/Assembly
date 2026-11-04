@@ -1,8 +1,10 @@
 import type { CurrentProviderResourceReadout } from "../../../src/application/telemetry/current-provider-resources.ts";
-import type {
-  ObservedResourceAmount,
-  ProviderResourceUnit,
+import {
+  type ObservedResourceAmount,
+  type ProviderResourceUnit,
+  tokenSummary,
 } from "../../../src/application/telemetry/provider-resource-readout.ts";
+import type { CaseRecord } from "../../lib/cases/cases.ts";
 import type { PerformanceSelection } from "../../lib/system/performance/api.ts";
 
 export const PERFORMANCE_VERSION = `commit:${"a".repeat(40)}`;
@@ -81,6 +83,84 @@ export function performanceReadout(
         state: calls === 0 ? "unknown" : "known",
       },
       units,
+      tokenSummary: { total: null, meanPerCall: null, cacheReadShare: null },
+    },
+    ...(selection.caseId === undefined ? {} : {
+      request: {
+        durationMs: null,
+        humanInterventions: { messages: 0, decisions: 0 },
+      },
+    }),
+  };
+}
+
+/** A Request the person closed as accepted, 9 min 19 s after its opening. */
+export const ACCEPTED_REQUEST: CaseRecord = {
+  id: "request-one",
+  number: 1,
+  type: "request",
+  objective: "Three short hooks",
+  owner: "owner-op",
+  status: "closed-done",
+  verdict: "accepted",
+  closedBy: "owner",
+  createdAt: "2026-11-03T11:42:31.000Z",
+  closedAt: "2026-11-03T11:51:50.000Z",
+  openedFrom: { conversationId: "main" },
+  modelPin: { digest: "b".repeat(64) },
+};
+
+/**
+ * Request 1 of the 3 November rehearsal: 8 calls with every token unit known,
+ * 1 message and 2 decisions. Operator groups, when given, repeat its units:
+ * the view does not need them to partition the total.
+ */
+export function rehearsalReadout(
+  operators?: readonly (readonly [string | null, number])[],
+): CurrentProviderResourceReadout {
+  const readout = performanceReadout({
+    expectedVersion: PERFORMANCE_VERSION,
+    caseId: ACCEPTED_REQUEST.id,
+  }, 8);
+  const units = { ...readout.resources.units };
+  for (
+    const [unit, value] of [
+      ["input_tokens", 616],
+      ["output_tokens", 3745],
+      ["cache_creation_input_tokens", 50888],
+      ["cache_read_input_tokens", 54129],
+    ] as const
+  ) {
+    units[unit] = {
+      observedSubtotal: value,
+      presentCalls: 8,
+      missingCalls: 0,
+      state: "known",
+    };
+  }
+  const resources = {
+    ...readout.resources,
+    units,
+    tokenSummary: tokenSummary(units, 8),
+  };
+  return {
+    ...readout,
+    resources: operators
+      ? {
+        ...resources,
+        operatorGroups: operators.map(([operatorId, calls]) => ({
+          operatorId,
+          calls,
+          outcomes: resources.outcomes,
+          providerElapsedMs: resources.providerElapsedMs,
+          units,
+          tokenSummary: tokenSummary(units, calls),
+        })),
+      }
+      : resources,
+    request: {
+      durationMs: 559_000,
+      humanInterventions: { messages: 1, decisions: 2 },
     },
   };
 }

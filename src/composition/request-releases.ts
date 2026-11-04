@@ -15,8 +15,8 @@ import { GitModelRepository } from "../adapters/out/git/repository.ts";
 import { GitReleaseTags } from "../adapters/out/git/release-tags.ts";
 import { GitRequestBranches } from "../adapters/out/git/request-branches.ts";
 import type { RepositoryWriterLock } from "../adapters/out/git/writer-lock.ts";
-import { RequestReleaseProvenance } from "../adapters/work/request-release-provenance.ts";
-import type { SavedSystemAssets } from "../adapters/work/saved-system-assets.ts";
+import { RequestReleaseProvenance } from "../application/work/saved-systems/request-release-provenance.ts";
+import type { SavedSystemAssets } from "../application/work/saved-systems/assets.ts";
 import type { OpeningRecord } from "../domain/work/request-spaces.ts";
 import type { RequestReleaseAdmissionReference } from "../domain/work/saved-systems.ts";
 import {

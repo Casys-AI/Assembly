@@ -29,17 +29,17 @@ use std::time::Instant;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use oxigraph::io::{RdfFormat, RdfParser};
-use oxigraph::model::{GraphName, Literal, NamedNode, Quad, Subject, Term, Triple};
-use oxigraph::sparql::{Query as OxigraphQuery, QueryResults};
+use oxigraph::model::{GraphName, Literal, NamedNode, NamedOrBlankNode, Quad, Term, Triple};
+use oxigraph::sparql::{QueryResults, SparqlEvaluator};
 use oxigraph::store::Store;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use spargebra::algebra::{AggregateExpression, Expression, GraphPattern, OrderExpression};
-use spargebra::Query;
+use spargebra::{Query, SparqlParser};
 
 /// Version Oxigraph epinglee dans Cargo.toml (a garder synchronisee).
-pub const OXIGRAPH_PIN: &str = "0.4.11";
+pub const OXIGRAPH_PIN: &str = "0.5.12";
 
 pub(crate) fn failure(code: &str, message: String) -> Error {
     Error::from_reason(format!("{code}: {message}"))
@@ -164,9 +164,8 @@ fn as_u32(value: usize) -> u32 {
 
 /// Refuse tout dataset explicite (`FROM` / `FROM NAMED`) : le store par
 /// build est le seul dataset. Le pre-filtre TS rejette deja le mot-cle ;
-/// ce controle est la couche autoritative. spargebra 0.3.5 place le type
-/// dans `algebra` et `Query::dataset()` retourne `None` quand aucune
-/// clause dataset n'a ete ecrite : la seule presence d'un dataset est un
+/// ce controle est la couche autoritative. `Query::dataset()` retourne
+/// `None` quand aucune clause dataset n'a ete ecrite : la seule presence d'un dataset est un
 /// choix du client.
 fn dataset_chosen(parsed: &Query) -> bool {
     parsed.dataset().is_some()
@@ -264,12 +263,12 @@ fn pattern_has_service(pattern: &GraphPattern) -> bool {
 }
 
 /// Parse et admet uniquement SELECT/ASK/CONSTRUCT/DESCRIBE sans SERVICE
-/// ni dataset client. Les updates ne parsent meme pas comme `Query`
-/// (spargebra 0.3.5 : `Query::parse`, aucun `SparqlParser`). La requete
+/// ni dataset client. Les updates ne parsent meme pas comme `Query`. La requete
 /// parsee admise est retournee pour etre executee telle quelle : aucun
 /// re-parse du texte apres admission.
 fn admit_query(sparql: &str) -> Result<Query> {
-    let parsed = Query::parse(sparql, None)
+    let parsed = SparqlParser::new()
+        .parse_query(sparql)
         .map_err(|error| failure("QUERY_REFUSED", format!("SPARQL parse refused: {error}")))?;
     let pattern: &GraphPattern = match &parsed {
         Query::Select { pattern, .. }
@@ -306,41 +305,28 @@ fn literal_dto(literal: &Literal) -> Value {
     dto
 }
 
-fn term_dto(term: &Term) -> Result<Value> {
-    Ok(match term {
+fn term_dto(term: &Term) -> Value {
+    match term {
         Term::NamedNode(node) => json!({"kind": "iri", "value": node.as_str()}),
         Term::BlankNode(node) => json!({"kind": "blank", "value": node.as_str()}),
         Term::Literal(literal) => literal_dto(literal),
-        Term::Triple(_) => {
-            return Err(failure(
-                "OXIGRAPH_ERROR",
-                "quoted triple terms are outside the ASE projection".into(),
-            ))
-        }
-    })
+    }
 }
 
-/// oxrdf 0.2.4 : le sujet d'un `Triple` est un `Subject` (distinct de
-/// `NamedOrBlankNode`, variante triple cite en plus sous `rdf-star`).
-fn subject_dto(subject: &Subject) -> Result<Value> {
-    Ok(match subject {
-        Subject::NamedNode(node) => json!({"kind": "iri", "value": node.as_str()}),
-        Subject::BlankNode(node) => json!({"kind": "blank", "value": node.as_str()}),
-        Subject::Triple(_) => {
-            return Err(failure(
-                "OXIGRAPH_ERROR",
-                "quoted triple subjects are outside the ASE projection".into(),
-            ))
-        }
-    })
+/// RDF 1.1 projection subjects remain IRIs or blank nodes in oxrdf 0.3.
+fn subject_dto(subject: &NamedOrBlankNode) -> Value {
+    match subject {
+        NamedOrBlankNode::NamedNode(node) => json!({"kind": "iri", "value": node.as_str()}),
+        NamedOrBlankNode::BlankNode(node) => json!({"kind": "blank", "value": node.as_str()}),
+    }
 }
 
-fn triple_dto(triple: &Triple) -> Result<Value> {
-    Ok(json!({
-        "subject": subject_dto(&triple.subject)?,
+fn triple_dto(triple: &Triple) -> Value {
+    json!({
+        "subject": subject_dto(&triple.subject),
         "predicate": triple.predicate.as_str(),
-        "object": term_dto(&triple.object)?,
-    }))
+        "object": term_dto(&triple.object),
+    })
 }
 
 struct Budget {
@@ -431,10 +417,11 @@ fn run_query(store: &Store, sparql: &str, limits: QueryLimits) -> Result<String>
     // que le graphe nomme du build, donc l'union de ses graphes est
     // exactement ce graphe ; les motifs GRAPH continuent de le voir comme
     // graphe nomme. Aucun dataset client n'arrive jusqu'ici (admission).
-    let mut query = OxigraphQuery::from(admitted);
+    let mut query = SparqlEvaluator::new().for_query(admitted);
     query.dataset_mut().set_default_graph_as_union();
-    let results = store
-        .query(query)
+    let results = query
+        .on_store(store)
+        .execute()
         .map_err(|error| failure("OXIGRAPH_ERROR", format!("query failed: {error}")))?;
     budget.check_deadline()?;
     let payload = match results {
@@ -467,7 +454,7 @@ fn run_query(store: &Store, sparql: &str, limits: QueryLimits) -> Result<String>
                 let mut row = serde_json::Map::new();
                 for variable in &variables {
                     if let Some(term) = solution.get(variable.as_str()) {
-                        row.insert(variable.clone(), term_dto(term)?);
+                        row.insert(variable.clone(), term_dto(term));
                     }
                 }
                 let row_value = Value::Object(row);
@@ -502,7 +489,7 @@ fn run_query(store: &Store, sparql: &str, limits: QueryLimits) -> Result<String>
                 let triple = triple.map_err(|error| {
                     failure("OXIGRAPH_ERROR", format!("result failed: {error}"))
                 })?;
-                let dto = triple_dto(&triple)?;
+                let dto = triple_dto(&triple);
                 let row_bytes = serde_json::to_vec(&dto)
                     .map_err(|error| {
                         failure("OXIGRAPH_ERROR", format!("serialization failed: {error}"))

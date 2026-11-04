@@ -367,7 +367,7 @@ export function assertBaseForChoice(
 /** Structural pinned model for branch team membership; no authority by itself. */
 export interface BranchTeamPinnedModel {
   identity: { builderId: string; systemId: string };
-  version: { digest: string };
+  version: { digest: string; repositoryVersion?: string };
   operatorTeam?: {
     parentOperatorId: string;
     requestOwnerId: string;
@@ -375,6 +375,74 @@ export interface BranchTeamPinnedModel {
     creationPolicyId?: string;
   };
 }
+/** Membership already verified by branchTeam at the Request opening boundary. */
+export interface VerifiedRequestTeam {
+  readonly caseId: string;
+  readonly memberIds: readonly string[];
+}
+
+/** The shared operational membership predicate; the host supplies verified evidence. */
+export function isRequestTeamMember(
+  operatorId: string,
+  team: VerifiedRequestTeam,
+): boolean {
+  return team.memberIds.includes(operatorId);
+}
+
+/** Main has no Request opening roster: only the exact native Case lineage applies. */
+export function canContributeFromMain(
+  model: BranchTeamPinnedModel,
+  callerId: string,
+  context: {
+    caseId: string;
+    record?: { owner: string };
+    budget?: { ownerId: string };
+  } | undefined,
+): boolean {
+  const team = model.operatorTeam;
+  return !team || !!context && callerId === team.parentOperatorId &&
+      context.caseId === team.requestId &&
+      (context.record?.owner ?? context.budget?.ownerId) ===
+        team.requestOwnerId;
+}
+
+/** Capture the roster verified at the opening boundary as immutable evidence. */
+export function verifiedRequestTeam(
+  caseId: string,
+  team: readonly BranchTeamMember[],
+): VerifiedRequestTeam {
+  return Object.freeze({
+    caseId,
+    memberIds: Object.freeze(team.map((member) => member.operatorId)),
+  });
+}
+
+/** Project current Case identity only for a member of the verified opening team. */
+export function operatorTeamInRequest(
+  model: BranchTeamPinnedModel,
+  team: VerifiedRequestTeam,
+) {
+  return model.operatorTeam &&
+      isRequestTeamMember(model.identity.builderId, team)
+    ? { ...model.operatorTeam, requestId: team.caseId }
+    : undefined;
+}
+
+/** An unambiguous registered baseline; membership still needs its own proof. */
+export function retainedMember(base: OpeningBase, operatorId: string) {
+  if (!base.manifest.source || operatorId === base.requestOwner.operatorId) {
+    return undefined;
+  }
+  const entries = base.manifest.operators.filter((entry) =>
+    entry.operatorId === operatorId
+  );
+  return entries.length === 1 &&
+      base.manifest.registeredOperatorIds.filter((id) => id === operatorId)
+          .length === 1
+    ? entries[0]
+    : undefined;
+}
+
 export interface BranchTeamMember {
   operatorId: string;
   modelDigest: string;
@@ -383,9 +451,11 @@ export interface BranchTeamMember {
 
 /**
  * The one branch-team source of truth (spec 4.8e E3): pinned operators of
- * this Case whose creation receipt verifies, admitted transitively from the
+ * this Case whose creation receipt verifies, or retained exact Release team,
+ * admitted transitively from the
  * Request owner (a member's own sub-operator joins only through it), at most
- * MAX_BRANCH_TEAM. Inherited members of another Request are inert here.
+ * MAX_BRANCH_TEAM. An exact Release retains its source Request team; other
+ * inherited members remain inert. Retained models keep their original lineage.
  * Receipt verification is the governance predicate injected by the caller
  * (`creationReceiptVerifies`); this module owns membership, not receipts.
  */
@@ -406,6 +476,22 @@ export function branchTeam(
     else if (!ambiguous.has(id)) byOperator.set(id, model);
   }
   for (const id of ambiguous) byOperator.delete(id);
+  const admitted = new Set(admittedMembers);
+  const retainedSource = base.sourceKind === "release"
+    ? base.manifest.source
+    : undefined;
+  // Initial membership is fixed by the exact retained executable. Later pins
+  // may advance only members already covered by this space's admission;
+  // their binding reader separately verifies the new execution digest.
+  const retained = (model: BranchTeamPinnedModel): boolean => {
+    const id = model.identity.builderId;
+    const entry = retainedMember(base, id);
+    return !!retainedSource && !!entry &&
+      entry.nativeSystemId === model.identity.systemId &&
+      (admitted.has(id) || entry.modelDigest === model.version.digest &&
+          entry.repositoryVersion === retainedSource.sourceVersion &&
+          model.version.repositoryVersion === retainedSource.sourceVersion);
+  };
   const members = new Map<string, BranchTeamMember>();
   let grew = true;
   while (grew) {
@@ -415,10 +501,11 @@ export function branchTeam(
       const id = model.identity.builderId;
       if (
         !team || id === owner || members.has(id) ||
-        team.requestId !== caseId || team.requestOwnerId !== owner ||
+        team.requestOwnerId !== owner ||
         team.parentOperatorId !== owner &&
           !members.has(team.parentOperatorId) ||
-        !receiptVerifies(model)
+        !(retained(model) ||
+          team.requestId === caseId && receiptVerifies(model))
       ) continue;
       members.set(id, {
         operatorId: id,
@@ -428,7 +515,6 @@ export function branchTeam(
       grew = true;
     }
   }
-  const admitted = new Set(admittedMembers);
   if (
     admittedMembers.length > MAX_BRANCH_TEAM ||
     new Set(admittedMembers).size !== admittedMembers.length ||

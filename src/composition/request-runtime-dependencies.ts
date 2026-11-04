@@ -7,7 +7,7 @@ import {
   inspectRequestInitialSkills,
   type RequestBundledSkillReader,
   type RequestInitialSkillsInspection,
-} from "../adapters/skills/request-initial-skills.ts";
+} from "../application/skills/request-initial-skills.ts";
 import type { ProviderCallContextPort } from "../application/telemetry/provider-call.ts";
 import { BehaviorInvocationRegistry } from "../application/work/behaviors/invocation.ts";
 import type { DecisionInformationPort } from "../application/work/context/information-ports.ts";
@@ -19,13 +19,14 @@ import type { OperatorStorage } from "../adapters/out/postgres/host-storage.ts";
 import {
   assertPostgresSystemScope,
   type PostgresRuntimeScope,
+  postgresScopeValidation,
   type PostgresSystemScope,
 } from "../adapters/out/postgres/scope.ts";
 import { DenoToolRunner } from "../adapters/out/sandbox/runner.ts";
 import { SkillsBehavior } from "../application/skills/behavior.ts";
 import { InformationBehavior } from "../application/work/context/information-behavior.ts";
-import { RequestInformationScope } from "../adapters/work/information/request-scope.ts";
-import type { RequestSpaceRuntimeDependencies } from "../adapters/work/request-space-runtime.ts";
+import { RequestInformationScope } from "../application/work/context/request-information-scope.ts";
+import type { RequestSpaceRuntimeDependencies } from "../application/work/request-spaces/runtime.ts";
 import type { ExecutableModel } from "../domain/model/execution/executable-model.ts";
 import { SkillError } from "../domain/skills/context-skills.ts";
 import type {
@@ -136,6 +137,7 @@ export class RequestRuntimeDependencies {
     const model = structuredClone(exactModel);
     const ownerId = model.identity.builderId;
     const scope = new RequestInformationScope({
+      validation: postgresScopeValidation,
       hostScope: options.hostScope,
       sourceProjectId: options.sourceProjectId,
       scope: stores.scope,

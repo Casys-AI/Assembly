@@ -1,3 +1,8 @@
+import { parseModelRevisionRef } from "../../../domain/model/value-objects/element-ref.ts";
+import {
+  type OpeningBase,
+  retainedMember,
+} from "../../../domain/work/request-spaces.ts";
 import {
   RequestAdoptionError,
   type RequestAdoptionManifest,
@@ -6,10 +11,10 @@ import {
 } from "./request-adoption-ports.ts";
 
 /** Project one operator's execution from the verified branch journal. A member
- * starts at the team adoption that admitted it; another operator's adoption
- * never advances its pin. No runtime snapshot supplies its own authority. */
+ * starts at its immutable opening manifest or the team adoption that admitted
+ * it; another operator's adoption never advances its pin. No runtime snapshot
+ * supplies its own authority. */
 export function requestExecutionPinFor(
-  ownerId: string,
   execution: {
     pin: RequestExecutionPin;
     adoptions: readonly {
@@ -18,9 +23,22 @@ export function requestExecutionPinFor(
     }[];
   },
   operatorId: string,
+  base: OpeningBase,
 ): RequestExecutionPin {
+  const ownerId = base.requestOwner.operatorId;
   if (operatorId === ownerId) return structuredClone(execution.pin);
-  let pin: RequestExecutionPin | undefined;
+  const retained = retainedMember(base, operatorId);
+  let pin: RequestExecutionPin | undefined = retained && base.manifest.source
+    ? {
+      source: parseModelRevisionRef({
+        repositoryId: base.manifest.source.repositoryId,
+        version: retained.repositoryVersion,
+      }),
+      modelDigest: retained.modelDigest,
+      sourceAdmission: { revision: 1, manifestDigest: base.manifestDigest },
+      adoption: null,
+    }
+    : undefined;
   for (const { manifest, receipt } of execution.adoptions) {
     const { candidate, target, team } = manifest.intent;
     const birth = team?.team.find((member) => member.operatorId === operatorId);

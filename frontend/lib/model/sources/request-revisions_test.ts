@@ -82,9 +82,12 @@ Deno.test("Request source client refuses foreign Case and different acceptance I
 
 Deno.test("source action refusals do not disconnect the current control channel", async () => {
   let code = "REQUEST_SOURCE_OWNER_REFUSED", status = 403, disconnected = 0;
+  let context: { session: string } | undefined = undefined;
   const api = createRequestSourceRevisionApi("case-a", {
     fetch: (() =>
-      Promise.resolve(Response.json({ code }, { status }))) as typeof fetch,
+      Promise.resolve(
+        Response.json({ code, context }, { status }),
+      )) as typeof fetch,
     onUnauthorized: () => {
       disconnected++;
     },
@@ -96,6 +99,9 @@ Deno.test("source action refusals do not disconnect the current control channel"
   await assert.rejects(() => api.accept("proposal-a"));
   assert.equal(disconnected, 0);
   code = "FORBIDDEN";
+  await assert.rejects(() => api.accept("proposal-a"));
+  assert.equal(disconnected, 0);
+  context = { session: "invalid" };
   await assert.rejects(() => api.accept("proposal-a"));
   assert.equal(disconnected, 1);
   status = 401;

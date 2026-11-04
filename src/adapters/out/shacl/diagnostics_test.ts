@@ -3,14 +3,26 @@ import {
   lintModelDiagnostics,
   type ModelDiagnosticFacts,
 } from "../../../domain/model/policies/diagnostics.ts";
-import type { BuildRef } from "../../../domain/model/value-objects/element-ref.ts";
-import { compareDiagnostics } from "../../../application/model/diagnostics/shapes.ts";
-import { BuildStoreError } from "../../../application/model/builds/ports/out/build-store.port.ts";
-import { parseNQuads } from "../oxigraph/rdf.ts";
 import {
+  buildElementIri,
+  type BuildRef,
+} from "../../../domain/model/value-objects/element-ref.ts";
+import {
+  compareDiagnostics,
+  ModelShapesError,
+} from "../../../application/model/diagnostics/shapes.ts";
+import { SemanticIndexError } from "../../../application/model/semantic/index-service.ts";
+import { BuildStoreError } from "../../../application/model/builds/ports/out/build-store.port.ts";
+import type {
+  ShaclGraphRead,
+  ValidateShaclShapesInput,
+} from "../../../application/model/diagnostics/queries/inputs.ts";
+import {
+  createNativeShaclEngine,
   FACTS_VOCAB,
-  projectDiagnosticFacts,
+  mapShaclResults,
   type ShaclEngine,
+  type ShaclEngineInput,
   ShaclModelDiagnostics,
 } from "./diagnostics.ts";
 
@@ -71,62 +83,86 @@ const cleanFacts: ModelDiagnosticFacts = {
   }],
 };
 
-Deno.test("facts projection publishes budgets and computed outside hosts", () => {
-  const projected = projectDiagnosticFacts(facts, build);
-  const quads = parseNQuads(projected.ntriples);
-  const sys = projected.units[0]!.node;
-  const budget = quads.find((quad) =>
-    quad.subject.kind === "iri" && quad.subject.value === sys &&
-    quad.predicate === `${FACTS_VOCAB}hasInvocationBudget`
-  );
-  equal(budget?.object.kind === "literal" && budget.object.value, "false");
-  const outside = quads.filter((quad) =>
-    quad.predicate === `${FACTS_VOCAB}outsideHost`
-  );
-  equal(outside.length, 1);
-  equal(
-    outside[0]?.object.kind === "literal" && outside[0].object.value,
-    "b.example",
-  );
-  deepStrictEqual(
-    [...projected.capabilities[0]!.outsideHosts],
-    ["b.example"],
-  );
+const graph: ShaclGraphRead = {
+  build,
+  projection: {
+    kind: "rdf-quads",
+    projectorVersion: `ase-rdf-quads-v4:${digest("6")}`,
+    artifactDigest: build.artifactDigest,
+    projectionDigest: digest("5"),
+  },
+  query: () =>
+    Promise.reject(new Error("Canned mapping engine must not query")),
+};
+const context = {
+  units: [
+    { elementId: "sys", kind: "conversation" as const, ownerSystemId: "sys" },
+    {
+      elementId: "plan",
+      kind: "plan" as const,
+      ownerSystemId: "sys",
+    },
+  ],
+  capabilities: [{
+    policyElementId: "policy",
+    ownerSystemId: "sys",
+    allowedHostsAttributeId: "policy-hosts",
+    networkHostsAttributeId: "sys-hosts",
+  }, {
+    policyElementId: "policy-ok",
+    ownerSystemId: "sys",
+    allowedHostsAttributeId: "policy-ok-hosts",
+    networkHostsAttributeId: "sys-hosts",
+  }],
+};
+Object.assign(facts, { graphContext: context });
+Object.assign(cleanFacts, {
+  graphContext: {
+    units: [{
+      elementId: "sys",
+      kind: "conversation",
+      ownerSystemId: "sys",
+      budgetPolicyId: "budget",
+    }],
+    capabilities: [{
+      policyElementId: "policy",
+      ownerSystemId: "sys",
+      allowedHostsAttributeId: "policy-hosts",
+      networkHostsAttributeId: "sys-hosts",
+    }],
+  },
 });
+const iri = (nativeId: string, ref = build) =>
+  buildElementIri({ build: ref, nativeId }, "user");
 
-/** Canned engine double: the results a SHACL Core engine returns for the
- * two versioned shapes on the projected facts above. Mapping — not an
- * engine reimplementation — is what these tests prove; the real engine
- * is exercised by the gated integration test. */
+/** A mapping double. Native evaluation is qualified separately; no computed
+ * verdict or host-set difference is passed to the real engine. */
 function cannedEngine(extraResults = false): ShaclEngine & { calls: number } {
   const engine = {
-    engineId: "rdf-validate-shacl",
-    engineVersion: "0.6.0",
+    engineId: "assembly-native-shacl-sparql",
+    engineVersion: "1.0.0",
     calls: 0,
-    validate(input: { dataNTriples: string }) {
+    validate(input: ShaclEngineInput) {
       engine.calls++;
       const results = [];
-      if (input.dataNTriples.includes(`"false"^^`)) {
+      if (input.units.some((u) => !u.budgetPolicy)) {
         results.push({
-          focusNode: projectDiagnosticFacts(facts, build).units[0]!.node,
+          focusNode: iri("sys", input.graph.build),
           path: `${FACTS_VOCAB}hasInvocationBudget`,
-          value: "false",
-          message: "LOOP_WITHOUT_BUDGET",
         });
       }
-      if (input.dataNTriples.includes("outsideHost")) {
+      if (input.capabilities.length > 1) {
         results.push({
-          focusNode: projectDiagnosticFacts(facts, build).capabilities[0]!.node,
+          focusNode: iri("policy", input.graph.build),
+          ownerSystem: iri("sys", input.graph.build),
           path: `${FACTS_VOCAB}outsideHost`,
           value: "b.example",
-          message: "CAPABILITY_BEYOND_MANDATE",
         });
       }
       if (extraResults) {
         results.push({
-          focusNode: projectDiagnosticFacts(facts, build).units[0]!.node,
+          focusNode: iri("sys", input.graph.build),
           path: `${FACTS_VOCAB}unknownProperty`,
-          message: "SOMETHING_ELSE",
         });
       }
       return Promise.resolve({ conforms: results.length === 0, results });
@@ -201,7 +237,7 @@ Deno.test("SHACL-mapped diagnostics equal the TS lint on positives and negatives
     engine: cannedEngine(),
     loadShapes: () => Promise.resolve(shapes),
   });
-  const report = await service.validateBuild({ build, facts });
+  const report = await service.validateBuild({ graph, build, facts });
   equal(report.conforms, false);
   const comparison = compareDiagnostics({
     shacl: report.diagnostics,
@@ -220,7 +256,8 @@ Deno.test("SHACL-mapped diagnostics equal the TS lint on positives and negatives
   );
   // Negative-only facts: no findings from either side for these codes.
   const clean = await service.validateBuild({
-    build: { ...build, artifactDigest: digest("8") },
+    graph,
+    build,
     facts: cleanFacts,
   });
   equal(clean.conforms, true);
@@ -246,10 +283,10 @@ Deno.test("reports are cached by full identity; unmapped results are counted or 
     loadShapes: () => Promise.resolve(shapes),
     cache,
   });
-  const first = await service.validateBuild({ build, facts });
+  const first = await service.validateBuild({ graph, build, facts });
   equal(first.unmappedResults, 1);
   equal(engine.calls, 1);
-  const second = await service.validateBuild({ build, facts });
+  const second = await service.validateBuild({ graph, build, facts });
   equal(engine.calls, 1); // identity hit: engine not re-run
   deepStrictEqual(second.identity, first.identity);
   // New shapes bytes → new identity → engine runs again.
@@ -258,13 +295,14 @@ Deno.test("reports are cached by full identity; unmapped results are counted or 
     loadShapes: () => Promise.resolve(`${shapes}# v2\n`),
     cache,
   });
-  const third = await reshaped.validateBuild({ build, facts });
+  const third = await reshaped.validateBuild({ graph, build, facts });
   equal(engine.calls, 2);
   equal(third.identity.shapesDigest === first.identity.shapesDigest, false);
   await rejects(
     () =>
       service.validateBuild({
-        build: { ...build, artifactDigest: digest("9") },
+        graph,
+        build,
         facts,
         options: { strictUnmapped: true },
       }),
@@ -273,44 +311,46 @@ Deno.test("reports are cached by full identity; unmapped results are counted or 
   );
 });
 
-Deno.test("corrupt cached reports are recomputed, never cast into validity", async () => {
+Deno.test("corrupt cached reports fail loudly without a partial report or recomputation", async () => {
   const engine = cannedEngine();
   const cache = memoryCache();
-  // Inject corruption on reads while keeping the valid stored bytes intact;
-  // recomputation must still obey the fake's immutable write contract.
-  const getProjection = cache.getProjection;
-  let corruptBytes: Uint8Array | undefined;
-  cache.getProjection = (kind, version, artifact) =>
-    corruptBytes
-      ? Promise.resolve(corruptBytes)
-      : getProjection(kind, version, artifact);
   const service = new ShaclModelDiagnostics({
     engine,
     loadShapes: () => Promise.resolve(shapes),
     cache,
   });
-  const first = await service.validateBuild({ build, facts });
-  equal(engine.calls, 1);
-  // Tamper with the stored bytes: invalid severity + non-boolean conforms.
-  const key = [...cache.store.keys()][0] as string;
-  const tampered = JSON.parse(
-    new TextDecoder().decode(cache.store.get(key)),
-  ) as Record<string, unknown>;
+  await service.validateBuild({ graph, build, facts });
+  const key = [...cache.store.keys()][0]!;
+  const original = cache.store.get(key)!;
+  const tampered = JSON.parse(new TextDecoder().decode(original));
   tampered.conforms = "yes";
-  (tampered.diagnostics as Record<string, unknown>[])[0]!.severity = "critical";
-  corruptBytes = new TextEncoder().encode(JSON.stringify(tampered));
-  const second = await service.validateBuild({ build, facts });
-  equal(engine.calls, 2); // recomputed, corruption not returned
-  equal(second.conforms, first.conforms);
-  deepStrictEqual(
-    second.diagnostics.map((d) => d.severity),
-    first.diagnostics.map((d) => d.severity),
-  );
-  // Garbage bytes are also a miss, not an error or a valid report.
-  corruptBytes = new TextEncoder().encode("{not json");
-  const third = await service.validateBuild({ build, facts });
-  equal(engine.calls, 3);
-  equal(third.diagnostics.length, first.diagnostics.length);
+  tampered.diagnostics[0].severity = "critical";
+  for (
+    const bytes of [
+      new TextEncoder().encode(JSON.stringify(tampered)),
+      new TextEncoder().encode("{not json"),
+      new TextEncoder().encode(
+        JSON.stringify({
+          ...JSON.parse(new TextDecoder().decode(original)),
+          conforms: false,
+          diagnostics: [],
+          unmappedResults: 0,
+        }),
+      ),
+      new TextEncoder().encode(
+        JSON.stringify({
+          ...JSON.parse(new TextDecoder().decode(original)),
+          conforms: true,
+        }),
+      ),
+    ]
+  ) {
+    cache.store.set(key, bytes);
+    await rejects(() => service.validateBuild({ graph, build, facts }), {
+      code: "SHACL_VALIDATION_FAILED",
+    });
+    equal(engine.calls, 1);
+  }
 });
 
 Deno.test("cache key covers facts and repository, not only A", async () => {
@@ -321,17 +361,22 @@ Deno.test("cache key covers facts and repository, not only A", async () => {
     loadShapes: () => Promise.resolve(shapes),
     cache,
   });
-  await service.validateBuild({ build, facts });
+  await service.validateBuild({ graph, build, facts });
   equal(engine.calls, 1);
-  await service.validateBuild({ build, facts }); // identical: hit
+  await service.validateBuild({ graph, build, facts }); // identical: hit
   equal(engine.calls, 1);
   // Same A, different facts: no stale hit.
-  const clean = await service.validateBuild({ build, facts: cleanFacts });
+  const clean = await service.validateBuild({
+    graph,
+    build,
+    facts: cleanFacts,
+  });
   equal(engine.calls, 2);
   equal(clean.conforms, true);
   // Same A and facts, another repository: no cross-repository hit.
   await service.validateBuild({
     build: { ...build, repositoryId: "repo-two" },
+    graph: { ...graph, build: { ...build, repositoryId: "repo-two" } },
     facts,
   });
   equal(engine.calls, 3);
@@ -349,9 +394,14 @@ Deno.test("SHACL cache versions fit W2 bounds and hash all contextual identity f
   });
   const report = await service.validateBuild({
     build: longBuild,
+    graph: { ...graph, build: longBuild },
     facts: cleanFacts,
   });
-  await service.validateBuild({ build: longBuild, facts: cleanFacts });
+  await service.validateBuild({
+    build: longBuild,
+    graph: { ...graph, build: longBuild },
+    facts: cleanFacts,
+  });
   equal(engine.calls, 1);
   equal(report.build.repositoryId, longRepository);
   equal(report.identity.engineId, engine.engineId);
@@ -373,11 +423,13 @@ Deno.test("SHACL cache versions fit W2 bounds and hash all contextual identity f
   ) {
     await new ShaclModelDiagnostics({ ...variant, cache }).validateBuild({
       build: longBuild,
+      graph: { ...graph, build: longBuild },
       facts: cleanFacts,
     });
   }
   await service.validateBuild({
     build: longBuild,
+    graph: { ...graph, build: longBuild },
     facts: cleanFacts,
     options: { strictUnmapped: true },
   });
@@ -426,15 +478,23 @@ for (const field of ["sourceDigest", "recipeDigest", "buildKey"] as const) {
       cache,
       loadShapes: () => Promise.resolve(shapes),
     });
-    const first = await service.validateBuild({ build, facts });
+    const first = await service.validateBuild({ graph, build, facts });
     const variant = { ...build, [field]: digest("a") };
-    const changed = await service.validateBuild({ build: variant, facts });
+    const changed = await service.validateBuild({
+      build: variant,
+      graph: { ...graph, build: variant },
+      facts,
+    });
     deepStrictEqual(changed.build, variant);
     deepStrictEqual(changed.identity, first.identity);
     equal(engine.calls, 2);
     equal(cache.store.size, 2);
     for (const expectedBuild of [build, variant]) {
-      const hit = await service.validateBuild({ build: expectedBuild, facts });
+      const hit = await service.validateBuild({
+        build: expectedBuild,
+        graph: { ...graph, build: expectedBuild },
+        facts,
+      });
       deepStrictEqual(hit.build, expectedBuild);
     }
     equal(engine.calls, 2);
@@ -479,5 +539,399 @@ Deno.test("cache fake enforces the 128-character version boundary on reads and w
         error instanceof BuildStoreError &&
         error.code === "BUILD_STORE_INVALID_INPUT",
     );
+  }
+});
+
+const parameterizedShapes = `
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix f: <urn:ase:facts:> .
+f:LoopWithoutBudgetShape a sh:NodeShape; sh:severity sh:Warning;
+ sh:sparql [sh:message "LOOP_WITHOUT_BUDGET"; sh:select "SELECT ?this ?ownerSystem WHERE {}"].
+f:CapabilityBeyondMandateShape a sh:NodeShape; sh:severity sh:Warning;
+ sh:sparql [sh:message "CAPABILITY_BEYOND_MANDATE"; sh:select "SELECT ?this ?ownerSystem ?value WHERE { FILTER(false) }"].
+`;
+
+Deno.test("native engine runs one constraint per association group and deduplicates findings", async () => {
+  const engine = await createNativeShaclEngine();
+  let queries = 0;
+  const service = new ShaclModelDiagnostics({
+    engine,
+    loadShapes: () => Promise.resolve(parameterizedShapes),
+  });
+  const report = await service.validateBuild({
+    build,
+    facts,
+    graph: {
+      ...graph,
+      query(sparql) {
+        queries++;
+        equal(sparql.includes("hasInvocationBudget"), false);
+        equal(sparql.includes("outsideHosts"), false);
+        const row = {
+          this: { kind: "iri" as const, value: iri("sys") },
+          ownerSystem: { kind: "iri" as const, value: iri("sys") },
+        };
+        return Promise.resolve({
+          form: "solutions",
+          variables: ["this", "ownerSystem"],
+          rows: queries === 2 ? [row, row] : [],
+          truncated: false,
+        });
+      },
+    },
+  });
+  equal(queries, 3); // one provenance read and exactly two constraint SELECTs
+  equal(report.diagnostics.length, 1);
+  equal(report.diagnostics[0]!.elementId, "sys");
+});
+
+Deno.test("missing or malformed provenance is refused before querying or caching", async () => {
+  const engine = cannedEngine();
+  const cache = memoryCache();
+  const service = new ShaclModelDiagnostics({
+    engine,
+    cache,
+    loadShapes: () => Promise.resolve(shapes),
+  });
+  const variants = [
+    { ...facts, graphContext: undefined },
+    { ...facts, graphContext: { units: [], capabilities: [] } },
+    {
+      ...facts,
+      graphContext: {
+        ...context,
+        capabilities: [{ policyElementId: "policy", ownerSystemId: "sys" }],
+      },
+    },
+    {
+      ...facts,
+      graphContext: {
+        ...context,
+        units: [{
+          elementId: "sys",
+          kind: "conversation",
+          ownerSystemId: "foreign",
+        }],
+      },
+    },
+    { ...facts, graphContext: { ...context, units: [null] } },
+  ];
+  for (const variant of variants) {
+    await rejects(() =>
+      service.validateBuild({
+        build,
+        graph,
+        facts: variant as ModelDiagnosticFacts,
+      }), { code: "SHAPES_INVALID_INPUT" });
+  }
+  await rejects(
+    () => service.validateBuild({ build, facts } as ValidateShaclShapesInput),
+    {
+      code: "SHAPES_INVALID_INPUT",
+    },
+  );
+  equal(engine.calls, 0);
+  equal(cache.store.size, 0);
+});
+
+Deno.test("native failures and truncated focus or constraint results never cache success", async () => {
+  const engine = await createNativeShaclEngine();
+  for (const failedAt of [1, 2, 3]) {
+    for (const mode of ["truncated", "failure", "scope"] as const) {
+      let calls = 0;
+      const cache = memoryCache();
+      const service = new ShaclModelDiagnostics({
+        engine,
+        cache,
+        loadShapes: () => Promise.resolve(parameterizedShapes),
+      });
+      await rejects(
+        () =>
+          service.validateBuild({
+            build,
+            facts,
+            graph: {
+              ...graph,
+              query() {
+                calls++;
+                if (calls === failedAt && mode === "failure") {
+                  return Promise.reject(new Error("native deadline exceeded"));
+                }
+                return Promise.resolve({
+                  form: "solutions",
+                  variables: ["this"],
+                  rows: calls === failedAt && mode === "scope"
+                    ? [{ this: { kind: "iri", value: "urn:foreign" } }]
+                    : [],
+                  truncated: calls === failedAt && mode === "truncated",
+                });
+              },
+            },
+          }),
+        { code: "SHACL_VALIDATION_FAILED" },
+      );
+      equal(cache.store.size, 0);
+      equal(calls, failedAt);
+    }
+  }
+});
+
+Deno.test("native timeout retains its structured internal cause without caching a report", async () => {
+  const cache = memoryCache();
+  const timeout = new SemanticIndexError(
+    "INDEX_TIMEOUT",
+    { timeoutMs: 5000, operation: "query" },
+    "Native query deadline exceeded",
+  );
+  const service = new ShaclModelDiagnostics({
+    engine: await createNativeShaclEngine(),
+    cache,
+    loadShapes: () => Promise.resolve(parameterizedShapes),
+  });
+  await rejects(
+    () =>
+      service.validateBuild({
+        build,
+        facts,
+        graph: { ...graph, query: () => Promise.reject(timeout) },
+      }),
+    (error: unknown) => {
+      if (!(error instanceof ModelShapesError)) return false;
+      equal(error.code, "SHACL_VALIDATION_FAILED");
+      equal(error.cause, timeout);
+      deepStrictEqual(error.context.cause, {
+        code: timeout.code,
+        context: timeout.context,
+        recovery: timeout.recovery,
+      });
+      equal(
+        error.recovery,
+        new ModelShapesError(
+          "SHACL_VALIDATION_FAILED",
+          {},
+          "",
+        ).recovery,
+      );
+      return true;
+    },
+  );
+  equal(cache.store.size, 0);
+});
+
+Deno.test("unsupported constraint and shape forms fail before native reads", async () => {
+  const service = new ShaclModelDiagnostics({
+    engine: await createNativeShaclEngine(),
+    loadShapes: () =>
+      Promise.resolve(
+        parameterizedShapes.replace(
+          "SELECT ?this ?ownerSystem WHERE {}",
+          "SELECT * WHERE {}",
+        ),
+      ),
+  });
+  await rejects(() => service.validateBuild({ graph, build, facts }), {
+    code: "SHACL_VALIDATION_FAILED",
+  });
+});
+
+Deno.test("different full projections separate immutable reports", async () => {
+  const engine = cannedEngine(), cache = memoryCache();
+  const service = new ShaclModelDiagnostics({
+    engine,
+    cache,
+    loadShapes: () => Promise.resolve(shapes),
+  });
+  await service.validateBuild({ graph, build, facts });
+  await service.validateBuild({
+    graph: {
+      ...graph,
+      projection: { ...graph.projection!, projectionDigest: digest("6") },
+    },
+    build,
+    facts,
+  });
+  equal(engine.calls, 2);
+  equal(cache.store.size, 2);
+});
+
+Deno.test("identical outside hosts retain one finding per policy owner and collapse repeated rows", () => {
+  const capability = {
+    location: { elementId: "policy" },
+    allowedHosts: ["outside.example"],
+    mandateHosts: [],
+  };
+  const owners = ["urn:owner-a", "urn:owner-b"];
+  const rows = owners.flatMap((ownerSystem) =>
+    Array.from(
+      { length: 2 },
+      () => ({
+        focusNode: "urn:policy",
+        ownerSystem,
+        path: `${FACTS_VOCAB}outsideHost`,
+        value: "outside.example",
+      }),
+    )
+  );
+  const mapped = mapShaclResults({
+    results: rows,
+    projected: {
+      units: [],
+      capabilities: owners.map((ownerSystem) => ({
+        node: "urn:policy",
+        ownerSystem,
+        capability,
+      })),
+    },
+  });
+  equal(mapped.unmappedResults, 0);
+  equal(mapped.diagnostics.length, 2);
+  deepStrictEqual(
+    mapped.diagnostics,
+    lintModelDiagnostics({
+      units: [],
+      effects: [],
+      networkCapabilities: owners.map(() => capability),
+    }),
+  );
+});
+
+Deno.test("incompatible model projection kinds and versions fail before the engine runs", async () => {
+  const engine = cannedEngine();
+  const service = new ShaclModelDiagnostics({
+    engine,
+    loadShapes: () => Promise.resolve(shapes),
+  });
+  for (
+    const projection of [
+      { ...graph.projection!, kind: "other" },
+      {
+        ...graph.projection!,
+        projectorVersion: `ase-rdf-quads-v2:${digest("6")}`,
+      },
+      {
+        ...graph.projection!,
+        projectorVersion: `ase-rdf-quads-v3:${digest("6")}`,
+      },
+      { ...graph.projection!, projectorVersion: "ase-rdf-quads-v4" },
+      { ...graph.projection!, projectorVersion: "ase-rdf-quads-v4:" },
+      {
+        ...graph.projection!,
+        projectorVersion: `ase-rdf-quads-v4:${"a".repeat(63)}`,
+      },
+      {
+        ...graph.projection!,
+        projectorVersion: `ase-rdf-quads-v4:${"A".repeat(64)}`,
+      },
+      {
+        ...graph.projection!,
+        projectorVersion: `ase-rdf-quads-v4:${digest("6")}:extra`,
+      },
+    ]
+  ) {
+    await rejects(
+      () =>
+        service.validateBuild({
+          build,
+          facts,
+          graph: { ...graph, projection },
+        }),
+      { code: "SHAPES_INVALID_INPUT" },
+    );
+  }
+  equal(engine.calls, 0);
+  await service.validateBuild({ build, facts, graph });
+  equal(engine.calls, 1);
+});
+
+Deno.test("SHACL metadata rejects literal impostors for RDF identities", async () => {
+  const engine = await createNativeShaclEngine();
+  const variants = [
+    parameterizedShapes.replace(
+      "a sh:NodeShape",
+      'a "http://www.w3.org/ns/shacl#NodeShape"',
+    ),
+    parameterizedShapes.replace(
+      "sh:severity sh:Warning",
+      'sh:severity "http://www.w3.org/ns/shacl#Warning"',
+    ),
+    parameterizedShapes.replace(
+      'sh:sparql [sh:message "LOOP_WITHOUT_BUDGET"; sh:select "SELECT ?this ?ownerSystem WHERE {}"]',
+      'sh:sparql "urn:constraint" . <urn:constraint> sh:message "LOOP_WITHOUT_BUDGET"; sh:select "SELECT ?this ?ownerSystem WHERE {}"',
+    ),
+    parameterizedShapes.replace(
+      '"LOOP_WITHOUT_BUDGET"',
+      '"LOOP_WITHOUT_BUDGET"@en',
+    ),
+  ];
+  for (const shapesTurtle of variants) {
+    await rejects(() =>
+      engine.validate({
+        graph,
+        shapesTurtle,
+        units: [{ this: iri("sys"), ownerSystem: iri("sys") }],
+        capabilities: [],
+      }), { code: "SHACL_VALIDATION_FAILED" });
+  }
+});
+
+Deno.test("parser loading failures return a coded unavailable engine error with cause", async () => {
+  await rejects(
+    () =>
+      createNativeShaclEngine(() =>
+        Promise.reject(new Error("module unavailable"))
+      ),
+    (error: unknown) => {
+      const value = error as { code: string; context: Record<string, unknown> };
+      equal(value.code, "SHACL_ENGINE_UNAVAILABLE");
+      equal(value.context.cause, "module unavailable");
+      equal(value.context.specifier, "npm:@rdfjs/parser-n3@2.1.0");
+      return true;
+    },
+  );
+});
+
+Deno.test("generated query byte budget bounds focus and constraint groups before dispatch", async () => {
+  const engine = await createNativeShaclEngine();
+  for (const unique of [true, false]) {
+    let calls = 0;
+    const units = Array.from(
+      { length: 2000 },
+      (_, i) => ({
+        this: `urn:unit:${unique ? i : 0}:${"é".repeat(30)}`,
+        ownerSystem: "urn:owner",
+      }),
+    );
+    await rejects(
+      () =>
+        engine.validate({
+          shapesTurtle: parameterizedShapes,
+          units,
+          capabilities: [],
+          graph: {
+            ...graph,
+            query() {
+              calls++;
+              return Promise.resolve({
+                form: "solutions",
+                variables: [],
+                rows: [],
+                truncated: false,
+              });
+            },
+          },
+        }),
+      (error: unknown) => {
+        const value = error as {
+          code: string;
+          context: Record<string, unknown>;
+        };
+        equal(value.code, "SHACL_VALIDATION_FAILED");
+        equal(value.context.maxQueryBytes, 65536);
+        equal(Number(value.context.queryBytes) > 65536, true);
+        equal(typeof value.context.recovery, "string");
+        return true;
+      },
+    );
+    equal(calls, unique ? 0 : 1);
   }
 });

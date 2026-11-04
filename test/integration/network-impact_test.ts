@@ -7,21 +7,22 @@ import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilatio
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import { KvModelBuildStore } from "../../src/adapters/out/deno-kv/kv-store.ts";
 import { FileBuildVault } from "../../src/adapters/out/filesystem/build-vault.ts";
-import { storedBuildMaterializer } from "../../src/adapters/model/builds/materialization/stored.ts";
+import { storedBuildMaterializer } from "../../src/adapters/out/sysml-toolkit/compilation/stored-materializer.ts";
 import { ModelBuildService } from "../../src/application/model/builds/service.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import {
+  sourceExecutablesCompilation,
   validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { NetworkImpactService } from "../../src/application/model/impact/analysis.ts";
-import { CompiledNetworkImpactModelReader } from "../../src/adapters/model/impact/compiled-model-reader.ts";
+import { CompiledNetworkImpactModelReader } from "../../src/application/model/impact/compiled-model-reader.ts";
 import { LiveNetworkImpactEvidenceReader } from "../../src/application/model/impact/live-evidence-reader.ts";
 import { openPostgresFixtureHost } from "../support/postgres-runtime-fixture.ts";
 import { ContextSkillsService } from "../../src/application/skills/context-skills.ts";
 import { HttpsSkillDownloader } from "../../src/adapters/out/http-client/download.ts";
 import { DenoToolRunner } from "../../src/adapters/out/sandbox/runner.ts";
 import { ToolInvocationError } from "../../src/domain/work/errors/tool-invocation.ts";
-import { sha256 } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { sha256 } from "../../src/domain/model/value-objects/artifact.ts";
 import type { Candidate } from "../../src/domain/work/candidates.ts";
 import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
 import {
@@ -85,6 +86,9 @@ Deno.test({
       sources["configuration.sysml"] = sources["configuration.sysml"].replace(
         'attribute networkHosts : String = "[]";',
         `attribute networkHosts : String = ${hostLiteral};`,
+      ).replace(
+        'attribute :>> allowedHosts = "[]";',
+        `attribute :>> allowedHosts = ${hostLiteral};`,
       ).replace(
         "part catalog : ToolCatalog {",
         `part catalog : ToolCatalog {
@@ -339,6 +343,7 @@ Deno.test({
           return await new NetworkImpactService({
             lineage: reader,
             models: new CompiledNetworkImpactModelReader({
+              compilation: sourceExecutablesCompilation,
               repository: reader,
               projectId,
             }),

@@ -6,7 +6,10 @@ import { compareCodeUnits } from "../../../domain/primitives/canonical-json.ts";
 import { AgentPreparationError } from "../../../application/work/runtime/agent-preparation.ts";
 
 /** Character ceilings are deterministic representation limits, not token counts. */
-export const MAX_PIN_CARD_CHARACTERS = 8_000;
+// Bound pin-card growth while retaining complete fresh-system authority data.
+// 2026-11-03: the largest fresh-system card (a BO holding a creation grant) is
+// 8,642 characters. 12,000 keeps a finite growth bound with ~39% headroom.
+export const MAX_PIN_CARD_CHARACTERS = 12_000;
 export const MAX_TURN_BRIEF_CHARACTERS = 4_096;
 const MAX_PIN_CARDS = 64;
 const MAX_INPUT_CHARACTERS = 1_600;
@@ -311,10 +314,10 @@ export async function buildTurnBrief(context: ChatContext) {
       message.role === "user" || message.noticeWake
     );
   const projectedReference = context.contextEvidence?.references.find((entry) =>
-    entry.messageId === opening?.id && entry.reasons.length > 0
+    entry.messageId === opening?.id
   );
   const truncated = (opening?.text.length ?? 0) > MAX_INPUT_CHARACTERS ||
-    projectedReference !== undefined;
+    projectedReference?.textOmitted === true;
   const reference = opening && truncated
     ? {
       kind: "journal-message" as const,
@@ -490,4 +493,11 @@ export async function buildTurnBrief(context: ChatContext) {
   };
   boundedJson(brief, MAX_TURN_BRIEF_CHARACTERS, "TURN_BRIEF_LIMIT");
   return brief;
+}
+
+/** Observed provider inputs carry data, never instructions or authority. */
+export function untrustedObservation<T extends Record<string, unknown>>(
+  fields: T,
+) {
+  return { trust: "untrusted-observation" as const, ...fields };
 }

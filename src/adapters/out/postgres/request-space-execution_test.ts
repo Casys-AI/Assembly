@@ -9,7 +9,7 @@ import type { AdmittedSourceChain } from "./request-source-admission-store.ts";
 import assert from "node:assert/strict";
 import type { Prisma, PrismaClient } from "./client.ts";
 import type { PostgresHostStorage } from "./host-storage.ts";
-import type { PostgresSpaceEffectStartGuard } from "../../work/runtime/postgres-ledger.ts";
+import type { PostgresSpaceEffectStartGuard } from "../native-execution/postgres-ledger.ts";
 import type { SpaceEffectStartProof } from "./request-space-control-store.ts";
 import {
   retainedToolAdmissionId,

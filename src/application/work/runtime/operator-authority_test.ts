@@ -17,7 +17,7 @@ import type { ModelPort } from "./ports.ts";
 import {
   nativeExecutionIdentity,
   runtimeRevisionReference,
-} from "./execution.ts";
+} from "../native-execution/contract.ts";
 import { OperatorConversations } from "../operators/conversations.ts";
 import {
   commandBusinessDecision,

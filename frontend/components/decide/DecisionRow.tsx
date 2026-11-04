@@ -13,7 +13,8 @@ export function DecisionRow({ decision }: { decision: PendingDecision }) {
       class="decide-row"
       href={decision.href}
       data-kind={decision.kind}
-      title={agentName ? `${label} · ${agentName}` : label}
+      title={[label, agentName, decision.id, decision.href].filter(Boolean)
+        .join(" · ")}
     >
       <span class="rev-dot is-pending" aria-hidden="true" />
       <span class="decide-text">{label}</span>

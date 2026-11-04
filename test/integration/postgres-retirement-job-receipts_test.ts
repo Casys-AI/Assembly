@@ -8,9 +8,9 @@ import {
 import {
   PostgresNativeExecutionLedger,
   type PostgresOperatorJob,
-} from "../../src/adapters/work/runtime/postgres-ledger.ts";
-import { PostgresOperatorDispatch } from "../../src/adapters/work/runtime/operator-dispatch.ts";
-import { lockRetirementJobReceipts } from "../../src/adapters/work/runtime/retirement-job-receipts.ts";
+} from "../../src/adapters/out/native-execution/postgres-ledger.ts";
+import { PostgresOperatorDispatch } from "../../src/adapters/out/native-execution/operator-dispatch.ts";
+import { lockRetirementJobReceipts } from "../../src/adapters/out/native-execution/retirement-job-receipts.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";
 import {

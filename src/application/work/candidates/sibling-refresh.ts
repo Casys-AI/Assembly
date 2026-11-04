@@ -1,4 +1,5 @@
-import type { NativeExecutionSnapshot } from "../runtime/execution.ts";
+import type { ClockPort } from "../runtime/ports.ts";
+import type { NativeExecutionSnapshot } from "../native-execution/contract.ts";
 import {
   canonical,
   compareCodeUnits,
@@ -7,7 +8,7 @@ import type { ExecutableModel } from "../../../domain/model/execution/executable
 import type { CompiledFlow } from "../../../domain/model/execution/flow.ts";
 import type { Candidate } from "../../../domain/work/candidates.ts";
 import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
-import { draftDigest, makeEvent, now, valueDigest } from "../runtime/values.ts";
+import { draftDigest, makeEvent, valueDigest } from "../runtime/values.ts";
 
 interface SiblingRefresh {
   candidateId: string;
@@ -203,6 +204,7 @@ function refreshReferences(value: unknown, candidate: Candidate, from: number) {
 /** Applied atomically with the first sibling's adoption. The serialized state
  * must still be the exact state whose tests and catalog were revalidated. */
 export function applySiblingCatalogRefresh(
+  clock: ClockPort,
   state: SystemRuntimeState,
   refresh: SiblingCatalogRefresh | undefined,
 ): void {
@@ -226,12 +228,15 @@ export function applySiblingCatalogRefresh(
       fromCatalogRevision: refresh.fromCatalogRevision,
       toCatalogRevision: state.catalogRevision,
       ...prepared.evidence,
-      at: now(),
+      at: clock.now(),
     });
-    state.events.push(makeEvent(
-      "candidate-catalog-base-refreshed",
-      `Exact tested sibling revalidated after ${refresh.publishedCandidateId}: catalog ${refresh.fromCatalogRevision} → ${state.catalogRevision}; a separate admission is still required`,
-      candidate,
-    ));
+    state.events.push(
+      makeEvent(
+        clock,
+        "candidate-catalog-base-refreshed",
+        `Exact tested sibling revalidated after ${refresh.publishedCandidateId}: catalog ${refresh.fromCatalogRevision} → ${state.catalogRevision}; a separate admission is still required`,
+        candidate,
+      ),
+    );
   }
 }

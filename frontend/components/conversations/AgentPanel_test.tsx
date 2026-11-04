@@ -64,6 +64,31 @@ Deno.test("the panel names the agent and escapes it; the whole mission is its to
   state.dispose();
 });
 
+Deno.test("a Request owner panel describes its objective while a teammate keeps its own mission", () => {
+  const state = createWorkbenchState({ initialState: snapshot() });
+  const request = caseRecord(1, {
+    id: "request",
+    owner: peer.nativeId,
+    objective: "Compare the Taiwan training offers",
+  });
+  state.requests.cases.accept({
+    systemId: state.current.value!.id,
+    cases: [request],
+  });
+  const panel = (nativeId: string) =>
+    textOf(renderToString(
+      <AgentPanel
+        state={state}
+        conversation={{ ...peer, nativeId }}
+        requestCaseId={request.id}
+      />,
+    ));
+  match(panel(peer.nativeId), /Compare the Taiwan training offers/);
+  doesNotMatch(panel(peer.nativeId), /Send the list/);
+  match(panel("teammate"), /Compare the offers\. Send the list\./);
+  state.dispose();
+});
+
 Deno.test("the panel shows the rights and tools in compact rows, with no way to change them", async () => {
   const initial = snapshot();
   const state = createWorkbenchState({
@@ -169,7 +194,8 @@ Deno.test("the Case panel retains its projected Branch Operator or custom name w
       );
       match(html, new RegExp(`<h2>${name}</h2>`));
       match(html, /data-agent-id="peer"/);
-      match(html, /Request · read-only/);
+      match(html, /aria-label="Request · Version unavailable · Read-only"/);
+      doesNotMatch(html, />Create release</);
       doesNotMatch(html, /Main Operator/);
     }
     const main = renderToString(
@@ -293,6 +319,31 @@ Deno.test("Main conversation panels show bound tool and skill metadata without i
       html,
       /<button|artifact-source-inspector|Read again|Open exact source|Keep for comparison|Clear comparison|Retained dependencies|Retained source|Close source/,
     );
+  } finally {
+    state.dispose();
+  }
+});
+
+Deno.test("an archived Request conversation does not claim its retained model is in service", () => {
+  const state = createWorkbenchState({ initialState: snapshot() });
+  try {
+    const html = renderToString(
+      <AgentPanel
+        state={state}
+        requestCaseId="request"
+        conversation={{
+          ...peer,
+          repositoryVersion: "commit:retained",
+          runtimeOwned: false,
+        }}
+      />,
+    );
+    match(
+      html,
+      /aria-label="Inspect Request · Service status unavailable · Read-only"/,
+    );
+    match(html, /Version: commit:retained/);
+    doesNotMatch(html, /aria-label="[^"]* · In service/);
   } finally {
     state.dispose();
   }

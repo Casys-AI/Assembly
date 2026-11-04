@@ -1,4 +1,4 @@
-import type { ModelIdentity } from "../work/dialogue.ts";
+import type { ModelIdentity } from "../shared-kernel/model-identity.ts";
 
 /** An admitted model's project and system, plus the execution space (main or a
  * Request branch) where it is admitted and its policies apply. */

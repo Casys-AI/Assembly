@@ -14,7 +14,7 @@ import {
   projectionKey,
   projectionParamsDigest,
   type ProjectionStatus,
-} from "./registry.ts";
+} from "./cached-projections.ts";
 
 const A1 = "a".repeat(64);
 const A2 = "b".repeat(64);
@@ -224,43 +224,6 @@ Deno.test("projections report failed without caching, then retry cleanly", async
   );
 });
 
-Deno.test("a slow projection for A never replaces a newer requested B", async () => {
-  const registry = new ModelProjectionRegistry({ maxBytes: 1_000_000 });
-  const gates = new Map<string, ReturnType<typeof deferred<string>>>();
-  registry.register<string>({
-    kind: "authority-matrix",
-    version: "1",
-    compute: (ctx) => {
-      const gate = deferred<string>();
-      gates.set(ctx.artifactDigest, gate);
-      return gate.promise;
-    },
-  });
-  const readA = registry.request<string>("authority-matrix", A1);
-  const readB = registry.request<string>("authority-matrix", A2);
-  let current = registry.current("authority-matrix");
-  equal(current.requestedArtifact, A2);
-  equal(current.availableArtifact, undefined);
-  equal(current.state, "pending");
-  // B (requested last) finishes first.
-  gates.get(A2)!.resolve("matrix-B");
-  equal(await readB, "matrix-B");
-  current = registry.current("authority-matrix");
-  equal(current.availableArtifact, A2);
-  equal(current.state, "ready");
-  equal(registry.getCurrent<string>("authority-matrix"), "matrix-B");
-  // A finishes late: available historically, but the pointer stays on B.
-  gates.get(A1)!.resolve("matrix-A");
-  equal(await readA, "matrix-A");
-  current = registry.current("authority-matrix");
-  equal(current.requestedArtifact, A2);
-  equal(current.availableArtifact, A2);
-  equal(registry.peek<string>("authority-matrix", A1), "matrix-A");
-  // A plain historical get moves no pointer either.
-  await registry.get<string>("authority-matrix", A1);
-  equal(registry.current("authority-matrix").availableArtifact, A2);
-});
-
 Deno.test("projections persist through the store and reload without computing", async () => {
   const store = new FakeProjectionStore();
   const first = new ModelProjectionRegistry({ maxBytes: 1_000_000, store });
@@ -314,7 +277,7 @@ Deno.test("projections refuse unregistered kinds and malformed artifacts", async
   equal(registry.status("board", A2).state, "unrequested");
 });
 
-Deno.test("empty projection parameters share compute, current, status and persisted identity", async () => {
+Deno.test("empty projection parameters share compute, status and persisted identity", async () => {
   equal(projectionKey("board", "1", A1, {}), projectionKey("board", "1", A1));
   equal(await projectionArtifactKey(A1, {}), await projectionArtifactKey(A1));
   equal(await projectionParamsDigest({}), undefined);
@@ -331,15 +294,14 @@ Deno.test("empty projection parameters share compute, current, status and persis
       return gate.promise;
     },
   });
-  const one = registry.request("board", A1, { params: {} });
+  const one = registry.get("board", A1, { params: {} });
   const two = registry.get("board", A1);
-  equal(registry.current("board").requestedArtifact, A1);
   equal(registry.status("board", A1, { params: {} }).state, "pending");
   gate.resolve("true");
   deepStrictEqual(await Promise.all([one, two]), ["true", "true"]);
   equal(computes, 1);
   equal(store.projections.size, 1);
-  equal(registry.getCurrent("board", { params: {} }), "true");
+  equal(registry.peek("board", A1, { params: {} }), "true");
   equal(registry.status("board", A1).state, "ready");
   const restarted = new ModelProjectionRegistry({ maxBytes: 1000, store });
   restarted.register({
@@ -369,18 +331,18 @@ Deno.test("projection persistence preserves payload form and digest across regis
       version: "1",
       compute: () => Promise.resolve(value),
     });
-    const initial = await first.request("board", A1);
-    const digest = first.current("board").projectionDigest;
+    const initial = await first.get("board", A1);
+    const digest = first.status("board", A1).projectionDigest;
     const restarted = new ModelProjectionRegistry({ maxBytes: 1000, store });
     restarted.register({
       kind: "board",
       version: "1",
       compute: () => Promise.reject("must not compute"),
     });
-    const restored = await restarted.request("board", A1);
+    const restored = await restarted.get("board", A1);
     deepStrictEqual(restored, initial);
     equal(typeof restored, typeof initial);
-    equal(restarted.current("board").projectionDigest, digest);
+    equal(restarted.status("board", A1).projectionDigest, digest);
     if (restored instanceof Uint8Array) {
       restored.fill(42);
       deepStrictEqual(await restarted.get("board", A1), value);
@@ -420,7 +382,7 @@ Deno.test("custom projection codecs survive restarts and legacy board JSON remai
   deepStrictEqual(await restarted.get("board", A1), { legacy: true });
 });
 
-Deno.test("new projector versions reset current pointers despite prior ready and late pending results", async () => {
+Deno.test("new projector versions isolate ready and late pending results", async () => {
   const registry = new ModelProjectionRegistry({ maxBytes: 1000 });
   const old = deferred<string>();
   registry.register({
@@ -429,28 +391,25 @@ Deno.test("new projector versions reset current pointers despite prior ready and
     compute: (ctx) =>
       ctx.artifactDigest === A1 ? Promise.resolve("old-ready") : old.promise,
   });
-  await registry.request("board", A1);
-  const pendingOld = registry.request("board", A2);
+  await registry.get("board", A1);
+  const pendingOld = registry.get("board", A2);
   registry.register({
     kind: "board",
     version: "2",
     compute: () => Promise.resolve("new"),
   });
-  deepStrictEqual(registry.current("board"), {
+  deepStrictEqual(registry.status("board", A2), {
     kind: "board",
     projectorVersion: "2",
+    artifactDigest: A2,
     state: "unrequested",
   });
-  equal(registry.getCurrent("board"), undefined);
-  await registry.request("board", A2);
+  equal(registry.peek("board", A2), undefined);
+  await registry.get("board", A2);
   old.resolve("old-late");
   equal(await pendingOld, "old-late");
-  equal(registry.getCurrent("board"), "new");
-  equal(registry.current("board").state, "ready");
-  equal(
-    registry.current("board").projectionDigest,
-    registry.status("board", A2).projectionDigest,
-  );
+  equal(registry.peek("board", A2), "new");
+  equal(registry.status("board", A2).state, "ready");
 });
 
 Deno.test("immutable projector conflicts fail without memory admission while quota failures are advisory", async () => {
@@ -471,10 +430,9 @@ Deno.test("immutable projector conflicts fail without memory admission while quo
       },
     });
     if (code === "BUILD_BLOB_CONFLICT") {
-      await rejects(() => registry.request("board", A1), { code });
+      await rejects(() => registry.get("board", A1), { code });
       equal(registry.peek("board", A1), undefined);
       equal(registry.status("board", A1).state, "failed");
-      equal(registry.current("board").availableArtifact, undefined);
       await rejects(() => registry.get("board", A1), { code });
       equal(computes, 2);
     } else {
@@ -498,7 +456,7 @@ Deno.test("empty projection payloads cannot retain unbounded LRU entries", async
   equal(registry.stats().bytes, 4);
 });
 
-Deno.test("evicted current projections are unrequested until a new read admits them", async () => {
+Deno.test("evicted projections are unrequested until a new read admits them", async () => {
   const registry = new ModelProjectionRegistry({ maxBytes: 4 });
   let computes = 0;
   registry.register({
@@ -510,22 +468,19 @@ Deno.test("evicted current projections are unrequested until a new read admits t
       return Promise.resolve("four");
     },
   });
-  await registry.request("plantuml", A1);
-  equal(registry.current("plantuml").state, "ready");
+  await registry.get("plantuml", A1);
+  equal(registry.status("plantuml", A1).state, "ready");
   await registry.get("plantuml", A2);
   equal(registry.status("plantuml", A1).state, "unrequested");
-  equal(registry.current("plantuml").state, "unrequested");
-  equal(registry.current("plantuml").requestedArtifact, A1);
-  equal(registry.current("plantuml").availableArtifact, undefined);
-  equal(registry.current("plantuml").projectionDigest, undefined);
-  equal(registry.getCurrent("plantuml"), undefined);
+  equal(registry.status("plantuml", A1).projectionDigest, undefined);
+  equal(registry.peek("plantuml", A1), undefined);
   await registry.get("plantuml", A1);
-  equal(registry.current("plantuml").state, "ready");
-  equal(registry.getCurrent("plantuml"), "four");
+  equal(registry.status("plantuml", A1).state, "ready");
+  equal(registry.peek("plantuml", A1), "four");
   equal(computes, 3);
   registry.invalidate("plantuml", A1);
-  equal(registry.current("plantuml").state, "unrequested");
-  equal(registry.getCurrent("plantuml"), undefined);
+  equal(registry.status("plantuml", A1).state, "unrequested");
+  equal(registry.peek("plantuml", A1), undefined);
 });
 
 Deno.test("oversize projections are served without advertising ready residency", async () => {
@@ -537,18 +492,16 @@ Deno.test("oversize projections are served without advertising ready residency",
     version: "1",
     compute: () => Promise.resolve("oversize"),
   });
-  equal(await registry.request("plantuml", A1), "oversize");
+  equal(await registry.get("plantuml", A1), "oversize");
   equal(registry.status("plantuml", A1).state, "unrequested");
-  equal(registry.current("plantuml").state, "unrequested");
-  equal(registry.current("plantuml").availableArtifact, undefined);
-  equal(registry.getCurrent("plantuml"), undefined);
+  equal(registry.peek("plantuml", A1), undefined);
   deepStrictEqual(events.map((event) => event.state), [
     "pending",
     "unrequested",
   ]);
 });
 
-Deno.test("pending current requests retain only resident fallback values", async () => {
+Deno.test("pending reads retain only resident earlier values", async () => {
   const registry = new ModelProjectionRegistry({ maxBytes: 4 });
   const gate = deferred<string>();
   registry.register({
@@ -557,19 +510,16 @@ Deno.test("pending current requests retain only resident fallback values", async
     compute: (ctx) =>
       ctx.artifactDigest === A2 ? gate.promise : Promise.resolve("four"),
   });
-  await registry.request("plantuml", A1);
-  const next = registry.request("plantuml", A2);
-  equal(registry.current("plantuml").state, "pending");
-  equal(registry.current("plantuml").availableArtifact, A1);
-  equal(registry.getCurrent("plantuml"), "four");
+  await registry.get("plantuml", A1);
+  const next = registry.get("plantuml", A2);
+  equal(registry.status("plantuml", A2).state, "pending");
+  equal(registry.peek("plantuml", A1), "four");
   await registry.get("plantuml", A3); // evicts the fallback while A2 is pending
-  equal(registry.current("plantuml").state, "pending");
-  equal(registry.current("plantuml").availableArtifact, undefined);
-  equal(registry.getCurrent("plantuml"), undefined);
+  equal(registry.status("plantuml", A2).state, "pending");
+  equal(registry.peek("plantuml", A1), undefined);
   gate.resolve("oversize");
   await next;
-  equal(registry.current("plantuml").state, "unrequested");
-  equal(registry.current("plantuml").availableArtifact, undefined);
+  equal(registry.status("plantuml", A2).state, "unrequested");
 });
 
 Deno.test("persisted projections are not promised ready before verified readmission", async () => {
@@ -580,17 +530,16 @@ Deno.test("persisted projections are not promised ready before verified readmiss
     version: "1",
     compute: () => Promise.resolve("four"),
   });
-  await registry.request("plantuml", A1);
+  await registry.get("plantuml", A1);
   await registry.get("plantuml", A2);
   equal(registry.status("plantuml", A1).state, "unrequested");
-  equal(registry.current("plantuml").state, "unrequested");
-  equal(registry.getCurrent("plantuml"), undefined);
+  equal(registry.peek("plantuml", A1), undefined);
   await registry.get("plantuml", A1);
-  equal(registry.current("plantuml").state, "ready");
-  equal(registry.getCurrent("plantuml"), "four");
+  equal(registry.status("plantuml", A1).state, "ready");
+  equal(registry.peek("plantuml", A1), "four");
 });
 
-Deno.test("historical retry of the requested artifact agrees with current availability after a failed request", async () => {
+Deno.test("retry readmits a failed artifact without changing earlier cached values", async () => {
   const registry = new ModelProjectionRegistry({ maxBytes: 1000 });
   let fail = true;
   registry.register({
@@ -601,15 +550,14 @@ Deno.test("historical retry of the requested artifact agrees with current availa
         ? Promise.reject(new Error("retryable"))
         : Promise.resolve(ctx.artifactDigest),
   });
-  await registry.request("board", A1);
-  await rejects(() => registry.request("board", A2));
-  equal(registry.current("board").state, "failed");
-  equal(registry.getCurrent("board"), A1);
+  await registry.get("board", A1);
+  await rejects(() => registry.get("board", A2));
+  equal(registry.status("board", A2).state, "failed");
+  equal(registry.peek("board", A1), A1);
   fail = false;
   await registry.get("board", A2);
-  equal(registry.current("board").state, "ready");
-  equal(registry.current("board").availableArtifact, A2);
-  equal(registry.getCurrent("board"), A2);
+  equal(registry.status("board", A2).state, "ready");
+  equal(registry.peek("board", A2), A2);
 });
 
 Deno.test("projection failures are forgotten under sustained parameter churn", async () => {
@@ -651,18 +599,11 @@ Deno.test("completed projection metadata stays bounded independently of payload 
     for (let i = 0; i < 2000; i++) {
       const params = { view: `${i % 2 ? "fail" : "ready"}-${i}` };
       if (i % 2) {
-        await rejects(() => registry.request("view-diagram", A1, { params }));
-      } else await registry.request("view-diagram", A1, { params });
+        await rejects(() => registry.get("view-diagram", A1, { params }));
+      } else await registry.get("view-diagram", A1, { params });
       equal(registry.stats().retainedStatuses <= 8, true);
-      equal(registry.stats().currentPointers <= 8, true);
     }
     equal(registry.stats().pending, 0);
-    equal(registry.stats().activeCurrentPointers, 0);
-    equal(
-      registry.current("view-diagram", { params: { view: "ready-0" } })
-        .requestedArtifact,
-      undefined,
-    );
     equal(
       registry.status("view-diagram", A1, { params: { view: "fail-1" } }).state,
       "unrequested",
@@ -672,7 +613,7 @@ Deno.test("completed projection metadata stays bounded independently of payload 
         .state,
       "failed",
     );
-    // Ready is derived from residency even after the pointer/history was forgotten.
+    // Ready is derived from residency independently of retained failure history.
     equal(
       registry.status("view-diagram", A1, { params: { view: "ready-0" } })
         .state,
@@ -689,18 +630,17 @@ Deno.test("completed projection metadata stays bounded independently of payload 
     compute: () => Promise.resolve("four"),
   });
   for (let i = 0; i < 2000; i++) {
-    await evicting.request("board", A1, { params: { view: String(i) } });
+    await evicting.get("board", A1, { params: { view: String(i) } });
   }
   equal(evicting.stats().entries, 1);
   equal(evicting.stats().retainedStatuses, 0);
-  equal(evicting.stats().currentPointers, 8);
   equal(
     evicting.status("board", A1, { params: { view: "0" } }).state,
     "unrequested",
   );
 });
 
-Deno.test("projection history pressure preserves active pointers, fallback and latest artifact", async () => {
+Deno.test("projection history pressure preserves pending reads and coalescing", async () => {
   const registry = new ModelProjectionRegistry({
     maxBytes: 100_000,
     maxRetainedStates: 2,
@@ -719,18 +659,14 @@ Deno.test("projection history pressure preserves active pointers, fallback and l
     },
   });
   const params = { view: "live" };
-  await registry.request("view-diagram", A1, { params });
-  const older = registry.request("view-diagram", A2, { params });
-  const newer = registry.request("view-diagram", A3, { params });
+  await registry.get("view-diagram", A1, { params });
+  const older = registry.get("view-diagram", A2, { params });
+  const newer = registry.get("view-diagram", A3, { params });
   const pending = Array.from(
     { length: 200 },
-    (_, i) =>
-      registry.request("view-diagram", A2, { params: { view: String(i) } }),
+    (_, i) => registry.get("view-diagram", A2, { params: { view: String(i) } }),
   );
   equal(registry.stats().pending, 202);
-  equal(registry.stats().activeCurrentPointers, 201);
-  equal(registry.current("view-diagram", { params }).state, "pending");
-  equal(registry.getCurrent("view-diagram", { params }), "fallback");
   // Coalescing still works after exceeding the completed history budget.
   const joined = registry.get("view-diagram", A2, { params });
   equal(computes, 203);
@@ -748,15 +684,9 @@ Deno.test("projection history pressure preserves active pointers, fallback and l
     outcomes.filter((outcome) => outcome.status === "rejected").length,
     100,
   );
-  equal(registry.current("view-diagram", { params }).requestedArtifact, A3);
-  equal(registry.getCurrent("view-diagram", { params }), "latest");
   gates.get("live/" + A2)!.resolve("late");
   deepStrictEqual(await Promise.all([older, joined]), ["late", "late"]);
-  equal(registry.current("view-diagram", { params }).requestedArtifact, A3);
-  equal(registry.getCurrent("view-diagram", { params }), "latest");
   equal(registry.stats().pending, 0);
-  equal(registry.stats().activeCurrentPointers, 0);
-  equal(registry.stats().currentPointers <= 2, true);
   equal(registry.stats().retainedStatuses, 2);
 });
 
@@ -776,7 +706,7 @@ Deno.test("retained projection errors have bounded text without changing rejecti
     compute: () => Promise.reject(error),
   });
   await rejects(
-    () => registry.request("board", A1),
+    () => registry.get("board", A1),
     (caught) => caught === error,
   );
   equal(events.at(-1)?.error?.message, error.message);

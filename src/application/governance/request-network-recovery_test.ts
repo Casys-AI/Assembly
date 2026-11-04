@@ -34,12 +34,14 @@ Deno.test("Request network startup/decision recovery never falls through to Main
   const host: MandateChangeHost = {
     state,
     ports: {
+      clock: { now: () => "2026-11-03T00:00:00.000Z" },
       model: {
         requestChangeScope: {
           caseId: "case-a",
           operatorId: model.identity.builderId,
           executionSpaceId: "space-a",
           branchTeamSize: 0,
+          memberIds: [],
         },
         readExecutableModel: () => Promise.resolve(model),
         previewApprovedChange: unused,

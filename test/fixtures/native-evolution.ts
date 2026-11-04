@@ -8,13 +8,14 @@ import { PostgresGovernedMemoryStore } from "../../src/adapters/out/postgres/mem
 import { PostgresEvolutionStore } from "../../src/adapters/out/postgres/evolution-store.ts";
 import { createModelProject } from "../../src/adapters/out/filesystem/model-project.ts";
 import {
+  sourceEvolutionCompilation,
   validateSourceEvolutionExecutables,
   validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { buildEvolutionPolicyEdits } from "../support/evolution-policy/writer.ts";
-import { NativeEvolutionSourceAssessment } from "../../src/adapters/model/evolution/assessment.ts";
-import { NativeEvolutionAuthority } from "../../src/adapters/model/evolution/authority.ts";
-import { createEvolutionSettingsPreflight } from "../../src/adapters/model/evolution/settings-preflight.ts";
+import { NativeEvolutionSourceAssessment } from "../../src/application/model/evolution/assessment.ts";
+import { NativeEvolutionAuthority } from "../../src/application/model/evolution/authority.ts";
+import { createEvolutionSettingsPreflight } from "../../src/application/work/runtime/evolution-settings-preflight.ts";
 import { WorkBudgetService } from "../../src/application/work/budget/service.ts";
 import type {
   MemoryOperation,
@@ -583,6 +584,7 @@ export async function openNativeEvolutionFixture(
           repositoryId: backend.project.id,
         });
         const assessment = new NativeEvolutionSourceAssessment({
+          compilation: sourceEvolutionCompilation,
           projectId: backend.projectId,
           validateSettings,
         });
@@ -621,6 +623,7 @@ export async function openNativeEvolutionFixture(
           repositoryId: backend.project.id,
           store: evolutionStore,
           authority: new NativeEvolutionAuthority({
+            compilation: sourceEvolutionCompilation,
             projectId: backend.projectId,
             repository: backend.repository,
             validateSettings,

@@ -1,4 +1,5 @@
-import type { ModelIdentity, SystemRuntimeState } from "./dialogue.ts";
+import type { SystemRuntimeState } from "./dialogue.ts";
+import type { ModelIdentity } from "../shared-kernel/model-identity.ts";
 
 /** An immutable accepted state, timestamped when this store observed it. */
 export interface StateRevision {

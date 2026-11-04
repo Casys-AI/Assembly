@@ -107,7 +107,7 @@ const modelToolDescriptions: Array<
     operation: "query",
     name: "Interroger le modèle",
     description:
-      "Interroger la version source exacte : mode toolkit (défaut) évalue le KerML existant ; mode sparql exécute SELECT/ASK sur le graphe RDF épinglé (jointures, filtres, agrégats ; 4096 caractères, 50 bindings, 64 KiB, 5 s). Aucun repli entre modes, écriture, SERVICE ou dataset client.",
+      "Interroger la version source exacte : mode toolkit (défaut) évalue le KerML existant ; mode sparql exécute SELECT/ASK sur le graphe RDF épinglé (jointures, filtres, agrégats ; 4096 caractères, 50 bindings, 64 KiB, 5 s). Classes et propriétés SysML : https://www.omg.org/spec/SysML# ; identités et listes ordonnées : extensions urn:ase:vocab:. Aucun repli entre modes, écriture, SERVICE ou dataset client.",
   },
 ];
 

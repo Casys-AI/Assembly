@@ -4,7 +4,7 @@ import { isNamespacePartOccurrence } from "../../../../../domain/model/policies/
 /** Compile an operator's callable behaviors from exact native exposures.
  * This module validates representation and binding identity, never eligibility,
  * approval, effect, retry or closure predicates of any particular behavior. */
-import type { ModelIdentity } from "../../../../../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../../../domain/shared-kernel/model-identity.ts";
 import type { NativeBehaviorContract } from "../../../../../domain/model/execution/native-contracts.ts";
 import type { EvolutionBehaviorDeclaration } from "../../../../../domain/model/evolution/semantic-effects.ts";
 import type { ElementRecord } from "../../../../../domain/model/records/snapshot.ts";
@@ -12,7 +12,7 @@ import {
   sourceLiterals,
   sourceRefs,
   sourceSnapshot,
-} from "../../../../model/projections/graph/source.ts";
+} from "../../../../../domain/model/projections/source-facts.ts";
 
 export type { NativeBehaviorContract } from "../../../../../domain/model/execution/native-contracts.ts";
 export interface BehaviorSourceRevision {

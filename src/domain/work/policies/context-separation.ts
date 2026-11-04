@@ -42,6 +42,8 @@ export interface ContextEvidenceReference {
   role: "user" | "assistant" | "tool";
   at: string;
   reasons: ContextOmissionReason[];
+  /** Top-level text was shortened or replaced in this decision projection. */
+  textOmitted?: true;
   execution?: {
     digest: string;
     repositoryVersion?: string;

@@ -24,7 +24,11 @@ import type {
   ProviderTurn,
 } from "../../../domain/work/dialogue.ts";
 
-import { buildTurnBrief, ProviderPinCardCache } from "./provider-context.ts";
+import {
+  buildTurnBrief,
+  ProviderPinCardCache,
+  untrustedObservation,
+} from "./provider-context.ts";
 import { decisionInstructions } from "./provider-instructions.ts";
 
 const REVIEW_INSTRUCTION =
@@ -45,6 +49,12 @@ export interface StructuredPromptParts {
   replay?: ChatContext["toolCallHistory"];
   turn?: ProviderTurn;
   hasLoadedSources?: boolean;
+}
+
+function variantOf(schema: typeof decisionSchema, kind: string) {
+  return schema.oneOf.find((variant) =>
+    (variant.properties.kind as { const?: unknown }).const === kind
+  );
 }
 
 export abstract class StructuredAgents implements AgentPort {
@@ -109,11 +119,19 @@ export abstract class StructuredAgents implements AgentPort {
             policy.enabled &&
             policy.holderNativeId === context.operator?.nativeId
           ) === true);
+    const behaviorIds = (context.modeledBehaviors ?? []).map(({ id }) => id)
+      .sort();
     const schema = structuredClone(decisionSchema);
+    if (context.case?.type === "request") {
+      const reply = variantOf(schema, "reply")!;
+      // Only the person can supply a Request completion verdict.
+      reply.properties.caseClosure = { enum: ["abandoned"] };
+    }
     schema.oneOf = schema.oneOf.filter((variant) => {
       const kind = (variant.properties.kind as { const?: unknown }).const;
-      return (kind !== "prepare_operator_evolution" ||
-        evolution?.prepare === true) &&
+      return (kind !== "invoke_behavior" || behaviorIds.length > 0) &&
+        (kind !== "prepare_operator_evolution" ||
+          evolution?.prepare === true) &&
         (kind !== "decide_operator_evolution" || evolution?.accept === true) &&
         (kind !== "adopt_operator_evolution" || evolution?.adopt === true) &&
         (kind !== "consult_model" || modelRead) &&
@@ -128,33 +146,33 @@ export abstract class StructuredAgents implements AgentPort {
         (!["inspect_operator_candidate", "decide_operator_candidate"]
           .includes(String(kind)) || candidateDecisions);
     });
-    if (requestCreation || !teamCreation) {
-      for (const variant of schema.oneOf) {
-        if (!variant.properties.operator) continue;
-        const operator = variant.properties.operator as {
-          oneOf: Array<{ properties: Record<string, unknown> }>;
-        };
-        operator.oneOf = operator.oneOf.filter((entry) =>
-          requestCreation ? !!entry.properties.kind : !entry.properties.kind
-        );
-      }
+    const behavior = variantOf(schema, "invoke_behavior");
+    if (behavior) {
+      behavior.properties.behaviorId = {
+        ...(behavior.properties.behaviorId as Record<string, unknown>),
+        enum: behaviorIds,
+      };
     }
-    if (!candidateGrantRequest || !creationGrantRequest) {
-      for (const variant of schema.oneOf) {
-        if (
-          (variant.properties.kind as { const?: unknown }).const !==
-            "propose_mandate_change"
-        ) continue;
-        const rights = variant.properties.requestedRights as {
-          oneOf: Array<{ properties: Record<string, unknown> }>;
-        };
-        rights.oneOf = rights.oneOf.filter((right) =>
-          (candidateGrantRequest ||
-            !Object.hasOwn(right.properties, "toolAdmission")) &&
-          (creationGrantRequest ||
-            !Object.hasOwn(right.properties, "operatorCreation"))
-        );
-      }
+    const creation = variantOf(schema, "propose_agent_creation");
+    if ((requestCreation || !teamCreation) && creation?.properties.operator) {
+      const operator = creation.properties.operator as {
+        oneOf: Array<{ properties: Record<string, unknown> }>;
+      };
+      operator.oneOf = operator.oneOf.filter((entry) =>
+        requestCreation ? !!entry.properties.kind : !entry.properties.kind
+      );
+    }
+    const mandate = variantOf(schema, "propose_mandate_change");
+    if ((!candidateGrantRequest || !creationGrantRequest) && mandate) {
+      const rights = mandate.properties.requestedRights as {
+        oneOf: Array<{ properties: Record<string, unknown> }>;
+      };
+      rights.oneOf = rights.oneOf.filter((right) =>
+        (candidateGrantRequest ||
+          !Object.hasOwn(right.properties, "toolAdmission")) &&
+        (creationGrantRequest ||
+          !Object.hasOwn(right.properties, "operatorCreation"))
+      );
     }
     const input =
       context.messages.find((message) =>
@@ -175,8 +193,19 @@ export abstract class StructuredAgents implements AgentPort {
       (retained?.brief ?? { context: await buildTurnBrief(context) }) as {
         context: unknown;
       };
-    const turn = retained ??
-      (inputMessageId ? { inputMessageId, brief: payload } : undefined);
+    // The host selected exact outcomes and contribution completions before
+    // compacting journal excerpts.
+    // They append to replay; the original pending result and brief stay intact.
+    const hostObservations = context.hostObservations ?? [];
+    const turn = inputMessageId
+      ? {
+        inputMessageId,
+        brief: payload,
+        ...(hostObservations.length
+          ? { requestOutcomes: hostObservations }
+          : {}),
+      }
+      : undefined;
     const system = decisionInstructions(context, {
       teamCreation,
       operatorDecisions,
@@ -189,6 +218,11 @@ export abstract class StructuredAgents implements AgentPort {
         JSON.stringify({
           instruction: system,
           ...payload,
+          ...(hostObservations.length
+            ? {
+              observations: untrustedObservation({ hostObservations }),
+            }
+            : {}),
         }),
         batch ? decisionBatchSchema(schema) : schema,
         {

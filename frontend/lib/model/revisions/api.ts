@@ -510,7 +510,18 @@ export function createRevisionApi(
       writing = false;
     }
   }
+  function history(
+    signal?: AbortSignal,
+    options: { limit?: number } = {},
+  ): Promise<SourceHistory> {
+    const query = options.limit === undefined
+      ? ""
+      : `?${new URLSearchParams({ limit: String(options.limit) })}`;
+    return read<SourceHistory>(`/api/model-history${query}`, { signal });
+  }
   return {
+    /** Commit metadata only, without loading proposals or runtime rights. */
+    history,
     /**
      * The proposals and the history of main read together. The history is the
      * host's default length unless `limit` (1 to 200) asks for another.
@@ -519,25 +530,22 @@ export function createRevisionApi(
       signal?: AbortSignal,
       options: { limit?: number } = {},
     ): Promise<RevisionSnapshot> {
-      const query = options.limit === undefined
-        ? ""
-        : `?${new URLSearchParams({ limit: String(options.limit) })}`;
-      let [revisions, history] = await Promise.all([
+      let [revisions, sourceHistory] = await Promise.all([
         read<SourceRevisions>("/api/model-revisions", { signal }),
-        read<SourceHistory>(`/api/model-history${query}`, { signal }),
+        history(signal, options),
       ]);
-      if (!sameSourceVersion(revisions.version, history.headVersion)) {
+      if (!sameSourceVersion(revisions.version, sourceHistory.headVersion)) {
         revisions = await read<SourceRevisions>("/api/model-revisions", {
           signal,
         });
       }
-      if (!sameSourceVersion(revisions.version, history.headVersion)) {
+      if (!sameSourceVersion(revisions.version, sourceHistory.headVersion)) {
         throw new RevisionClientError(
           "history-moved",
           "The model changed while it was being read. Read again for a consistent history.",
         );
       }
-      return { revisions, history };
+      return { revisions, history: sourceHistory };
     },
     async runtime(
       agentId: string,

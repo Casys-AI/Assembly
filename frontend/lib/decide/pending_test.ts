@@ -665,7 +665,8 @@ Deno.test("what a Request's operator asked waits on that Request, read from its 
       snapshot(
         cases[0],
         owner("research", [
-          { ...asked, caseId: cases[0].id },
+          // The enclosing Request supplies the origin even for an older change.
+          asked,
           { ...asked, id: "decided", status: "approved", caseId: cases[0].id },
         ]),
       ),
@@ -678,7 +679,7 @@ Deno.test("what a Request's operator asked waits on that Request, read from its 
       "authorization",
       "thread:research",
       cases[0].id,
-      `/cases?case=${encodeURIComponent(cases[0].id)}`,
+      `/cases?case=${encodeURIComponent(cases[0].id)}&agent=thread%3Aresearch`,
     ]],
   );
   // The Request that asked waits; the other does not.

@@ -51,3 +51,9 @@ export interface ScopedSoftwareSourceWriteOptions {
   readonly dossier: ScopedSoftwareWriteDossierV2;
   readonly protocol: ScopedSoftwareSourcePublicationProtocol;
 }
+
+export interface ScopedSoftwareSourceWritePort {
+  scopedSoftwareSourceWrite(
+    options: ScopedSoftwareSourceWriteOptions,
+  ): Promise<ScopedSoftwareSourceWriteFacade>;
+}

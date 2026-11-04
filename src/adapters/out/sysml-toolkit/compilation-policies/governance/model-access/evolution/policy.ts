@@ -9,8 +9,8 @@ import type {
   ElementRecord,
   ModelSnapshot,
 } from "../../../../../../../domain/model/records/snapshot.ts";
-import type { ModelIdentity } from "../../../../../../../domain/work/dialogue.ts";
-import type { NativeLiteral } from "../../../work/execution-model.ts";
+import type { ModelIdentity } from "../../../../../../../domain/shared-kernel/model-identity.ts";
+import type { NativeLiteral } from "../../../../../../../domain/model/records/native-literal.ts";
 import { compileNativeAuthority } from "../../../work/execution-model.ts";
 import {
   validateModelEditPolicyIdentity,

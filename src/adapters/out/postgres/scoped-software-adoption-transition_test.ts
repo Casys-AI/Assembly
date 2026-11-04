@@ -1,9 +1,14 @@
+import type { OperatorStorage } from "./host-storage.ts";
 import assert from "node:assert/strict";
 import { PostgresScopedSoftwareAdoptionTransition } from "./scoped-software-adoption-transition.ts";
-import type { ScopedSoftwareAdoptionPort } from "../../work/scoped-software-evolution.ts";
+import type { ScopedSoftwareAdoptionPort } from "../../../application/model/evolution/ports.ts";
 
-type Input = Parameters<ScopedSoftwareAdoptionPort["adopt"]>[0];
-type Receipt = Awaited<ReturnType<ScopedSoftwareAdoptionPort["adopt"]>>;
+type Input = Parameters<
+  ScopedSoftwareAdoptionPort<OperatorStorage>["adopt"]
+>[0];
+type Receipt = Awaited<
+  ReturnType<ScopedSoftwareAdoptionPort<OperatorStorage>["adopt"]>
+>;
 type Options = ConstructorParameters<
   typeof PostgresScopedSoftwareAdoptionTransition
 >[0];

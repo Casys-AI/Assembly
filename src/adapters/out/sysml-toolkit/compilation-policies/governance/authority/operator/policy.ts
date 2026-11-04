@@ -2,15 +2,15 @@ import { persistedOrder } from "../../../../../../../domain/primitives/persisted
 import {
   bindPolicyReferences,
   typedPolicyLiterals,
-} from "../../typed-policy-facts.ts";
+} from "../../../../../../../domain/model/policies/typed-policy-facts.ts";
 import { sameProductName } from "../../../../../../../domain/model/sysml-product-names.ts";
 /** Semantic compilation of admitted operator authority policies. */
 import type {
   ElementRecord,
   ModelSnapshot,
 } from "../../../../../../../domain/model/records/snapshot.ts";
-import type { ModelIdentity } from "../../../../../../../domain/work/dialogue.ts";
-import type { NativeLiteral } from "../../../work/execution-model.ts";
+import type { ModelIdentity } from "../../../../../../../domain/shared-kernel/model-identity.ts";
+import type { NativeLiteral } from "../../../../../../../domain/model/records/native-literal.ts";
 import { compileNativeAuthority } from "../../../work/execution-model.ts";
 import { compileModelPolicyRoot } from "../model-policy-root.ts";
 import {

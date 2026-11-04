@@ -1,7 +1,7 @@
 import {
   type NativeExecutionLedger,
   NativeGraphExecution,
-} from "../../src/adapters/work/runtime/conversation.ts";
+} from "../../src/adapters/out/native-execution/conversation.ts";
 import {
   deepStrictEqual,
   equal,
@@ -12,7 +12,7 @@ import {
 import type {
   NativeExecutionHandlers,
   NativeExecutionRequest,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import type { CompiledFlow } from "../../src/domain/model/execution/flow.ts";
 import {
   createTestNativeExecution,
@@ -25,7 +25,7 @@ import {
   memoryImmutableConsultationState,
 } from "./immutable-consultations.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";
-import { runtimeRevisionReference } from "../../src/application/work/runtime/execution.ts";
+import { runtimeRevisionReference } from "../../src/application/work/native-execution/contract.ts";
 import { valueDigest } from "../../src/application/work/runtime/values.ts";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
 import { compileNativeFixtureFlows } from "./execution-fixture.ts";
@@ -33,9 +33,9 @@ import type { PendingChange } from "../../src/domain/governance/records/pending-
 import { Command, MemorySaver } from "@langchain/langgraph";
 import {
   compileNativeOperatorGraph,
-  type NativeTrace,
-} from "../../src/adapters/work/runtime/native-graph.ts";
-import type { NativeObservationEmission } from "../../src/adapters/work/runtime/native-observation.ts";
+} from "../../src/adapters/out/native-execution/native-graph.ts";
+import type { NativeTrace } from "../../src/domain/model/execution/native-observation.ts";
+import type { NativeObservationEmission } from "../../src/domain/model/execution/native-observation.ts";
 
 async function immutableLedgerFixture() {
   const f = immutableConsultationFixture(), runId = "immutable-memory-run";

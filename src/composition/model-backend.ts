@@ -1,10 +1,12 @@
+import { StartupRefusalError } from "../infrastructure/startup-refusal.ts";
+import { createSourceModel as constructSourceModel } from "./source-model-services.ts";
 import type { ArtifactSourceServicePort } from "../application/work/artifacts/publication.ts";
 import { createArtifactSourceServices } from "./artifact-source-services.ts";
 import { ArtifactSourceError } from "../domain/work/artifacts/source-reference.ts";
 import {
   type EvolutionSourceAssessmentPort,
   NativeEvolutionRepository,
-} from "../adapters/model/evolution/repository.ts";
+} from "../application/model/evolution/repository.ts";
 import { resolveRepositoryLayout } from "../adapters/out/filesystem/layout.ts";
 import { readAssemblyEnv } from "../infrastructure/environment.ts";
 import { canonical } from "../domain/primitives/canonical-json.ts";
@@ -13,7 +15,7 @@ import { defaultToolkitPackageDir } from "../infrastructure/native/runtime-locat
 /** Assemble the local Git source repository and embedded SysML compiler. */
 import { join, resolve } from "node:path";
 import { GitModelRepository } from "../adapters/out/git/repository.ts";
-import { NativeModelSourceAuthorization } from "../adapters/governance/model-access/source-authorization.ts";
+import { NativeModelSourceAuthorization } from "../application/governance/model-access/source-authorization.ts";
 import {
   createModelProject,
   readModelProject,
@@ -38,7 +40,7 @@ import {
   PostgresModelWriteQueue,
   type PostgresRequestPublicationParticipant,
   type PostgresScopedSoftwarePublicationParticipant,
-} from "../adapters/model/repository/writing/postgres-write-queue.ts";
+} from "../adapters/out/postgres/model-write-queue.ts";
 import type { ScopedSoftwareSourceWriteResolver } from "../application/model/publication/ports/out/scoped-software-source-publication.port.ts";
 import type {
   RequestSourceTargetOptions,
@@ -51,21 +53,25 @@ import { safeStoragePort } from "../adapters/out/postgres/errors.ts";
 import { QueuedModelWriter } from "../application/model/publication/queued-writer.ts";
 import { DurableQueuedArtifactSourcePublisher } from "../application/model/write-queue/queued-artifact-source-publisher.ts";
 import type { QueuedArtifactSourcePublication } from "../domain/work/artifacts/source-publication.ts";
-import { NativeModelPublicationRevalidator } from "../adapters/governance/model-access/publication/policy.ts";
-import { createHostEditExecutor } from "../adapters/model/sources/editing/host-writer.ts";
-import { storedBuildMaterializer } from "../adapters/model/builds/materialization/stored.ts";
-import { type SourceModelOptions } from "../adapters/model/sources/source-model.ts";
+import {
+  createSelectedSystemValidator,
+  NativeModelPublicationRevalidator,
+} from "../application/model/publication/revalidation.ts";
+import { createHostEditExecutor } from "../application/model/editing/host-writer.ts";
+import { storedBuildMaterializer } from "../adapters/out/sysml-toolkit/compilation/stored-materializer.ts";
+import { type SourceModelOptions } from "../application/model/source-model-options.ts";
 import { observeModelRevisions } from "../application/model/diagnostics/events.ts";
 import { SysmlToolkitAdapter } from "../adapters/out/sysml-toolkit/adapter.ts";
 import { ToolkitCompiler } from "../adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { loadInitialSources } from "../adapters/out/filesystem/initial-model-sources.ts";
 import {
-  SourceModel,
+  sourceCompilation,
+  sourceEvolutionCompilation,
   validateSourceExecutable,
-} from "../adapters/model/sources/source-model.ts";
+} from "../adapters/out/sysml-toolkit/compilation/source-executables.ts";
 
 /** Assembly runs only on the SysML Toolkit: without it, nothing starts. */
-export class ToolkitRequiredError extends Error {
+export class ToolkitRequiredError extends StartupRefusalError {
   readonly code = "TOOLKIT_REQUIRED";
   readonly recovery =
     "deno task model:toolkit:setup, or export SYSML_TOOLKIT_DIR=<sysml-toolkit package directory>";
@@ -91,10 +97,10 @@ export function toolkitPackageDir(): string {
   return defaultToolkitPackageDir();
 }
 
-/** Desktop composition budget: the measured 19-source seed weighs 112.7 MB
- * under the conservative estimator. Keep a base and prepared candidate with
- * headroom; the generic build-service default remains suitable for small models. */
-export const DEFAULT_BACKEND_BUILD_MEMORY_BYTES = 256 * 1024 * 1024;
+/** Desktop composition budget: the two source builds used by the measured
+ * Release opening weigh about 312 MiB together under the conservative estimator.
+ * Keep both resident with headroom; callers can override this bounded budget. */
+export const DEFAULT_BACKEND_BUILD_MEMORY_BYTES = 512 * 1024 * 1024;
 
 export async function openModelBackend(
   dataDir: string,
@@ -343,6 +349,8 @@ export async function openModelBackend(
       requestSourceExecutor: createHostEditExecutor(tooling),
       sourceAuthorization: new NativeModelSourceAuthorization(
         projectId,
+        sourceCompilation,
+        sourceEvolutionCompilation,
         tooling,
       ),
       writeFence: {
@@ -373,7 +381,11 @@ export async function openModelBackend(
     compiler,
     builds: buildService,
     executor: createHostEditExecutor(tooling),
-    revalidator: new NativeModelPublicationRevalidator(projectId),
+    revalidator: new NativeModelPublicationRevalidator(
+      projectId,
+      createSelectedSystemValidator(sourceCompilation),
+      sourceCompilation,
+    ),
   });
   const artifactSourceRepository = storedRepository.artifactSources(
     options.storage.sourceScopeId,
@@ -510,10 +522,10 @@ export async function openModelBackend(
   const createSourceModel = (
     modelOptions: Pick<
       SourceModelOptions,
-      "systemQualifiedName" | "sourcesDir" | "initialSources" | "creationScope"
+      "systemQualifiedName" | "initialSources" | "creationScope"
     > = {},
   ) =>
-    new SourceModel({
+    constructSourceModel({
       repository,
       projectId,
       initialSources,

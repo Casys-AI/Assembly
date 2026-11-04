@@ -5,13 +5,64 @@ import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
-import { projectSourceGraph } from "../../src/adapters/model/projections/graph/source.ts";
+import { projectSourceGraph } from "../../src/domain/model/projections/source-graph.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { freshProviderContexts } from "../support/fresh-provider-contexts.ts";
+import { projectModelDiagnosticFacts } from "../../src/domain/model/policies/diagnostics.ts";
+import { lintModelDiagnostics } from "../../src/domain/model/policies/diagnostics.ts";
 import {
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+  MAX_PIN_CARD_CHARACTERS,
+  ProviderPinCardCache,
+} from "../../src/adapters/out/llm-providers/provider-context.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");
+
+Deno.test({
+  name: "fresh-system Main, BO and teammate pin cards fit the provider ceiling",
+  ignore: !toolkitIntegrationEnabled,
+  async fn() {
+    const contexts = await freshProviderContexts(packageDir!);
+    const cache = new ProviderPinCardCache();
+    for (const role of ["main", "boCreationGrantRequest", "bo", "teammate"]) {
+      const context = contexts[role]!;
+      assert.equal(context.designer !== undefined, role === "main", role);
+      assert.equal(
+        context.case?.type,
+        role === "main" ? undefined : "request",
+        role,
+      );
+      assert.equal(
+        context.mandate!.supportedChanges.some((change) =>
+          change.requestedRights === "operatorCreation"
+        ),
+        role === "boCreationGrantRequest",
+        role,
+      );
+      assert(Array.isArray(context.modeledBehaviors), role);
+      assert(
+        context.modeledBehaviors.every((behavior) =>
+          behavior.id &&
+          behavior.callerNativeId === context.operator!.nativeId &&
+          behavior.inputSchema && behavior.sourceIds.length > 0
+        ),
+        role,
+      );
+      assert.equal(
+        context.operatorCreation?.policies.some((policy) => policy.enabled) ??
+          false,
+        role === "bo",
+        role,
+      );
+      const card = cache.card(context);
+      assert(card.length <= MAX_PIN_CARD_CHARACTERS, `${role}: ${card.length}`);
+    }
+    assert.notEqual(
+      contexts.teammate!.operator!.nativeId,
+      contexts.bo!.operator!.nativeId,
+    );
+  },
+});
 
 Deno.test({
   name:
@@ -98,10 +149,34 @@ Deno.test({
     assert.equal(model.memoryPolicy!.allowSelfAdmission, false);
     assert.equal(model.memoryPolicy!.ownerId, model.identity.builderId);
     assert.deepEqual(model.memoryPolicy!.allowedScopes, ["modeling"]);
-    assert.deepEqual(model.skillPolicy!.allowedHosts, [
-      "raw.githubusercontent.com",
-    ]);
+    assert.deepEqual(model.skillPolicy!.allowedHosts, []);
     assert.deepEqual(model.configuration.network!.allowedHosts, []);
+    assert.equal(model.workBudgetPolicy!.limit, 1000);
+    assert.equal(model.workBudgetPolicy!.revision, 1);
+    assert.equal(model.workBudgetPolicy!.onExhausted, "wait");
+    assert.equal(model.workBudgetPolicy!.exhaustionRecipient, "local-control");
+    assert.equal(model.ownerAuthority!.ownerSource, "modeled");
+    const revision = { ...native, version: "fresh-bootstrap-diagnostics" };
+    const facts = projectModelDiagnosticFacts(revision, [model]);
+    assert.equal(facts.units[0]!.accountableHumanDeclared, true);
+    assert.deepEqual(lintModelDiagnostics(facts), []);
+    const withoutAssignment = await compile({
+      ...native.sources,
+      "configuration.sysml": native.sources["configuration.sysml"]!.replace(
+        "part accountability : APEAccountability::AccountabilityAssignment;\nbind accountability.accountable = owner;",
+        "",
+      ),
+    });
+    // Removing a binding can change native connector/allocation identities.
+    // Compatibility for unchanged sources is covered by the legacy and inert
+    // library cases; this variant checks only the declared accountability fact.
+    assert.equal(
+      projectModelDiagnosticFacts(
+        { ...withoutAssignment.native, version: "owner-only-diagnostics" },
+        [withoutAssignment.model],
+      ).units[0]!.accountableHumanDeclared,
+      false,
+    );
     assert.equal(model.catalog.length, 0);
     assert.equal(model.behaviors!.length, 10);
     assert.equal(model.operatorEntries!.length, 10);
@@ -218,6 +293,7 @@ Deno.test({
     const historical = { ...withDefinitions };
     for (
       const name of [
+        "accountability",
         "context",
         "memory",
         "skills",

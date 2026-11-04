@@ -1,4 +1,5 @@
 import type { SystemRuntimeState } from "../../../src/domain/work/dialogue.ts";
+import { responseError } from "../api-error.ts";
 import type {
   AgentMessageCommand,
   ConversationsSnapshot,
@@ -56,7 +57,7 @@ export interface CaseChangeStatus {
 }
 export type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
-/** Same-origin transport. Writes are performed once, only on an explicit action. */
+/** Same-origin transport. Message state owns the bounded stale-revision retry. */
 export function createWorkbenchApi(
   fetcher: Fetcher = (path, init) => fetch(path, init),
 ) {
@@ -64,11 +65,11 @@ export function createWorkbenchApi(
     const response = await fetcher(path, init);
     const body: unknown = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const message = body && typeof body === "object" && "error" in body &&
-          typeof body.error === "string"
-        ? body.error
-        : `Action not possible (${response.status}).`;
-      throw new Error(message);
+      throw responseError(
+        response.status,
+        body,
+        `Action not possible (${response.status}).`,
+      );
     }
     return body as T;
   }

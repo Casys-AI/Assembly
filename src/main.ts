@@ -3,12 +3,9 @@
  * `composition/`, wires the HTTP server, starts the advisory pre-warms after
  * listening, and registers the ordered shutdown. Startup/shutdown order is
  * load-bearing: toolkit gate, listen, advisory pre-warms, ordered `stop()`. */
-import {
-  requireToolkitPackage,
-  toolkitPackageDir,
-  ToolkitRequiredError,
-} from "./composition/model-backend.ts";
-import { assembleAssembly, startAdvisoryPrewarms } from "./composition/root.ts";
+import { startAssembly } from "./composition/startup.ts";
+import { StartupRefusalError } from "./infrastructure/startup-refusal.ts";
+import { startAdvisoryPrewarms } from "./composition/root.ts";
 import { createOrderedStop } from "./composition/lifecycle.ts";
 import { resolveProviderConfiguration } from "./composition/provider-configuration.ts";
 import { createHttpServeHandler } from "./adapters/in/http/app.ts";
@@ -40,14 +37,7 @@ const { provider, agentModel, agentEffort, decisionMaxTokens } =
   resolveProviderConfiguration((key) => Deno.env.get(key));
 const dataDir = readAssemblyEnv("ASSEMBLY_DEMO_DATA_DIR") ??
   new URL("../.data/demo/", import.meta.url).pathname;
-// Nothing starts without the SysML Toolkit.
-await requireToolkitPackage(toolkitPackageDir()).catch((error) => {
-  if (!(error instanceof ToolkitRequiredError)) throw error;
-  const { code, message, context, recovery } = error;
-  compositionLog.error(message, { code, context, recovery });
-  Deno.exit(2);
-});
-const assembly = await assembleAssembly({
+const assembly = await startAssembly({
   dataDir,
   servedOrigin,
   environment,
@@ -55,6 +45,11 @@ const assembly = await assembleAssembly({
   agentModel,
   agentEffort,
   decisionMaxTokens,
+}).catch((error) => {
+  if (!(error instanceof StartupRefusalError)) throw error;
+  const { code, message, context, recovery } = error;
+  compositionLog.error(message, { code, context, recovery });
+  Deno.exit(2);
 });
 const handleRequest = createHttpServeHandler(assembly);
 const server = Deno.serve({ hostname, port }, handleRequest);

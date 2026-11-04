@@ -62,6 +62,38 @@ Deno.test("a member change continuation uses only its recorded work and rejects 
   );
 });
 
+Deno.test("a retained Release member continues recorded work in its current Request", () => {
+  const { state, contribution } = fixture();
+  const { receipt } = contribution("member-input");
+  receipt.caseContext.record = {
+    id: "root-request",
+    owner: "main",
+    status: "open",
+  } as Case;
+  state.executionModel!.operatorTeam = {
+    parentOperatorId: "main",
+    requestOwnerId: "main",
+    requestId: "origin-request",
+  };
+  state.configuration = {
+    ...state.executionModel!.configuration,
+    changes: [
+      { id: "change", requestedBy: "worker", caseId: "root-request" } as never,
+    ],
+  };
+  const invocation = { kind: "delegated" as const, work: receipt };
+  state.changeWorkContinuations = {
+    change: {
+      inputMessageId: "member-input",
+      invocationKey: invocationKey(invocation),
+    },
+  };
+  deepStrictEqual(
+    requestChangeInvocation(state, "change", "root-request", "member-input"),
+    invocation,
+  );
+});
+
 function fixture() {
   const model = executableFixture({
     projectId: "project",

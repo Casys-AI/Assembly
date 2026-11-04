@@ -1,7 +1,7 @@
-import { nativePromotionDependencies } from "./model-advance.ts";
+import { nativePromotionDependencies } from "../native-execution/model-advance.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { adoptBudgetCeiling } from "./budget-transition.ts";
-import type { NativeExecutionPort } from "./execution.ts";
+import type { NativeExecutionPort } from "../native-execution/contract.ts";
 import {
   caseBudgetPolicy,
   currentCase,
@@ -166,6 +166,7 @@ export async function adoptModelVersion(this: ModelAdoptionHost, input: {
     await this.update((s) =>
       s.events.push({
         ...makeEvent(
+          this.ports.clock,
           "model-version-admission-authorized",
           `Décision locale d’adoption : ${native.version.digest}`,
         ),
@@ -187,6 +188,7 @@ export async function adoptModelVersion(this: ModelAdoptionHost, input: {
       s.events.push(
         {
           ...makeEvent(
+            this.ports.clock,
             "model-version-admitted",
             authorityExercise.outOfMandate
               ? "Reprise locale hors mandat : version du modèle admise"
@@ -375,6 +377,7 @@ export async function adopt(
       change.status = "superseded";
       s.events.push({
         ...makeEvent(
+          this.ports.clock,
           "configuration-change-superseded",
           `Proposition supplantée : ${change.id}`,
         ),

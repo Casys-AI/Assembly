@@ -3,6 +3,7 @@ import {
   assertOpeningBase,
   branchTeam,
   type BranchTeamPinnedModel,
+  canContributeFromMain,
   conversationPermissions,
   exactSourceVersion,
   openingCommand,
@@ -11,6 +12,7 @@ import {
   recordedOpeningCommand,
   requestSpaceDigest,
   RequestSpaceError,
+  verifiedRequestTeam,
 } from "./request-spaces.ts";
 import {
   requestOpeningBase,
@@ -357,4 +359,118 @@ Deno.test("branchTeam overflow never displaces an admitted member by alphabetica
       ]),
     /admitted branch member/,
   );
+});
+
+Deno.test("branchTeam retains only exact Release team members, then preserves their admitted pins", async () => {
+  const base = await requestOpeningBase();
+  base.sourceKind = "release";
+  const source = base.manifest.source!;
+  const owner = base.requestOwner.operatorId;
+  const child = pinned("retained", {
+    parentOperatorId: owner,
+    requestOwnerId: owner,
+    requestId: "original-case",
+  });
+  child.version.repositoryVersion = source.sourceVersion;
+  base.manifest.registeredOperatorIds.push("retained");
+  base.manifest.operators.push({
+    ...structuredClone(base.manifest.operators[0]),
+    operatorId: "retained",
+    nativeSystemId: child.identity.systemId,
+    modelDigest: child.version.digest,
+  });
+  const read = (admitted: string[] = []) =>
+    branchTeam(base, [child], "fresh-case", () => false, admitted);
+  const expected = [{
+    operatorId: "retained",
+    modelDigest: child.version.digest,
+    parentOperatorId: owner,
+  }];
+  deepStrictEqual(read(), expected);
+  equal(child.operatorTeam!.requestId, "original-case");
+  const advanced = structuredClone(child);
+  advanced.version.digest = "new-admitted-digest";
+  deepStrictEqual(branchTeam(base, [advanced], "fresh-case", () => false), []);
+  deepStrictEqual(
+    branchTeam(base, [advanced], "fresh-case", () => false, ["retained"]),
+    [{
+      ...expected[0],
+      modelDigest: advanced.version.digest,
+    }],
+  );
+  const invalid: Array<
+    (input: { base: typeof base; child: typeof child }) => void
+  > = [
+    ({ child }) => {
+      child.operatorTeam!.parentOperatorId = "missing-parent";
+    },
+    ({ child }) => {
+      child.operatorTeam!.requestOwnerId = "other-owner";
+    },
+    ({ child }) => {
+      child.identity.systemId = "other-system";
+    },
+    ({ base }) => {
+      base.manifest.registeredOperatorIds.push("retained");
+    },
+    ({ base }) => {
+      base.sourceKind = "current-main";
+    },
+  ];
+  for (const change of invalid) {
+    const input = structuredClone({ base, child });
+    change(input);
+    deepStrictEqual(
+      branchTeam(input.base, [input.child], "fresh-case", () => false),
+      [],
+    );
+  }
+});
+
+Deno.test("Main contribution refuses another Case even under the same parent and owner", () => {
+  const model = {
+    identity: { builderId: "member", systemId: "member-system" },
+    version: { digest: "member-pin" },
+    operatorTeam: {
+      parentOperatorId: "parent",
+      requestOwnerId: "owner",
+      requestId: "native-case",
+    },
+  };
+  equal(canContributeFromMain(model, "parent", undefined), false);
+  equal(
+    canContributeFromMain(
+      { ...model, operatorTeam: undefined },
+      "parent",
+      undefined,
+    ),
+    true,
+  );
+  equal(
+    canContributeFromMain(model, "parent", {
+      caseId: "foreign-case",
+      record: { owner: "owner" },
+    }),
+    false,
+  );
+  equal(
+    canContributeFromMain(model, "parent", {
+      caseId: "native-case",
+      record: { owner: "owner" },
+    }),
+    true,
+  );
+});
+
+Deno.test("verified Request roster keeps its opening membership immutable", () => {
+  const members = [{
+    operatorId: "member",
+    modelDigest: "pin",
+    parentOperatorId: "owner",
+  }];
+  const proof = verifiedRequestTeam("case-a", members);
+  members[0].operatorId = "changed";
+  deepStrictEqual(proof, { caseId: "case-a", memberIds: ["member"] });
+  throws(() => (proof.memberIds as string[]).push("extra"), TypeError);
+  throws(() => Object.assign(proof, { caseId: "other-case" }), TypeError);
 });

@@ -1,3 +1,4 @@
+import { parse, within } from "../../test/support/dom.ts";
 import {
   deepStrictEqual,
   doesNotMatch,
@@ -17,6 +18,7 @@ import {
   type ChatEntry,
   ChatTimeline,
   entriesFor,
+  ExchangeMessages,
   ToolProposalCard,
   useMessageCaseDetails,
   withExchanges,
@@ -24,6 +26,7 @@ import {
 import {
   cannotAdjust,
   changeCardProps,
+  ChangeProposalCard,
   sendAdjustment,
 } from "./ChangeProposalCard.tsx";
 import type { SourceProposal } from "../../lib/model/revisions/api.ts";
@@ -55,6 +58,329 @@ const conversation = (id: string): AgentConversation => ({
   responsibility: "",
   phase: "Prêt",
   messages: [],
+});
+
+Deno.test("Main keeps questions and human decisions, hides information, and leaves other threads and the journal intact", () => {
+  const state = createWorkbenchState({ initialState: snapshot() });
+  const main = conversation("alpha");
+  main.messages = [
+    {
+      id: "question",
+      role: "assistant",
+      at: "2026-11-03T10:00:00Z",
+      text: "Which audience?",
+    },
+    {
+      id: "done",
+      role: "tool",
+      at: "2026-11-03T10:01:00Z",
+      text: "completion data",
+      operatorNotice: {
+        kind: "request-completed",
+        caseId: "request-1",
+        owner: "beta",
+        openedBy: "alpha",
+        status: "closed-done",
+        result: "All done",
+      },
+    },
+    {
+      id: "order",
+      role: "tool",
+      at: "2026-11-03T10:02:00Z",
+      text: "order data",
+      operatorNotice: {
+        kind: "subordinate-order",
+        caseId: "request-1",
+        invocationId: "invocation-1",
+        subordinate: "beta",
+        orderedBy: { operatorId: "alpha" },
+        summary: "Read the page",
+      },
+    },
+    {
+      id: "human",
+      role: "tool",
+      at: "2026-11-03T10:03:00Z",
+      text: "decision data",
+      operatorNotice: {
+        kind: "authority-escalation",
+        caseId: "request-1",
+        changeId: "human",
+        recipient: "alpha",
+        requestedBy: "beta",
+        decisionAuthority: "human",
+        reason: "Allow web access",
+      },
+    },
+    {
+      id: "operator",
+      role: "tool",
+      at: "2026-11-03T10:04:00Z",
+      text: "operator decision data",
+      operatorNotice: {
+        kind: "authority-escalation",
+        caseId: "request-1",
+        changeId: "operator",
+        recipient: "alpha",
+        requestedBy: "beta",
+        decisionAuthority: "operator",
+        reason: "Delegate review",
+      },
+    },
+  ];
+  main.messages.push({
+    id: "unresolved",
+    role: "tool",
+    text: "unresolved data",
+    at: "2026-11-03T10:04:10Z",
+    operatorNotice: {
+      kind: "authority-escalation",
+      caseId: "request-2",
+      changeId: "unresolved",
+      recipient: "alpha",
+      requestedBy: "beta",
+      decisionAuthority: "unresolved",
+      reason: "Resolve this route",
+    },
+  }, {
+    id: "abandoned",
+    role: "tool",
+    text: "abandoned data",
+    at: "2026-11-03T10:04:20Z",
+    operatorNotice: {
+      kind: "request-completed",
+      caseId: "request-3",
+      owner: "beta",
+      openedBy: "alpha",
+      status: "closed-abandoned",
+      result: "Attention required",
+    },
+  }, {
+    id: "member",
+    role: "tool",
+    at: "2026-11-03T10:05:00Z",
+    text: "Member return",
+    work: {
+      callerId: "alpha",
+      targetNativeId: "beta",
+      correlationId: "correlation",
+      invocationId: "invocation",
+      modelVersion: { digest: "digest", repositoryVersion: "commit" },
+    },
+  });
+  const before = structuredClone(main.messages);
+  const show = (primary: boolean, independentRequest = false) =>
+    renderToString(
+      <ChatTimeline
+        state={state}
+        entries={chatEntries(state, main)}
+        conversation={{ ...main, primary }}
+        independentRequest={independentRequest}
+      />,
+    );
+  const html = show(true);
+  match(html, /Which audience\?/);
+  match(html, /Allow web access/);
+  match(html, /Resolve this route/);
+  match(html, /Attention required/);
+  doesNotMatch(
+    html,
+    /All done|gave .* an order|Delegate review|completion data|Member return/,
+  );
+  match(show(false), /All done/);
+  match(show(false), /Delegate review/);
+  match(show(true, true), /completion data/);
+  deepStrictEqual(main.messages, before);
+});
+
+Deno.test("an operator reassignment removes the superseded human request from Main", () => {
+  const state = createWorkbenchState({ initialState: snapshot() });
+  const main = conversation("alpha");
+  main.messages = (["human", "operator"] as const).map((authority, index) => ({
+    id: authority,
+    role: "tool",
+    text: "record",
+    at: `2026-11-04T00:0${index}:00Z`,
+    operatorNotice: {
+      kind: "authority-escalation",
+      caseId: "request",
+      changeId: "change",
+      recipient: "alpha",
+      requestedBy: "beta",
+      decisionAuthority: authority,
+      reason: `${authority} assignment`,
+    },
+  }));
+  const html = renderToString(
+    <ChatTimeline
+      state={state}
+      conversation={main}
+      entries={chatEntries(state, main)}
+    />,
+  );
+  doesNotMatch(html, /human assignment|operator assignment/);
+  equal(main.messages.length, 2);
+  state.dispose();
+});
+
+Deno.test("hidden Main notices neither split tool steps nor change the next message's Case chip", () => {
+  const state = createWorkbenchState({
+    initialState: { ...snapshot(), candidates: [] },
+  });
+  const main = conversation("alpha");
+  const step = (id: string) => ({
+    id,
+    role: "tool" as const,
+    caseId: "request-1",
+    text: `Step ${id}`,
+    at: "2026-11-03T10:00:00Z",
+  });
+  const hidden = {
+    id: "hidden",
+    role: "tool" as const,
+    caseId: "request-2",
+    text: "done",
+    at: "2026-11-03T10:01:00Z",
+    operatorNotice: {
+      kind: "request-completed" as const,
+      caseId: "request-2",
+      owner: "beta",
+      openedBy: "alpha",
+      status: "closed-done" as const,
+      result: "Done",
+    },
+  };
+  const messages = [step("one"), hidden, step("two"), {
+    ...hidden,
+    id: "another",
+  }, {
+    id: "answer",
+    role: "assistant" as const,
+    caseId: "request-1",
+    text: "Answer",
+    at: "2026-11-03T10:02:00Z",
+  }];
+  const html = renderToString(
+    <ChatTimeline
+      state={state}
+      conversation={main}
+      entries={messages.map((message) => ({
+        kind: "message",
+        at: message.at,
+        id: message.id,
+        message,
+      }))}
+    />,
+  );
+  equal((html.match(/class="tool-steps"/g) ?? []).length, 1);
+  match(html, /2 steps/);
+  equal((html.match(/class="case-chip"/g) ?? []).length, 1);
+  doesNotMatch(html, /request-2/);
+  state.dispose();
+});
+
+Deno.test("Retry applying acts once when ready, and says on hover why it waits for the session, a decision or the operator", async () => {
+  const reply = Promise.withResolvers<Response>();
+  let writes = 0;
+  const status = {
+    caseId: "C",
+    changeId: "network",
+    status: "blocked",
+    canResume: true,
+  };
+  const state = createWorkbenchState({
+    initialState: snapshot(),
+    fetch: (_path, init) => {
+      if (init?.method === "POST") {
+        writes++;
+        return reply.promise;
+      }
+      return Promise.resolve(Response.json(status));
+    },
+  });
+  const change = grant({
+    id: "network",
+    status: "approved",
+    requestedBy: "alpha",
+    caseId: "C",
+    baseModelDigest: "a".repeat(64),
+    requestedRights: { addNetworkHosts: ["example.org"] },
+  });
+  const owner = conversation("alpha");
+  owner.proposalContext = {
+    configurationRevision: 1,
+    before: {
+      network: { allowedHosts: [] },
+      builder: { admissionAuthority: "human" },
+    },
+    changes: [change],
+  };
+  const html = () =>
+    renderToString(
+      <ChangeProposalCard
+        state={state}
+        change={change}
+        conversation={owner}
+        caseId="C"
+        independentRequest
+      />,
+    );
+  state.requests.sessionReady.value = true;
+  await state.loadCaseChangeStatus("C", "alpha", change.id);
+  match(
+    html(),
+    /class="change-retry" disabled title="Reload the Request conversation before retrying/,
+  );
+  equal(await state.resumeCaseChange("C", "alpha", change.id), false);
+  equal(writes, 0);
+  const threads = {
+    systemId: "ui-fixture",
+    version: "v1",
+    defaultAgentId: "alpha",
+    conversations: [{ ...owner, busy: true }],
+  };
+  state.requests.snapshots.value = new Map([["C", threads]]);
+  match(
+    html(),
+    /class="change-retry" disabled title="The operator is processing a contribution/,
+  );
+  equal(await state.resumeCaseChange("C", "alpha", change.id), false);
+  equal(writes, 0);
+  state.requests.snapshots.value = new Map([["C", {
+    ...threads,
+    conversations: [owner],
+  }]]);
+  match(html(), /class="change-retry"\s*>Retry applying<\/button>/);
+  state.pending.value = true;
+  match(
+    html(),
+    /class="change-retry" disabled title="Another decision is in progress/,
+  );
+  equal(await state.resumeCaseChange("C", "alpha", change.id), false);
+  equal(writes, 0);
+  state.pending.value = false;
+  state.requests.sessionReady.value = false;
+  // Without the session the record is unread: no retry is offered at all.
+  const unread = parse(html());
+  equal(within(unread).queryByRole("button", { name: "Retry applying" }), null);
+  const checking = within(unread).byText("Checking…");
+  match(checking.getAttribute("title")!, /Connect the local session/);
+  equal(checking.querySelector(".chip-steps"), null);
+  state.requests.sessionReady.value = true;
+  await state.loadCaseChangeStatus("C", "alpha", change.id);
+  const applying = state.resumeCaseChange("C", "alpha", change.id);
+  match(
+    html(),
+    /class="change-retry" disabled title="Applying is already in progress/,
+  );
+  equal(await state.resumeCaseChange("C", "alpha", change.id), false);
+  equal(writes, 1);
+  reply.resolve(
+    Response.json({ ...status, status: "adopted", canResume: false }),
+  );
+  await applying;
+  state.dispose();
 });
 Deno.test("timeline includes only owned candidates, preserving exact pending controls", () => {
   const state = createWorkbenchState({ initialState: snapshot() });
@@ -875,8 +1201,12 @@ Deno.test("team creation cards keep their originating Request and publication st
     operatorState([{ ...team, status: "approved" }], []),
     "designer",
   );
-  match(accepted, /Accepted/);
-  doesNotMatch(accepted, />Applied</);
+  // Accepted, not yet published: applying, in the words every decision uses.
+  const chip = parse(accepted).querySelector(".change-chip")!;
+  equal(chip.textContent, "Applying");
+  equal(chip.getAttribute("title"), "Decided ✓ · Saved · In service");
+  equal(chip.querySelectorAll(".chip-steps span").length, 3);
+  doesNotMatch(accepted, />Applied<|Accepted/);
   match(accepted, /Originating Request: ui-fixture:case:1/);
   const published = timeline(
     operatorState([{
@@ -1000,4 +1330,101 @@ Deno.test("Case actions are offered only for the exact supported network proposa
     html({ ...network, requestedBy: "other" }),
     />Accept<\/button>|>Decline<\/button>/,
   );
+});
+
+const said = (
+  id: string,
+  role: "user" | "assistant" | "tool",
+  text: string,
+  caseId?: string,
+): ChatEntry => ({
+  kind: "message",
+  id: `message:${id}`,
+  at: "2026-11-03T10:00:00Z",
+  message: {
+    id,
+    role,
+    text,
+    at: "2026-11-03T10:00:00Z",
+    ...(caseId ? { caseId } : {}),
+  },
+});
+
+Deno.test("host and tool records in a row fold into one line that keeps their exact texts", () => {
+  const state = createWorkbenchState({ initialState: snapshot() });
+  const html = renderToString(
+    <ChatTimeline
+      state={state}
+      entries={[
+        said("t1", "tool", '{"status":"waiting"}'),
+        said("t2", "tool", "<b>**raw**</b>"),
+        said("reply", "assistant", "**Done**"),
+        said("t3", "tool", "later"),
+      ]}
+    />,
+  );
+  match(
+    html,
+    /<details class="tool-steps" data-key="message:t1"><summary><span aria-hidden="true">···<\/span> 2 steps<\/summary>/,
+  );
+  match(html, /<pre>\{&quot;status&quot;:&quot;waiting&quot;\}<\/pre>/);
+  match(html, /<pre>&lt;b>\*\*raw\*\*&lt;\/b><\/pre>/);
+  match(
+    html,
+    /<strong\s*>Done<\/strong>[\s\S]*data-key="message:t3"[\s\S]*1 step/,
+  );
+  doesNotMatch(html, /Tool result|View result|<details[^>]* open/);
+});
+
+Deno.test("a fold of host and tool records ends where the Case changes", () => {
+  const state = createWorkbenchState({ initialState: snapshot() });
+  const html = renderToString(
+    <ChatTimeline
+      state={state}
+      caseLinks={false}
+      entries={[
+        said("a1", "tool", "first", "case-a"),
+        said("a2", "tool", "second", "case-a"),
+        said("b1", "tool", "third", "case-b"),
+      ]}
+    />,
+  );
+  match(html, /data-key="message:a1"><summary>[\s\S]*? 2 steps</);
+  match(html, /data-key="message:b1"><summary>[\s\S]*? 1 step</);
+});
+
+Deno.test("the person's words stay as written; an agent's read as Markdown", () => {
+  const state = createWorkbenchState({ initialState: snapshot() });
+  const html = renderToString(
+    <ChatTimeline
+      state={state}
+      entries={[
+        said("asked", "user", "Keep **these** stars"),
+        said("answered", "assistant", "Kept **these**"),
+      ]}
+    />,
+  );
+  match(html, /Keep \*\*these\*\* stars/);
+  match(html, /Kept <strong\s*>these<\/strong>/);
+});
+
+Deno.test("another agent's exchange folds its records and reads its requests as Markdown", () => {
+  const message = (id: string, role: "user" | "tool", text: string) => ({
+    id,
+    role,
+    text,
+    at: "2026-11-03T10:00:00Z",
+  });
+  const html = renderToString(
+    <ExchangeMessages
+      messages={[
+        message("r1", "tool", "first record"),
+        message("r2", "tool", "second record"),
+        message("order", "user", "Review **these** hooks"),
+      ]}
+    />,
+  );
+  match(html, /data-key="message:r1"><summary>[\s\S]*? 2 steps</);
+  doesNotMatch(html, /data-key="message:r2"/);
+  match(html, /Review <strong\s*>these<\/strong> hooks/);
 });

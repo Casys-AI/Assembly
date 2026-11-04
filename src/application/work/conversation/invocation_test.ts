@@ -80,6 +80,7 @@ function host(
     say: () => Promise.resolve(),
     feedback: () => Promise.resolve(),
     ports: {
+      clock: { now: () => "2026-11-03T00:00:00.000Z" },
       runner: {
         test: () => Promise.reject(new Error("unused")),
         run: () => Promise.reject(new Error("unused")),
@@ -160,6 +161,7 @@ Deno.test("checkInvocation admits an exact behavior call and clears any tool che
       return Promise.resolve();
     },
     ports: {
+      clock: { now: () => "2026-11-03T00:00:00.000Z" },
       behaviors: {
         supports: () => Promise.resolve(true),
         invoke: () => Promise.reject(new Error("unused")),
@@ -193,6 +195,7 @@ Deno.test("checkInvocation reports an unauthorized behavior instead of throwing"
   const current = model();
   const runtimeHost = host(current, state(), {
     ports: {
+      clock: { now: () => "2026-11-03T00:00:00.000Z" },
       behaviors: {
         supports: () => Promise.resolve(true),
         invoke: () => Promise.reject(new Error("unused")),
@@ -402,6 +405,7 @@ function toolHost(
     },
     nativeCandidate: () => true,
     ports: {
+      clock: { now: () => "2026-11-03T00:00:00.000Z" },
       runner: {
         test: () => Promise.reject(new Error("unused")),
         run,
@@ -512,6 +516,7 @@ async function behaviorHost(
   runtime.executionModel = current;
   const runtimeHost = host(current, runtime, {
     ports: {
+      clock: { now: () => "2026-11-03T00:00:00.000Z" },
       behaviors: {
         supports: () => Promise.resolve(true),
         invoke,

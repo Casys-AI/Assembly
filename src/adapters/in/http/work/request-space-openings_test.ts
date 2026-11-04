@@ -1,5 +1,6 @@
 import { deepStrictEqual, equal, match } from "node:assert/strict";
 import { createRequestSpaceOpeningHandler } from "./request-space-openings.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
 import {
   createSpaceSessionHandler,
   SPACE_SESSION_COOKIE,
@@ -17,6 +18,34 @@ function request(path: string, body: unknown, cookie?: string) {
     body: JSON.stringify(body),
   });
 }
+Deno.test("opening refusal exposes the named check and recovery", async () => {
+  const context = { check: "dispatch.admission.status", openingId: "opening" };
+  const recovery = "Retry the same opening after restoring its admission.";
+  const handler = createRequestSpaceOpeningHandler({
+    open() {
+      throw new RequestSpaceError(
+        "ADMISSION_REFUSED",
+        "Admission unavailable",
+        {
+          context,
+          recovery,
+        },
+      );
+    },
+  }, origin);
+  const response = await handler(request("/api/request-space-openings/open", {
+    openingKey: "key",
+    text: "Request",
+    source: { kind: "current-main" },
+  }, `${SPACE_SESSION_COOKIE}=${"a".repeat(64)}`));
+  equal(response!.status, 403);
+  deepStrictEqual(await response!.json(), {
+    code: "ADMISSION_REFUSED",
+    error: "Admission unavailable",
+    context,
+    recovery,
+  });
+});
 Deno.test("space opening HTTP derives session from cookie and refuses actor/scope/ref DTOs", async () => {
   let called = 0;
   const handler = createRequestSpaceOpeningHandler({

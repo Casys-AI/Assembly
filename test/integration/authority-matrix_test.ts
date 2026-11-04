@@ -79,7 +79,7 @@ Deno.test("host enforcement anchors exhaust the matrix contract and point to rea
     import("../../src/application/work/candidates/decisions.ts"),
     import("../../src/domain/governance/policies/governance.ts"),
     import(
-      "../../src/adapters/governance/model-access/source-authorization.ts"
+      "../../src/application/governance/model-access/source-authorization.ts"
     ),
     import("../../src/adapters/in/http/model/revisions.ts"),
   ]);

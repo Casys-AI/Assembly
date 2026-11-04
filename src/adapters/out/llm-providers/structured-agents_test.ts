@@ -1,4 +1,5 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
+import { Ajv } from "ajv";
 import type { ChatContext } from "../../../domain/work/dialogue.ts";
 import { modelContextTools } from "../../../domain/model/consultation/context.ts";
 import {
@@ -32,6 +33,64 @@ class RecordingAgents extends StructuredAgents {
     );
   }
 }
+
+Deno.test("behavior tools select canonical exposed ids and disappear without exposures", async () => {
+  const agent = new RecordingAgents();
+  const id = "f444e82c-cd07-56a2-9840-bdf42361bb19";
+  const name = "ContributeTo_4be741d072cae0f21fb6d7f6";
+  const context: ChatContext = {
+    messages: [],
+    activeTools: [],
+    candidates: [],
+    modelVersion: { digest: "behavior-pin" },
+    operator: { nativeId: "bo", name: "BO", instruction: "Coordinate" },
+    modeledBehaviors: [{
+      id,
+      name,
+      description: "Contribute bounded work to the Request member.",
+      callerNativeId: "bo",
+      targetNativeId: "member-inbox",
+      targetTypeId: "AgentInbox",
+      inputTypeId: "WorkRequest",
+      inputSchema: { type: "object" },
+      sourceIds: [],
+    }],
+  };
+  const secondId = "e444e82c-cd07-56a2-9840-bdf42361bb19";
+  context.modeledBehaviors = [...context.modeledBehaviors!, {
+    ...context.modeledBehaviors![0],
+    id: secondId,
+  }];
+  agent.response = {
+    kind: "invoke_behavior",
+    text: "Ask the member",
+    behaviorId: id,
+    inputJson: '{"text":"Review the passage."}',
+  };
+  const selected = await agent.decide(context);
+  equal(selected.kind, "invoke_behavior");
+  if (selected.kind === "invoke_behavior") equal(selected.behaviorId, id);
+  const tool = buildProviderTools(agent.schema!).find((tool) =>
+    tool.name === "invoke_behavior"
+  )!;
+  const properties = tool.input_schema.properties as Record<
+    string,
+    { enum?: string[] }
+  >;
+  deepStrictEqual(properties.behaviorId.enum, [secondId, id]);
+  equal(properties.behaviorId.enum!.includes(name), false);
+  const prefix = agent.parts!.system;
+  const sameSchema = structuredClone(agent.schema);
+  context.modeledBehaviors = [...context.modeledBehaviors!].reverse();
+  await agent.decide(structuredClone(context));
+  equal(agent.parts!.system, prefix);
+  deepStrictEqual(agent.schema, sameSchema);
+  agent.response = undefined;
+  context.modelVersion = { digest: "without-behaviors" };
+  delete context.modeledBehaviors;
+  await agent.decide(context);
+  equal(agent.tools.includes("invoke_behavior"), false);
+});
 
 Deno.test("a Request exposes only granted team creation and refuses historical creation responses", async () => {
   const agent = new RecordingAgents();
@@ -91,6 +150,59 @@ Deno.test("a Request exposes only granted team creation and refuses historical c
   }
   delete context.case;
   equal((await agent.decide(context)).kind, "propose_agent_creation");
+});
+
+Deno.test("Request reply schema reserves done for the person's verdict", async () => {
+  const agent = new RecordingAgents();
+  const context: ChatContext = {
+    messages: [],
+    activeTools: [],
+    candidates: [],
+    case: {
+      id: "request",
+      number: 1,
+      type: "request",
+      objective: "Read",
+      owner: "operator",
+      openedBy: "person",
+      openedFrom: { conversationId: "main" },
+      modelPin: { digest: "pin" },
+      status: "open",
+      createdAt: "now",
+    },
+  };
+  await agent.decide(context);
+  const reply = (agent.schema as typeof decisionSchema).oneOf.find((variant) =>
+    (variant.properties.kind as { const: string }).const === "reply"
+  )!;
+  deepStrictEqual((reply.properties.caseClosure as { enum: string[] }).enum, [
+    "abandoned",
+  ]);
+  const validate = new Ajv({ strict: true }).compile(agent.schema!);
+  equal(
+    validate({ kind: "reply", text: "Complete", caseClosure: "done" }),
+    false,
+  );
+  equal(
+    validate({ kind: "reply", text: "Stop", caseClosure: "abandoned" }),
+    true,
+  );
+  for (const type of ["job", "watch", undefined] as const) {
+    if (type) context.case!.type = type;
+    else delete context.case;
+    await agent.decide(context);
+    const validateOutsideRequest = new Ajv({ strict: true }).compile(
+      agent.schema!,
+    );
+    equal(
+      validateOutsideRequest({
+        kind: "reply",
+        text: "Complete",
+        caseClosure: "done",
+      }),
+      true,
+    );
+  }
 });
 
 Deno.test("creation right is exposed and accepted only when the host supports its request", async () => {

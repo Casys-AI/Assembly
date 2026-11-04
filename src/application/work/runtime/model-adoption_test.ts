@@ -580,33 +580,34 @@ Deno.test("ordinary adoption checks the durable pin gate inside serialized contr
 Deno.test("foreign pin adoption preserves an actual parked promotion and permits the same transition only after settlement", async () => {
   const f = budgetAdoptionFixture("designer");
   const admitted = f.state.executionModel!;
-  const promotion: import("./execution.ts").NativeExecutionSnapshot = {
-    identity: {
-      operatorId: admitted.identity.builderId,
-      invocationKey: "designer",
-      scope: {
-        kind: "designer",
-        scopeId: f.state.designer!.scopeId,
-        ownerId: admitted.identity.builderId,
+  const promotion:
+    import("../native-execution/contract.ts").NativeExecutionSnapshot = {
+      identity: {
+        operatorId: admitted.identity.builderId,
+        invocationKey: "designer",
+        scope: {
+          kind: "designer",
+          scopeId: f.state.designer!.scopeId,
+          ownerId: admitted.identity.builderId,
+        },
+        purpose: "promotion",
+        subjectId: "candidate",
       },
-      purpose: "promotion",
-      subjectId: "candidate",
-    },
-    threadId: "promotion-thread",
-    contributionId: "input",
-    modelDigest: admitted.version.digest,
-    repositoryVersion: admitted.version.repositoryVersion,
-    flowRootId: admitted.flows.promotion.rootNativeId,
-    checkpointId: "retained-admission",
-    status: "waiting",
-    waits: [{
-      nodeId: "admission",
-      kind: "decision",
-      mechanism: "decide_admission",
-    }],
-    unsettledEffects: [],
-    pendingContributions: [],
-  };
+      threadId: "promotion-thread",
+      contributionId: "input",
+      modelDigest: admitted.version.digest,
+      repositoryVersion: admitted.version.repositoryVersion,
+      flowRootId: admitted.flows.promotion.rootNativeId,
+      checkpointId: "retained-admission",
+      status: "waiting",
+      waits: [{
+        nodeId: "admission",
+        kind: "decision",
+        mechanism: "decide_admission",
+      }],
+      unsettledEffects: [],
+      pendingContributions: [],
+    };
   f.host.ports.execution = {
     inspect: (operatorId) => {
       assert.equal(

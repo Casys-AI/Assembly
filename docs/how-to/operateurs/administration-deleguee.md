@@ -118,7 +118,7 @@ changes may require explicit reconciliation before admission.
 
 - [Bounds and chain resolution](../../../src/domain/governance/policies/model-delegation.ts).
 - [Root policy compilation](../../../src/adapters/out/sysml-toolkit/compilation-policies/governance/model-access/administration/policy.ts).
-- [Construction and validation of the exact operation](../../../src/adapters/governance/model-access/administration/operations.ts).
+- [Construction and validation of the exact operation](../../../src/application/governance/model-access/administration/operations.ts).
 - [Real Toolkit and Git scenario](../../../test/integration/model-delegation_test.ts).
 
 Normal tests are deterministic and make no AI provider calls.

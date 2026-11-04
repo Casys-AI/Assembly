@@ -1,10 +1,15 @@
+import {
+  errorLogProperties,
+  technicalLogger,
+} from "../infrastructure/logging.ts";
+import { createRequestRuntimeReaders } from "../adapters/out/postgres/request-runtime-readers.ts";
 import type { ClockPort } from "../application/work/runtime/ports.ts";
 import { SystemClock } from "../infrastructure/clock.ts";
 import type { ScopedOperatorRef } from "../domain/governance/authority.ts";
 import type { RequestChangeDecision } from "../application/work/request-spaces/request-change-decision.ts";
 import type { RequestSourceOwnerContext } from "../application/model/source-admission/request-source-owner.ts";
 import type { OperatorExecutionDelivery } from "../application/work/operators/execution.ts";
-import type { ResolvedOperatorScope } from "../adapters/work/runtime/operator-dispatch.ts";
+import type { ResolvedOperatorScope } from "../application/work/native-execution/contract.ts";
 import { createScopedSoftwareEvolutionComposition } from "./scoped-software-evolution.ts";
 import {
   bindMainAuthorityReplay,
@@ -12,7 +17,7 @@ import {
   requestAuthorityLifecycleBindings,
   requestTeamSettlement,
 } from "./request-space-authority-bridge.ts";
-import type { RequestNetworkChangePreparationPort } from "../adapters/work/request-network-change-sources.ts";
+import type { RequestNetworkChangePreparationPort } from "../application/work/request-spaces/request-network-change-sources.ts";
 import type { SystemRuntime } from "../application/work/runtime/system.ts";
 import { RequestSupervision } from "../application/work/request-spaces/supervision.ts";
 import { PostgresRequestSupervisionObservations } from "../adapters/out/postgres/request-supervision.ts";
@@ -23,12 +28,13 @@ import { PostgresRequestExecutionBindingReader } from "../adapters/out/postgres/
 import { PostgresEvolutionStore } from "../adapters/out/postgres/evolution-store.ts";
 import { PostgresRequestAdoptionTransition } from "../adapters/out/postgres/request-adoption-transition.ts";
 import { createRequestInputAdmissionGuard } from "../adapters/out/postgres/request-input-admission.ts";
-import { RequestAdoptionContexts } from "../adapters/work/request-adoption-context.ts";
-import { RequestExecutedModels } from "../adapters/work/request-executed-models.ts";
+import { RequestAdoptionContexts } from "../adapters/out/postgres/request-adoption-context.ts";
+import { RequestExecutedModels } from "../adapters/out/postgres/request-executed-models.ts";
 import { RequestRuntimeAdoptionService } from "../application/model/evolution/request-adoption-service.ts";
 import type { GitModelRepositoryReader } from "../adapters/out/git/repository.ts";
 import { createCaseBranchReader } from "../application/model/case-branch-reader.ts";
 import { RequestCaseConversations } from "../application/work/request-spaces/conversations.ts";
+import { createRequestConversationOwnerReader } from "../application/work/request-spaces/conversation-notifications.ts";
 import { RequestSpaceError } from "../domain/work/request-spaces.ts";
 import { createRequestSpaceControls } from "./space-controls.ts";
 export { createRequestSpaceControls } from "./space-controls.ts";
@@ -42,14 +48,15 @@ import {
   createRequestSpaceEffectStartGuard,
   createRequestSpaceResolver,
 } from "../adapters/out/postgres/request-space-execution.ts";
-import { createRequestSpaceDispatcher } from "../adapters/work/request-space-dispatch.ts";
-import { RequestInitialSkillAuthority } from "../adapters/work/request-initial-skill-authority.ts";
-import { RequestSpaceRuntime } from "../adapters/work/request-space-runtime.ts";
+import { createRequestSpaceDispatcher } from "../application/work/request-spaces/dispatch.ts";
+import { RequestInitialSkillAuthority } from "../application/work/request-spaces/request-initial-skill-authority.ts";
+import { createRequestInitialSkillRuntimeReader } from "../adapters/out/postgres/request-initial-skill-runtime-reader.ts";
+import { RequestSpaceRuntime } from "../application/work/request-spaces/runtime.ts";
 import type { createRequestOpeningSourcesComposition } from "./request-opening-sources.ts";
 import {
   createPostgresAdmittedRequestRuntime,
   type PostgresAdmittedRequestRuntimeOptions,
-} from "../adapters/work/runtime/postgres.ts";
+} from "../adapters/out/native-execution/postgres.ts";
 
 export interface RequestSpacesCompositionOptions {
   clock?: ClockPort;
@@ -102,6 +109,8 @@ export interface RequestSpacesCompositionOptions {
   controlComposition?: ReturnType<typeof createRequestSpaceControls>;
   /** Advisory: something committed may have moved this Case's model. */
   onCaseModelChanged?(caseId: string): void;
+  /** Advisory: a BO or member conversation changed after persistence. */
+  onConversationStateChanged?(caseId: string): void;
   /** Explicit production composition; legacy inert fixtures need no adoption facade. */
   adoption?: {
     repositoryId: string;
@@ -287,7 +296,17 @@ export async function createRequestSpacesComposition(
     })
     : undefined;
   if (software) options.softwareEvolution!.bindPublication(software);
+  if (nativeRuntime.ledger.client !== storage.client) {
+    throw new RequestSpaceError(
+      "FORBIDDEN",
+      "The admitted Request runtime belongs to another host",
+    );
+  }
+  const log = technicalLogger("composition");
   const runtime = new RequestSpaceRuntime({
+    ...createRequestRuntimeReaders(storage.client),
+    onNoticeError: (error) =>
+      log.error(error.message, errorLogProperties(error)),
     mainSnapshot: () => options.mainAuthorityRuntime?.()?.snapshot,
     ...(software ? { softwareEvolutionFactory: software.factory } : {}),
     storage,
@@ -301,13 +320,22 @@ export async function createRequestSpacesComposition(
         (await executionBindings.read(record)).admission.permissions
           .operatorIds)
       : {}),
-    native: nativeRuntime,
+    native: {
+      scope: nativeRuntime.ledger.options.scope,
+      forCaseSpace: nativeRuntime.forCaseSpace,
+    },
     openings: store,
     source,
     branches,
     admissions,
     dependencies,
     executionBindings,
+    ...(options.onConversationStateChanged
+      ? {
+        onConversationStateChanged: (opening: { caseId: string }) =>
+          options.onConversationStateChanged!(opening.caseId),
+      }
+      : {}),
     ...(executedModels
       ? {
         resolveExecutionModel: executedModels.current,
@@ -366,7 +394,7 @@ export async function createRequestSpacesComposition(
     })
     : undefined;
   const initialSkillAuthority = new RequestInitialSkillAuthority({
-    storage,
+    runtime: createRequestInitialSkillRuntimeReader(storage),
     openings: store,
     source,
     branches,
@@ -450,6 +478,10 @@ export async function createRequestSpacesComposition(
     controls,
     openings,
     runtime,
+    conversationOwner: createRequestConversationOwnerReader({
+      scope: storage.scope,
+      store,
+    }),
     conversations: new RequestCaseConversations({
       scope: storage.scope,
       control: controls,

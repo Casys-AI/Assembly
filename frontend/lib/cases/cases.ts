@@ -1,3 +1,4 @@
+import { shortDate } from "../dates.ts";
 import { computed, signal } from "@preact/signals";
 import type { Fetcher } from "../workbench/api.ts";
 
@@ -8,6 +9,7 @@ import type { Fetcher } from "../workbench/api.ts";
  * ignores fields it does not know, so the contract can still grow.
  */
 export type CaseKind = "request" | "job" | "watch";
+export type CaseVerdict = "accepted" | "rejected";
 export type CaseStatus =
   | "open"
   | "waiting"
@@ -37,6 +39,8 @@ export interface CaseRecord {
   initialExecutionOutcome?: "refused";
   createdAt: string;
   closedAt?: string;
+  closedBy?: string;
+  verdict?: CaseVerdict;
   openedFrom: { conversationId: string; messageId?: string };
   modelPin: { digest: string; repositoryVersion?: string };
   budget?: { budgetId: string; scopeId: string };
@@ -223,6 +227,10 @@ function parseCase(value: unknown): CaseRecord {
         !["open", "waiting"].includes(value.status)) ||
     !timestamp(value.createdAt) ||
     (value.closedAt !== undefined && !timestamp(value.closedAt)) ||
+    (value.closedBy !== undefined && !identity(value.closedBy)) ||
+    (value.verdict !== undefined &&
+      (value.status !== "closed-done" || !identity(value.closedBy) ||
+        !["accepted", "rejected"].includes(value.verdict as string))) ||
     !object(openedFrom) || !identity(openedFrom.conversationId) ||
     (openedFrom.messageId !== undefined && !identity(openedFrom.messageId)) ||
     !object(modelPin) || !identity(modelPin.digest) ||
@@ -245,6 +253,12 @@ function parseCase(value: unknown): CaseRecord {
       : {}),
     createdAt: value.createdAt,
     ...(value.closedAt !== undefined ? { closedAt: value.closedAt } : {}),
+    ...(value.closedBy !== undefined
+      ? { closedBy: value.closedBy as string }
+      : {}),
+    ...(value.verdict !== undefined
+      ? { verdict: value.verdict as CaseVerdict }
+      : {}),
     openedFrom: {
       conversationId: openedFrom.conversationId,
       ...(openedFrom.messageId !== undefined
@@ -318,6 +332,16 @@ export function caseTitle(
   return `${word.length >= max / 2 ? word : cut}…`;
 }
 
+/** "3 Nov, 19:52": the day and time of an event. */
+export function timeLabel(at: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(at));
+}
+
 /** "in 3 hours", "yesterday", or a date: enough to place an event. */
 export function since(at: string, now = Date.now()): string {
   const seconds = Math.round((Date.parse(at) - now) / 1000);
@@ -330,8 +354,7 @@ export function since(at: string, now = Date.now()): string {
   for (const [unit, size] of units) {
     if (Math.abs(seconds) >= size) {
       return Math.abs(seconds) >= 7 * 86400
-        ? new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" })
-          .format(new Date(at))
+        ? shortDate(at)
         : format.format(Math.round(seconds / size), unit);
     }
   }
@@ -422,6 +445,11 @@ export function caseHref(id: string, type: CaseKind = "request"): string {
   return type === "request" ? `/cases?${query}` : `/chat?${query}`;
 }
 
+/** A new Request on the Requests page, starting from this Release. */
+export function newRequestHref(releaseId: string): string {
+  return `/cases?${new URLSearchParams({ from: releaseId })}`;
+}
+
 /** A sub-agent's messages in a Request: the Requests page reads them, read-only. */
 export function caseAgentHref(caseId: string, agentId: string): string {
   return `/cases?${new URLSearchParams({ case: caseId, agent: agentId })}`;
@@ -432,7 +460,11 @@ export interface CasesPort {
   read(): Promise<CasesSnapshot | null>;
   /** `null` when this Case does not exist (404). */
   readOne(id: string): Promise<CaseRecord | null>;
-  close(id: string, outcome: "done" | "abandoned"): Promise<void>;
+  close(
+    id: string,
+    outcome: "done" | "abandoned",
+    verdict?: CaseVerdict,
+  ): Promise<void>;
   /** Runtime actions on a Job or a Watch; none of them grants a right. */
   act(id: string, action: CaseAction): Promise<void>;
 }
@@ -476,13 +508,13 @@ export function createCasesApi(
       }
       return record;
     },
-    async close(id, outcome) {
+    async close(id, outcome, verdict) {
       const response = await fetcher(
         `/api/cases/${encodeURIComponent(id)}/close`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ outcome }),
+          body: JSON.stringify({ outcome, verdict }),
         },
       );
       if (!response.ok) {
@@ -537,6 +569,7 @@ export function createCases(
   let collectionSequence = 0;
   let flight: Promise<void> | null = null;
   const detailFlights = new Map<string, Promise<void>>();
+  const detailInvalidations = new Map<string, number>();
   let queued = false;
   /** Open Cases, oldest first: numbers only grow, so this is arrival order. */
   const open = computed(() =>
@@ -640,7 +673,12 @@ export function createCases(
   }
   /** Read a direct link or a closed Case omitted from the Dock collection. */
   function ensure(id: string): Promise<void> {
-    if (byId(id)) return Promise.resolve();
+    return readDetail(id, false);
+  }
+  function readDetail(id: string, invalidated: boolean): Promise<void> {
+    if (invalidated) {
+      detailInvalidations.set(id, (detailInvalidations.get(id) ?? 0) + 1);
+    } else if (byId(id)) return Promise.resolve();
     const existing = detailFlights.get(id);
     if (existing) return existing;
     const requestLifecycle = lifecycle;
@@ -648,35 +686,63 @@ export function createCases(
     const task = (async () => {
       while (requestLifecycle === lifecycle) {
         const requestedSequence = ++sequence;
+        const invalidation = detailInvalidations.get(id);
         try {
           const record = await options.port?.readOne(id) ?? null;
           if (requestLifecycle !== lifecycle) return;
-          if (requestedSequence < acceptedSequence) {
-            if (byId(id)) return;
+          if (requestedSequence < collectionSequence) {
+            if (!detailInvalidations.has(id) && byId(id)) return;
             continue;
           }
-          acceptedSequence = requestedSequence;
+          // Other Cases' details are independent; the global watermark still
+          // prevents an older collection from overwriting any updated row.
+          acceptedSequence = Math.max(acceptedSequence, requestedSequence);
           setDetail(
             id,
             record ? { status: "ready", record } : { status: "not-found" },
           );
+          // A targeted reread also updates the Dock's existing row, including
+          // closure. Direct links outside its collection remain detail-only.
+          const collection = snapshot.peek();
+          if (collection?.cases.some((entry) => entry.id === id)) {
+            snapshot.value = {
+              ...collection,
+              cases: record
+                ? collection.cases.map((entry) =>
+                  entry.id === id ? record : entry
+                )
+                : collection.cases.filter((entry) => entry.id !== id),
+            };
+          }
         } catch (cause) {
           if (requestLifecycle !== lifecycle) return;
-          if (requestedSequence < acceptedSequence) continue;
+          if (requestedSequence < collectionSequence) continue;
           setDetail(id, {
             status: "error",
             error: cause instanceof Error ? cause.message : "Case unavailable.",
           });
         }
+        if (invalidation !== detailInvalidations.get(id)) continue;
         return;
       }
     })().finally(() => {
-      if (detailFlights.get(id) === task) detailFlights.delete(id);
+      if (detailFlights.get(id) === task) {
+        detailFlights.delete(id);
+        detailInvalidations.delete(id);
+      }
     });
     detailFlights.set(id, task);
     return task;
   }
-  async function close(id: string, outcome: "done" | "abandoned" = "done") {
+  /** Coalesced reread of one known Case without fetching its full history. */
+  function refreshOne(id: string): Promise<void> {
+    return readDetail(id, true);
+  }
+  async function close(
+    id: string,
+    outcome: "done" | "abandoned",
+    verdict?: CaseVerdict,
+  ) {
     const record = byId(id);
     if (!options.port || !record || !isOpenCase(record) || closing.peek()) {
       return false;
@@ -684,7 +750,7 @@ export function createCases(
     closing.value = id;
     error.value = "";
     try {
-      await options.port.close(id, outcome);
+      await options.port.close(id, outcome, verdict);
       // A direct-link Case may live only in the detail cache, outside the
       // collection. Its pre-command record must not survive the reread.
       if (details.peek().has(id)) {
@@ -734,6 +800,7 @@ export function createCases(
     queued = false;
     flight = null;
     detailFlights.clear();
+    detailInvalidations.clear();
     details.value = new Map();
   }
   return {
@@ -750,6 +817,7 @@ export function createCases(
     accept,
     refresh,
     ensure,
+    refreshOne,
     detailStatus,
     detailError,
     close,

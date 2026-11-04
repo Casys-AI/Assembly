@@ -1,11 +1,11 @@
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import assert from "node:assert/strict";
+import { projectSourceGraph } from "../../src/domain/model/projections/source-graph.ts";
 import {
-  projectSourceGraph,
   sourceLiterals,
   sourceSnapshot,
-} from "../../src/adapters/model/projections/graph/source.ts";
-import type { ModelIdentity } from "../../src/domain/work/dialogue.ts";
+} from "../../src/domain/model/projections/source-facts.ts";
+import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 
 type Raw = Record<string, unknown>;
 const ref = (id: string) => ({ "@id": id });
@@ -411,7 +411,7 @@ Deno.test({
       "../../src/adapters/out/sysml-toolkit/compilation-policies/work/execution-model.ts"
     );
     const { sourceModelIdentity } = await import(
-      "../../src/adapters/model/sources/source-model.ts"
+      "../../src/domain/model/records/source-identity.ts"
     );
     const { loadInitialSources } = await import(
       "../../src/adapters/out/filesystem/initial-model-sources.ts"

@@ -6,7 +6,7 @@ import {
   toolDraftDigest,
   toolReuseReceipt,
 } from "./catalog.ts";
-import { draftDigest } from "../runtime/system.ts";
+import { draftDigest } from "../runtime/values.ts";
 import {
   artifactModel,
   publishedArtifact,

@@ -27,34 +27,3 @@ export const LEGACY_MANDATE_SOURCE =
 
 export const LEGACY_DYNAMIC_MANDATE_SOURCE =
   "host configuration: src/domain/governance.ts; src/domain/mandates.ts; src/application/system-runtime.ts; src/adapters/agents.ts";
-
-interface CapabilityBinding {
-  kind: ToolKind;
-  relationship: "may-propose" | "may-invoke";
-  /** Present for a concrete catalog item, absent for a host contract kind. */
-  nativeId?: string;
-  name?: string;
-  sourceRefs: string[];
-  evidenceLevel: "configured";
-}
-export interface OperatorAnnotation {
-  nativeId: string;
-  roleLabel: string;
-  /** Native allocated action IDs: depiction, not evidence of execution. */
-  depictedJudgmentRefs: string[];
-  capabilityBindings: CapabilityBinding[];
-}
-export interface MandateAnnotation {
-  id: string;
-  version: string;
-  nativeId: string;
-  holderNativeId: string;
-  scopeLabel: string;
-  allowedChoices: string[];
-  limits: string[];
-  sourceRefs: string[];
-  evidenceLevel: "configured";
-  grantingOperator: "unknown";
-  /** Verified native configuration scope, separate from mandate boolean fields. */
-  networkScope?: { allowedHosts: string[]; sourceRefs: string[] };
-}

@@ -8,7 +8,7 @@ import type {
   ElementRecord,
   ModelSnapshot,
 } from "../../../../../../domain/model/records/snapshot.ts";
-import type { NativeLiteral } from "../../work/execution-model.ts";
+import type { NativeLiteral } from "../../../../../../domain/model/records/native-literal.ts";
 
 /** Lot 1 recognizes only the owner's root, leaving software grants unchanged. */
 export function compileOwnerAuthority(

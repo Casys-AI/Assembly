@@ -6,11 +6,11 @@ import { ToolkitCompiler } from "../../../../compilation/compiler.ts";
 import {
   sourceLiterals,
   sourceSnapshot,
-} from "../../../../../../model/projections/graph/source.ts";
+} from "../../../../../../../domain/model/projections/source-facts.ts";
 import { loadInitialSources } from "../../../../../filesystem/initial-model-sources.ts";
 import {
   sourceModelIdentity,
-} from "../../../../../../model/sources/source-model.ts";
+} from "../../../../../../../domain/model/records/source-identity.ts";
 
 /** Insert inside the concrete liveBuilder; no existing project gets this grant. */
 export const modelEditPolicyFixture = `

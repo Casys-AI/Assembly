@@ -24,7 +24,7 @@ Compilation alone is therefore insufficient: an edit that compiles but changes
 the wrong member is rejected before publication.
 
 Sources: [edit types](../../../src/domain/model/editing/host-edit.ts),
-[preparation and verification](../../../src/adapters/model/sources/editing/host-writer.ts).
+[preparation and verification](../../../src/application/model/editing/host-writer.ts).
 
 ## Operations and errors
 
@@ -99,7 +99,7 @@ operator signature. For decisions and authorizations, see
 
 Sources: [receipts](../../../src/domain/model/publication/change.ts),
 [compatibility](../../../src/domain/model/publication/compatibility.ts),
-[post-publication read-back](../../../src/adapters/model/sources/source-model.ts).
+[post-publication read-back](../../../src/application/model/source-model.ts).
 
 ## Candidates and activation
 

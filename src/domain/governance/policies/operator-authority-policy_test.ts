@@ -731,6 +731,7 @@ const branchScope = (model: ExecutableModel): CreationScope => ({
     executionSpaceId: "case-x",
   },
   branchTeamSize: 0,
+  currentCaseId: "case-x-request",
 });
 
 Deno.test("4.8d D1: a branch publication verifies the MO's receipt against its recorded decision, never Main's current policy", () => {

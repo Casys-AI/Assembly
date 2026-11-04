@@ -55,6 +55,57 @@ Deno.test("4.8e E4: a creation grant is the creator's own verified receipt, bran
   );
 });
 
+Deno.test("a retained member's admitted Request can exercise its autonomous creation grant", async () => {
+  const f = await branchAuthorityFixture();
+  const change = f.teamProposal("autonomous");
+  const { opening, admission, request } = f.snapshot;
+  const model = request.executionModel!;
+  model.operatorTeam = {
+    parentOperatorId: "branch-owner",
+    requestOwnerId: "branch-owner",
+    requestId: "origin-request",
+  };
+  change.teamOrigin = { operatorId: "branch-owner", requestId: opening.caseId };
+  admission.permissions.operatorIds = [
+    "branch-owner",
+    model.identity.builderId,
+  ];
+  admission.permissions.modelDigests = ["d".repeat(64), model.version.digest];
+  const envelope = buildRequestCreationGrantAuthority({
+    opening,
+    admission,
+    request,
+    space: f.space,
+    branchTeamSize: 1,
+    change,
+    destination: f.destination,
+    capturedAt: "2026-11-01T00:00:00.000Z",
+  });
+  equal(envelope.exercise.creationDelegation?.caseId, opening.caseId);
+  equal(envelope.priorModel.operatorTeam?.requestId, "origin-request");
+  assertRequestCreationGrantAuthorityCurrent(envelope, {
+    opening,
+    admission,
+    request,
+    space: f.space,
+    branchTeamSize: 1,
+    change,
+  });
+  change.caseId = "foreign-request";
+  change.teamOrigin!.requestId = "foreign-request";
+  throws(() =>
+    buildRequestCreationGrantAuthority({
+      opening,
+      admission,
+      request,
+      space: f.space,
+      branchTeamSize: 1,
+      change,
+      destination: f.destination,
+      capturedAt: "2026-11-01T00:00:00.000Z",
+    }), { code: "AUTHORITY_OUT_OF_BOUNDS" });
+});
+
 Deno.test("4.8e E4: a per-creation grant never self-approves into a creation grant", async () => {
   const f = await branchAuthorityFixture();
   const change = f.teamProposal("per-creation");

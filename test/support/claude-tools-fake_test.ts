@@ -70,7 +70,6 @@ Deno.test("helper: decide reply lit system, contexte et outils du nouveau fil", 
     "consult_model",
     "propose_tool",
     "invoke_tool",
-    "invoke_behavior",
     "propose_mandate_change",
     "propose_agent_creation",
   ]);

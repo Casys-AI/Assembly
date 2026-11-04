@@ -1,7 +1,7 @@
 import type {
   ImmutableConsultationGroupManifest,
   ImmutableConsultationMemberOutcome,
-} from "../runtime/execution.ts";
+} from "../native-execution/contract.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 
 /** Keys encode both components without permitting separator collisions. */

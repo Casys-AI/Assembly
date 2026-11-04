@@ -3,11 +3,11 @@
 import assert from "node:assert/strict";
 import { fromPrisma } from "pg-boss";
 import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
+import { parseNativeWaitEvidence } from "../../src/application/work/native-execution/wait-evidence.ts";
 import {
   checkpointConsumptions,
-  parseNativeWaitEvidence,
   verifyOfficialWaitCheckpoint,
-} from "../../src/adapters/work/runtime/checkpoint-wait-evidence.ts";
+} from "../../src/adapters/out/native-execution/checkpoint-wait-evidence.ts";
 import {
   postgresTestEnabled,
   withPostgresDatabase,
@@ -21,7 +21,7 @@ import { caseNetworkWitnessAgent } from "../support/request-case-network-witness
 import {
   type NativeChangeApprovalWait,
   parseRequestNetworkRefusalContinuation,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { sha256 } from "../../src/domain/primitives/execution-digest.ts";
 import { eventually } from "../support/eventually.ts";
@@ -55,9 +55,9 @@ const diagnosticFrames = [
   "src/application/work/conversation/turn.ts",
   "src/application/work/runtime/system.ts",
   "src/application/work/runtime/model-adoption.ts",
-  "src/adapters/work/runtime/postgres-ledger.ts",
-  "src/adapters/work/runtime/conversation.ts",
-  "src/adapters/work/request-space-runtime.ts",
+  "src/adapters/out/native-execution/postgres-ledger.ts",
+  "src/adapters/out/native-execution/conversation.ts",
+  "src/application/work/request-spaces/runtime.ts",
   "test/integration/postgres-request-network-refusal_test.ts",
 ];
 

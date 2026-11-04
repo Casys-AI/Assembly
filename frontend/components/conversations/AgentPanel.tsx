@@ -1,4 +1,6 @@
 import { RequestOperatorDetails } from "./RequestOperatorDetails.tsx";
+import { requestVersionInfo } from "../../lib/workbench/version-label.ts";
+import { VersionPill } from "../view/VersionPill.tsx";
 import type { ComponentChildren } from "preact";
 import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
 import { caseOperatorName } from "../../lib/cases/operator-names.ts";
@@ -35,7 +37,7 @@ export function AgentPanel(
     requestCaseId?: string;
   },
 ) {
-  const details = readAgentDetails(state, conversation);
+  const details = readAgentDetails(state, conversation, requestCaseId);
   useSourceRights(state, conversation, requestCaseId === undefined);
   const { mission } = details;
   const name = caseOperatorName(
@@ -47,11 +49,10 @@ export function AgentPanel(
       caseBranch: requestCaseId,
       agent: conversation.agentId,
     });
-    const releaseQuery = new URLSearchParams(query);
-    releaseQuery.set("create", "1");
-    if (conversation.repositoryVersion) {
-      releaseQuery.set("version", conversation.repositoryVersion);
-    }
+    const version = requestVersionInfo(
+      state.requests.cases.byId(requestCaseId) ?? { id: requestCaseId },
+      state.requests.scopes.value.get(requestCaseId),
+    );
     return (
       <aside
         class="agent-panel"
@@ -64,19 +65,17 @@ export function AgentPanel(
           {mission && <p title={mission}>{mission}</p>}
         </header>
         <Section label="Model">
-          <p>Request · read-only</p>
-          {conversation.repositoryVersion && (
-            <p title={conversation.repositoryVersion}>
-              {conversation.repositoryVersion}
-            </p>
-          )}
+          <VersionPill
+            {...version}
+            version={conversation.repositoryVersion}
+            inService={conversation.runtimeOwned === false
+              ? undefined
+              : conversation.repositoryVersion}
+            modelDigest={conversation.modelDigest}
+            inspect
+          />
           <p>
-            <a href={`/model?page=files&${query}`}>View model</a>
-          </p>
-          <p>
-            <a href={`/model?page=releases&${releaseQuery}`}>
-              Create release
-            </a>
+            <a class="button" href={`/model?page=files&${query}`}>View model</a>
           </p>
         </Section>
         <RequestOperatorDetails

@@ -179,6 +179,14 @@ function stopFixture(
       stopAccepting: mark("native.stop-accepting"),
       stop: mark("native.stop"),
     },
+    requestEvents: { close: mark("request-events.close") },
+    requestSpaces: {
+      runtime: {
+        closeConversationObservers() {
+          events.push("conversation-observers.close");
+        },
+      },
+    },
     service: {
       async idle() {
         events.push("business.enter");
@@ -314,6 +322,9 @@ Deno.test("stop drains work before closing provider collection and awaits one de
     assert.deepEqual(appended, ["lifecycle-message"]);
     assert.equal(p.fake.views.length, 1);
     const at = (name: string) => fixture.events.indexOf(name);
+    assert.ok(at("request-events.close") < at("server.shutdown"));
+    assert.ok(at("native.stop") < at("conversation-observers.close"));
+    assert.ok(at("conversation-observers.close") < at("storage.close"));
     assert.ok(at("business.drained") < at("observation.close"));
     assert.ok(at("deliveries.drained") < at("observation.close"));
     assert.ok(at("observation.closed") < at("source-writer.stop"));

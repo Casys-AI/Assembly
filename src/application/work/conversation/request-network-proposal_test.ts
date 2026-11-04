@@ -50,12 +50,12 @@ async function caseProposalHost(
       return structuredClone(state);
     },
     ports: {
+      clock: { now: () => "2026-11-03T00:00:00.000Z" },
       model: new RequestSpaceModel({
         base,
         model,
-        caseId: "case-a",
         executionSpaceId: "space-a",
-        branchTeamSize: 0,
+        requestTeam: { caseId: "case-a", memberIds: [] },
       }),
     },
     update(change) {
@@ -81,10 +81,22 @@ async function caseProposalHost(
   return { host, turn, model, state, proposal, base };
 }
 
-Deno.test("a recorded Case network proposal uses the host evidence channel while preserving admitted native outputs", async () => {
+Deno.test("a recorded Case proposal retains its approval boundary while a final reply is queued", async () => {
   const { host, turn, model, state } = await caseProposalHost({
     status: "pending",
   });
+  state.conversationBatches = [{
+    id: "response",
+    caseId: "case-a",
+    modelDigest: model.version.digest,
+    createdAt: "2026-11-03T00:00:00Z",
+    sourceDecision: {},
+    calls: [{
+      id: "final-reply",
+      status: "queued",
+      decision: { kind: "reply", text: "Meanwhile, here is my review." },
+    }],
+  }];
   const outputs = await submitProposal.call(host, turn, model, {
     choice: {
       kind: "propose_mandate_change",
@@ -259,12 +271,12 @@ Deno.test("a delegated member's granted team proposal captures its exact Request
   const memberHost: ConversationProposalHost = {
     ...host,
     ports: {
+      clock: { now: () => "2026-11-03T00:00:00.000Z" },
       model: new RequestSpaceModel({
         base,
         model,
-        caseId: "case-a",
         executionSpaceId: "space-a",
-        branchTeamSize: 2,
+        requestTeam: { caseId: "case-a", memberIds: ["member"] },
         teamPin: {
           modelDigest: model.version.digest,
           repositoryVersion: model.version.repositoryVersion!,
@@ -287,29 +299,43 @@ Deno.test("a delegated member's granted team proposal captures its exact Request
   deepStrictEqual(state.caseInvocation.kind, "delegated");
   const ownInvocation = structuredClone(state.caseInvocation);
   const ownTeam = structuredClone(model.operatorTeam);
+  model.operatorTeam.requestId = "release-origin-request";
+  delete turn.changeApprovalProposal;
+  await submitProposal.call(memberHost, turn, model, { choice: teamChoice });
+  deepStrictEqual(turn.changeApprovalProposal, {
+    changeId: "actual-recorded-change",
+    proposalIntentDigest: "a".repeat(64),
+  });
+  deepStrictEqual(model.operatorTeam.requestId, "release-origin-request");
   for (
     const mismatch of [
+      "foreign member",
       "work Case",
       "work context Case",
-      "member Request",
       "designer invocation",
     ]
   ) {
     delete turn.changeApprovalProposal;
     state.caseInvocation = structuredClone(ownInvocation);
     model.operatorTeam = structuredClone(ownTeam);
-    if (mismatch === "work Case") {
+    if (mismatch === "foreign member") {
+      model.operatorTeam.requestId = "foreign-request";
+      (memberHost.ports.model.requestChangeScope as {
+        memberIds?: readonly string[];
+      }).memberIds = [];
+    } else if (mismatch === "work Case") {
       state.caseInvocation.work.caseId = "other-case";
     } else if (mismatch === "work context Case") {
       state.caseInvocation.work.caseContext.caseId = "other-case";
-    } else if (mismatch === "member Request") {
-      model.operatorTeam.requestId = "other-case";
     } else {
       state.caseInvocation = { kind: "designer", scopeId: "designer" };
     }
     await submitProposal.call(memberHost, turn, model, { choice: teamChoice });
     deepStrictEqual(turn.changeApprovalProposal, undefined, mismatch);
     deepStrictEqual(state.cases, [], mismatch);
+    (memberHost.ports.model.requestChangeScope as {
+      memberIds?: readonly string[];
+    }).memberIds = ["member"];
   }
   // The same scoped capture serves a member's network proposal too.
   state.caseInvocation = ownInvocation;

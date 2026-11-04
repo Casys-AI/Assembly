@@ -8,19 +8,19 @@ import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
 import type {
   NativeExecutionHandlers,
   NativeExecutionSnapshot,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import type { OperatorExecutionDelivery } from "../../src/application/work/operators/execution.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
-import type { NativeTrace } from "../../src/adapters/work/runtime/native-graph.ts";
+import type { NativeTrace } from "../../src/domain/model/execution/native-observation.ts";
 import {
   nativeObservationBatchDigest,
   type NativeObservationEmission,
   parseNativeObservationPayload,
-} from "../../src/adapters/work/runtime/native-observation.ts";
+} from "../../src/domain/model/execution/native-observation.ts";
 import {
   ExecutionNativeObservationLedger,
   type NativeObservationOwner,
-} from "../../src/adapters/work/runtime/native-observation-ledger.ts";
+} from "../../src/adapters/out/native-execution/native-observation-ledger.ts";
 import { immutableConsultationFixture } from "../support/immutable-consultation-fixture.ts";
 import { openPostgresDurableRecoveryHost } from "../support/postgres-runtime-fixture.ts";
 import {

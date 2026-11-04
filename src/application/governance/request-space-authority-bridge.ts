@@ -1,17 +1,21 @@
+import type { SystemRuntime } from "../work/runtime/system.ts";
 import { type Case, isOpenCase } from "../../domain/work/entities/cases.ts";
 import type { SystemRuntimeState } from "../../domain/work/dialogue.ts";
 import type { PendingChange } from "../../domain/governance/records/pending-change.ts";
 import {
   type AuthorityRouteCode,
-  type ExecutionSpaceRef,
+  awaitingPersonView,
   MAIN_EXECUTION_SPACE_ID,
   mainExecutionSpace,
   OperatorAuthorityError,
   type OperatorNotice,
   type RequestAuthorityRoute,
   sameScopedOperator,
-  type ScopedOperatorRef,
 } from "../../domain/governance/operator-authority.ts";
+import type {
+  ExecutionSpaceRef,
+  ScopedOperatorRef,
+} from "../../domain/governance/authority.ts";
 import type { ChatContext, ChatDecision } from "../../domain/work/dialogue.ts";
 import type { OperatorCommandOrigin } from "../work/operators/command-delivery.ts";
 import { scopedOperator } from "../../domain/governance/policies/delegation-scope.ts";
@@ -33,7 +37,10 @@ import {
   requestChangeEffect,
   unresumedTeamCreation,
 } from "../../domain/governance/records/request-change.ts";
-import { creationPreviewExercise } from "../../domain/governance/policies/operator-creation-policy.ts";
+import {
+  creationPreviewExercise,
+  requestCreationScope,
+} from "../../domain/governance/policies/operator-creation-policy.ts";
 
 /** All inputs are resolved by a host-owned adapter, never a caller-supplied proof.
  * Admission lifecycle may be revoked or expired: this route informs, not executes. */
@@ -266,13 +273,14 @@ export class RequestSpaceAuthorityBridge {
           ).size !== operatorIds.length - 1 ||
         (snapshot.members ?? []).some((member) => {
           const memberModel = member.executionModel;
+          const team = memberModel?.operatorTeam;
           const index = memberModel
             ? operatorIds.indexOf(memberModel.identity.builderId)
             : -1;
           return !memberModel || index < 1 ||
             modelDigests[index] !== memberModel.version.digest ||
-            memberModel.operatorTeam?.requestId !== caseId ||
-            memberModel.operatorTeam.requestOwnerId !==
+            !team ||
+            team.requestOwnerId !==
               model.identity.builderId;
         })
       ) return "team";
@@ -508,14 +516,19 @@ export class RequestSpaceAuthorityBridge {
     ) return false;
     const requester = this.#requester(verified, change.id);
     try {
-      return !!creationPreviewExercise(requester.executionModel!, change, {
-        space: this.#space(verified, requester),
-        branchTeamSize: reservedBranchTeamSize(
-          verified.snapshot.admission,
-          this.#states(verified),
-          change.caseId!,
+      return !!creationPreviewExercise(
+        requester.executionModel!,
+        change,
+        requestCreationScope(
+          this.#space(verified, requester),
+          verified.snapshot.opening.caseId,
+          reservedBranchTeamSize(
+            verified.snapshot.admission,
+            this.#states(verified),
+            change.caseId!,
+          ),
         ),
-      }).creationDelegation;
+      ).creationDelegation;
     } catch (error) {
       if (
         error instanceof OperatorAuthorityError &&
@@ -1046,4 +1059,92 @@ export class RequestSpaceAuthorityBridge {
       { wake: false },
     );
   }
+}
+
+/** Revision-scoped Main context reads; decisions must read the bridge afresh. */
+export function createWorkspaceBranchReads(options: {
+  primary: SystemRuntime;
+  runtimes: ReadonlyMap<string, { runtime: SystemRuntime }>;
+  bridge?: Pick<RequestSpaceAuthorityBridge, "mainView">;
+  authorityRoute(
+    runtime: SystemRuntime,
+    change: PendingChange,
+  ): RequestAuthorityRoute;
+}) {
+  const { runtimes } = options;
+  /** The registered Main as a decider; other runtimes read no branch. */
+  function branchDecider(runtime: SystemRuntime) {
+    const model = runtime.snapshot.executionModel;
+    if (!options.bridge || !model || runtime !== options.primary) {
+      return undefined;
+    }
+    return scopedOperator(
+      mainExecutionSpace(model.identity),
+      model.identity.builderId,
+    );
+  }
+
+  const emptyBranchView: RequestBranchMainView = {
+    requests: [],
+    awaitingPerson: [],
+    openRequests: [],
+    recorded: [],
+  };
+  /** One walk of the branches per Main revision: the contexts assembled for
+   * one turn (authority and Request openings) share it, so a change is never
+   * both decidable and waiting. Decisions walk again (4.8d D2). */
+  let branchViewOf:
+    | { revision: number; view: Promise<RequestBranchMainView> }
+    | undefined;
+  function branchView(runtime: SystemRuntime): Promise<RequestBranchMainView> {
+    const decider = branchDecider(runtime);
+    if (!decider) return Promise.resolve(emptyBranchView);
+    const revision = runtime.snapshot.revision;
+    if (branchViewOf?.revision !== revision) {
+      const view = options.bridge!.mainView(decider);
+      branchViewOf = { revision, view };
+      void view.catch(() => {
+        if (branchViewOf?.view === view) branchViewOf = undefined;
+      });
+    }
+    return branchViewOf.view;
+  }
+
+  /** Main's read-only view of the requests waiting for the person: main
+   * operators' requests from the same routes as its decidable ones, then the
+   * Branch Operators' requests (4.8d D2). */
+  async function awaitingPersonContext(runtime: SystemRuntime) {
+    const entries: RequestAwaitingPersonEntry[] = [];
+    if (runtime !== options.primary) return awaitingPersonView(entries);
+    const self = runtime.snapshot.executionModel?.identity.builderId;
+    for (const entry of runtimes.values()) {
+      for (
+        const change of entry.runtime.snapshot.configuration?.changes ?? []
+      ) {
+        if (
+          change.status !== "pending" || change.publishedCommit ||
+          !change.caseId || change.requestedBy === self
+        ) continue;
+        const route = options.authorityRoute(entry.runtime, change);
+        if (route.status === "actor-decision") continue;
+        entries.push({
+          id: change.id,
+          caseId: change.caseId,
+          executionSpaceId: MAIN_EXECUTION_SPACE_ID,
+          requester: route.requester,
+          changeKind: change.kind,
+          ...(change.requestedRights
+            ? { requestedRights: structuredClone(change.requestedRights) }
+            : {}),
+          status: route.status,
+          ...(route.code ? { code: route.code } : {}),
+          requestedAt: change.requestedAt,
+        });
+      }
+    }
+    entries.push(...(await branchView(runtime)).awaitingPerson);
+    return awaitingPersonView(entries);
+  }
+
+  return { branchDecider, branchView, awaitingPersonContext, emptyBranchView };
 }

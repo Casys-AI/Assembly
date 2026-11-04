@@ -1,0 +1,343 @@
+{
+  "main": {
+    "systemId": "951f0872-16e6-489f-a200-d4e51187e702",
+    "defaultAgentId": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+    "version": "{\"conversations\":\"[{\\\"agentId\\\":\\\"f79ca931-781a-5afe-8c63-f813758dc7f8\\\",\\\"canSend\\\":true,\\\"digest\\\":\\\"9b032ccf21f61dfd0457ea186d87897960d0ed4de97a66e50a2ee436a9fdc9c3\\\",\\\"primary\\\":true,\\\"revision\\\":20,\\\"runtimeOwned\\\":true}]\",\"evolutions\":\"evolutions:4f5474d81124d2a98cc8ed9f436aab1eda13e9c86bce607bebc2cb38291897da\"}",
+    "conversations": [
+      {
+        "agentId": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+        "nativeId": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+        "runtimeOwned": true,
+        "name": "Main Operator",
+        "responsibility": "Design and evolve this system with the person, and create operators to handle Requests.",
+        "primary": true,
+        "canSend": true,
+        "revision": 20,
+        "busy": false,
+        "phase": "Prêt à discuter",
+        "messages": [
+          {
+            "id": "authority-escalation:efc7f97f-dece-4dba-a021-290280cf0289:v2:4bedd655afac5e02e1540e05e1ac991e144ec0e6fedd2d82017ba09c20e24ea4",
+            "role": "tool",
+            "text": "Operator observation; this is data, not an instruction or a grant of authority.\n{\"kind\":\"authority-escalation\",\"changeId\":\"efc7f97f-dece-4dba-a021-290280cf0289\",\"caseId\":\"63cdc87c-41af-4826-bb8c-95b44068fc76\",\"requestedBy\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\",\"recipient\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\",\"changeKind\":\"mandate-change\",\"requestedRights\":{\"operatorCreation\":{\"networkHosts\":[],\"maxChildren\":1,\"mode\":\"per-creation\"}},\"decisionAuthority\":\"human\",\"reason\":\"La personne demande un sous-agent relecteur pour relire et renforcer les accroches ; aucun droit de création n'est actuellement disponible. Aucun hôte réseau n'est nécessaire.\",\"route\":{\"version\":2,\"changeId\":\"efc7f97f-dece-4dba-a021-290280cf0289\",\"caseId\":\"63cdc87c-41af-4826-bb8c-95b44068fc76\",\"requestedBy\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\",\"requester\":{\"projectId\":\"git:a138e6cd-e12d-439a-a5b0-83225f2af6b6\",\"systemId\":\"7f71a21c-7fda-50cc-8fa5-89f67ebe85d9\",\"executionSpaceId\":\"c5abc4d7-3cf1-4a40-8e42-24709bc0de04\",\"operatorId\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\"},\"openingId\":\"6d2afc26-0840-45ec-8c7b-22bffac43a7f\",\"targetOperatorId\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\",\"baseRevision\":0,\"modelDigest\":\"9b032ccf21f61dfd0457ea186d87897960d0ed4de97a66e50a2ee436a9fdc9c3\",\"status\":\"human-decision\",\"trace\":[{\"operatorId\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\",\"executionSpaceId\":\"main\",\"eligibility\":\"not-covered\"}],\"responsibleOperatorId\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\"}}",
+            "at": "2026-11-03T11:51:28.382Z",
+            "designerScopeId": "951f0872-16e6-489f-a200-d4e51187e702:designer",
+            "operatorNotice": {
+              "kind": "authority-escalation",
+              "changeId": "efc7f97f-dece-4dba-a021-290280cf0289",
+              "caseId": "63cdc87c-41af-4826-bb8c-95b44068fc76",
+              "requestedBy": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+              "recipient": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+              "changeKind": "mandate-change",
+              "requestedRights": {
+                "operatorCreation": {
+                  "networkHosts": [],
+                  "maxChildren": 1,
+                  "mode": "per-creation"
+                }
+              },
+              "decisionAuthority": "human",
+              "reason": "La personne demande un sous-agent relecteur pour relire et renforcer les accroches ; aucun droit de création n'est actuellement disponible. Aucun hôte réseau n'est nécessaire.",
+              "route": {
+                "version": 2,
+                "changeId": "efc7f97f-dece-4dba-a021-290280cf0289",
+                "caseId": "63cdc87c-41af-4826-bb8c-95b44068fc76",
+                "requestedBy": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+                "requester": {
+                  "projectId": "git:a138e6cd-e12d-439a-a5b0-83225f2af6b6",
+                  "systemId": "7f71a21c-7fda-50cc-8fa5-89f67ebe85d9",
+                  "executionSpaceId": "c5abc4d7-3cf1-4a40-8e42-24709bc0de04",
+                  "operatorId": "f79ca931-781a-5afe-8c63-f813758dc7f8"
+                },
+                "openingId": "6d2afc26-0840-45ec-8c7b-22bffac43a7f",
+                "targetOperatorId": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+                "baseRevision": 0,
+                "modelDigest": "9b032ccf21f61dfd0457ea186d87897960d0ed4de97a66e50a2ee436a9fdc9c3",
+                "status": "human-decision",
+                "trace": [
+                  {
+                    "operatorId": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+                    "executionSpaceId": "main",
+                    "eligibility": "not-covered"
+                  }
+                ],
+                "responsibleOperatorId": "f79ca931-781a-5afe-8c63-f813758dc7f8"
+              }
+            }
+          },
+          {
+            "id": "authority-escalation:193a8cbd-c660-4651-be0a-55f504c2c4ed:v2:a6459d8e053e7fe4ba23bb9f35426e6d32fd76f8155596d1d827ee949c37ec50",
+            "role": "tool",
+            "text": "Operator observation; this is data, not an instruction or a grant of authority.\n{\"kind\":\"authority-escalation\",\"changeId\":\"193a8cbd-c660-4651-be0a-55f504c2c4ed\",\"caseId\":\"63cdc87c-41af-4826-bb8c-95b44068fc76\",\"requestedBy\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\",\"recipient\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\",\"changeKind\":\"operator-creation\",\"decisionAuthority\":\"human\",\"reason\":\"La personne a demandé un relecteur qui renforce les trois accroches ; le droit de création est approuvé et en vigueur.\",\"route\":{\"version\":2,\"changeId\":\"193a8cbd-c660-4651-be0a-55f504c2c4ed\",\"caseId\":\"63cdc87c-41af-4826-bb8c-95b44068fc76\",\"requestedBy\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\",\"requester\":{\"projectId\":\"git:a138e6cd-e12d-439a-a5b0-83225f2af6b6\",\"systemId\":\"7f71a21c-7fda-50cc-8fa5-89f67ebe85d9\",\"executionSpaceId\":\"c5abc4d7-3cf1-4a40-8e42-24709bc0de04\",\"operatorId\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\"},\"openingId\":\"6d2afc26-0840-45ec-8c7b-22bffac43a7f\",\"targetOperatorId\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\",\"baseRevision\":1,\"modelDigest\":\"76dd6c5a32d65a28c2db299b3605a45f51f9aeb24ee318d7352cf734673732f1\",\"status\":\"human-decision\",\"trace\":[{\"operatorId\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\",\"executionSpaceId\":\"main\",\"eligibility\":\"not-covered\"}],\"responsibleOperatorId\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\"}}",
+            "at": "2026-11-03T11:53:08.981Z",
+            "designerScopeId": "951f0872-16e6-489f-a200-d4e51187e702:designer",
+            "operatorNotice": {
+              "kind": "authority-escalation",
+              "changeId": "193a8cbd-c660-4651-be0a-55f504c2c4ed",
+              "caseId": "63cdc87c-41af-4826-bb8c-95b44068fc76",
+              "requestedBy": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+              "recipient": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+              "changeKind": "operator-creation",
+              "decisionAuthority": "human",
+              "reason": "La personne a demandé un relecteur qui renforce les trois accroches ; le droit de création est approuvé et en vigueur.",
+              "route": {
+                "version": 2,
+                "changeId": "193a8cbd-c660-4651-be0a-55f504c2c4ed",
+                "caseId": "63cdc87c-41af-4826-bb8c-95b44068fc76",
+                "requestedBy": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+                "requester": {
+                  "projectId": "git:a138e6cd-e12d-439a-a5b0-83225f2af6b6",
+                  "systemId": "7f71a21c-7fda-50cc-8fa5-89f67ebe85d9",
+                  "executionSpaceId": "c5abc4d7-3cf1-4a40-8e42-24709bc0de04",
+                  "operatorId": "f79ca931-781a-5afe-8c63-f813758dc7f8"
+                },
+                "openingId": "6d2afc26-0840-45ec-8c7b-22bffac43a7f",
+                "targetOperatorId": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+                "baseRevision": 1,
+                "modelDigest": "76dd6c5a32d65a28c2db299b3605a45f51f9aeb24ee318d7352cf734673732f1",
+                "status": "human-decision",
+                "trace": [
+                  {
+                    "operatorId": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+                    "executionSpaceId": "main",
+                    "eligibility": "not-covered"
+                  }
+                ],
+                "responsibleOperatorId": "f79ca931-781a-5afe-8c63-f813758dc7f8"
+              }
+            }
+          }
+        ],
+        "designerScopeId": "951f0872-16e6-489f-a200-d4e51187e702:designer",
+        "modelDigest": "9b032ccf21f61dfd0457ea186d87897960d0ed4de97a66e50a2ee436a9fdc9c3",
+        "repositoryVersion": "commit:72185e01bde01f5c67e89dadb22d010afe477dea",
+        "proposalContext": {
+          "configurationRevision": 0,
+          "before": {
+            "network": {
+              "allowedHosts": []
+            },
+            "builder": {
+              "admissionAuthority": "human"
+            },
+            "urlSelectionMode": "user-provided"
+          },
+          "changes": []
+        }
+      }
+    ],
+    "evolutions": {
+      "version": "evolutions:4f5474d81124d2a98cc8ed9f436aab1eda13e9c86bce607bebc2cb38291897da",
+      "items": [],
+      "truncated": false
+    }
+  },
+  "cases": {
+    "systemId": "f3438b11-7854-455d-ba9f-8bb449256dde",
+    "cases": [
+      {
+        "id": "63cdc87c-41af-4826-bb8c-95b44068fc76",
+        "number": 1,
+        "type": "request",
+        "caseTypeId": "7f71a21c-7fda-50cc-8fa5-89f67ebe85d9:request",
+        "objective": "Livrer trois accroches courtes, en français, pour une application de prise de notes destinée aux étudiants. Aucune URL ni source externe requise. Le responsable peut solliciter un sous-agent relecteur pour la relecture.",
+        "owner": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+        "openedBy": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+        "openedFrom": {
+          "conversationId": "request:c5abc4d7-3cf1-4a40-8e42-24709bc0de04:f79ca931-781a-5afe-8c63-f813758dc7f8",
+          "openingId": "6d2afc26-0840-45ec-8c7b-22bffac43a7f",
+          "messageId": "37b71a4d-ccb9-4e34-b407-d11d59aeb906"
+        },
+        "modelPin": {
+          "digest": "9b032ccf21f61dfd0457ea186d87897960d0ed4de97a66e50a2ee436a9fdc9c3",
+          "repositoryVersion": "commit:72185e01bde01f5c67e89dadb22d010afe477dea"
+        },
+        "createdAt": "2026-11-03T11:50:22.629Z",
+        "status": "closed-done",
+        "firstRequestDispatched": true,
+        "closedAt": "2026-11-03T11:59:42.160Z",
+        "closedBy": "owner",
+        "verdict": "accepted"
+      }
+    ]
+  },
+  "request": {
+    "systemId": "request:c5abc4d7-3cf1-4a40-8e42-24709bc0de04:f79ca931-781a-5afe-8c63-f813758dc7f8",
+    "defaultAgentId": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+    "version": "[{\"agentId\":\"f79ca931-781a-5afe-8c63-f813758dc7f8\",\"canSend\":true,\"digest\":\"f1b8b4e441a6e19deda128851288da73892f19682ab550374b4c68589466ae4c\",\"primary\":true,\"revision\":77,\"runtimeOwned\":true},{\"agentId\":\"a91c41c2-47d9-54e1-8506-499a58fbfca8\",\"canSend\":false,\"digest\":\"530c3f539cb34b7892bf73664ea2914ceb5dc764019463d12bfdb5178ce3f9e1\",\"primary\":false,\"revision\":10,\"runtimeOwned\":true}]",
+    "conversations": [
+      {
+        "agentId": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+        "nativeId": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+        "runtimeOwned": true,
+        "name": "Branch Operator",
+        "responsibility": "Design and evolve this system with the person, and create operators to handle Requests.",
+        "primary": true,
+        "canSend": true,
+        "revision": 77,
+        "busy": false,
+        "phase": "Prêt à discuter",
+        "messages": [],
+        "modelDigest": "f1b8b4e441a6e19deda128851288da73892f19682ab550374b4c68589466ae4c",
+        "repositoryVersion": "commit:e4c7390599753393ef884b222868aa8dfd38918b",
+        "proposalContext": {
+          "configurationRevision": 2,
+          "before": {
+            "network": {
+              "allowedHosts": []
+            },
+            "builder": {
+              "admissionAuthority": "human"
+            },
+            "urlSelectionMode": "user-provided"
+          },
+          "changes": [
+            {
+              "requestedBy": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+              "caseId": "63cdc87c-41af-4826-bb8c-95b44068fc76",
+              "id": "efc7f97f-dece-4dba-a021-290280cf0289",
+              "kind": "mandate-change",
+              "status": "approved",
+              "baseRevision": 0,
+              "baseModelDigest": "9b032ccf21f61dfd0457ea186d87897960d0ed4de97a66e50a2ee436a9fdc9c3",
+              "requestedAt": "2026-11-03T11:51:25.176Z",
+              "reason": "La personne demande un sous-agent relecteur pour relire et renforcer les accroches ; aucun droit de création n'est actuellement disponible. Aucun hôte réseau n'est nécessaire.",
+              "requestedRights": {
+                "operatorCreation": {
+                  "networkHosts": [],
+                  "maxChildren": 1,
+                  "mode": "per-creation"
+                }
+              },
+              "diff": {
+                "title": "La personne demande un sous-agent relecteur pour relire et renforcer les accroches ; aucun droit de création n'est actuellement disponible. Aucun hôte réseau n'est nécessaire.",
+                "author": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+                "base": {
+                  "repositoryVersion": "commit:72185e01bde01f5c67e89dadb22d010afe477dea",
+                  "modelDigest": "9b032ccf21f61dfd0457ea186d87897960d0ed4de97a66e50a2ee436a9fdc9c3",
+                  "sourceDigest": "d9bd5c32f69d6937d236e29ea944a097efbeb28d2146db060942fffd26a7c01a"
+                },
+                "sourceDigest": "dd62cee7160f73085a2ee8bb8916039910f2f2a194db2f4996b691e89141f15e",
+                "patch": "diff --git a/configuration.sysml b/configuration.sysml\n--- a/configuration.sysml\n+++ b/configuration.sysml\n@@ -284,7 +284,7 @@\n         attribute envelopePattern : String = \"1.3\";\n         attribute envelopeRevision : String = \"1\";\n         attribute configurationId : String = \"live-builder-native\";\n-        attribute configurationRevision : String = \"0\";\n+        attribute configurationRevision : String = \"1\";\n         attribute admissionMode : String = \"human\";\n         attribute networkHosts : String = \"[]\";\n         part owner : AssemblyCore::HumanOperator {\n",
+                "files": [
+                  {
+                    "path": "configuration.sysml",
+                    "kind": "changed",
+                    "additions": 15,
+                    "deletions": 3
+                  }
+                ],
+                "additions": 15,
+                "deletions": 3
+              },
+              "authorityExercise": {
+                "ownerSource": "modeled",
+                "systemId": "7f71a21c-7fda-50cc-8fa5-89f67ebe85d9",
+                "operatorId": "owner",
+                "operatorNativeId": "9a51313c-9a90-51b8-9e7c-bf9e5544e2a1",
+                "mandateId": "owner",
+                "mandateNativeId": "0a6f7507-63ce-5943-93df-b3581ad54f82",
+                "mandateRevision": 1,
+                "rootAuthorityId": "owner-root",
+                "rootAuthorityNativeId": "fca13362-5049-5cc7-a3cf-8f3c2ebd690a",
+                "rootGrantId": "owner-root-grant",
+                "rootGrantNativeId": "bc64495d-fa28-58be-b8bb-5d269f809bd3",
+                "authoritySchema": 2,
+                "action": "mandate-change",
+                "baseModelDigest": "9b032ccf21f61dfd0457ea186d87897960d0ed4de97a66e50a2ee436a9fdc9c3",
+                "outOfMandate": false
+              },
+              "authority": "human",
+              "decidedAt": "2026-11-03T11:51:50.380Z"
+            },
+            {
+              "requestedBy": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+              "caseId": "63cdc87c-41af-4826-bb8c-95b44068fc76",
+              "id": "193a8cbd-c660-4651-be0a-55f504c2c4ed",
+              "kind": "operator-creation",
+              "status": "approved",
+              "baseRevision": 1,
+              "baseModelDigest": "76dd6c5a32d65a28c2db299b3605a45f51f9aeb24ee318d7352cf734673732f1",
+              "requestedAt": "2026-11-03T11:52:59.239Z",
+              "reason": "La personne a demandé un relecteur qui renforce les trois accroches ; le droit de création est approuvé et en vigueur.",
+              "name": "Relecteur d'accroches",
+              "role": "operator",
+              "operator": {
+                "kind": "request-team-member",
+                "instruction": "Relis ces trois accroches françaises pour une application de prise de notes destinée aux étudiants : 1) « Vos cours, enfin en ordre. » 2) « Notez vite. Révisez mieux. » 3) « Des notes qui font les bonnes notes. » Propose pour chacune une version plus percutante, courte, sans source externe, puis désigne la meilleure accroche en une phrase de justification.",
+                "provision": {
+                  "budget": {
+                    "maxAgentDecisions": 3,
+                    "maxToolProposals": 0,
+                    "maxFlowSteps": 32
+                  },
+                  "networkHosts": [],
+                  "mayPropose": [],
+                  "mayInvokeActiveCatalog": false
+                }
+              },
+              "teamOrigin": {
+                "operatorId": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+                "requestId": "63cdc87c-41af-4826-bb8c-95b44068fc76"
+              },
+              "diff": {
+                "title": "Create operator: Relecteur d'accroches",
+                "author": "f79ca931-781a-5afe-8c63-f813758dc7f8",
+                "base": {
+                  "repositoryVersion": "commit:02eb7cdfce0703234742532b2f8b7a431850383c",
+                  "modelDigest": "76dd6c5a32d65a28c2db299b3605a45f51f9aeb24ee318d7352cf734673732f1",
+                  "sourceDigest": "dd62cee7160f73085a2ee8bb8916039910f2f2a194db2f4996b691e89141f15e"
+                },
+                "sourceDigest": "eda6b41be50c1d085e1e22f5157833e24f9641a478d7e4f6b8d9d37aca44f75a",
+                "patch": "diff --git a/configuration.sysml b/configuration.sysml\n--- a/configuration.sysml\n+++ b/configuration.sysml\n@@ -284,7 +284,7 @@\n         attribute envelopePattern : String = \"1.3\";\n         attribute envelopeRevision : String = \"1\";\n         attribute configurationId : String = \"live-builder-native\";\n-        attribute configurationRevision : String = \"1\";\n+        attribute configurationRevision : String = \"2\";\n         attribute admissionMode : String = \"human\";\n         attribute networkHosts : String = \"[]\";\n         part owner : AssemblyCore::HumanOperator {\n",
+                "files": [
+                  {
+                    "path": "configuration.sysml",
+                    "kind": "changed",
+                    "additions": 124,
+                    "deletions": 3
+                  }
+                ],
+                "additions": 124,
+                "deletions": 3
+              },
+              "authorityExercise": {
+                "ownerSource": "modeled",
+                "systemId": "7f71a21c-7fda-50cc-8fa5-89f67ebe85d9",
+                "operatorId": "owner",
+                "operatorNativeId": "9a51313c-9a90-51b8-9e7c-bf9e5544e2a1",
+                "mandateId": "owner",
+                "mandateNativeId": "0a6f7507-63ce-5943-93df-b3581ad54f82",
+                "mandateRevision": 1,
+                "rootAuthorityId": "owner-root",
+                "rootAuthorityNativeId": "fca13362-5049-5cc7-a3cf-8f3c2ebd690a",
+                "rootGrantId": "owner-root-grant",
+                "rootGrantNativeId": "bc64495d-fa28-58be-b8bb-5d269f809bd3",
+                "authoritySchema": 2,
+                "action": "mandate-change",
+                "baseModelDigest": "76dd6c5a32d65a28c2db299b3605a45f51f9aeb24ee318d7352cf734673732f1",
+                "outOfMandate": false
+              },
+              "authority": "human",
+              "decidedAt": "2026-11-03T11:53:52.877Z"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "decisions": [
+    {
+      "caseId": "63cdc87c-41af-4826-bb8c-95b44068fc76",
+      "changeId": "193a8cbd-c660-4651-be0a-55f504c2c4ed",
+      "status": "adopted",
+      "canResume": true
+    },
+    {
+      "caseId": "63cdc87c-41af-4826-bb8c-95b44068fc76",
+      "changeId": "efc7f97f-dece-4dba-a021-290280cf0289",
+      "status": "adopted",
+      "canResume": true
+    }
+  ]
+}

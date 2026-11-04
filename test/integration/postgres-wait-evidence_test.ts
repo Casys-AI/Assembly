@@ -1,3 +1,4 @@
+import { nativeFrameworkNodeName } from "../../src/application/work/native-execution/framework-node-name.ts";
 /** Real PostgreSQL receipt and official-saver witnesses. Models and provider
  * replies are controlled fixtures; this does not qualify Toolkit/source pins. */
 import assert from "node:assert/strict";
@@ -9,34 +10,35 @@ import type {
   NativeExecutionHandlers,
   NativeExecutionRequest,
   NativeExecutionSnapshot,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import type { OperatorExecutionDelivery } from "../../src/application/work/operators/execution.ts";
 import {
   type NativeModelAdvanceEvidence,
   runtimeRevisionReference,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";
 import {
   compileNativeOperatorGraph,
-  nativeFrameworkNodeName,
-} from "../../src/adapters/work/runtime/native-graph.ts";
+} from "../../src/adapters/out/native-execution/native-graph.ts";
 import {
   postgresExecutionThreadId,
   PostgresNativeExecutionLedger,
-} from "../../src/adapters/work/runtime/postgres-ledger.ts";
-import { nativeCatalogAdvanceEvidence } from "../../src/application/work/runtime/model-advance.ts";
+} from "../../src/adapters/out/native-execution/postgres-ledger.ts";
+import { nativeCatalogAdvanceEvidence } from "../../src/application/work/native-execution/model-advance.ts";
 import { PostgresSystemStateStore } from "../../src/adapters/out/postgres/system-state-store.ts";
 import {
-  checkpointConsumptions,
   LEGACY_WAIT_PROTOCOL,
   type NativeWaitEvidence,
-  type OfficialCheckpoint,
   TYPED_WAIT_PROTOCOL,
+} from "../../src/application/work/native-execution/wait-evidence.ts";
+import {
+  checkpointConsumptions,
+  type OfficialCheckpoint,
   verifyOfficialWaitCheckpoint,
-} from "../../src/adapters/work/runtime/checkpoint-wait-evidence.ts";
-import { ExecutionWaitEvidenceLedger } from "../../src/adapters/work/runtime/wait-evidence-ledger.ts";
-import type { WaitRun } from "../../src/adapters/work/runtime/wait-evidence-ledger.ts";
+} from "../../src/adapters/out/native-execution/checkpoint-wait-evidence.ts";
+import { ExecutionWaitEvidenceLedger } from "../../src/adapters/out/native-execution/wait-evidence-ledger.ts";
+import type { WaitRun } from "../../src/adapters/out/native-execution/wait-evidence-ledger.ts";
 import { executableFixture } from "../support/execution-fixture.ts";
 import { immutableConsultationFixture } from "../support/immutable-consultation-fixture.ts";
 import { openPostgresDurableRecoveryHost } from "../support/postgres-runtime-fixture.ts";

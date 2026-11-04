@@ -2,7 +2,7 @@
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import assert from "node:assert/strict";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
-import { resolveModelEdits } from "../../src/adapters/model/sources/editing/tooling.ts";
+import { resolveModelEdits } from "../../src/domain/model/editing/source-index.ts";
 import { ModelRepositoryError } from "../../src/application/model/repository.ts";
 import {
   editRequest,

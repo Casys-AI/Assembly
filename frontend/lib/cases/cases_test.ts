@@ -13,6 +13,7 @@ import {
   isOpenCase,
   messageCaseId,
   parseCasesSnapshot,
+  since,
 } from "./cases.ts";
 import {
   caseRecord,
@@ -343,7 +344,7 @@ Deno.test("a newer collection invalidates a suspended open detail even without S
   equal(detailReads, 2);
   await store.ensure(old.id);
   equal(detailReads, 2);
-  equal(await store.close(old.id), false);
+  equal(await store.close(old.id, "done", "accepted"), false);
   deepStrictEqual(store.open.value, []);
 });
 
@@ -432,9 +433,9 @@ Deno.test("closing a Case outside the collection refreshes its cached detail", a
     }),
   });
   await store.ensure("ui-fixture:case:1");
-  equal(await store.close("ui-fixture:case:1"), true);
+  equal(await store.close("ui-fixture:case:1", "done", "accepted"), true);
   equal(store.byId("ui-fixture:case:1")?.status, "closed-done");
-  equal(await store.close("ui-fixture:case:1"), false);
+  equal(await store.close("ui-fixture:case:1", "done", "accepted"), false);
   deepStrictEqual(paths, [
     "/api/cases/ui-fixture%3Acase%3A1",
     "/api/cases/ui-fixture%3Acase%3A1/close",
@@ -496,16 +497,19 @@ Deno.test("closing a case is one explicit local command, then a reread", async (
   });
   const store = createCases({ port: api });
   await store.refresh();
-  equal(await store.close("ui-fixture:case:1"), true);
+  equal(await store.close("ui-fixture:case:1", "done", "accepted"), true);
   deepStrictEqual(calls.map((call) => call.path), [
     "/api/cases",
     "/api/cases/ui-fixture%3Acase%3A1/close",
     "/api/cases",
   ]);
-  equal(calls[1].body, JSON.stringify({ outcome: "done" }));
+  equal(
+    calls[1].body,
+    JSON.stringify({ outcome: "done", verdict: "accepted" }),
+  );
   deepStrictEqual(store.open.value, []);
   // A closed case cannot be closed again.
-  equal(await store.close("ui-fixture:case:1"), false);
+  equal(await store.close("ui-fixture:case:1", "done", "accepted"), false);
   equal(calls.length, 3);
 });
 
@@ -708,4 +712,51 @@ Deno.test("Case readout parses static initial refusal separately from open lifec
     });
     deepStrictEqual(parsed.cases.map((entry) => entry.number), [2]);
   }
+});
+
+Deno.test("older Case dates use the same UTC day as version labels", () => {
+  equal(
+    since("2026-11-03T23:30:00-04:00", Date.parse("2026-11-12T12:00:00Z")),
+    "4 Nov",
+  );
+});
+
+Deno.test("a slower Case detail applies after another Case completes without rereading either", async () => {
+  const initial = parseCasesSnapshot({
+    systemId: "s",
+    cases: [caseRecord(1), caseRecord(2)],
+  });
+  const [a, b] = initial.cases;
+  const gates = new Map(
+    initial.cases.map((
+      entry,
+    ) => [entry.id, Promise.withResolvers<CaseRecord>()]),
+  );
+  const reads = new Map<string, number>();
+  const store = createCases({
+    port: {
+      read: () => Promise.reject(new Error("Unexpected collection read")),
+      readOne(id) {
+        const count = (reads.get(id) ?? 0) + 1;
+        reads.set(id, count);
+        if (count > 1) {
+          return Promise.reject(new Error("Unexpected repeated detail read"));
+        }
+        return gates.get(id)!.promise;
+      },
+      close: () => Promise.resolve(),
+      act: () => Promise.resolve(),
+    },
+  });
+  store.accept(initial);
+  const left = store.refreshOne(a.id);
+  const right = store.refreshOne(b.id);
+  gates.get(b.id)!.resolve({ ...b, status: "waiting" });
+  await right;
+  gates.get(a.id)!.resolve({ ...a, objective: "Current A" });
+  await left;
+  equal(store.byId(a.id)?.objective, "Current A");
+  equal(store.byId(b.id)?.status, "waiting");
+  deepStrictEqual([...reads], [[a.id, 1], [b.id, 1]]);
+  store.dispose();
 });

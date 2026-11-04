@@ -1,4 +1,4 @@
-import { textOf } from "../../test/support/dom.ts";
+import { parse, textOf } from "../../test/support/dom.ts";
 import {
   deepStrictEqual,
   doesNotMatch,
@@ -79,6 +79,10 @@ const order = (summary: string, patch: object = {}): Message => ({
   },
 });
 
+/** What a notice line says on hover: the reason, what was asked, the route. */
+const lineTitle = (html: string) =>
+  parse(html).querySelector(".notice-line")?.getAttribute("title") ?? "";
+
 /** The designer's thread with these messages, and the Request they point at. */
 function thread(messages: Message[], options: { known?: boolean } = {}) {
   const current = snapshot();
@@ -101,9 +105,9 @@ function thread(messages: Message[], options: { known?: boolean } = {}) {
   return {
     state,
     html: renderToString(
-      <ChatTimeline
+      <ExchangeMessages
         state={state}
-        entries={chatEntries(state, designer)}
+        messages={designer.messages}
         conversation={designer}
       />,
     ),
@@ -114,10 +118,9 @@ Deno.test("a historical escalation names the requester without inferring a human
   const { html } = thread([
     escalation("Read example.org. I need it to answer the request."),
   ]);
-  equal(
-    textOf(html),
-    "Research asks: Read example.org · Decision routing unavailable",
-  );
+  // No change known: the line shows no state, and never the route instead.
+  equal(textOf(html), "Research asks: Read example.org");
+  match(lineTitle(html), /Route: Decision routing unavailable/);
   // The line leads to the operator's own Request, not the designer's.
   match(
     html,
@@ -161,12 +164,21 @@ Deno.test("recorded hierarchy routing names exact operators and distinguishes a 
     route,
     decisionAuthority: "operator",
   })]);
-  match(textOf(html), /Forwarded by native:research-owner to Designer/);
-  match(textOf(html), /Route recorded; eligibility is rechecked on decision/);
+  equal(textOf(html), "Research asks: Read example.org");
+  // The exact route is the line's tooltip, never a second line nor a state.
   match(
-    textOf(html),
+    lineTitle(html),
+    /Route: Forwarded by native:research-owner to Designer/,
+  );
+  match(
+    lineTitle(html),
+    /Route recorded; eligibility is rechecked on decision/,
+  );
+  match(
+    html,
     /native:research-owner: no covering grant → Designer: grant:network revision 2/,
   );
+  doesNotMatch(html, /<details|Decision route/);
   doesNotMatch(
     html,
     /waiting for you|Human decision|<button|>Accept<|>Decline</,
@@ -180,7 +192,7 @@ Deno.test("recorded hierarchy routing names exact operators and distinguishes a 
       trace: route.trace.map((hop) => ({ ...hop, eligibility: "not-covered" })),
     },
   })]).html;
-  match(textOf(human), /Human decision requested/);
+  match(lineTitle(human), /Human decision requested/);
   doesNotMatch(human, /waiting for you|Forwarded/);
   const unresolved = thread([escalation("Read example.org", {
     decisionAuthority: "unresolved",
@@ -191,7 +203,7 @@ Deno.test("recorded hierarchy routing names exact operators and distinguishes a 
       trace: [],
     },
   })]).html;
-  match(textOf(unresolved), /Routing needs resolution/);
+  match(lineTitle(unresolved), /Routing needs resolution/);
   doesNotMatch(unresolved, /Human decision|waiting for you/);
 });
 
@@ -241,13 +253,11 @@ Deno.test("a version 2 route of the main space shows as a version 1 route does",
     route,
     decisionAuthority: "operator",
   })]);
+  equal(textOf(html), "Research asks: Read example.org");
+  match(lineTitle(html), /Forwarded by native:research-owner to Designer/);
+  match(html, /Route recorded; eligibility is rechecked on decision/);
   match(
-    textOf(html),
-    /Research asks: Read example.org · Forwarded by native:research-owner to Designer/,
-  );
-  match(textOf(html), /Route recorded; eligibility is rechecked on decision/);
-  match(
-    textOf(html),
+    html,
     /native:research-owner: no covering grant → Designer: grant:network revision 2/,
   );
   doesNotMatch(
@@ -263,14 +273,14 @@ Deno.test("a version 2 route of the main space shows as a version 1 route does",
       trace: route.trace.map((hop) => ({ ...hop, eligibility: "not-covered" })),
     },
   })]).html;
-  match(textOf(human), /Human decision requested/);
+  match(lineTitle(human), /Human decision requested/);
   doesNotMatch(human, /Decision routing unavailable|Forwarded/);
   // A version 2 route that is not exactly bound to its notice reads as none.
   const forged = thread([escalation("Read example.org", {
     route: { ...route, requester: { ...route.requester, operatorId: "other" } },
     decisionAuthority: "operator",
   })]).html;
-  match(textOf(forged), /Decision routing unavailable/);
+  match(lineTitle(forged), /Decision routing unavailable/);
   doesNotMatch(forged, /Forwarded|<details/);
 });
 
@@ -287,22 +297,22 @@ Deno.test("a route that needs resolution says why in words, never as its code", 
     decisionAuthority: "unresolved",
   })]);
   match(
-    textOf(html),
-    /^Research asks: Read example.org · Routing needs resolution: Main's policy cannot be read/,
+    lineTitle(html),
+    /Route: Routing needs resolution: Main(?:'|&#39;)s policy cannot be read/,
   );
   // The host's own reason stays in the route detail.
-  match(textOf(html), /Main's current policy is unavailable\./);
+  match(html, /title="[^"]*Main(?:'|&#39;)s current policy is unavailable\./);
   doesNotMatch(html, /MAIN_POLICY_UNREADABLE|Human decision/);
   // A code the route may not carry is no route.
   const stray = thread([escalation("Read example.org", {
     route: { ...route, code: "OTHER" },
     decisionAuthority: "unresolved",
   })]).html;
-  match(textOf(stray), /Decision routing unavailable/);
+  match(lineTitle(stray), /Decision routing unavailable/);
   doesNotMatch(stray, /Routing needs resolution/);
 });
 
-Deno.test("a notice says on one line what was asked, as text only", () => {
+Deno.test("a notice keeps what was asked in its tooltip, as text only, never as a second line", () => {
   const asked = (hosts: string[]) =>
     thread([escalation("Read example.org", {
       changeKind: "mandate-change",
@@ -311,15 +321,16 @@ Deno.test("a notice says on one line what was asked, as text only", () => {
   const html = asked(["example.org", "example.net"]);
   match(
     html,
-    /<p class="notice-result" title="Extend web access: example.org, example.net">/,
+    /<a class="notice-line" href="[^"]*" title="Read example.org\nExtend web access: example.org, example.net\n/,
   );
-  match(
-    textOf(html),
-    /^Research asks: Read example.org · Decision routing unavailable Extend web access: example.org, example.net$/,
-  );
+  equal(textOf(html), "Research asks: Read example.org");
+  doesNotMatch(html, /notice-result/);
   doesNotMatch(asked(["<img src=x onerror=attack()>"]), /<img/);
-  // Recorded before the rights: no line.
-  doesNotMatch(thread([escalation("Read example.org")]).html, /notice-result/);
+  // Recorded before the rights: the reason alone.
+  match(
+    thread([escalation("Read example.org")]).html,
+    /title="Read example.org\nRoute:/,
+  );
 });
 
 Deno.test("initial configuration routes render on both responsible and decider notice copies", () => {
@@ -392,18 +403,17 @@ Deno.test("initial configuration routes render on both responsible and decider n
     )
   ) {
     const html = renderToString(
-      <ChatTimeline
+      <ExchangeMessages
         state={state}
+        messages={conversation.messages}
         conversation={conversation}
-        entries={chatEntries(state, conversation)}
       />,
     );
-    match(
-      textOf(html),
-      /Leaf analyst asks: Read example.org · Forwarded by Research owner to Main/,
-    );
-    match(textOf(html), /base revision 0/);
-    match(textOf(html), /Main: research-network revision 1/);
+    // The change is known and waits: the line says so, the route on hover.
+    equal(textOf(html), "Leaf analyst asks: Read example.org To decide");
+    match(lineTitle(html), /Forwarded by Research owner to Main/);
+    match(lineTitle(html), /Base revision: 0/);
+    match(lineTitle(html), /Main: research-network revision 1/);
     doesNotMatch(
       html,
       /Decision routing unavailable|waiting for you|Human decision/,
@@ -482,14 +492,14 @@ Deno.test("a thread presents only the latest notice assignment while retaining e
   const assertLatest = (rendered: string) => {
     equal(rendered.match(/data-notice="authority-escalation"/g)?.length, 3);
     match(
-      textOf(rendered),
-      /Research asks: Latest route · Forwarded by native:owner to native:next/,
+      rendered,
+      /title="Latest route\nRoute: Forwarded by native:owner to native:next/,
     );
     match(textOf(rendered), /Other change/);
     match(textOf(rendered), /Other recipient/);
     doesNotMatch(
-      textOf(rendered),
-      /Legacy notice|First route|Older route appended last|Decision routing unavailable/,
+      rendered,
+      /Legacy notice|First route|Older route appended last/,
     );
   };
   assertLatest(html);
@@ -528,7 +538,9 @@ Deno.test("an escalation says what became of the change once the person decided 
       conversation={designer}
     />,
   );
-  equal(textOf(html), "Research asks: Read example.org · Declined");
+  // Decided: one line, with the chip every decision reads.
+  equal(textOf(html), "Research asks: Read example.org Declined");
+  match(html, /<span class="change-chip is-declined"\s*>Declined</);
 });
 
 Deno.test("an escalation names a delegated decider only from the exact recorded receipt", () => {
@@ -595,9 +607,10 @@ Deno.test("an escalation names a delegated decider only from the exact recorded 
     return html;
   };
   const exact = draw();
+  equal(textOf(exact), "Research asks: Read example.org Applied");
   match(
-    textOf(exact),
-    /Decided by Main Operator · research-network revision 1/,
+    exact,
+    /<span class="change-chip is-applied" title="Decided by Main Operator · rule research-network · rev\. 1/,
   );
   doesNotMatch(exact, /<button|>Accept<|>Decline<|>Adjust</);
   for (
@@ -608,19 +621,16 @@ Deno.test("an escalation names a delegated decider only from the exact recorded 
     ]
   ) {
     const forged = draw(patch);
-    match(textOf(forged), /Decision routing unavailable/);
+    match(lineTitle(forged), /Decision routing unavailable/);
     doesNotMatch(textOf(forged), /Decided by|Applied/);
   }
   const ambiguous = draw({}, true);
-  match(textOf(ambiguous), /Decision routing unavailable/);
+  match(lineTitle(ambiguous), /Decision routing unavailable/);
   doesNotMatch(textOf(ambiguous), /Decided by|Applied/);
   change.authorityExercise!.delegation!.requestedRights = {
     addNetworkHosts: ["example.net"],
   };
-  doesNotMatch(
-    textOf(draw()),
-    /Decided by Main Operator|research-network revision 1/,
-  );
+  doesNotMatch(draw(), /Decided by Main Operator|rule research-network/);
 });
 
 /**
@@ -667,9 +677,9 @@ function branchThread(
     state,
     name: branchOperatorName(state.requests.cases.byId(REQUEST)!),
     html: renderToString(
-      <ChatTimeline
+      <ExchangeMessages
         state={state}
-        entries={chatEntries(state, designer)}
+        messages={designer.messages}
         conversation={designer}
       />,
     ),
@@ -679,10 +689,7 @@ function branchThread(
 Deno.test("an escalation from a Branch Operator names it, not the Main Operator, and leads to its Request", () => {
   const { html, name } = branchThread(escalation("Read example.org"));
   ok(name && name !== "Main Operator");
-  equal(
-    textOf(html),
-    `${name} asks: Read example.org · Decision routing unavailable`,
-  );
+  equal(textOf(html), `${name} asks: Read example.org To decide`);
   match(
     html,
     /<a class="notice-line" href="\/cases\?case=ui-fixture%3Acase%3A2"/,
@@ -696,11 +703,11 @@ Deno.test("an escalation says what became of the change in the Request's own con
     "refused",
   );
   // Main's roster still holds the change pending; the Request recorded it refused.
-  equal(textOf(html), `${name} asks: Read example.org · Declined`);
+  equal(textOf(html), `${name} asks: Read example.org Checking…`);
   const pending = branchThread(escalation("Read example.org"), "pending");
   equal(
     textOf(pending.html),
-    `${pending.name} asks: Read example.org · Decision routing unavailable`,
+    `${pending.name} asks: Read example.org To decide`,
   );
 });
 
@@ -734,13 +741,17 @@ Deno.test("a version 2 route of a Branch Operator names it by its space, and lea
     requestedRights: { addNetworkHosts: ["example.org"] },
   }));
   ok(name && name !== "Main Operator");
+  // While it waits: the line, then the relayed card, which carries the state;
+  // the exact route is in the card's inspector, not in a fold of its own.
   match(
     textOf(html),
-    new RegExp(
-      `^${name} asks: Read example.org · Human decision requested Extend web access: example.org Decision route`,
-    ),
+    new RegExp(`^${name} asks: Read example.org Allow model`),
   );
-  match(textOf(html), /Route recorded; eligibility is rechecked on decision\./);
+  match(
+    textOf(html),
+    /Route Human decision requested Host note Existing native-ID policies do not grant cross-space authority\. Base revision 1 Model digest Route recorded; eligibility is rechecked on decision\./,
+  );
+  doesNotMatch(html, /notice-result|Decision route|class="notice-state"/);
   match(
     html,
     /<a class="notice-line" href="\/cases\?case=ui-fixture%3Acase%3A2"/,
@@ -785,14 +796,13 @@ Deno.test("a route through a Branch Operator to its Main Operator tells them apa
     decisionAuthority: "operator",
   }));
   ok(name && name !== "Main Operator");
+  equal(textOf(html), "native:leaf asks: Read example.org");
   match(
-    textOf(html),
-    new RegExp(
-      `^native:leaf asks: Read example.org · Forwarded by ${name} to Main Operator `,
-    ),
+    lineTitle(html),
+    new RegExp(`Route: Forwarded by ${name} to Main Operator`),
   );
   match(
-    textOf(html),
+    html,
     new RegExp(
       `${name}: no covering grant → Main Operator: grant:network revision 2`,
     ),
@@ -808,7 +818,7 @@ Deno.test("a route through a Branch Operator to its Main Operator tells them apa
     },
     decisionAuthority: "operator",
   })).html;
-  match(textOf(spaceless), /Decision routing unavailable/);
+  match(lineTitle(spaceless), /Decision routing unavailable/);
   doesNotMatch(spaceless, /Forwarded/);
 });
 
@@ -823,10 +833,9 @@ Deno.test("a Branch Operator's route that needs resolution says why in words", (
   }));
   match(
     textOf(html),
-    new RegExp(
-      `^${name} asks: Read example.org · Routing needs resolution: Main is unavailable `,
-    ),
+    new RegExp(`^${name} asks: Read example.org Allow model`),
   );
+  match(textOf(html), /Route Routing needs resolution: Main is unavailable /);
   doesNotMatch(html, /MAIN_UNAVAILABLE/);
 });
 
@@ -849,15 +858,26 @@ Deno.test("a completion names the operator, the Request and its outcome, with th
   // Two lines on screen, the whole text in the tooltip.
   match(
     html,
-    /<p class="notice-result" title="Both hosts answered\. The details/,
+    /<div class="notice-result" title="Both hosts answered\. The details/,
   );
-  const full = html.match(/<p class="notice-result" title="([^"]*)"/)?.[1];
+  const full = html.match(/<div class="notice-result" title="([^"]*)"/)?.[1];
   equal(full?.length, result.length);
   const abandoned = thread([completion("Stopped early", {
     status: "closed-abandoned",
   })]).html;
   match(textOf(abandoned), /finished .* · Abandoned Stopped early$/);
   doesNotMatch(thread([completion("")]).html, /notice-result/);
+});
+
+Deno.test("a completion's result reads as the Markdown of agents' messages, never as raw marks", () => {
+  const { html } = thread([
+    completion("**Best version:** `Notez vite.`\n- kept\n- dropped"),
+  ]);
+  match(
+    html,
+    /<div class="notice-result" title="[^"]*"><p><strong>Best version:<\/strong> <code>Notez vite\.<\/code><\/p><ul><li\s*>kept<\/li><li\s*>dropped<\/li><\/ul><\/div>/,
+  );
+  doesNotMatch(textOf(html), /\*\*|`/);
 });
 
 Deno.test("an order given to a sub-operator names both operators and its first sentence, and leads to its Request", () => {
@@ -933,7 +953,7 @@ Deno.test("a record that is not exactly a notice stays an ordinary tool message"
   (odd.operatorNotice as { kind: string }).kind = "something-else";
   const { html } = thread([odd]);
   doesNotMatch(html, /operator-notice/);
-  match(html, /View result/);
+  match(html, /1 step/);
   const missing = escalation("Read example.org", { caseId: "" });
   doesNotMatch(thread([missing]).html, /operator-notice/);
   // An order that does not name who gave it is shown as it is recorded.
@@ -951,10 +971,7 @@ Deno.test("another agent's exchange shows a report as the same line", () => {
   const rows = renderToString(
     <ExchangeMessages messages={reports} state={state} />,
   );
-  equal(
-    textOf(rows),
-    "Research asks: Read example.org · Decision routing unavailable",
-  );
+  equal(textOf(rows), "Research asks: Read example.org");
 });
 
 Deno.test("the Request a report names is read when the page does not have it yet", async () => {
@@ -1004,6 +1021,7 @@ Deno.test("the Request a report names is read when the page does not have it yet
 function relayedThread(
   decisionAuthority: "human" | "operator",
   notices = 1,
+  status: "pending" | "approved" = "pending",
 ) {
   const network = (status: "pending" | "approved") =>
     grant({
@@ -1058,7 +1076,7 @@ function relayedThread(
   );
   state.agentConversations.accept(main);
   state.cases.accept({ systemId: current.id, cases: [] });
-  const branch = operatorRoster([], [network("pending")]);
+  const branch = operatorRoster([], [network(status)]);
   // A Request's conversation names its operator by its native identity.
   branch.conversations[1].agentId = "native:research";
   seedRequestCases(
@@ -1096,10 +1114,19 @@ Deno.test("4.8d D5: a relayed request for the person shows the Case's own card, 
   doesNotMatch(html, /not available for decision here/);
 });
 
-Deno.test("4.8d D5: a request the MO decides under its mandate is relayed read-only", () => {
-  const { html } = relayedThread("operator");
+Deno.test("4.8d D5: a decided relayed request is one folded line, the card's own, in the words of every decision", () => {
+  const waiting = relayedThread("human").html;
+  match(waiting, /class="notice-line"/);
+  match(waiting, /<span class="change-chip is-to-decide"\s*>To decide</);
+  const { html } = relayedThread("human", 1, "approved");
+  doesNotMatch(html, /class="notice-line"|>Accept<|To decide/);
   equal((html.match(/id="change-native:research-grant"/g) ?? []).length, 1);
-  match(html, /Main Operator decides this request under its mandate/);
+  match(
+    html,
+    /<details class="proposal-receipt"><summary><span>Extend web access<\/span><span class="change-chip is-applying"/,
+  );
+  // The exact route waits in the card's inspector.
+  match(textOf(html), /Route Human decision requested/);
 });
 
 Deno.test("4.8d D5: two notices of one change relay one card", () => {

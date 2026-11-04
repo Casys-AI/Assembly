@@ -11,7 +11,7 @@ import {
   type ModelWriteWorker,
 } from "../../src/application/model/publication/write-queue.ts";
 import { QueuedModelWriter } from "../../src/application/model/publication/queued-writer.ts";
-import { PostgresModelWriteQueue } from "../../src/adapters/model/repository/writing/postgres-write-queue.ts";
+import { PostgresModelWriteQueue } from "../../src/adapters/out/postgres/model-write-queue.ts";
 import { repositoryWriterLock } from "../../src/adapters/out/git/writer-lock.ts";
 import {
   postgresTestEnabled,

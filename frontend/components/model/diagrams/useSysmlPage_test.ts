@@ -55,7 +55,12 @@ Deno.test("view navigation reuses the versioned list, never reads PlantUML, and 
     return null;
   }
   const show = (search: string) =>
-    root.show(Probe, { location: { search }, api, live: feed.live });
+    root.show(Probe, {
+      versionInfo: { source: { kind: "main" as const } },
+      location: { search },
+      api,
+      live: feed.live,
+    });
   try {
     await show(`?version=${HEAD}&view=A`);
     await settle();
@@ -96,11 +101,13 @@ Deno.test("a late diagram from another version cannot replace the view currently
   }
   try {
     await root.show(Probe, {
+      versionInfo: { source: { kind: "main" as const } },
       location: { search: `?version=${HEAD}&view=A` },
       api,
     });
     await settle();
     await root.show(Probe, {
+      versionInfo: { source: { kind: "main" as const } },
       location: { search: `?version=${NEXT}&view=B` },
       api,
     });
@@ -143,6 +150,7 @@ Deno.test("an open live diagram reloads automatically on publication and ignores
   }
   try {
     await root.show(Probe, {
+      versionInfo: { source: { kind: "main" as const } },
       location: { search: "?view=A" },
       api,
       live: feed.live,

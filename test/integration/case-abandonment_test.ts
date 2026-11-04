@@ -1,3 +1,4 @@
+import { ACCEPTED_CASE_CLOSURE } from "../support/case-closure.ts";
 import { unexpectedModelAuthoring } from "../support/model-authoring.ts";
 import {
   deepStrictEqual,
@@ -210,9 +211,12 @@ Deno.test("abandoning a budget-suspended review terminates its candidate and per
   equal(runtime.snapshot.budgetSuspension?.operation, "review");
   equal(runtime.snapshot.budgetSuspension?.candidateId, candidate.id);
   equal(f.counts().reviews, 0);
-  await rejects(() => runtime.closeCase(first.id, "done"), {
-    code: "CASE_BUSY",
-  });
+  await rejects(
+    () => runtime.closeCase(first.id, "done", ACCEPTED_CASE_CLOSURE),
+    {
+      code: "CASE_BUSY",
+    },
+  );
   equal(runtime.cases.cases[0]!.status, "waiting");
 
   await runtime.closeCase(first.id, "abandoned");
@@ -281,7 +285,7 @@ Deno.test("a failed native review preserves its unknown receipt when the Case co
   equal(uncertain.status, "uncertain");
   equal(uncertain.unsettledEffects.length, 1);
   equal(f.model.catalog.length, 0);
-  await runtime.closeCase(first.id, "done");
+  await runtime.closeCase(first.id, "done", ACCEPTED_CASE_CLOSURE);
   equal(runtime.cases.cases[0]!.status, "closed-done");
   deepStrictEqual(
     (await f.execution.execution.inspect("builder")).find((snapshot) =>

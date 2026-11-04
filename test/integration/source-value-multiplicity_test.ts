@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import { sourceValues } from "../../src/adapters/model/projections/graph/source.ts";
+import { sourceValues } from "../../src/adapters/out/sysml-toolkit/graph/values/source-values.ts";
 import {
   SourceValueReadError,
   sourceValueReaders,
-} from "../../src/adapters/model/sources/values/readers.ts";
+} from "../../src/domain/model/value-objects/readers.ts";
 import { loadSysmlToolkit } from "../../src/adapters/out/sysml-toolkit/runtime/loader.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";

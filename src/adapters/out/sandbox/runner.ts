@@ -1,3 +1,4 @@
+import type { RequestOpeningRunnerPort } from "../../../application/work/request-spaces/opening-host-ports.ts";
 import type { RunnableTool } from "../../../application/work/tools/active-tools.ts";
 import { TOOL_KINDS } from "../../../domain/shared-kernel/tool-kind.ts";
 import type { ToolRunnerPort } from "../../../application/work/runtime/ports.ts";
@@ -48,7 +49,8 @@ export interface ToolRunnerOptions {
  * The V8 heap cap is not an operating-system RSS limit. Hostname allowlisting
  * trusts the configured sites' DNS; fetch does not pin DNS against rebinding.
  */
-export class DenoToolRunner implements ToolRunnerPort {
+export class DenoToolRunner
+  implements ToolRunnerPort, RequestOpeningRunnerPort {
   private readonly options: ToolRunnerOptions;
   private readonly defaultScope: NetworkScope;
 

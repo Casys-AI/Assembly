@@ -6,8 +6,11 @@ import { createModelBoardHandler } from "../adapters/in/http/model/board.ts";
 import { createAuthorityMatrixHandler } from "../adapters/in/http/governance/authority-matrix.ts";
 import { createModelAttentionHandler } from "../adapters/in/http/model/attention.ts";
 import { createModelViewsHandler } from "../adapters/in/http/model/views.ts";
-import { createModelBoardHeadReader } from "../adapters/model/projections/board-reader.ts";
-import { createCachedModelProjections } from "../adapters/model/projections/cache.ts";
+import { createModelBoardHeadReader } from "../application/model/projections/board-reader.ts";
+import {
+  type CachedModelProjectionsOptions,
+  createCachedModelProjections,
+} from "../application/model/projections/cached-projections.ts";
 import { ModelBoardService } from "../application/model/projections/board.ts";
 import {
   ModelViewDiagramService,
@@ -21,13 +24,85 @@ import type { ModelRepositoryPort } from "../application/model/repository.ts";
 import type { ModelBuildStore } from "../application/model/builds/ports/out/build-store.port.ts";
 import type { ModelDiagnosticsPort } from "../application/work/runtime/ports.ts";
 import type { SysmlToolkitAdapter } from "../adapters/out/sysml-toolkit/adapter.ts";
-import type { AuthorityMatrixProjection } from "../adapters/out/sysml-toolkit/projections/authority-matrix/worker-client.ts";
 import {
   errorLogProperties,
   technicalLogger,
 } from "../infrastructure/logging.ts";
 
+import { ToolkitModelBoardReader } from "../adapters/out/sysml-toolkit/projections/board-reader.ts";
+import { CompiledAuthorityMatrixReader } from "../adapters/out/sysml-toolkit/projections/authority-matrix/reader.ts";
+import {
+  ToolkitModelViewDiagramReader,
+  ToolkitModelViewListReader,
+  ToolkitModelViewPlantumlReader,
+} from "../adapters/out/sysml-toolkit/projections/views-readers.ts";
+import type {
+  AuthorityMatrixProjection,
+  MatrixProcessObserver,
+} from "../adapters/out/sysml-toolkit/projections/authority-matrix/worker-client.ts";
+
 const log = technicalLogger("composition");
+
+export type ToolkitCachedModelProjectionsOptions =
+  & Omit<CachedModelProjectionsOptions, "createReaders">
+  & {
+    tooling: Pick<
+      SysmlToolkitAdapter,
+      "board" | "views" | "diagram" | "plantuml"
+    >;
+    authorityMatrixProject?: AuthorityMatrixProjection;
+    matrixObserver?: MatrixProcessObserver;
+    now?: () => number;
+  };
+
+export function createToolkitCachedModelProjections(
+  options: ToolkitCachedModelProjectionsOptions,
+) {
+  return createCachedModelProjections({
+    ...options,
+    createReaders(cachedViews) {
+      const { repository, projectId } = options;
+      const rawBoard = new ToolkitModelBoardReader(
+        repository,
+        options.tooling,
+        options.now,
+      );
+      const rawMatrix = new CompiledAuthorityMatrixReader(
+        repository,
+        projectId,
+        options.authorityMatrixProject,
+        options.now,
+        options.matrixObserver,
+      );
+      const rawList = new ToolkitModelViewListReader(
+        repository,
+        options.tooling,
+        options.now,
+      );
+      const rawDiagram = new ToolkitModelViewDiagramReader(
+        repository,
+        options.tooling,
+        { read: (version) => cachedViews.list(version) },
+        options.now,
+      );
+      const rawPlantuml = new ToolkitModelViewPlantumlReader(
+        repository,
+        options.tooling,
+        { read: (version) => cachedViews.list(version) },
+        options.now,
+      );
+      return {
+        board: rawBoard,
+        authorityMatrix: rawMatrix,
+        views: {
+          list: (version) => rawList.list(version),
+          diagram: (version, viewId) => rawDiagram.diagram(version, viewId),
+          plantuml: (version, viewId) => rawPlantuml.plantuml(version, viewId),
+        },
+      };
+    },
+  });
+}
 
 export interface ModelProjectionDependencies {
   repository: ModelRepositoryPort;
@@ -53,7 +128,7 @@ export function composeModelProjections(
     toolkitDigest,
     modelDiagnostics,
   } = dependencies;
-  const projectionReaders = createCachedModelProjections({
+  const projectionReaders = createToolkitCachedModelProjections({
     repository,
     repositoryId: project.id,
     projectId,

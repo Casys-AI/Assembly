@@ -1,3 +1,4 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 /** Shared mandate-change test harness for both suite tiers.
  *
  * The memory composition (host-agnostic semantics) and the durable PostgreSQL
@@ -7,7 +8,7 @@
  */
 import type { HostEdit } from "../../src/domain/model/editing/host-edit.ts";
 import { compileVerifiedSources } from "../support/memory-source-repository.ts";
-import { sha256 } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { sha256 } from "../../src/domain/model/value-objects/artifact.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import {
   TOOLKIT_COMPILER_DESCRIPTOR,
@@ -21,11 +22,9 @@ import {
 import { isHostEdit } from "../../src/domain/model/publication/compatibility.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { modelSourceDigest } from "../../src/domain/model/value-objects/sources.ts";
-import {
-  SourceModel,
-  type SourceRepository,
-  type SourceRevision,
-} from "../../src/adapters/model/sources/source-model.ts";
+import type { SourceModel } from "../../src/application/model/source-model.ts";
+import { type SourceRepository } from "../../src/application/model/source-repository.ts";
+import { type SourceRevision } from "../../src/domain/model/records/source-revision.ts";
 import type { CompiledModel } from "../../src/domain/model/records/compiled-model.ts";
 import type { ModelSources as Sources } from "../../src/domain/model/value-objects/sources.ts";
 import type {
@@ -554,7 +553,7 @@ export async function openMandateMemorySession(options: {
   requestedRights?: MandateRequestedRights;
   preProposed?: boolean;
 }): Promise<MandateMemorySession> {
-  const model = new SourceModel({
+  const model = createSourceModel({
     tooling: new SysmlToolkitAdapter({
       packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
     }),
@@ -665,7 +664,7 @@ export async function openMandateDurableSession(options: {
   requestedRights?: MandateRequestedRights;
   preProposed?: boolean;
 }): Promise<MandateDurableSession> {
-  const model = new SourceModel({
+  const model = createSourceModel({
     tooling: new SysmlToolkitAdapter({
       packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
     }),
@@ -753,7 +752,7 @@ export async function reopenMandateSession(
   await drainMandateQueue(durable);
   await durable.session.stop();
   const session = await durable.recovery.openSession();
-  const model = new SourceModel({
+  const model = createSourceModel({
     tooling: new SysmlToolkitAdapter({
       packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
     }),

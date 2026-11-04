@@ -45,7 +45,7 @@ import {
   propPredicate,
 } from "./rdf.ts";
 import {
-  createRdfValidateShaclEngine,
+  createNativeShaclEngine,
   ShaclModelDiagnostics,
 } from "../shacl/diagnostics.ts";
 
@@ -287,7 +287,7 @@ export class ModelSemanticBackend {
         },
     );
     this.#shapes = new ShaclModelDiagnostics({
-      engine: createRdfValidateShaclEngine,
+      engine: createNativeShaclEngine,
       cache: options.cache,
     });
   }
@@ -564,7 +564,11 @@ export class ModelSemanticBackend {
     const facts = typeof source.input === "function"
       ? await source.input()
       : source.input;
-    const report = await this.#shapes.validateBuild({ build, facts });
+    const report = await this.readGraph(
+      version,
+      source.digest,
+      (graph) => this.#shapes.validateBuild({ build, facts, graph }),
+    );
     return {
       version,
       sourceDigest: source.digest,

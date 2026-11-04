@@ -3,6 +3,13 @@ import {
   readCaseModelScope,
 } from "../case-model-scope.ts";
 import { signal } from "@preact/signals";
+import {
+  isSessionFailure,
+  isStaleConversation,
+  responseError,
+  retryOnceAfterStale,
+  sendErrorMessage,
+} from "../api-error.ts";
 import { type AssemblyEnvironment, parseEnvironment } from "../environment.ts";
 import type {
   AgentConversation,
@@ -124,6 +131,7 @@ export function createRequests(options: {
   let contextFlight: Promise<boolean> | null = null;
   const source = signal<OpeningSourceChoice>({ kind: "current-main" });
   const releases = signal<SavedSystemView[]>([]);
+  const releaseCatalogue = signal<SavedSystemView[]>([]);
   const error = signal("");
   const sessionReady = signal(false);
   const environment = signal<AssemblyEnvironment | null>(null);
@@ -132,6 +140,8 @@ export function createRequests(options: {
   let localSessionExpires = 0;
   const sessionGeneration = signal(0);
   const pending = signal(false);
+  const selectingRelease = signal(false);
+  let selectionFlight: Promise<boolean> | null = null;
   const intent = signal<OpeningCommand | null>(null);
   const opening = signal<OpeningView | null>(null);
   const scopes = signal(new Map<string, CaseModelScope>());
@@ -139,7 +149,12 @@ export function createRequests(options: {
   const readErrors = signal(new Map<string, string>());
   const writeErrors = signal(new Map<string, string>());
   const sending = signal<string | null>(null);
-  const flights = new Map<string, Promise<void>>();
+  const flights = new Map<
+    string,
+    { promise: Promise<void>; controller: AbortController; ordinary: boolean }
+  >();
+  const readers = new Map<string, { count: number }>();
+  const caseReads = new Set<AbortController>();
   const scopeReads = new Map<string, number>();
   const scopeHost = () => {
     const selected = host();
@@ -153,15 +168,27 @@ export function createRequests(options: {
   let savedIntentKey: string | null = null;
   let generation = 0;
   let requestReadFence = 0;
+  const requestInvalidations = new Map<string, number>();
+  let snapshotHost = scopeHost();
+  const clearSnapshots = () => {
+    snapshots.value = new Map();
+    readErrors.value = new Map();
+  };
   const releaseReadFences = [
     context.subscribe(() => {
       requestReadFence++;
+      const nextHost = scopeHost();
+      if (nextHost !== snapshotHost) {
+        snapshotHost = nextHost;
+        clearSnapshots();
+      }
     }),
     sessionReady.subscribe(() => {
       requestReadFence++;
     }),
     sessionGeneration.subscribe(() => {
       requestReadFence++;
+      clearSnapshots();
     }),
   ];
   let releaseGeneration = 0;
@@ -169,6 +196,8 @@ export function createRequests(options: {
     target.value = new Map(target.peek()).set(id, value);
   };
   async function json(path: string, init?: RequestInit): Promise<unknown> {
+    const session = sessionGeneration.peek(), selectedHost = scopeHost();
+    const fence = requestReadFence;
     const response = await fetcher(path, {
       ...init,
       credentials: "same-origin",
@@ -176,17 +205,21 @@ export function createRequests(options: {
     });
     const body: unknown = await response.json().catch(() => null);
     if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
+      // Error text is deliberately bounded; never echo credential payloads.
+      const failure = responseError(
+        response.status,
+        body,
+        `Request unavailable (${response.status}).`,
+      );
+      if (
+        isSessionFailure(failure) && !disposed && !init?.signal?.aborted &&
+        session === sessionGeneration.peek() && selectedHost === scopeHost() &&
+        fence === requestReadFence
+      ) {
         localSessionExpires = 0;
         sessionReady.value = false;
       }
-      // Error text is deliberately bounded; never echo credential payloads.
-      throw new Error(
-        object(body) && typeof body.error === "string" &&
-          body.error.length < 1000
-          ? body.error
-          : `Request unavailable (${response.status}).`,
-      );
+      throw failure;
     }
     return body;
   }
@@ -198,38 +231,83 @@ export function createRequests(options: {
     });
   const unavailable = () =>
     Promise.reject(new Error("This Request action is not connected yet."));
+  /** Case reads share the same session fences and stop with this store. */
+  async function readCase<T>(
+    path: string,
+    accept: (body: unknown) => T,
+  ): Promise<T> {
+    const controller = new AbortController();
+    caseReads.add(controller);
+    try {
+      while (!disposed && !controller.signal.aborted) {
+        const fence = requestReadFence, session = sessionGeneration.peek();
+        const selectedHost = scopeHost();
+        const currentRead = () =>
+          !disposed && !controller.signal.aborted &&
+          fence === requestReadFence &&
+          session === sessionGeneration.peek() && selectedHost === scopeHost();
+        let body: unknown;
+        try {
+          body = await json(path, { signal: controller.signal });
+        } catch (failure) {
+          if (currentRead() || disposed || !sessionReady.peek()) throw failure;
+          continue;
+        }
+        if (currentRead()) return accept(body);
+        if (!disposed && sessionReady.peek()) continue;
+        throw new Error(
+          "The Request session changed. Reconnect to read its Cases.",
+        );
+      }
+      throw new Error("The Request Case reader stopped.");
+    } finally {
+      caseReads.delete(controller);
+    }
+  }
   const cases = createCases({
     port: {
-      async read() {
-        const value = parseCasesSnapshot(
-          await json("/api/cases?space=requests"),
-        );
-        if (
-          host().systemId && value.systemId !== host().systemId
-        ) throw new Error("The Request host changed.");
-        if (
-          value.cases.some((entry) => entry.type !== "request")
-        ) throw new Error("The Request collection received is invalid.");
-        sessionReady.value = true;
-        return value;
+      read() {
+        return readCase("/api/cases?space=requests", (body) => {
+          const value = parseCasesSnapshot(body);
+          if (
+            host().systemId && value.systemId !== host().systemId
+          ) throw new Error("The Request host changed.");
+          if (
+            value.cases.some((entry) => entry.type !== "request")
+          ) throw new Error("The Request collection received is invalid.");
+          sessionReady.value = true;
+          return value;
+        });
       },
-      async readOne(id) {
-        const value = await json(
+      readOne(id) {
+        return readCase(
           `/api/cases/${encodeURIComponent(id)}?space=requests`,
+          (value) => {
+            if (
+              !object(value) || !object(value.case) || value.case.id !== id ||
+              host().systemId && value.systemId !== host().systemId
+            ) throw new Error("The Request received does not match.");
+            const record = parseCasesSnapshot({
+              systemId: value.systemId,
+              cases: [value.case],
+            })
+              .cases[0];
+            if (!record || record.type !== "request") {
+              throw new Error("The Request received is unreadable.");
+            }
+            return record;
+          },
         );
-        if (
-          !object(value) || !object(value.case) || value.case.id !== id ||
-          host().systemId && value.systemId !== host().systemId
-        ) throw new Error("The Request received does not match.");
-        const record =
-          parseCasesSnapshot({ systemId: value.systemId, cases: [value.case] })
-            .cases[0];
-        if (!record || record.type !== "request") {
-          throw new Error("The Request received is unreadable.");
-        }
-        return record;
       },
-      close: unavailable,
+      async close(id, outcome, verdict) {
+        await post(
+          `/api/cases/${encodeURIComponent(id)}/close?space=requests`,
+          {
+            outcome,
+            verdict,
+          },
+        );
+      },
       act: unavailable,
     },
   });
@@ -401,6 +479,8 @@ export function createRequests(options: {
       pending.value = false;
     }
   }
+  // The Release an address asked for, until a complete catalogue read takes it.
+  let wanted: string | null = null;
   async function loadReleases() {
     const epoch = ++releaseGeneration;
     const currentHost = { ...host() };
@@ -435,27 +515,54 @@ export function createRequests(options: {
     for (const record of records) {
       counts.set(record.id, (counts.get(record.id) ?? 0) + 1);
     }
-    releases.value = records.filter((entry) =>
-      counts.get(entry.id) === 1 && releaseOpeningKind(entry) !== null &&
+    releaseCatalogue.value = records.filter((entry) =>
+      counts.get(entry.id) === 1 &&
       (!currentHost.projectId ||
         entry.origin.projectId === currentHost.projectId) &&
       (!currentHost.systemId || entry.origin.systemId === currentHost.systemId)
+    );
+    releases.value = releaseCatalogue.peek().filter((entry) =>
+      releaseOpeningKind(entry) !== null
     );
     const catalogueError =
       "Some Releases could not be read in this source scope. Check the local session; the list refreshes automatically.";
     if (partial) error.value = catalogueError;
     else if (error.peek() === catalogueError) error.value = "";
+    if (wanted && !partial) {
+      const id = wanted;
+      wanted = null;
+      await selectRelease(id);
+    }
   }
-  async function selectRelease(id: string) {
-    if (pending.peek() || intent.peek() || disposed) return;
-    pending.value = true;
+  function selectRelease(id: string): Promise<boolean> {
+    if (selectionFlight) return selectionFlight;
+    if (pending.peek() || intent.peek() || disposed) {
+      return Promise.resolve(false);
+    }
+    const listed = releases.peek().filter((entry) => entry.id === id);
+    if (listed.length !== 1 || !listed[0].source) {
+      error.value = "Select an exact listed Release.";
+      return Promise.resolve(false);
+    }
+    const selected = listed[0];
+    // A first send waits for this exact selection. A failed inspection leaves
+    // the previously verified choice intact and reports the refusal.
+    selectingRelease.value = true;
     error.value = "";
+    selectionFlight = inspectRelease(selected).finally(() => {
+      selectionFlight = null;
+      if (!disposed) selectingRelease.value = false;
+    });
+    return selectionFlight;
+  }
+  /** The Release a new Request should start from (named by an address): the
+   * next complete catalogue read selects it once, as a person's choice is. */
+  function startFrom(releaseId: string) {
+    wanted = releaseId;
+  }
+  async function inspectRelease(selected: SavedSystemView): Promise<boolean> {
     try {
-      const listed = releases.peek().filter((entry) => entry.id === id);
-      if (listed.length !== 1 || !listed[0].source) {
-        throw new Error("Select an exact listed Release.");
-      }
-      const selected = listed[0];
+      const id = selected.id;
       const catalogue = selected.source!.branch.kind === "case"
         ? { kind: "owned-requests" as const }
         : { kind: "main" as const };
@@ -464,7 +571,7 @@ export function createRequests(options: {
         catalogue,
       }).inspect(id);
       const scope = host();
-      if (disposed) return;
+      if (disposed) return false;
       if (
         release.id !== id || release.digest !== selected.digest ||
         !releaseOpeningKind(release, true) ||
@@ -481,13 +588,13 @@ export function createRequests(options: {
       );
       source.value = {
         kind: "release",
-        releaseId: release.id,
-        digest: release.digest!,
+        releaseId: selected.id,
+        digest: selected.digest!,
       };
+      return true;
     } catch (failure) {
       if (!disposed) error.value = message(failure);
-    } finally {
-      if (!disposed) pending.value = false;
+      return false;
     }
   }
   async function loadScope(caseId: string) {
@@ -530,51 +637,136 @@ export function createRequests(options: {
     scopes.value = next;
     return loadScope(caseId);
   }
-  async function refresh(caseId: string): Promise<void> {
-    const flight = flights.get(caseId);
-    if (flight) return flight;
-    const epoch = generation;
-    const session = sessionGeneration.peek(),
-      ready = sessionReady.peek(),
-      selectedHost = scopeHost();
-    const fence = requestReadFence;
-    const currentRead = () =>
-      !disposed && epoch === generation && fence === requestReadFence &&
-      session === sessionGeneration.peek() && ready === sessionReady.peek() &&
-      selectedHost === scopeHost();
-    const next = (async () => {
-      try {
-        const value = parseConversationsSnapshot(
-          await json(`/api/conversations?${new URLSearchParams({ caseId })}`),
-        );
-        if (
-          value.conversations.some((agent) =>
-            agent.messages.some((entry) =>
-              entry.caseId !== undefined && entry.caseId !== caseId
-            )
-          )
-        ) {
-          throw new Error("The Request conversation received does not match.");
-        }
-        if (!currentRead()) return;
-        snapshots.value = new Map(snapshots.peek()).set(caseId, value);
-        setError(readErrors, caseId, "");
-      } catch (failure) {
-        if (currentRead()) {
-          setError(readErrors, caseId, message(failure));
-        }
-      }
-    })();
-    flights.set(caseId, next);
-    try {
-      await next;
-    } finally {
-      if (flights.get(caseId) === next) flights.delete(caseId);
+  /**
+   * Reads a Request's conversation. A reply from a read context that changed
+   * meanwhile (session, host) never lands; the conversation is read again in
+   * the new one while the session is ready, so a caller is not left without.
+   */
+  function refresh(caseId: string, invalidated = false): Promise<void> {
+    return readConversation(caseId, invalidated, "ordinary");
+  }
+  function readConversation(
+    caseId: string,
+    invalidated: boolean,
+    consumer: "held" | "ordinary",
+  ): Promise<void> {
+    if (disposed) return Promise.resolve();
+    // A new notice can overtake an existing read; its caller waits for a fresh
+    // response without starting a parallel request or losing the invalidation.
+    if (invalidated) {
+      requestInvalidations.set(
+        caseId,
+        (requestInvalidations.get(caseId) ?? 0) + 1,
+      );
     }
+    const flight = flights.get(caseId);
+    if (flight) {
+      flight.ordinary ||= consumer === "ordinary";
+      return flight.promise;
+    }
+    const epoch = generation;
+    const controller = new AbortController();
+    const next = (async () => {
+      // Every caller waits for the whole read, including a reply overtaken by
+      // a session or host change. No caller receives the abandoned attempt.
+      do {
+        const fence = requestReadFence, selectedHost = scopeHost();
+        const invalidation = requestInvalidations.get(caseId);
+        const currentRead = () =>
+          !disposed && !controller.signal.aborted && epoch === generation &&
+          fence === requestReadFence &&
+          selectedHost === scopeHost();
+        try {
+          const value = parseConversationsSnapshot(
+            await json(
+              `/api/conversations?${new URLSearchParams({ caseId })}`,
+              {
+                signal: controller.signal,
+              },
+            ),
+          );
+          if (
+            value.conversations.some((agent) =>
+              agent.messages.some((entry) =>
+                entry.caseId !== undefined && entry.caseId !== caseId
+              )
+            )
+          ) {
+            throw new Error(
+              "The Request conversation received does not match.",
+            );
+          }
+          if (currentRead()) {
+            snapshots.value = new Map(snapshots.peek()).set(caseId, value);
+            setError(readErrors, caseId, "");
+            if (invalidation === requestInvalidations.get(caseId)) return;
+          }
+        } catch (failure) {
+          if (currentRead()) {
+            setError(readErrors, caseId, message(failure));
+            if (invalidation === requestInvalidations.get(caseId)) return;
+          }
+        }
+      } while (
+        !disposed && !controller.signal.aborted && epoch === generation &&
+        sessionReady.peek()
+      );
+    })().finally(() => {
+      if (flights.get(caseId)?.promise === next) flights.delete(caseId);
+    });
+    flights.set(caseId, {
+      promise: next,
+      controller,
+      ordinary: consumer === "ordinary",
+    });
+    return next;
+  }
+  /** Holds a useful conversation independently of its historical cache. */
+  function retain(caseId: string): () => void {
+    if (disposed) return () => {};
+    let reader = readers.get(caseId);
+    if (reader) reader.count++;
+    else {
+      reader = { count: 1 };
+      readers.set(caseId, reader);
+      if (sessionReady.peek()) void readConversation(caseId, true, "held");
+    }
+    let released = false;
+    return () => {
+      if (released || readers.get(caseId) !== reader) return;
+      released = true;
+      if (--reader.count > 0) return;
+      readers.delete(caseId);
+      const flight = flights.get(caseId);
+      if (flight && !flight.ordinary) {
+        flight.controller.abort();
+        flights.delete(caseId);
+      }
+    };
+  }
+  /** Advisory identities trigger authorized reads, never a new selection. */
+  async function invalidateConversation(caseId: string): Promise<void> {
+    if (disposed || !sessionReady.peek()) return;
+    await Promise.all([
+      cases.byId(caseId) ? cases.refreshOne(caseId) : cases.refresh(),
+      ...(readers.has(caseId) ? [readConversation(caseId, true, "held")] : []),
+    ]);
+  }
+  /** A stream opening recovers missed changes for held conversations only. */
+  async function reconcile(): Promise<void> {
+    if (disposed || !sessionReady.peek()) return;
+    await Promise.all([
+      cases.refresh(),
+      ...[...readers.keys()].map((caseId) =>
+        readConversation(caseId, true, "held")
+      ),
+    ]);
   }
   async function open(text: string): Promise<string | null> {
     if (pending.peek() || !sessionReady.peek() || disposed) return null;
     if (!restore()) return null;
+    if (selectionFlight && !await selectionFlight) return null;
+    if (pending.peek() || !sessionReady.peek() || disposed) return null;
     pending.value = true;
     error.value = "";
     try {
@@ -680,13 +872,19 @@ export function createRequests(options: {
       agent.agentId === (agentId ?? value.defaultAgentId)
     ) ?? null;
   }
-  function canSend(caseId: string, agent: AgentConversation | null): boolean {
+  function targetCanSend(
+    caseId: string,
+    agent: AgentConversation | null,
+  ): boolean {
     const record = cases.byId(caseId);
     return !!record && isOpenCase(record) && !!agent &&
       agent === conversation(caseId, agent.agentId) &&
       agent.nativeId === record.owner && takesHumanMessage(agent, caseId) &&
-      !agent.busy && sending.value === null && sessionReady.value &&
+      !agent.busy && sessionReady.value &&
       !readErrors.value.get(caseId);
+  }
+  function canSend(caseId: string, agent: AgentConversation | null): boolean {
+    return sending.value === null && targetCanSend(caseId, agent);
   }
   async function send(
     caseId: string,
@@ -698,16 +896,40 @@ export function createRequests(options: {
     }
     sending.value = caseId;
     setError(writeErrors, caseId, "");
+    const submittedIdentity = JSON.stringify([
+      snapshots.peek().get(caseId)?.systemId,
+      agent.nativeId,
+    ]);
     try {
-      // Capture the displayed CAS once; no retry or current-revision substitution.
-      const value = await post(
-        `/api/conversations/${
-          encodeURIComponent(agent.nativeId)
-        }/messages?space=requests`,
-        {
-          caseId,
-          text: text.trim(),
-          expectedRevision: agent.revision,
+      const value = await retryOnceAfterStale(
+        (target: AgentConversation = agent) =>
+          post(
+            `/api/conversations/${
+              encodeURIComponent(target.nativeId)
+            }/messages?space=requests`,
+            {
+              caseId,
+              text: text.trim(),
+              expectedRevision: target.revision,
+            },
+          ),
+        async () => {
+          // Finish an older read before starting the post-refusal read.
+          const activeRead = flights.get(caseId);
+          if (activeRead) {
+            activeRead.ordinary = true;
+            await activeRead.promise;
+          }
+          const beforeRead = snapshots.peek().get(caseId);
+          await refresh(caseId);
+          const reloaded = snapshots.peek().get(caseId);
+          const fresh = conversation(caseId, agent.agentId);
+          return reloaded !== beforeRead &&
+              JSON.stringify([reloaded?.systemId, fresh?.nativeId]) ===
+                submittedIdentity &&
+              targetCanSend(caseId, fresh)
+            ? fresh
+            : null;
         },
       );
       if (
@@ -720,12 +942,13 @@ export function createRequests(options: {
       await refresh(caseId);
       return true;
     } catch (failure) {
+      const detail = sendErrorMessage(failure, "Request unavailable.");
       setError(
         writeErrors,
         caseId,
-        `${
-          message(failure)
-        } Refresh before deciding whether to send again; the contribution may have been accepted.`,
+        isStaleConversation(failure)
+          ? detail
+          : `${detail} Refresh before deciding whether to send again; the contribution may have been accepted.`,
       );
       await refresh(caseId);
       return false;
@@ -738,10 +961,12 @@ export function createRequests(options: {
     context,
     source,
     releases,
+    releaseCatalogue,
     sessionReady,
     environment,
     sessionGeneration,
     pending,
+    selectingRelease,
     intent,
     opening,
     scopes,
@@ -756,9 +981,13 @@ export function createRequests(options: {
     connect,
     loadReleases,
     selectRelease,
+    startFrom,
     loadScope,
     refreshScope,
     refresh,
+    retain,
+    invalidateConversation,
+    reconcile,
     open,
     send,
     canSend,
@@ -768,6 +997,11 @@ export function createRequests(options: {
       for (const release of releaseReadFences) release();
       generation++;
       releaseGeneration++;
+      readers.clear();
+      for (const controller of caseReads) controller.abort();
+      caseReads.clear();
+      for (const flight of flights.values()) flight.controller.abort();
+      flights.clear();
       cases.dispose();
       snapshots.value = new Map();
     },

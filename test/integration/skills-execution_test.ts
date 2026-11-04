@@ -16,17 +16,20 @@ import {
 } from "../../src/application/work/behaviors/invocation.ts";
 import { SystemRuntime } from "../../src/application/work/runtime/system.ts";
 import { openPostgresRuntimeFixture } from "../support/postgres-runtime-fixture.ts";
-import type { PostgresTestDatabase } from "../support/postgres.ts";
+import {
+  type PostgresTestDatabase,
+  postgresTestEnabled,
+} from "../support/postgres.ts";
 import type { DecisionInformationPort } from "../../src/application/work/context/information-ports.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatDecision } from "../../src/domain/work/dialogue.ts";
+import type { SkillMetadata } from "../../src/domain/skills/entities/skill.ts";
+import type { SkillLoadReceipt } from "../../src/domain/skills/context-skills.ts";
+import type { BehaviorInvocationResult } from "../../src/domain/work/execution/modeled-behavior.ts";
 
 Deno.test({
   name:
-    "default Assembly skill reaches the provider only while loaded and survives scoped workspace restart",
-  ignore: !toolkitIntegrationEnabled,
+    "skills return exact instructions through loading and persist their selection across scoped workspace restart",
+  ignore: !toolkitIntegrationEnabled || !postgresTestEnabled,
   async fn() {
     const directory = await Deno.makeTempDir({
       prefix: "assembly-skills-execution-",
@@ -39,6 +42,13 @@ Deno.test({
     let database: PostgresTestDatabase | undefined;
     try {
       const sources = await loadInitialSources();
+      // This download scenario explicitly admits its remote skill source;
+      // the ordinary new-system foundation retains a closed network policy.
+      sources["configuration.sysml"] = sources["configuration.sysml"]!
+        .replace(
+          'attribute :>> allowedHosts = "[]";',
+          'attribute :>> allowedHosts = "[\\"raw.githubusercontent.com\\"]";',
+        );
       const bundledContent = await Deno.readTextFile(
         new URL("../../skills/assembly-modeling/SKILL.md", import.meta.url),
       );
@@ -60,28 +70,38 @@ Deno.test({
           );
         },
       });
-      let phase = "initial", step = 0;
-      const captured: Array<
-        { phase: string; wire: string; context: ChatContext }
-      > = [];
+      let phase = "initial", step = 0, bundledText = "";
+      let seed: SkillMetadata, remote: SkillMetadata;
+      let expectedBehaviorId = "";
+      const captured: string[] = [];
       let failure: unknown;
       const fake = createClaudeToolsFake((view) => {
         try {
-          const serialized = JSON.stringify(view.body);
-          const context = view.context as unknown as ChatContext;
-          captured.push({ phase, wire: serialized, context });
-          assert(context.skills && context.contextEvidence);
-          assert.equal(context.activeTools.length, 0);
-          assert.deepEqual(context.mandate!.network.allowedHosts, []);
+          captured.push(phase);
+          assert(view.context && view.pinCard);
+          assert.deepEqual(view.context.activeTools, []);
+          assert.deepEqual(
+            (view.pinCard.mandate as { network: { allowedHosts: string[] } })
+              .network.allowedHosts,
+            [],
+          );
+          // Loaded instructions are native results, never repeated in the card
+          // or opening brief. Historical results remain in the transcript.
+          for (const marker of [bundledMarker, remoteMarker]) {
+            assert(!view.systemText.includes(marker));
+            assert(!JSON.stringify(view.context).includes(marker));
+          }
           const first = step++ === 0;
           const invoke = (
             name: string,
             input: Record<string, unknown>,
           ): ChatDecision => {
-            const behavior = context.modeledBehaviors!.find((b) =>
-              b.name === name
-            );
+            const behaviors = view.pinCard!.behaviors as Array<
+              { id: string; name: string }
+            >;
+            const behavior = behaviors.find((entry) => entry.name === name);
             assert(behavior, `Missing admitted behavior ${name}`);
+            expectedBehaviorId = behavior.id;
             return {
               kind: "invoke_behavior",
               behaviorId: behavior.id,
@@ -89,78 +109,124 @@ Deno.test({
               text: name,
             };
           };
+          let observed: Partial<SkillLoadReceipt> & {
+            skills?: SkillMetadata[];
+            range?: { offset: number; characters: number };
+            next?: Record<string, unknown>;
+          } = {};
+          if (!first) {
+            const [assistant, response] = view.body.messages.slice(-2);
+            assert.equal(assistant.role, "assistant");
+            assert.equal(response.role, "user");
+            const calls = assistant.content.filter((b) =>
+              b.type === "tool_use"
+            );
+            const results = response.content.filter((b) =>
+              b.type === "tool_result"
+            );
+            assert.equal(calls.length, 1);
+            assert.equal(results.length, 1);
+            assert.equal(results[0].tool_use_id, calls[0].id);
+            assert.equal(calls[0].name, "invoke_behavior");
+            assert.equal(
+              (calls[0].input as { behaviorId: string }).behaviorId,
+              expectedBehaviorId,
+            );
+            const receipt = JSON.parse(String(results[0].content));
+            assert.equal(receipt.status, "succeeded");
+            assert.equal(receipt.truncated, undefined);
+            const value = receipt.value as BehaviorInvocationResult;
+            assert.equal(value.behaviorId, expectedBehaviorId);
+            observed = value.result as typeof observed;
+            if (phase !== "load-remote" && !(phase === "initial" && step > 2)) {
+              assert.equal(observed.content, undefined);
+              assert(!JSON.stringify(observed).includes(remoteMarker));
+              assert(!JSON.stringify(observed).includes(bundledMarker));
+            }
+          }
           let result: ChatDecision = {
             kind: "reply",
             text: `Recorded phase ${phase}.`,
           };
           if (phase === "initial") {
-            assert.equal(context.skills.loaded[0]!.content, bundledContent);
-            assert(
-              !JSON.stringify(context.modelSources).includes(bundledMarker),
-            );
-            assert(serialized.includes(bundledMarker));
-          } else if (phase === "unload-bundled") {
-            const seed = context.skills.catalog.find((s) =>
-              s.id === "assembly-modeling"
-            )!;
-            if (first) {
-              result = invoke("DechargerSkill", {
+            if (first) result = invoke("ListerSkills", {});
+            else if (step === 2) {
+              seed = observed.skills!.find((s) =>
+                s.id === "assembly-modeling"
+              )!;
+              assert(seed);
+              assert.equal(seed.loaded, true);
+              result = invoke("ChargerSkill", {
                 id: seed.id,
                 expectedDigest: seed.digest,
+                offset: 0,
+                limit: 4096,
               });
-            } else {assert(
-                !serialized.includes(bundledMarker),
-                "Unloaded seed leaked outside the loaded collection",
-              );}
-          } else {
-            assert(
-              !serialized.includes(bundledMarker),
-              "Restart reloaded bundled instructions",
-            );
-            if (phase === "install") {
-              assert(
-                !serialized.includes(remoteMarker),
-                "Installation injected instruction bytes",
-              );
-              if (first) {
-                result = invoke("InstallerSkill", {
-                  id: "remote-skill",
-                  url: remoteUrl,
-                });
-              } else {assert.equal(
-                  context.skills.catalog.find((s) => s.id === "remote-skill")!
-                    .loaded,
-                  false,
-                );}
-            } else if (phase === "load-remote") {
-              const remote = context.skills.catalog.find((s) =>
-                s.id === "remote-skill"
-              )!;
-              if (first) {
-                result = invoke("ChargerSkill", {
-                  id: remote.id,
-                  expectedDigest: remote.digest,
-                });
-              } else {assert.equal(
-                  context.skills.loaded[0]!.content,
-                  remoteContent,
-                );}
-            } else if (phase === "unload-remote") {
-              const remote = context.skills.catalog.find((s) =>
-                s.id === "remote-skill"
-              )!;
-              if (first) {
-                result = invoke("DechargerSkill", {
-                  id: remote.id,
-                  expectedDigest: remote.digest,
-                });
-              } else {assert(
-                  !serialized.includes(remoteMarker),
-                  "Unloaded downloaded skill leaked in provider JSON",
-                );}
             } else {
-              assert.equal(context.skills.loaded.length, 0);
-              assert(!serialized.includes(remoteMarker));
+              assert.equal(observed.skill!.loaded, true);
+              assert.equal(observed.range!.offset, bundledText.length);
+              assert.equal(observed.range!.characters, bundledContent.length);
+              assert.equal(typeof observed.content, "string");
+              bundledText += observed.content;
+              if (observed.next) result = invoke("ChargerSkill", observed.next);
+              else assert.equal(bundledText, bundledContent);
+            }
+          } else if (phase === "install") {
+            if (first) {
+              result = invoke("InstallerSkill", {
+                id: "remote-skill",
+                url: remoteUrl,
+              });
+            } else {
+              remote = observed.skill!;
+              assert.equal(remote.id, "remote-skill");
+              assert.equal(remote.loaded, false);
+              assert.equal(remote.source.location, remoteUrl);
+            }
+          } else if (phase === "load-remote") {
+            if (first) {
+              result = invoke("ChargerSkill", {
+                id: remote.id,
+                expectedDigest: remote.digest,
+                offset: 0,
+                limit: 4096,
+              });
+            } else {
+              assert.equal(observed.skill!.loaded, true);
+              assert.equal(observed.content, remoteContent);
+              assert.equal(observed.next, undefined);
+            }
+          } else if (phase === "unload-bundled" || phase === "unload-remote") {
+            const selected = phase === "unload-bundled" ? seed : remote;
+            if (first) {
+              result = invoke("DechargerSkill", {
+                id: selected.id,
+                expectedDigest: selected.digest,
+              });
+            } else if (step === 2) {
+              assert.equal(observed.skill!.id, selected.id);
+              assert.equal(observed.skill!.loaded, false);
+              result = invoke("ListerSkills", {});
+            } else {
+              assert.equal(
+                observed.skills!.find((s) => s.id === selected.id)!.loaded,
+                false,
+              );
+            }
+          } else {
+            if (first) result = invoke("ListerSkills", {});
+            else {
+              assert(observed.skills!.every((s) => !s.loaded));
+              assert.equal(
+                observed.skills!.find((s) => s.id === seed.id)!.digest,
+                seed.digest,
+              );
+              if (phase === "restart-no-content") {
+                assert.equal(
+                  observed.skills!.find((s) => s.id === remote.id)!.digest,
+                  remote.digest,
+                );
+              }
             }
           }
           return {
@@ -254,6 +320,11 @@ Deno.test({
         await current!.postgres.idle(current!.service);
         if (failure) throw failure;
         assert.equal(current!.service.snapshot.error, undefined);
+        assert.equal(current!.service.snapshot.budgetSuspension, undefined);
+        assert(
+          captured.includes(name),
+          `No provider request captured for ${name}`,
+        );
       };
       current = await open();
       assert(current.service.snapshot.executionModel!.memoryPolicy);
@@ -270,7 +341,7 @@ Deno.test({
       await run("restart-no-content");
       assert.equal(downloads, 1);
       assert.equal(current.service.snapshot.candidates.length, 0);
-      assert(captured.filter((c) => c.phase === "unload-remote").length >= 2);
+      assert(captured.filter((name) => name === "unload-remote").length >= 2);
     } finally {
       try {
         await current?.postgres.close();

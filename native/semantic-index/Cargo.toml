@@ -27,11 +27,10 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 napi = { version = "=3.15.0", features = ["napi8", "serde-json"] }
 napi-derive = "=3.6.13"
-oxigraph = { version = "=0.4.11", default-features = false }
-# Memes versions exactes ; features explicites pour que les variantes AST
-# controlees a l'admission (Lateral/sep-0006, triples cites rdf-star)
-# existent par construction et pas seulement par unification via Oxigraph.
-spargebra = { version = "=0.3.5", features = ["rdf-star", "sep-0006"] }
+oxigraph = { version = "=0.5.12", default-features = false }
+# Lateral stays explicit so admission covers sep-0006 by construction.
+# RDF 1.2 remains disabled: the projection and result DTOs are RDF 1.1.
+spargebra = { version = "=0.4.8", features = ["sep-0006"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 sha2 = "=0.10.9"

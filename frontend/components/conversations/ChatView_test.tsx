@@ -19,7 +19,7 @@ Deno.test("conversation renders untrusted content as text and tool output as col
   match(html, /&lt;img src=x onerror=attack\(\)(?:>|&gt;)/);
   match(
     html,
-    /<details data-key="message:m2"><summary>View result<\/summary>/,
+    /<details class="tool-steps" data-key="message:m2"><summary><span aria-hidden="true">···<\/span> 1 step<\/summary>/,
   );
   match(html, /Brouillon conservé/);
   doesNotMatch(html, /<details[^>]* open/);
@@ -151,7 +151,7 @@ Deno.test("chat does not display system-wide tool counts as agent permissions", 
   doesNotMatch(html, /3 agents, 2 active tools/);
 });
 
-Deno.test("host-correlated work is never rendered as a human instruction or an invented tool result", () => {
+Deno.test("Main leaves correlated work to Activity; other conversations keep its recorded role", () => {
   const state = createWorkbenchState({ initialState: snapshot() });
   const threads = conversations();
   const work = {
@@ -170,16 +170,25 @@ Deno.test("host-correlated work is never rendered as a human instruction or an i
     work,
   }];
   state.agentConversations.accept(threads);
-  const received = renderToString(<ChatView state={state} active />);
+  const main = renderToString(<ChatView state={state} active />);
+  doesNotMatch(main, /Dossier transmis|Work received|Work returned/);
+  const audit = threads.conversations[1];
+  audit.messages = threads.conversations[0].messages;
+  const received = renderToString(
+    <ChatView state={state} active conversation={audit} />,
+  );
   match(received, /Work received/);
   match(received, /View received work/);
   doesNotMatch(received, /class="message-label">You|Tool result/);
-  threads.conversations[0].messages[0].work!.callerId = "native:coordinator";
+  audit.messages[0].work!.callerId = audit.nativeId;
   state.agentConversations.accept(threads);
-  const returned = renderToString(<ChatView state={state} active />);
+  const returned = renderToString(
+    <ChatView state={state} active conversation={audit} />,
+  );
   match(returned, /Work returned/);
   match(returned, /View returned work/);
   doesNotMatch(returned, /class="message-label">You|Tool result/);
+  state.dispose();
 });
 
 Deno.test("messages read oldest first with the latest just above the composer, whatever their arrival order", () => {

@@ -76,6 +76,8 @@ Deno.test("save action preserves retry key, displays incomplete/refused results 
   let fail = true;
   let refused = false;
   let nextKey = 0;
+  // The host's record: the last one it acknowledged.
+  let acknowledged = saved;
   const api = {
     tags: () => Promise.resolve([]),
     list: () => Promise.resolve([saved]),
@@ -85,7 +87,7 @@ Deno.test("save action preserves retry key, displays incomplete/refused results 
         fail = false;
         throw new Error("Interrupted");
       }
-      return Promise.resolve({
+      acknowledged = {
         ...saved,
         saveKey: input.saveKey,
         metadata: { name: input.name, purpose: input.purpose },
@@ -111,13 +113,14 @@ Deno.test("save action preserves retry key, displays incomplete/refused results 
           sourceDigest: "a".repeat(64),
         },
         status: "incomplete" as const,
-      });
+      };
+      return Promise.resolve(acknowledged);
     },
     inspect() {
       if (refused) {
         throw new SavedSystemsReadError("FORBIDDEN", "Source withdrawn");
       }
-      return Promise.resolve(saved);
+      return Promise.resolve(acknowledged);
     },
   };
   const stored = new Map<string, string>();
@@ -146,8 +149,13 @@ Deno.test("save action preserves retry key, displays incomplete/refused results 
   await controller.save("Exact S", "Purpose", source, tag);
   equal(controller.state.selected!.status, "incomplete");
   equal(commands[0].saveKey, commands[1].saveKey);
+  // The acknowledged Release is read at once; a refused read keeps it shown.
+  refused = true;
   await controller.save("Changed", "Purpose", source, tag);
   equal(commands[2].saveKey, "key-2");
+  equal(controller.state.selected!.metadata.name, "Changed");
+  equal(controller.state.refused, true);
+  refused = false;
   const otherSource = { ...source, sourceVersion: `commit:${"b".repeat(40)}` };
   await controller.save("Changed", "Purpose", otherSource, tag);
   equal(commands[3].saveKey, "key-3");
@@ -553,6 +561,46 @@ Deno.test("Release invalidation bursts coalesce one follow-up and never issue co
   equal(calls, 2);
   equal(controller.state.records[0].revision, 2);
   equal(commands, 0);
+  controller.dispose();
+});
+
+Deno.test("an inspection asked during chained catalogue reads goes before the next read, and a second command is refused aloud", async () => {
+  const reads = [
+    Promise.withResolvers<SavedSystemView[]>(),
+    Promise.withResolvers<SavedSystemView[]>(),
+  ];
+  let calls = 0;
+  const order: string[] = [];
+  const controller = createSavedSystemsController(
+    {
+      list: () => {
+        order.push("list");
+        return reads[calls++].promise;
+      },
+      tags: () => Promise.resolve([]),
+      inspect: (id) => {
+        order.push(`inspect ${id}`);
+        return Promise.resolve(saved);
+      },
+      save: () => Promise.reject(new Error("unused")),
+    },
+    () => {},
+    () => "unused",
+    readRecovery(),
+  );
+  void controller.open();
+  await tickUntil(() => calls === 1);
+  // The live stream asks again while the first read is in flight.
+  void controller.invalidate();
+  const inspecting = controller.inspect(saved.id);
+  await controller.inspect("other");
+  equal(controller.state.error, "Another Release action is still running.");
+  reads[0].resolve([saved]);
+  await inspecting;
+  await tickUntil(() => calls === 2);
+  deepStrictEqual(order, ["list", `inspect ${saved.id}`, "list"]);
+  equal(controller.state.selected?.id, saved.id);
+  reads[1].resolve([saved]);
   controller.dispose();
 });
 

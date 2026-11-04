@@ -5,7 +5,7 @@ import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilatio
 import {
   materialize,
   sha256,
-} from "../../src/adapters/model/builds/materialization/artifact.ts";
+} from "../../src/domain/model/value-objects/artifact.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { ModelRepositoryError } from "../../src/application/model/repository.ts";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
@@ -945,7 +945,7 @@ Deno.test("separate Git writer processes serialize CAS without losing immutable 
     )
       .href;
     const ir = new URL(
-      "../../src/adapters/model/builds/materialization/artifact.ts",
+      "../../src/domain/model/value-objects/artifact.ts",
       import.meta.url,
     ).href;
     const code = `import {GitModelRepository} from ${JSON.stringify(module)};

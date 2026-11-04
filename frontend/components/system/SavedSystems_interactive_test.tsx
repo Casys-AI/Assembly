@@ -6,7 +6,10 @@ import { act } from "preact/test-utils";
 import { renderToString } from "preact-render-to-string";
 import { probeRoot } from "../../test/support/hook-probe.ts";
 import { SavedSystems } from "./SavedSystems.tsx";
-import type { SavedSystemsApi } from "../../lib/system/saved-systems.ts";
+import type {
+  SavedSystemsApi,
+  SavedSystemView,
+} from "../../lib/system/saved-systems.ts";
 
 const source = {
   branch: { kind: "main" as const },
@@ -413,6 +416,68 @@ Deno.test("entering fresh creation clears an earlier inspection and keeps a newl
       view.html.includes("Choose another tag")
     );
     match(view.html, /Create another release/);
+  } finally {
+    await root.restore();
+    restoreGlobals();
+  }
+});
+
+Deno.test("a created Release incomplete only by a declared skill is read at once and offers its next step, not a retention retry", async () => {
+  const root = probeRoot();
+  root.windowListeners();
+  const doc = globalThis.document as unknown as Record<string, unknown>;
+  doc.visibilityState = "visible";
+  doc.addEventListener = () => {};
+  doc.removeEventListener = () => {};
+  const restoreGlobals = browser(new Map());
+  const inspected: string[] = [];
+  let created!: SavedSystemView;
+  const api: SavedSystemsApi = {
+    list: () => Promise.resolve([]),
+    tags: () => Promise.resolve([binding]),
+    save: (command) => {
+      const view = localSkillRelease("new-release");
+      created = {
+        ...view,
+        saveKey: command.saveKey,
+        metadata: { name: command.name, purpose: command.purpose },
+        origin: { projectId: "p", systemId: "s", executionSpaceId: "main" },
+        tag: { selection: command.tag!, binding, verified: true },
+        tagAvailability: "verified",
+      };
+      return Promise.resolve(created);
+    },
+    inspect: (id) => {
+      inspected.push(id);
+      return Promise.resolve({
+        ...created,
+        assetAvailability: "verified",
+        openingAvailability: "ready",
+        openingIssues: [],
+      });
+    },
+  };
+  let view!: ReturnType<typeof handlers>;
+  function Probe() {
+    view = handlers(() =>
+      SavedSystems({ api, source, initiallyCreating: true })
+    );
+    return null;
+  }
+  try {
+    await root.show(Probe, {});
+    await settleUntil(() => view.html.includes(option("v1")));
+    await act(() => view.changes[0](event("v1")));
+    await act(() => view.inputs[0](event("Accroches v1")));
+    await act(() => view.submits[0]({ preventDefault() {} }));
+    await settleUntil(() =>
+      view.html.includes("New Request from this Release")
+    );
+    deepStrictEqual(inspected, ["new-release"]);
+    match(view.html, /✓.*Accroches v1/);
+    match(view.html, /href="\/cases\?from=new-release"/);
+    ok(!view.html.includes("Retry retention"), view.html);
+    ok(!view.html.includes("Retention incomplete"), view.html);
   } finally {
     await root.restore();
     restoreGlobals();

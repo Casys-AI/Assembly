@@ -1,4 +1,8 @@
 import assert from "node:assert/strict";
+import {
+  PostgresMigrationsPendingError,
+  requirePostgresMigrations,
+} from "../../src/adapters/out/postgres/migration-readiness.ts";
 import { PostgresEvolutionStore } from "../../src/adapters/out/postgres/evolution-store.ts";
 import type { EvolutionDossier } from "../../src/application/model/evolution/ports.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
@@ -11,6 +15,49 @@ import {
   seedPostgresRuntime,
   withPostgresDatabase,
 } from "../support/postgres.ts";
+
+Deno.test({
+  name: "backend migration preflight checks its own schema before startup",
+  ignore: !postgresTestEnabled,
+  async fn() {
+    await withPostgresDatabase(async ({ client }) => {
+      // The fixture applies SQL directly, so its isolated schema has no Prisma
+      // deployment registry, regardless of any registry in the public schema.
+      let pending: string[] = [];
+      await assert.rejects(() => requirePostgresMigrations(client), (error) => {
+        assert(error instanceof PostgresMigrationsPendingError);
+        assert.equal(error.recovery, "deno task db:migrate");
+        pending = error.context.pending;
+        assert(pending.includes("20261102010000_request_member_adoption"));
+        return true;
+      });
+      const registry = postgresQualifiedTable(client, "_prisma_migrations");
+      await client.$executeRaw(Prisma.sql`
+        CREATE TABLE ${registry} (
+          migration_name TEXT NOT NULL,
+          finished_at TIMESTAMPTZ,
+          rolled_back_at TIMESTAMPTZ
+        )
+      `);
+      const missing = pending.at(-1)!;
+      await client.$executeRaw(Prisma.sql`
+        INSERT INTO ${registry} (migration_name, finished_at)
+        SELECT name, now() FROM unnest(${pending}::text[]) AS name
+        WHERE name <> ${missing}
+      `);
+      await assert.rejects(() => requirePostgresMigrations(client), (error) => {
+        assert(error instanceof PostgresMigrationsPendingError);
+        assert.deepEqual(error.context, { pending: [missing], unresolved: [] });
+        return true;
+      });
+      await client.$executeRaw(Prisma.sql`
+        INSERT INTO ${registry} (migration_name, finished_at)
+        VALUES (${missing}, now())
+      `);
+      await requirePostgresMigrations(client);
+    });
+  },
+});
 
 Deno.test({
   name:

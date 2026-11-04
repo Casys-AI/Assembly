@@ -38,12 +38,19 @@ function fixture() {
       id: record.caseId,
       text: record.caseId,
       caseId: record.caseId,
+      role: "user",
+      at: "2026-11-03T00:00:00.000Z",
     }],
     cases: [{
       id: record.caseId,
       number: index + 1,
       owner: native,
       status: "open",
+      createdAt: "2026-11-03T00:00:00.000Z",
+      openedFrom: {
+        conversationId: `request:${record.executionSpaceId}:${native}`,
+        messageId: record.caseId,
+      },
     }],
   } as unknown as SystemRuntimeState]));
   let valid = true, admitted = true, revalidations = 0;
@@ -55,6 +62,7 @@ function fixture() {
       state: SystemRuntimeState,
     ) => Promise<"refused" | undefined>)
     | undefined;
+  const closures: unknown[] = [];
   const reads: string[] = [],
     submitted: Array<{ caseId: string; command: AgentMessageCommand }> = [];
   const bridge = new RequestCaseConversations({
@@ -94,6 +102,10 @@ function fixture() {
       },
     },
     runtime: {
+      closeCase(record, outcome, evidence) {
+        closures.push({ caseId: record.caseId, outcome, evidence });
+        return Promise.resolve();
+      },
       initialExecutionOutcome: (record, state) =>
         outcomeReader ? outcomeReader(record, state) : Promise.resolve(outcome),
       read(record) {
@@ -131,6 +143,7 @@ function fixture() {
     teamStates,
     reads,
     submitted,
+    closures,
     revoke: () => {
       valid = false;
     },
@@ -263,6 +276,7 @@ Deno.test("only the exact Request owner's generic Main name becomes Branch Opera
       state,
       model.identity.systemQualifiedName ?? model.identity.builderId,
       undefined,
+      model.operatorTeam,
     );
     const selected =
       (await f.bridge.conversations("session", "caseA")).conversations[0];
@@ -275,6 +289,7 @@ Deno.test("only the exact Request owner's generic Main name becomes Branch Opera
         state,
         model.identity.builderId,
         model.identity.builderId,
+        model.operatorTeam,
       ).name,
       name,
       "the shared global projection retains its exact name",
@@ -394,7 +409,7 @@ Deno.test("mixed historically readable Request list retains closed-space Case wh
   deepStrictEqual(f.submitted, []);
 });
 
-Deno.test("Request snapshot lists the branch team after the BO, each with its operatorTeam", async () => {
+Deno.test("Request snapshot lists retained team members in their operational Case without rewriting lineage", async () => {
   const f = fixture();
   const bo = structuredClone(f.states.get("caseA")!);
   const member = structuredClone(bo);
@@ -408,7 +423,7 @@ Deno.test("Request snapshot lists the branch team after the BO, each with its op
   member.executionModel.operatorTeam = {
     parentOperatorId: "operator",
     requestOwnerId: "operator",
-    requestId: "caseA",
+    requestId: "original-case",
   };
   member.executionModel.operator = {
     name: "Helper",
@@ -427,7 +442,42 @@ Deno.test("Request snapshot lists the branch team after the BO, each with its op
     requestId: "caseA",
   });
   equal(snapshot.defaultAgentId, "operator");
+  equal(member.executionModel.operatorTeam.requestId, "original-case");
   // Without team states the snapshot is the historical single conversation.
   const alone = await f.bridge.conversations("session", "caseB");
   equal(alone.conversations.length, 1);
+});
+
+Deno.test("Request KPI reading includes team journals and checks the authenticated selection", async () => {
+  const f = fixture();
+  const member = structuredClone(f.states.get("caseA")!);
+  member.id = "member";
+  f.teamStates.set("caseA", [member]);
+  deepStrictEqual(await f.bridge.requestKpis("session", "caseA"), {
+    durationMs: null,
+    humanInterventions: { messages: 1, decisions: 0 },
+  });
+  await rejects(() => f.bridge.requestKpis("session", "caseForeign"));
+  f.revoke();
+  await rejects(() => f.bridge.requestKpis("session", "caseA"));
+});
+
+Deno.test("Request closure takes the authenticated owner and refuses foreign or revoked selection", async () => {
+  const f = fixture();
+  await f.bridge.closeCase("session", "caseA", "done", "accepted");
+  deepStrictEqual(f.closures, [{
+    caseId: "caseA",
+    outcome: "done",
+    evidence: { closedBy: "control-owner", verdict: "accepted" },
+  }]);
+  await rejects(() =>
+    f.bridge.closeCase("session", "caseForeign", "done", "accepted")
+  );
+  f.revokeAdmission();
+  await rejects(() =>
+    f.bridge.closeCase("session", "caseA", "done", "rejected")
+  );
+  f.revoke();
+  await rejects(() => f.bridge.closeCase("session", "caseA", "abandoned"));
+  equal(f.closures.length, 1);
 });

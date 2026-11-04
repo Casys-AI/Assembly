@@ -1,13 +1,13 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
-import type { NativeExecutionSession } from "../../src/adapters/work/runtime/conversation.ts";
+import type { NativeExecutionSession } from "../../src/adapters/out/native-execution/conversation.ts";
 import type {
   ImmutableConsultationGroupManifest,
   ImmutableConsultationMemberOutcome,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import {
   nativeExecutionIdentity,
   runtimeRevisionReference,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import { immutableConsultationFixture } from "../support/immutable-consultation-fixture.ts";
 import {
   openPostgresDurableRecoveryHost,

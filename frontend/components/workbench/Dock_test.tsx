@@ -54,9 +54,9 @@ const places: DockPlace[] = [{
   pending: true,
   active: false,
 }, {
-  id: "decide",
-  label: "To decide",
-  href: "/decide",
+  id: "activity",
+  label: "Activity",
+  href: "/activity",
   pending: false,
   active: false,
   count: 2,
@@ -114,7 +114,7 @@ Deno.test("the Casys logo is a real button between work and the places that open
   deepStrictEqual(places.map(nameOf), [
     "System",
     "Model, decision waiting",
-    "To decide, 2 pending",
+    "Activity, 2 pending",
   ]);
   ok(inOrder(
     dock.byRole("link", { name: "collector" }),
@@ -233,7 +233,7 @@ Deno.test("pinned work stands next to the Requests button, in pin order, and nev
   match(textOf(tight.byRole("button", { name: "3 earlier" })), /^\+3 /);
 });
 
-Deno.test("system, model and To decide are Dock tiles that mark the open view and what waits", () => {
+Deno.test("system, model and Activity are Dock tiles that mark the open view and what waits", () => {
   const html = render([], {
     places: [{ ...places[0], active: true, href: "/" }, places[1], places[2]],
   });
@@ -251,18 +251,18 @@ Deno.test("system, model and To decide are Dock tiles that mark the open view an
   equal(closed.getAttribute("href"), "/system");
 });
 
-Deno.test("To decide is a place like the others: a link to /decide with the count of what waits", () => {
+Deno.test("Activity is a place like the others: a link to /activity with the count of what waits", () => {
   const html = render([]);
-  const decide = byRole(html, "link", { name: "To decide, 2 pending" });
-  equal(decide.id, "decide-link");
-  equal(decide.getAttribute("href"), "/decide");
+  const decide = byRole(html, "link", { name: "Activity, 2 pending" });
+  equal(decide.id, "activity-link");
+  equal(decide.getAttribute("href"), "/activity");
   // The count, then the label, both drawn for the eye only.
-  equal(textOf(decide), "2 To decide");
+  equal(textOf(decide), "2 Activity");
   // The tile is the place's own icon, after System and Model, in the places list.
   deepStrictEqual(placeLinks(html).map((link) => link.id), [
     "system-link",
     "model-link",
-    "decide-link",
+    "activity-link",
   ]);
   match(decide.querySelector("svg path")?.getAttribute("d") ?? "", /^M4 13\.5/);
   // Nothing waits: no count, but the place stays and says so.
@@ -271,16 +271,16 @@ Deno.test("To decide is a place like the others: a link to /decide with the coun
       places: [places[0], places[1], { ...places[2], count: 0 }],
     }),
     "link",
-    { name: "To decide, 0 pending" },
+    { name: "Activity, 0 pending" },
   );
-  equal(textOf(none), "To decide");
+  equal(textOf(none), "Activity");
   // Open: it closes back to the desk, as every place does.
   const open = byRole(
     render([], {
       places: [places[0], places[1], { ...places[2], active: true, href: "/" }],
     }),
     "link",
-    { name: "To decide, 2 pending", current: "page" },
+    { name: "Activity, 2 pending", current: "page" },
   );
   equal(open.getAttribute("href"), "/");
   ok(open.classList.contains("is-active"));
@@ -366,7 +366,7 @@ Deno.test("following the Requests link in this tab says so, a new tab does not",
 
 Deno.test("model places expose their selected conversation by badge, hover, focus label and accessible name", () => {
   const contextual = places.map((place) =>
-    place.id === "decide" ? place : {
+    place.id === "activity" ? place : {
       ...place,
       context: { name: "Request · Market analysis", tint: "request" as const },
     }
@@ -383,7 +383,7 @@ Deno.test("model places expose their selected conversation by badge, hover, focu
   const main = byRole(
     render([], {
       places: places.map((place) =>
-        place.id === "decide" ? place : {
+        place.id === "activity" ? place : {
           ...place,
           context: { name: "Main Operator", tint: "designer" as const },
         }

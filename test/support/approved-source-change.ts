@@ -1,5 +1,5 @@
-import type { SourceModel } from "../../src/adapters/model/sources/source-model.ts";
-import type { ModelIdentity } from "../../src/domain/work/dialogue.ts";
+import type { SourceModel } from "../../src/application/model/source-model.ts";
+import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import type {
   PendingChange,
 } from "../../src/domain/governance/records/pending-change.ts";

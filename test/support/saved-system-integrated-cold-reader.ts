@@ -4,7 +4,7 @@ import { postgresClientConfiguration } from "../../src/adapters/out/postgres/con
 import { ModelBuildService } from "../../src/application/model/builds/service.ts";
 import { createColdBuildStore } from "./cold-build-store.ts";
 import { FileBuildVault } from "../../src/adapters/out/filesystem/build-vault.ts";
-import { storedBuildMaterializer } from "../../src/adapters/model/builds/materialization/stored.ts";
+import { storedBuildMaterializer } from "../../src/adapters/out/sysml-toolkit/compilation/stored-materializer.ts";
 import { savedSystemReadFixture } from "./saved-system-read-fixture.ts";
 import {
   savedSystemDigest,

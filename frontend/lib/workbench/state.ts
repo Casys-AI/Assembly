@@ -1,4 +1,5 @@
 import { isCaseChangeDecision } from "../conversations/case-change.ts";
+import { applicationUnfinished } from "../conversations/decision-state.ts";
 import {
   isReleaseCatalogueInvalidation,
   RELEASE_CATALOGUE_INVALIDATED,
@@ -8,6 +9,11 @@ import {
   PROVIDER_RESOURCES_INVALIDATED,
 } from "../../../src/application/telemetry/provider-resource-notifications.ts";
 import { createRequests } from "../requests/requests.ts";
+import {
+  isRequestConversationsInvalidation,
+  REQUEST_CONVERSATIONS_INVALIDATED,
+} from "../../../src/application/work/request-spaces/conversation-notifications.ts";
+import { isRecord } from "../transport/is-record.ts";
 import { batch, computed, signal } from "@preact/signals";
 import type { SystemRuntimeState } from "../../../src/domain/work/dialogue.ts";
 import type { ProjectionSnapshot } from "../../../src/domain/work/history.ts";
@@ -87,6 +93,7 @@ export function createWorkbenchState(options: WorkbenchOptions = {}) {
   const connection = signal<"connecting" | "live" | "reconnecting" | "closed">(
     "connecting",
   );
+  const connectionGeneration = signal(0);
   const pending = signal(false);
   const loading = signal(!current.value);
   const localError = signal("");
@@ -304,24 +311,52 @@ export function createWorkbenchState(options: WorkbenchOptions = {}) {
       });
     }
   }
+  function caseChangeResumeReason(
+    caseId: string,
+    agentId: string,
+    changeId: string,
+  ): string {
+    if (!api.resumeCaseChange) {
+      return "Retry applying is unavailable on this host.";
+    }
+    if (!requests.sessionReady.value) {
+      return "Connect the local session to retry applying.";
+    }
+    if (pendingChanges.value.includes(changeKey(caseId, agentId, changeId))) {
+      return "Applying is already in progress.";
+    }
+    if (!decisionsOpen.value) {
+      return readOnly.value
+        ? "Return to the current version to retry applying."
+        : "Another decision is in progress.";
+    }
+    const conversation = requests.conversation(caseId, agentId);
+    if (!conversation) {
+      return "Reload the Request conversation before retrying.";
+    }
+    if (conversation.busy) {
+      return "The operator is processing a contribution. Wait before retrying.";
+    }
+    const status = caseChangeStatus(caseId, agentId, changeId);
+    if (!status) return "Reload the application status before retrying.";
+    return status.canResume && applicationUnfinished(status.status)
+      ? ""
+      : "The recorded application status does not allow a retry.";
+  }
   async function resumeCaseChange(
     caseId: string,
     agentId: string,
     changeId: string,
   ) {
     const key = changeKey(caseId, agentId, changeId), stamp = caseStamp();
-    const status = caseChangeStatus(caseId, agentId, changeId);
-    if (
-      !api.resumeCaseChange || !status?.canResume ||
-      ![
-        "decision-recorded",
-        "publication-pending",
-        "published-awaiting-adoption",
-        "blocked",
-        "refused-awaiting-continuation",
-      ].includes(status.status) || !requests.sessionReady.peek() ||
-      !decisionsOpen.peek() || pendingChanges.peek().includes(key)
-    ) return false;
+    const reason = caseChangeResumeReason(caseId, agentId, changeId);
+    if (reason) {
+      caseChangeErrors.value = new Map(caseChangeErrors.peek()).set(key, {
+        message: reason,
+        stamp,
+      });
+      return false;
+    }
     pendingChanges.value = [...pendingChanges.peek(), key];
     invalidateCaseStatusReads(key);
     try {
@@ -523,7 +558,7 @@ export function createWorkbenchState(options: WorkbenchOptions = {}) {
         : state?.messages.length || 0,
     };
   });
-  const pendingDecisions = computed(() =>
+  const mainDecisions = computed(() =>
     aggregatePendingDecisions({
       state: current.value,
       conversations: agentConversations.snapshot.value,
@@ -536,6 +571,12 @@ export function createWorkbenchState(options: WorkbenchOptions = {}) {
   const requestDecisions = computed(() =>
     aggregateRequestDecisions(requests.snapshots.value)
   );
+  const pendingDecisions = computed(() => [
+    ...mainDecisions.value,
+    ...requestDecisions.value.filter((decision) =>
+      requests.cases.open.value.some((record) => record.id === decision.caseId)
+    ),
+  ]);
   const pendingDecisionCount = computed(() => pendingDecisions.value.length);
   const pendingDecisionsLoading = computed(() =>
     loading.value || decisionProposals.loading.value ||
@@ -592,8 +633,8 @@ export function createWorkbenchState(options: WorkbenchOptions = {}) {
   let stateFlight: Promise<void> | null = null;
   let historyFlight: Promise<void> | null = null;
   let historyAgain = false;
-  let proposalPoll: ReturnType<typeof setInterval> | undefined;
   let releaseSessionFollow: (() => void) | undefined;
+  let releaseOnline: (() => void) | undefined;
 
   // Each Case's model as the host tells it (`case-model-version`): a Case's
   // pages follow it exactly as the main pages follow `model-version`. The
@@ -876,10 +917,10 @@ export function createWorkbenchState(options: WorkbenchOptions = {}) {
     epoch++;
     for (const release of releaseCaseFences) release();
     historyRequest++;
-    clearInterval(proposalPoll);
-    proposalPoll = undefined;
     releaseSessionFollow?.();
     releaseSessionFollow = undefined;
+    releaseOnline?.();
+    releaseOnline = undefined;
     source?.close();
     source = null;
     stateFlight = null;
@@ -906,6 +947,7 @@ export function createWorkbenchState(options: WorkbenchOptions = {}) {
     try {
       const opened = factory("/api/events");
       source = opened;
+      let proposalDigest: string | undefined;
       // A stream let go (closed, or replaced for a new session) says nothing.
       const current = () => epoch === lifecycle && source === opened;
       opened.addEventListener("open", () => {
@@ -916,6 +958,7 @@ export function createWorkbenchState(options: WorkbenchOptions = {}) {
         // The generation survives connection transitions coalesced by rendering.
         void chatProposals.invalidate();
         connection.value = "live";
+        connectionGeneration.value++;
         performanceGeneration.value++;
         releaseCatalogueGeneration.value++;
         void refresh();
@@ -924,7 +967,19 @@ export function createWorkbenchState(options: WorkbenchOptions = {}) {
         void operatorTools.refresh();
         void decisionProposals.refresh();
         void cases.refresh();
+        void requests.reconcile();
         if (reconnected) resyncCases();
+      });
+      opened.addEventListener(REQUEST_CONVERSATIONS_INVALIDATED, (event) => {
+        if (!current()) return;
+        try {
+          const value: unknown = JSON.parse(event.data ?? "");
+          if (isRequestConversationsInvalidation(value)) {
+            void requests.invalidateConversation(value.caseId);
+          }
+        } catch {
+          // A malformed advisory event supplies no Request identity.
+        }
       });
       opened.addEventListener(PROVIDER_RESOURCES_INVALIDATED, (event) => {
         if (!current()) return;
@@ -975,7 +1030,22 @@ export function createWorkbenchState(options: WorkbenchOptions = {}) {
       // The model's pages follow the host's word on it (lib/model-live.ts)
       // over this connection: they open none of their own.
       opened.addEventListener("model-version", (event) => {
-        if (current()) modelLive.accept(event.data);
+        if (!current()) return;
+        modelLive.accept(event.data);
+        try {
+          const value: unknown = JSON.parse(event.data ?? "");
+          if (
+            isRecord(value) && isRecord(value.proposals) &&
+            typeof value.proposals.digest === "string" &&
+            /^[a-f0-9]{64}$/.test(value.proposals.digest) &&
+            value.proposals.digest !== proposalDigest
+          ) {
+            proposalDigest = value.proposals.digest;
+            decisionProposals.invalidate();
+          }
+        } catch {
+          // Invalid advisory data cannot invalidate the proposal journal.
+        }
       });
       // A Case's pages follow its own word the same way, over the same
       // connection. Only a valid announcement is heard.
@@ -1001,6 +1071,23 @@ export function createWorkbenchState(options: WorkbenchOptions = {}) {
   function start() {
     if (source) return dispose;
     const lifecycle = ++epoch;
+    // A failed EventSource construction can leave this lifecycle retryable.
+    releaseOnline?.();
+    releaseOnline = undefined;
+    releaseSessionFollow?.();
+    releaseSessionFollow = undefined;
+    const online = async () => {
+      if (epoch !== lifecycle) return;
+      if (!requests.sessionReady.peek()) {
+        if (!await requests.prepareConnection() || epoch !== lifecycle) return;
+        await requests.cases.refresh();
+      }
+      // A browser can restore HTTP while its existing SSE stream stays open.
+      if (epoch === lifecycle) await requests.reconcile();
+    };
+    const onOnline = () => void online();
+    globalThis.addEventListener?.("online", onOnline);
+    releaseOnline = () => globalThis.removeEventListener?.("online", onOnline);
     connection.value = "connecting";
     connect(lifecycle);
     // The host tells a Request owner's Case events only to a stream opened
@@ -1012,14 +1099,6 @@ export function createWorkbenchState(options: WorkbenchOptions = {}) {
       source?.close();
       connect(lifecycle);
     });
-    // Source proposal decisions can leave runtime state and conversations unchanged.
-    // Poll only their existing endpoint, skipping ticks while a read is in flight.
-    clearInterval(proposalPoll);
-    proposalPoll = setInterval(() => {
-      if (epoch === lifecycle && !decisionProposals.loading.peek()) {
-        void decisionProposals.refresh();
-      }
-    }, 30_000);
     void refresh();
     void refreshHistory();
     void agentConversations.refresh();
@@ -1046,10 +1125,12 @@ export function createWorkbenchState(options: WorkbenchOptions = {}) {
     caseChangeError,
     loadCaseChangeStatus,
     resumeCaseChange,
+    caseChangeResumeReason,
     current,
     displayed,
     draft,
     connection,
+    connectionGeneration,
     caseModelLive,
     performanceGeneration,
     releaseCatalogueGeneration,

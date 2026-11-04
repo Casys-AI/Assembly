@@ -4,11 +4,9 @@ import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import assert from "node:assert/strict";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";
-import { sourceSnapshot } from "../../src/adapters/model/projections/graph/source.ts";
+import { sourceSnapshot } from "../../src/domain/model/projections/source-facts.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");
 async function runPromotion(model: ExecutableModel, calls: string[]) {

@@ -1,4 +1,4 @@
-import { useEffect } from "preact/hooks";
+import type { ComponentChildren } from "preact";
 import { isCaseChangeDecision } from "../../lib/conversations/case-change.ts";
 import type { WorkbenchState } from "../../lib/workbench/state.ts";
 import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
@@ -12,12 +12,13 @@ import { ChatProposalCard } from "./ChatProposalCard.tsx";
 import { ModelChangeCard } from "../model/changes/ModelChangeCard.tsx";
 import { ObservedOperatorAuthority } from "./OperatorAuthorityFacts.tsx";
 import { caseOperatorName } from "../../lib/cases/operator-names.ts";
+import { hasDiff, operatorName } from "../../lib/model/revisions/change.ts";
 import {
-  changeOutcome,
-  hasDiff,
-  operatorName,
-  outcomeLabel,
-} from "../../lib/model/revisions/change.ts";
+  decidedBy,
+  decidedByLabel,
+} from "../../lib/conversations/operator-authority.ts";
+import { ChangeInspector, DecisionChip } from "./DecisionParts.tsx";
+import { useChangeDecision } from "./useChangeDecision.ts";
 import { isTeamOperatorSpec } from "../../../src/domain/governance/operator-authority.ts";
 import { takesHumanMessage } from "../../lib/conversations/state.ts";
 
@@ -112,15 +113,22 @@ export function changeCardProps(
 /**
  * A change to the mandate or to the model. One that carries the diff of the
  * sources the host prepared reads like a pull request; one without keeps the
- * Before / After rows.
+ * Before / After rows. Both say where the decision stands in the same words,
+ * and who decided it.
  */
 export function ChangeProposalCard(
-  { change, conversation, state, caseId, independentRequest, decidedByMain }: {
+  {
+    change,
+    conversation,
+    state,
+    caseId,
+    independentRequest,
+    route,
+  }: {
     caseId?: string;
     independentRequest?: boolean;
-    /** Relayed to the Main Operator, which decides it under its mandate: the
-     * card shows the status, never the person's decision. */
-    decidedByMain?: boolean;
+    /** The recorded route of a relayed request, listed in the inspector. */
+    route?: ComponentChildren;
     change: PendingChange;
     conversation: AgentConversation;
     state: WorkbenchState;
@@ -135,104 +143,68 @@ export function ChangeProposalCard(
   );
   const supported = !independentRequest ||
     isCaseChangeDecision(change, caseId, conversation.agentId);
-  const decidable = supported && !decidedByMain;
+  const { decision, observed, error } = useChangeDecision(
+    state,
+    change,
+    independentRequest && supported && caseId
+      ? { caseId, agentId: conversation.agentId }
+      : undefined,
+  );
   const notice = !supported
     ? "This Case change is not available for decision here."
-    : decidedByMain && change.status === "pending"
-    ? "The Main Operator decides this request under its mandate."
-    : common.notice;
-  const shouldRead = independentRequest && supported && !!caseId &&
-    (change.status === "approved" || change.status === "refused");
-  const sessionGeneration = state.requests.sessionGeneration.value;
-  const sessionReady = state.requests.sessionReady.value;
-  const host = JSON.stringify(state.requests.context.value);
-  const systemId = state.current.value?.id;
-  useEffect(() => {
-    if (shouldRead && caseId && sessionReady) {
-      void state.loadCaseChangeStatus(caseId, conversation.agentId, change.id);
-    }
-  }, [
-    state,
-    caseId,
-    conversation.agentId,
-    change.id,
-    shouldRead,
-    sessionGeneration,
-    sessionReady,
-    host,
-    systemId,
-  ]);
-  const observedStatus = shouldRead && caseId
-    ? state.caseChangeStatus(caseId, conversation.agentId, change.id)
-    : undefined;
-  const consistent = observedStatus &&
-    (change.status === "refused"
-      ? ["refused-awaiting-continuation", "refused"].includes(
-        observedStatus.status,
-      )
-      : [
-        "decision-recorded",
-        "publication-pending",
-        "published-awaiting-adoption",
-        "adopted",
-        "blocked",
-      ].includes(observedStatus.status));
-  const status = consistent ? observedStatus : undefined;
-  const error = shouldRead && caseId
-    ? state.caseChangeError(caseId, conversation.agentId, change.id)
-    : "";
-  const label = status
-    ? ({
-      "pending": "Awaiting decision",
-      "decision-recorded": "Decision recorded",
-      "publication-pending": "Publication pending",
-      "published-awaiting-adoption": "Published; adoption pending",
-      "adopted": "Adopted",
-      "refused-awaiting-continuation": "Refused; continuation pending",
-      "refused": "Refused; continuation accepted",
-      "blocked": "Applying blocked",
-    } as const)[status.status]
-    : error ||
-      (observedStatus && !consistent
-        ? "Decision status is inconsistent"
-        : shouldRead
-        ? "Checking application status"
-        : undefined);
+    : common.notice ??
+      (error ||
+        (decision.inconsistent
+          ? "Decision status is inconsistent"
+          : undefined));
+  const author = decidedBy(
+    change,
+    state.conversationSnapshot.value?.conversations ?? [],
+  );
+  const decider = author && decidedByLabel(author);
+  // Who decided, and why the record is not read yet when the session is off.
+  const stateNote = [
+    decider,
+    decision.checking && !state.requests.sessionReady.value
+      ? "Connect the local session to read where it stands."
+      : undefined,
+  ].filter(Boolean).join(" · ") || undefined;
+  const authority = (
+    <>
+      <ObservedOperatorAuthority change={change} state={state} />
+      {route}
+    </>
+  );
   if (hasDiff(change)) {
     return (
       <ModelChangeCard
         {...common}
         change={change}
-        actionsEnabled={decidable}
+        decision={decision}
+        actionsEnabled={supported}
         notice={notice}
-        retryStatus={label}
-        onRetryApplying={caseId && status?.canResume && (
-            change.status === "refused"
-              ? status.status === "refused-awaiting-continuation"
-              : change.status === "approved" &&
-                [
-                  "decision-recorded",
-                  "publication-pending",
-                  "published-awaiting-adoption",
-                  "blocked",
-                ].includes(status.status)
-          )
-          ? () => {
-            void state.resumeCaseChange(
+        retry={caseId && observed?.canResume && decision.unfinished
+          ? {
+            label: change.status === "refused"
+              ? "Retry continuation"
+              : "Retry applying",
+            reason: state.caseChangeResumeReason(
               caseId,
               conversation.agentId,
               change.id,
-            );
+            ),
+            onRetry: () => {
+              void state.resumeCaseChange(
+                caseId,
+                conversation.agentId,
+                change.id,
+              );
+            },
           }
           : undefined}
-        retryLabel={change.status === "refused"
-          ? "Retry continuation"
-          : "Retry applying"}
-        retryDisabled={!state.decisionsOpen.value ||
-          state.pendingChanges.value.includes(
-            JSON.stringify([caseId, conversation.agentId, change.id]),
-          )}
-        authority={<ObservedOperatorAuthority change={change} state={state} />}
+        authority={authority}
+        decidedBy={decider}
+        stateNote={stateNote}
         proposedBy={independentRequest &&
             change.requestedBy === conversation.nativeId
           ? caseOperatorName(
@@ -250,10 +222,10 @@ export function ChangeProposalCard(
   return (
     <ChatProposalCard
       {...common}
-      actions={decidable}
+      actions={supported}
       notice={notice}
       title={changeTitle(change)}
-      status={pending ? "To decide" : outcomeLabel[changeOutcome(change)]}
+      status={<DecisionChip decision={decision} note={stateNote} />}
       open={pending}
       rows={changeDifferences(change, conversation.proposalContext!)}
       reason={change.reason}
@@ -261,7 +233,9 @@ export function ChangeProposalCard(
         <>
           {change.operator && isTeamOperatorSpec(change.operator) &&
             <p>{changeScope(change).join(" · ")}</p>}
-          <ObservedOperatorAuthority change={change} state={state} />
+          <ChangeInspector change={change} summary={decider ?? "Details"}>
+            {authority}
+          </ChangeInspector>
         </>
       }
     />

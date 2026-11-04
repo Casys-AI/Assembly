@@ -21,7 +21,7 @@ async function fixture() {
   await Deno.mkdir(`${crateDir}/src`, { recursive: true });
   await Deno.writeTextFile(
     `${crateDir}/Cargo.toml`,
-    'oxigraph = { version = "=0.4.11", default-features = false }\nspargebra = { version = "=0.3.5" }\n',
+    'oxigraph = { version = "=0.5.12", default-features = false }\nspargebra = { version = "=0.4.8" }\n',
   );
   await Deno.writeTextFile(`${crateDir}/Cargo.lock`, "version = 4\n");
   await Deno.writeTextFile(`${crateDir}/build.rs`, "fn main() {}\n");
@@ -148,6 +148,8 @@ Deno.test("semantic installer uses exact pins, fresh output and binary-only dist
       "darwin-arm64",
       await semanticIndexSourceFingerprint(f.crateDir),
     );
+    assert.equal(info.oxigraph, "0.5.12");
+    assert.equal(info.spargebra, "0.4.8");
     assert.equal(info.addonBytes, 3);
     assert.equal(info.addonFile, SEMANTIC_INDEX_ADDON_FILE);
     assert.deepEqual(
@@ -185,6 +187,19 @@ Deno.test("semantic installer uses exact pins, fresh output and binary-only dist
     const count = f.calls.length;
     assert.equal(await installSemanticIndex(f.options), installed);
     assert.equal(f.calls.length, count); // verified cache, no tools or build
+    const buildPath = `${installed}/buildinfo.json`;
+    const buildBytes = await Deno.readFile(buildPath);
+    for (const oldPin of [{ oxigraph: "0.4.11" }, { spargebra: "0.3.5" }]) {
+      const stale = JSON.stringify({ ...info, ...oldPin });
+      await Deno.writeTextFile(buildPath, stale);
+      await assert.rejects(
+        installSemanticIndex(f.options),
+        /integrity mismatch/,
+      );
+      assert.equal(await Deno.readTextFile(buildPath), stale);
+      assert.equal(f.calls.length, count);
+    }
+    await Deno.writeFile(buildPath, buildBytes);
     await Deno.writeFile(`${installed}/${info.addonFile}`, new Uint8Array([9]));
     await assert.rejects(installSemanticIndex(f.options), /integrity mismatch/);
   } finally {

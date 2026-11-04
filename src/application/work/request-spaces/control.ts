@@ -53,6 +53,21 @@ const denied = () =>
     "FORBIDDEN",
     "The current local control credential is unavailable.",
   );
+/** Only credential checks identify a failed session. A scoped action may use
+ * the same refusal code without invalidating the controller's other reads. */
+async function checkingSession<T>(check: () => Promise<T>): Promise<T> {
+  try {
+    return await check();
+  } catch (error) {
+    if (error instanceof RequestSpaceError && error.code === "FORBIDDEN") {
+      throw new RequestSpaceError(error.code, error.message, {
+        context: { ...error.context, session: "invalid" },
+        recovery: error.recovery,
+      });
+    }
+    throw error;
+  }
+}
 function requireAuthority(authority: SpaceControlAuthority, ownerId: string) {
   if (
     !effectiveSpaceControlAuthority(authority) ||
@@ -142,29 +157,31 @@ export class SpaceControls implements SpaceControlPort {
     return { secret, expiresAt: row.expiresAt };
   }
   async authenticateSession(secret: string): Promise<SpaceController> {
-    if (!/^[a-f0-9]{64}$/.test(secret)) throw denied();
-    const session = await this.store.findHash(
-      await requestSpaceDigest({ secret }),
-    );
-    this.live(session, "session");
-    const capability = session.parentCapabilityId
-      ? await this.store.get(session.parentCapabilityId)
-      : null;
-    this.live(capability, "capability");
-    // Session/controller snapshots must still identify their exact credential.
-    // Only comparison with the freshly admitted control source uses policy identity.
-    if (
-      session.ownerId !== capability.ownerId ||
-      canonical(session.authority) !== canonical(capability.authority)
-    ) throw denied();
-    await this.current(capability);
-    return {
-      ownerId: capability.ownerId,
-      capabilityId: capability.id,
-      capabilityRevision: capability.revision,
-      sessionId: session.id,
-      authority: capability.authority,
-    };
+    return await checkingSession(async () => {
+      if (!/^[a-f0-9]{64}$/.test(secret)) throw denied();
+      const session = await this.store.findHash(
+        await requestSpaceDigest({ secret }),
+      );
+      this.live(session, "session");
+      const capability = session.parentCapabilityId
+        ? await this.store.get(session.parentCapabilityId)
+        : null;
+      this.live(capability, "capability");
+      // Session/controller snapshots must still identify their exact credential.
+      // Only comparison with the freshly admitted control source uses policy identity.
+      if (
+        session.ownerId !== capability.ownerId ||
+        canonical(session.authority) !== canonical(capability.authority)
+      ) throw denied();
+      await this.current(capability);
+      return {
+        ownerId: capability.ownerId,
+        capabilityId: capability.id,
+        capabilityRevision: capability.revision,
+        sessionId: session.id,
+        authority: capability.authority,
+      };
+    });
   }
   /** Host-internal controller of a Main Operator opening (4.8d D3, 4.8c A1):
    * a capability issued by local composition, its secret discarded and no
@@ -200,20 +217,22 @@ export class SpaceControls implements SpaceControlPort {
       await this.current(capability);
       return;
     }
-    const [session, capability] = await Promise.all([
-      this.store.get(controller.sessionId),
-      this.store.get(controller.capabilityId),
-    ]);
-    this.live(session, "session");
-    this.live(capability, "capability");
-    if (
-      session.parentCapabilityId !== capability.id ||
-      session.ownerId !== controller.ownerId ||
-      capability.ownerId !== controller.ownerId ||
-      capability.revision !== controller.capabilityRevision ||
-      canonical(capability.authority) !== canonical(controller.authority)
-    ) throw denied();
-    await this.current(capability);
+    await checkingSession(async () => {
+      const [session, capability] = await Promise.all([
+        this.store.get(controller.sessionId),
+        this.store.get(controller.capabilityId),
+      ]);
+      this.live(session, "session");
+      this.live(capability, "capability");
+      if (
+        session.parentCapabilityId !== capability.id ||
+        session.ownerId !== controller.ownerId ||
+        capability.ownerId !== controller.ownerId ||
+        capability.revision !== controller.capabilityRevision ||
+        canonical(capability.authority) !== canonical(controller.authority)
+      ) throw denied();
+      await this.current(capability);
+    });
   }
   async revokeCapability(controller: SpaceController): Promise<void> {
     await this.revalidate(controller);
@@ -371,7 +390,10 @@ export class SpaceAdmissions implements SpaceAdmissionPort {
       return permissions;
     }
     const binding = await this.executionBindings.read(record);
-    const team = await this.team(record, binding);
+    const admitted = binding.admission.permissions.operatorIds;
+    const team = (await this.team(record, binding)).toSorted((a, b) =>
+      admitted.indexOf(a.operatorId) - admitted.indexOf(b.operatorId)
+    );
     return {
       operatorIds: [
         record.base.requestOwner.operatorId,
@@ -468,37 +490,76 @@ export class SpaceAdmissions implements SpaceAdmissionPort {
     record: OpeningRecord,
     admission: SpaceExecutionAdmission,
   ): Promise<void> {
-    const fresh = await this.store.get(admission.id);
-    const capability = await this.credentials.get(admission.capabilityId);
-    const current = await this.authority.current(admission.ownerId);
-    const permissions = await this.permissions(record, admission.id);
-    if (
-      !fresh || fresh.revision !== admission.revision ||
-      fresh.status !== "active" ||
-      !Number.isFinite(Date.parse(fresh.expiresAt)) ||
-      Date.parse(fresh.expiresAt) <= this.now() ||
-      !capability || capability.kind !== "capability" ||
-      capability.status !== "active" ||
-      capability.revision !== fresh.capabilityRevision ||
-      capability.ownerId !== fresh.ownerId ||
-      fresh.openingId !== record.id || fresh.ownerId !== record.ownerId ||
-      fresh.executionSpaceId !== record.executionSpaceId ||
-      canonical(fresh.scope) !== canonical(record.scope) ||
-      fresh.baseDigest !== record.baseDigest ||
-      fresh.authority.owner.operatorId !== fresh.ownerId || !record.base ||
-      canonical(fresh.permissions) !==
-        canonical(permissions) ||
-      !sameEffectiveSpaceControlAuthority(current, fresh.authority) ||
-      !sameEffectiveSpaceControlAuthority(
-        capability.authority,
-        fresh.authority,
-      ) ||
-      canonical(current.scope) !== canonical(record.scope)
-    ) {
-      throw new RequestSpaceError(
+    const refuse = (check: string, extra?: Record<string, unknown>) =>
+      new RequestSpaceError(
         "ADMISSION_REFUSED",
         "The current space execution admission is unavailable.",
+        {
+          context: {
+            check,
+            admissionId: admission.id,
+            openingId: record.id,
+            ...extra,
+          },
+          recovery:
+            "Refresh the current Request admission before retrying dispatch.",
+        },
       );
+    // Reconcile the persisted admission with this opening and its current policy.
+    const fresh = await this.store.get(admission.id);
+    if (!fresh) throw refuse("dispatch.admission.lookup");
+    if (fresh.status !== "active") throw refuse("dispatch.admission.status");
+    if (fresh.revision !== admission.revision) {
+      throw refuse("dispatch.admission.revision", {
+        expectedRevision: admission.revision,
+        actualRevision: fresh.revision,
+      });
+    }
+    if (
+      !Number.isFinite(Date.parse(fresh.expiresAt)) ||
+      Date.parse(fresh.expiresAt) <= this.now()
+    ) {
+      throw refuse("dispatch.admission.expiry");
+    }
+    const capability = await this.credentials.get(fresh.capabilityId);
+    if (!capability || capability.kind !== "capability") {
+      throw refuse("dispatch.capability.lookup");
+    }
+    if (capability.status !== "active") {
+      throw refuse("dispatch.capability.status");
+    }
+    if (capability.revision !== fresh.capabilityRevision) {
+      throw refuse("dispatch.capability.revision", {
+        admissionRevision: fresh.capabilityRevision,
+        capabilityRevision: capability.revision,
+      });
+    }
+    if (capability.ownerId !== fresh.ownerId) {
+      throw refuse("dispatch.capability.owner");
+    }
+    if (
+      !record.base || fresh.openingId !== record.id ||
+      fresh.ownerId !== record.ownerId ||
+      fresh.executionSpaceId !== record.executionSpaceId ||
+      canonical(fresh.scope) !== canonical(record.scope) ||
+      fresh.baseDigest !== record.baseDigest
+    ) throw refuse("dispatch.opening");
+    if (fresh.authority.owner.operatorId !== fresh.ownerId) {
+      throw refuse("dispatch.authority.owner");
+    }
+    const permissions = await this.permissions(record, fresh.id);
+    if (canonical(fresh.permissions) !== canonical(permissions)) {
+      throw refuse("dispatch.permissions");
+    }
+    const current = await this.authority.current(fresh.ownerId);
+    if (
+      !sameEffectiveSpaceControlAuthority(current, fresh.authority) ||
+      canonical(current.scope) !== canonical(record.scope)
+    ) throw refuse("dispatch.authority.current");
+    if (
+      !sameEffectiveSpaceControlAuthority(capability.authority, fresh.authority)
+    ) {
+      throw refuse("dispatch.authority.capability");
     }
     // No session read here. Browser/session expiry cannot revoke admitted work.
     // This is preflight only; the worker must repeat the transaction guard at start.

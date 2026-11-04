@@ -1,11 +1,12 @@
 # Propose, compare and adopt a revision
 
 Use this guide to change the existing SysML system through its chat. The
-effective execution policy must permit `mayProposeSysmlRevision`, and the agent
-must receive the required sources and their exact version. Targeted model
-consultation is governed by `mayConsultModel`, which is required for revision
-proposals. On historical pins that omit this field it follows the retained
-revision right. Wait for an execution to finish before deciding a revision.
+effective execution policy must permit `mayProposeSysmlRevision`, and the
+operator must receive the required sources and their exact version. Targeted
+model consultation is governed by `mayConsultModel`, which is required for
+revision proposals. On historical pins that omit this field it follows the
+retained revision right. Wait for an execution to finish before deciding a
+revision.
 
 The
 [Context Separation](../../explanation/contexte-et-memoire/separation-du-contexte.md)
@@ -23,8 +24,8 @@ the proposal. For example:
 > it and read its source files before proposing the change. Keep the
 > consultation version supplied by the host for all these calls.
 
-The agent uses the standard consultation tools supplied by the host. Search and
-inspection return pointers; `read_source` loads complete files into its next
+The operator uses the standard consultation tools supplied by the host. Search
+and inspection return pointers; `read_source` loads complete files into its next
 context. A search excerpt is not enough to reconstruct a file to edit.
 Consultations count towards the request's decision limit: prefer a precise
 change.
@@ -44,9 +45,9 @@ In the system's chat, describe the desired result and its limits. For example:
 > its current scope. Preserve its rights, identities and the other files.
 > Propose the SysML revision with its reason and base version.
 
-The agent submits `propose_sysml_revision`. It supplies the complete content of
-each changed or added file; files absent from the proposal remain those of the
-base. Compilation and contract checks precede availability for review. An
+The operator submits `propose_sysml_revision`. It supplies the complete content
+of each changed or added file; files absent from the proposal remain those of
+the base. Compilation and contract checks precede availability for review. An
 invalid proposal does not change the current branch.
 
 For a grant already supported by the mandate variants, request a
@@ -56,15 +57,25 @@ the workflow described in the
 
 ## Review the sources
 
-In the authoring agent's chat, the proposal appears in the feed with the exact
-Git diff of its files. **Accept**, **Decline** and **Adjust** remain on the
-card. **Adjust** lets you enter a correction: the old proposal is declined, then
-the request is sent to the same agent to prepare a new proposal. An unconfirmed
-submission remains flagged, without automatic retry or validation of the change.
+In the authoring operator's chat, the proposal appears in the feed with the
+exact Git diff of its files. **Accept**, **Decline** and **Adjust** remain on
+the card. **Adjust** lets you enter a correction: the old proposal is declined,
+then the request is sent to the same operator to prepare a new proposal. An
+unconfirmed submission remains flagged, without automatic retry or validation of
+the change.
 
-To find a proposal, open **Model > Revisions**, then **Proposals**. Select it
-and check its reason, base and files in the diff. **Unified** shows changes line
-by line; **Split** puts the two versions side by side. Both layouts compare the
+The card has one state: **To decide**, **Applying**, **Applied**, **Declined**
+or **Superseded**. Once decided, it folds to one line, and its byline says who
+decided and under which rule. **Applying** shows three dots: decided, saved, in
+service.
+
+A proposal that waits for you is also listed in **Activity**, in the Dock, as
+“Review model proposal”, and at the top of **Model > Activity**, where
+**Accept** and **Decline** also act. To find any proposal, open **Model >
+Revisions**, then **Proposals**; this page belongs to the main system, since a
+Request's Model offers only Files, SysML and Releases. Select the proposal and
+check its reason, base and files in the diff. **Unified** shows changes line by
+line; **Split** puts the two versions side by side. Both layouts compare the
 same sources against the proposal's base.
 
 In **Commits**, each commit is compared with its first parent containing model

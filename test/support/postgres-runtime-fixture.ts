@@ -4,18 +4,22 @@ import { Client } from "pg";
 import { openPostgresDatabase, type PostgresTestDatabase } from "./postgres.ts";
 import { postgresClientConfiguration } from "../../src/adapters/out/postgres/config.ts";
 import { PostgresHostStorage } from "../../src/adapters/out/postgres/host-storage.ts";
-import { createPostgresNativeRuntime } from "../../src/adapters/work/runtime/postgres.ts";
+import {
+  createPostgresNativeRuntime,
+  type PostgresQueuePoolCounts,
+} from "../../src/adapters/out/native-execution/postgres.ts";
 import { openModelBackend } from "../../src/composition/model-backend.ts";
 import { AjvSchemaValidator } from "../../src/infrastructure/ajv-schema-validation.ts";
 import { SystemClock } from "../../src/infrastructure/clock.ts";
 import { createModelProject } from "../../src/adapters/out/filesystem/model-project.ts";
-import { validateSourceExecutable } from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
 import type { ModelSources as Sources } from "../../src/domain/model/value-objects/sources.ts";
 import type { PostgresSystemScope } from "../../src/adapters/out/postgres/scope.ts";
 import type { OperatorExecutionDeliveryHandler } from "../../src/application/work/operators/execution.ts";
 import type { SystemRuntime } from "../../src/application/work/runtime/system.ts";
-import type { openOperatorWorkspace } from "../../src/adapters/work/operator-workspace.ts";
+import { WorkBudgetService } from "../../src/application/work/budget/service.ts";
+import type { openOperatorWorkspace } from "../../src/composition/operator-workspace.ts";
 
 type Workspace = Awaited<ReturnType<typeof openOperatorWorkspace>>;
 
@@ -321,6 +325,7 @@ export async function openPostgresRuntimeFixture(options: {
   let activeRuntime: SystemRuntime | undefined;
   let workersStarted = false;
   const workerErrors: unknown[] = [];
+  const workerPoolCounts: Array<PostgresQueuePoolCounts | null> = [];
   let workspaceStopped = false;
   const stopWorkspace = async () => {
     if (workspaceStopped) return;
@@ -378,6 +383,7 @@ export async function openPostgresRuntimeFixture(options: {
     });
     const identity = await backend.model.initialize();
     const primary = await storage.operator(identity.builderId);
+    const workBudget = new WorkBudgetService(primary.budget);
     const prefix = database.schema;
     const schemas = {
       queueSchema: `${prefix}_queue`,
@@ -408,8 +414,15 @@ export async function openPostgresRuntimeFixture(options: {
       ...(options.initialAdmissionFault
         ? { initialAdmissionFault: options.initialAdmissionFault }
         : {}),
-      onError: (error) => {
+      onError: (error, metadata) => {
         workerErrors.push(error);
+        // Keep bounded counters at failure time, never SQL, connection material
+        // or queue payloads. Preserve the original errors and failure behavior.
+        if (workerPoolCounts.length < 8) {
+          workerPoolCounts.push(
+            metadata?.poolCounts ? { ...metadata.poolCounts } : null,
+          );
+        }
       },
     });
     const framework = native;
@@ -445,6 +458,7 @@ export async function openPostgresRuntimeFixture(options: {
     const repository = { ...modelBackend.repository, publishSystemSources };
     const workspacePorts = {
       storage,
+      workBudget,
       execution: framework.execution,
       dispatch: framework.dispatch,
       caseNumbers: storage.caseNumbers(),
@@ -454,6 +468,7 @@ export async function openPostgresRuntimeFixture(options: {
       bindArtifactSourceAuthority: modelBackend.bindArtifactSourceAuthority,
     };
     const runtimePorts = {
+      workBudget,
       schemaValidator: new AjvSchemaValidator(),
       clock: new SystemClock(),
       store: primary.state,
@@ -485,6 +500,7 @@ export async function openPostgresRuntimeFixture(options: {
             throw new AggregateError(
               observed,
               "PostgreSQL fixture worker failed",
+              { cause: { queuePoolCounts: workerPoolCounts.splice(0) } },
             );
           }
           return;

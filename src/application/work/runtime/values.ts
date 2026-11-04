@@ -1,3 +1,4 @@
+import type { ClockPort } from "./ports.ts";
 import { sha256 } from "../../../domain/primitives/execution-digest.ts";
 import type { Candidate, ToolDraft } from "../../../domain/work/candidates.ts";
 import type { Event } from "../../../domain/work/dialogue.ts";
@@ -8,14 +9,14 @@ export async function valueDigest(value: unknown): Promise<string> {
 export async function draftDigest(draft: ToolDraft): Promise<string> {
   return await toolDraftDigest(draft);
 }
-export const now = () => new Date().toISOString();
 export const makeEvent = (
+  clock: ClockPort,
   kind: string,
   label: string,
   candidate?: Candidate,
 ): Event => ({
   id: crypto.randomUUID(),
-  at: now(),
+  at: clock.now(),
   kind,
   label,
   ...(candidate

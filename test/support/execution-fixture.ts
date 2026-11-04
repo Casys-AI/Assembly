@@ -5,7 +5,7 @@ import type {
   ExecutableModel,
 } from "../../src/domain/model/execution/executable-model.ts";
 import { SystemGovernance } from "../../src/domain/governance/policies/governance.ts";
-import { type ModelIdentity } from "../../src/domain/work/dialogue.ts";
+import { type ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import { TOOL_CONTRACTS } from "../../src/domain/work/candidates.ts";
 import { TOOL_KINDS } from "../../src/domain/shared-kernel/tool-kind.ts";
 import { CONVERSATION, PROMOTION } from "../fixtures/native-flows.ts";

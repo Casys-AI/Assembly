@@ -22,9 +22,9 @@ import type {
 import type {
   ChatContext,
   ChatDecision,
-  ModelIdentity,
   SystemRuntimeState,
 } from "../../src/domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import { executableFixture } from "../support/execution-fixture.ts";
 
 const identity: ModelIdentity = {

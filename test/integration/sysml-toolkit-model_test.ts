@@ -1,23 +1,26 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 import { latestModelObservation } from "../support/model-observation.ts";
 import { SYSML_TOOLKIT_VERSION } from "../../src/adapters/out/sysml-toolkit/runtime/loader.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import { createClaudeToolsFake } from "../support/claude-tools-fake.ts";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
 import { editPolicy } from "../fixtures/model-edit-mandate.ts";
-import { NativeModelSourceAuthorization } from "../../src/adapters/governance/model-access/source-authorization.ts";
-import { assertModelEditScope } from "../../src/adapters/governance/model-access/editing/scope.ts";
+import { NativeModelSourceAuthorization } from "../../src/application/governance/model-access/source-authorization.ts";
+import { assertModelEditScope } from "../../src/domain/model/editing/scope.ts";
 import { sameSysmlQualifiedName } from "../../src/domain/model/value-objects/sysml-qualified-name.ts";
-import { resolveModelEdits } from "../../src/adapters/model/sources/editing/tooling.ts";
+import { resolveModelEdits } from "../../src/domain/model/editing/source-index.ts";
 /** Real toolkit → native-ID authoring → Toolkit admission → Git.
  * No MCP transport, agent provider, or application database is involved. */
 import assert from "node:assert/strict";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import type { ModelSources as Sources } from "../../src/domain/model/value-objects/sources.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
+import type { SourceModel } from "../../src/application/model/source-model.ts";
 import {
-  SourceModel,
+  sourceCompilation,
+  sourceEvolutionCompilation,
   validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { ModelRepositoryError } from "../../src/application/model/repository.ts";
 import { type ModelRevision } from "../../src/domain/model/records/revision.ts";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
@@ -701,7 +704,11 @@ Deno.test({
         const repository = await GitModelRepository.open({
           projectDir: directory,
           compiler,
-          sourceAuthorization: new NativeModelSourceAuthorization(projectId),
+          sourceAuthorization: new NativeModelSourceAuthorization(
+            projectId,
+            sourceCompilation,
+            sourceEvolutionCompilation,
+          ),
         });
         const sources = twoScopes(
           await loadInitialSources(undefined, { information: false }),
@@ -733,7 +740,7 @@ Deno.test({
             );
         }
         const tooling = new SysmlToolkitAdapter({ packageDir: packageDir! });
-        const model = new SourceModel({
+        const model = createSourceModel({
           repository,
           projectId,
           tooling,
@@ -806,7 +813,11 @@ Deno.test({
       assert.equal(await compiler.version(), SYSML_TOOLKIT_VERSION);
       const options = {
         projectDir: stateDir,
-        sourceAuthorization: new NativeModelSourceAuthorization(projectId),
+        sourceAuthorization: new NativeModelSourceAuthorization(
+          projectId,
+          sourceCompilation,
+          sourceEvolutionCompilation,
+        ),
         compiler: {
           async compile(sources: Sources) {
             const compiled = await compiler.compile(sources);
@@ -823,7 +834,7 @@ Deno.test({
       const repository = await GitModelRepository.open(options);
       const peerRepository = await GitModelRepository.open(options);
       const tooling = new SysmlToolkitAdapter({ packageDir: packageDir! });
-      const primary = new SourceModel({
+      const primary = createSourceModel({
         repository,
         projectId,
         tooling,
@@ -831,7 +842,7 @@ Deno.test({
           await loadInitialSources(undefined, { information: false }),
         ),
       });
-      const peer = new SourceModel({
+      const peer = createSourceModel({
         repository: peerRepository,
         projectId,
         tooling,
@@ -1150,7 +1161,11 @@ Deno.test({
       const compiler = new ToolkitCompiler({ packageDir: packageDir! });
       const repository = await GitModelRepository.open({
         projectDir: stateDir,
-        sourceAuthorization: new NativeModelSourceAuthorization(projectId),
+        sourceAuthorization: new NativeModelSourceAuthorization(
+          projectId,
+          sourceCompilation,
+          sourceEvolutionCompilation,
+        ),
         compiler: {
           async compile(sources) {
             const compiled = await compiler.compile(sources);
@@ -1176,7 +1191,7 @@ Deno.test({
           "competitionRevision : Integer = 2;",
           "competitionRevision : Integer = 222;",
         );
-      const model = new SourceModel({
+      const model = createSourceModel({
         repository,
         projectId,
         tooling,
@@ -1272,7 +1287,11 @@ Deno.test({
         const repository = await GitModelRepository.open({
           projectDir: directory,
           compiler,
-          sourceAuthorization: new NativeModelSourceAuthorization(projectId),
+          sourceAuthorization: new NativeModelSourceAuthorization(
+            projectId,
+            sourceCompilation,
+            sourceEvolutionCompilation,
+          ),
         });
         const sources = twoScopes(
           await loadInitialSources(undefined, { information: false }),
@@ -1306,7 +1325,7 @@ Deno.test({
         sources["configuration.sysml"] = sources["configuration.sysml"]!
           .replace(policy, policy.replace(operations, extended));
         const tooling = new SysmlToolkitAdapter({ packageDir: packageDir! });
-        const model = new SourceModel({
+        const model = createSourceModel({
           repository,
           projectId,
           tooling,

@@ -2,7 +2,7 @@ import { scopedOperator } from "../../../domain/governance/policies/delegation-s
 import { sameScopedOperator } from "../../../domain/governance/operator-authority.ts";
 import { type ScopedOperatorRef } from "../../../domain/governance/authority.ts";
 import { requestExecutionPinFor } from "../../../application/model/evolution/request-execution-pin.ts";
-import { requestSpaceSeed } from "../../work/request-space-runtime.ts";
+import { requestSpaceSeed } from "../../../application/work/runtime/initialization.ts";
 import {
   assertRequestTeamPublicationBase,
   parseRequestOwnerAdoptionDossier,
@@ -175,7 +175,11 @@ export class PostgresRequestExecutionBindingReader
     if (row) return this.readOperatorInTransaction(tx, opening, operatorId);
     const owner = await this.readInTransaction(tx, opening);
     const chain = await this.journal.readAdmittedSource(tx, opening);
-    const pin = requestExecutionPinFor(ownerId, chain.execution, operatorId);
+    const pin = requestExecutionPinFor(
+      chain.execution,
+      operatorId,
+      opening.base!,
+    );
     const index = owner.admission.permissions.operatorIds.indexOf(operatorId);
     if (
       index < 1 || pin.adoption ||
@@ -281,7 +285,7 @@ export class PostgresRequestExecutionBindingReader
         )
     ) unavailable();
     const chain = await readChain(opening),
-      pin = requestExecutionPinFor(ownerId, chain.execution, operatorId);
+      pin = requestExecutionPinFor(chain.execution, operatorId, opening.base!);
     const admissionRow = await tx.spaceExecutionAdmission.findFirst({
       where: { ...this.#scope, id: opening.admissionId },
     });
@@ -346,8 +350,7 @@ export class PostgresRequestExecutionBindingReader
       });
     } else if (
       state.id !== `request:${opening.executionSpaceId}:${operatorId}` ||
-      model.operatorTeam?.requestId !== opening.caseId ||
-      model.operatorTeam.requestOwnerId !== ownerId
+      model.operatorTeam?.requestOwnerId !== ownerId
     ) unavailable();
     if (!pin.adoption) {
       if (isOwner) {

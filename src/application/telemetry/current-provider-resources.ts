@@ -7,6 +7,7 @@ import {
   requestSpaceIdentity,
 } from "../../domain/work/request-spaces.ts";
 import type { ProviderCallHostScope } from "./provider-call.ts";
+import type { RequestKpis } from "./request-kpis.ts";
 import {
   assertProviderResourceQuery,
   type ProviderResourceQuery,
@@ -40,6 +41,9 @@ export interface CurrentProviderResourceReadout {
     };
   };
   readonly resources: ProviderResourceReadout;
+  /** Present for Requests, read once after pin verification.
+   * Runtime journals and provider rows are separate snapshots. */
+  readonly request?: RequestKpis;
 }
 type ProviderResourceAccessCode =
   | "PROVIDER_RESOURCE_INVALID_SELECTION"
@@ -66,7 +70,8 @@ const unavailable = () =>
 const forbidden = () =>
   new ProviderResourceAccessError("PROVIDER_RESOURCE_FORBIDDEN");
 
-/** Current executed configuration only. Host scope is injected independently of
+/** Current authorized selection; Request resources include all historical pins.
+ * Host scope is injected independently of
  * model/native state IDs; read authority is checked before and after aggregation. */
 export class CurrentProviderResources {
   readonly #scope: ProviderCallHostScope;
@@ -200,8 +205,16 @@ export class CurrentProviderResources {
           "PROVIDER_RESOURCE_VERSION_MISMATCH",
         );
       }
+      const request = caseId === undefined
+        ? undefined
+        : await this.options.cases.requestKpis(secret, caseId);
       await this.options.control.revalidate(controller);
-      return Object.freeze({ schemaVersion: 1, execution: pin, resources });
+      return Object.freeze({
+        schemaVersion: 1,
+        execution: pin,
+        resources,
+        ...(request === undefined ? {} : { request }),
+      });
     } catch (error) {
       if (error instanceof ProviderResourceAccessError) throw error;
       if (

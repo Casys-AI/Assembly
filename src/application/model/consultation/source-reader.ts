@@ -1,7 +1,10 @@
+import {
+  requireModelContext,
+  utf8SourceSpan,
+} from "../../../domain/model/value-objects/source-span.ts";
 import { compareCodeUnits as compare } from "../../../domain/primitives/canonical-json.ts";
 import {
   type ModelContextElement,
-  ModelContextError,
   type ModelContextInspection,
   type ModelContextOverview,
   type ModelContextQuery,
@@ -27,7 +30,6 @@ interface ModelContextReaderOptions {
 const MAX_PAGE_SIZE = 50;
 const DEFAULT_PAGE_SIZE = 20;
 const encoder = new TextEncoder();
-const decoder = new TextDecoder("utf-8", { fatal: true });
 const string = (value: unknown): string | undefined =>
   typeof value === "string" ? value : undefined;
 const ref = (value: unknown): string | undefined => {
@@ -37,16 +39,8 @@ const ref = (value: unknown): string | undefined => {
     : undefined;
 };
 
-function requireValue(
-  value: unknown,
-  code: ModelContextError["code"],
-  message: string,
-): asserts value {
-  if (!value) throw new ModelContextError(code, message);
-}
-
 function version(value: unknown): asserts value is string {
-  requireValue(
+  requireModelContext(
     typeof value === "string" &&
       /^(?:branch|commit):[A-Za-z0-9_-]{1,120}$/.test(value),
     "INVALID_REQUEST",
@@ -60,60 +54,12 @@ function boundedInteger(
   maximum: number,
   name: string,
 ): number {
-  requireValue(
+  requireModelContext(
     Number.isSafeInteger(value) && value >= minimum && value <= maximum,
     "INVALID_REQUEST",
     `${name} must be an integer between ${minimum} and ${maximum}`,
   );
   return value;
-}
-
-/** Native source positions use one-based UTF-8 byte columns. Never apply these
- * columns directly to JavaScript string offsets. No sourceText fallback. */
-export function utf8SourceSpan(
-  source: string,
-  location: ModelSourceRange,
-): string {
-  requireValue(
-    location.coordinateSystem === "utf8-bytes" &&
-      [
-        location.startLine,
-        location.startColumn,
-        location.endLine,
-        location.endColumn,
-      ].every((value) => Number.isSafeInteger(value) && value > 0),
-    "INVALID_SOURCE_RANGE",
-    "Source range must contain positive UTF-8 byte coordinates",
-  );
-  const bytes = encoder.encode(source);
-  const starts = [0];
-  for (let index = 0; index < bytes.length; index++) {
-    if (bytes[index] === 10) starts.push(index + 1);
-  }
-  const at = (line: number, column: number): number => {
-    const start = starts[line - 1];
-    const end = line < starts.length ? starts[line]! - 1 : bytes.length;
-    requireValue(
-      start !== undefined && column - 1 <= end - start,
-      "INVALID_SOURCE_RANGE",
-      "Source position is outside its exact snapshot",
-    );
-    return start + column - 1;
-  };
-  const start = at(location.startLine, location.startColumn);
-  const end = at(location.endLine, location.endColumn);
-  requireValue(end > start, "INVALID_SOURCE_RANGE", "Empty or reversed range");
-  try {
-    // Check both boundaries, including cases where the selected bytes alone
-    // happen to decode but a boundary would split a preceding character.
-    decoder.decode(bytes.subarray(0, start));
-    return decoder.decode(bytes.subarray(start, end));
-  } catch {
-    throw new ModelContextError(
-      "INVALID_SOURCE_RANGE",
-      "Source position splits a UTF-8 character",
-    );
-  }
 }
 
 interface Relation {
@@ -237,13 +183,17 @@ class ModelIndex {
   }
 
   requireElement(id: unknown): string {
-    requireValue(
+    requireModelContext(
       typeof id === "string" && characterCount(id) <= 512,
       "INVALID_REQUEST",
       "An elementId is required",
     );
     const native = this.native(id);
-    requireValue(native, "NOT_FOUND", "Element is absent from this revision");
+    requireModelContext(
+      native,
+      "NOT_FOUND",
+      "Element is absent from this revision",
+    );
     return native;
   }
 
@@ -261,14 +211,14 @@ class ModelIndex {
         const sourcePath = this.sourcePaths.get(String(origin.source_path));
         if (sourcePath) paths.add(sourcePath);
       }
-      requireValue(
+      requireModelContext(
         paths.size <= 1,
         "AMBIGUOUS_SOURCE",
         "Element has conflicting source origins",
       );
       if (paths.size) {
         path = [...paths][0]!;
-        requireValue(
+        requireModelContext(
           Object.hasOwn(this.revision.sources, path),
           "AMBIGUOUS_SOURCE",
           "Source origin is outside this model snapshot",
@@ -284,7 +234,7 @@ class ModelIndex {
     const ranges: ModelSourceRange[] = [];
     const addRange = (values: unknown[]) => {
       if (values.every((value) => value === undefined)) return;
-      requireValue(
+      requireModelContext(
         values.every((value) =>
           Number.isSafeInteger(value) && Number(value) > 0
         ),
@@ -317,7 +267,7 @@ class ModelIndex {
         origin.end_column,
       ]);
     }
-    requireValue(
+    requireModelContext(
       new Set(ranges.map((range) => JSON.stringify(range))).size <= 1,
       "AMBIGUOUS_SOURCE",
       "Element has conflicting source ranges",
@@ -404,7 +354,7 @@ export class ModelContextReader {
       return cached;
     }
     const pending = load().then((revision) => {
-      requireValue(
+      requireModelContext(
         revision.version === requested,
         "VERSION_MISMATCH",
         "Repository returned a different model revision",
@@ -463,14 +413,14 @@ export class ModelContextReader {
   }
 
   async query(input: ModelContextQuery): Promise<ModelContextQueryResult> {
-    requireValue(
+    requireModelContext(
       input && typeof input === "object",
       "INVALID_REQUEST",
       "A model query is required",
     );
     const request = structuredClone(input);
     version(request.version);
-    requireValue(
+    requireModelContext(
       ["search", "inspect", "references", "read_source"].includes(
         request.operation,
       ),
@@ -497,12 +447,12 @@ export class ModelContextReader {
       ...(offset + limit < total ? { nextOffset: offset + limit } : {}),
     });
     if (request.operation === "read_source") {
-      requireValue(
+      requireModelContext(
         request.offset === undefined && request.limit === undefined,
         "INVALID_REQUEST",
         "Source files must be read whole, without pagination",
       );
-      requireValue(
+      requireModelContext(
         typeof request.path === "string" &&
           characterCount(request.path) <= 240 &&
           !request.path.startsWith("/") &&
@@ -511,12 +461,12 @@ export class ModelContextReader {
         "A relative model source path is required",
       );
       const file = index.files.find((file) => file.path === request.path);
-      requireValue(
+      requireModelContext(
         file,
         "NOT_FOUND",
         "Source file is absent from this revision",
       );
-      requireValue(
+      requireModelContext(
         file.byteLength <= this.#maxSourceBytes,
         "SOURCE_TOO_LARGE",
         "Source file exceeds the whole-file read limit",
@@ -529,7 +479,7 @@ export class ModelContextReader {
       };
     }
     if (request.operation === "search") {
-      requireValue(
+      requireModelContext(
         request.query === undefined ||
           typeof request.query === "string" &&
             characterCount(request.query) <= 200,

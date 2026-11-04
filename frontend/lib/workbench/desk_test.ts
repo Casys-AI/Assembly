@@ -19,6 +19,7 @@ import {
   systemPageFor,
   systemPageOf,
 } from "./desk.ts";
+import { newRequestHref } from "../cases/cases.ts";
 
 const at = (path: string) => new URL(path, "https://atelier.test");
 
@@ -158,6 +159,18 @@ Deno.test("the Requests page names the sub-agent it reads in a Request, and only
   });
 });
 
+Deno.test("the Requests page names the Release a new Request starts from, and only on the list", () => {
+  deepStrictEqual(deskLocation(at(newRequestHref("release-1")), null).item, {
+    kind: "cases",
+    startFrom: "release-1",
+  });
+  // A selected Request has started already: the list's Release is ignored.
+  deepStrictEqual(
+    deskLocation(at("/cases?case=s%3Acase%3A2&from=release-1"), null).item,
+    { kind: "cases", caseId: "s:case:2" },
+  );
+});
+
 Deno.test("only a plain click follows a link in this tab", () => {
   const click = {
     button: 0,
@@ -187,7 +200,7 @@ Deno.test("System is /system, Model is /model, and /revisions stays an address o
   deepStrictEqual(PLACE_PATH, {
     system: "/system",
     model: "/model",
-    decide: "/decide",
+    activity: "/activity",
   });
   deepStrictEqual(deskLocation(at("/system"), "coordinator"), {
     item: { kind: "system", page: "team" },
@@ -348,17 +361,24 @@ Deno.test("the System place opens on Team, then Performance, Explore, Flows, Req
   }
 });
 
-Deno.test("To decide is a place of its own at /decide, whatever the query", () => {
-  for (const address of ["/decide", "/decide?x=1", "/decide?page=graph"]) {
+Deno.test("Activity opens at /activity and its earlier /decide address", () => {
+  for (
+    const address of [
+      "/activity",
+      "/activity?x=1",
+      "/decide",
+      "/decide?page=graph",
+    ]
+  ) {
     deepStrictEqual(deskLocation(at(address), "coordinator"), {
-      item: { kind: "decide" },
+      item: { kind: "activity" },
       talk: false,
       details: null,
     });
   }
   // No other address opens it, and it draws no graph.
   deepStrictEqual(deskLocation(at("/decided"), "coordinator").item, null);
-  equal(graphAddress({ kind: "decide" }), null);
+  equal(graphAddress({ kind: "activity" }), null);
 });
 
 Deno.test("the Model place opens on Activity, a revision's link on Revisions, and ?page= names another of its pages", () => {

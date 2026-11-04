@@ -9,7 +9,7 @@ import { evolutionCheckpoint } from "./evolution.ts";
 import {
   nativeExecutionIdentity,
   type NativeExecutionSnapshot,
-} from "./execution.ts";
+} from "../native-execution/contract.ts";
 
 function fixture() {
   const model = executableFixture({

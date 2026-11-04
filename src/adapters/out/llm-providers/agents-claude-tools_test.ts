@@ -184,7 +184,7 @@ function assertTransportInvariants(body: WireBody) {
   deepStrictEqual(body.system[1]!.cache_control, { type: "ephemeral" });
 }
 
-Deno.test("outils par défaut : 6 kinds sans édition SysML ni administration", async () => {
+Deno.test("outils par défaut : 5 kinds sans édition SysML ni administration", async () => {
   const observed: WireBody[] = [];
   const agent = agentWith(
     [() => toolUseResponse("reply", replyInput())],
@@ -200,7 +200,6 @@ Deno.test("outils par défaut : 6 kinds sans édition SysML ni administration", 
       "reply",
       "propose_tool",
       "invoke_tool",
-      "invoke_behavior",
       "propose_mandate_change",
       "propose_agent_creation",
     ],
@@ -208,7 +207,7 @@ Deno.test("outils par défaut : 6 kinds sans édition SysML ni administration", 
   assertTransportInvariants(body);
 });
 
-Deno.test("édition ciblée + révision brute : 8 outils avec sources en liste", async () => {
+Deno.test("édition ciblée + révision brute : 7 outils avec sources en liste", async () => {
   const observed: WireBody[] = [];
   const agent = agentWith(
     [() => toolUseResponse("reply", replyInput())],
@@ -225,7 +224,6 @@ Deno.test("édition ciblée + révision brute : 8 outils avec sources en liste",
       "reply",
       "propose_tool",
       "invoke_tool",
-      "invoke_behavior",
       "propose_mandate_change",
       "propose_sysml_revision",
       "propose_sysml_edit",
@@ -242,7 +240,7 @@ Deno.test("édition ciblée + révision brute : 8 outils avec sources en liste",
   ok(!JSON.stringify(revision.input_schema).includes("propertyNames"));
 });
 
-Deno.test("administration : propose_model_delegation ajouté, 7 outils", async () => {
+Deno.test("administration : propose_model_delegation ajouté, 6 outils", async () => {
   const observed: WireBody[] = [];
   const agent = agentWith(
     [() => toolUseResponse("reply", replyInput())],
@@ -256,7 +254,6 @@ Deno.test("administration : propose_model_delegation ajouté, 7 outils", async (
       "reply",
       "propose_tool",
       "invoke_tool",
-      "invoke_behavior",
       "propose_mandate_change",
       "propose_model_delegation",
       "propose_agent_creation",
@@ -265,7 +262,7 @@ Deno.test("administration : propose_model_delegation ajouté, 7 outils", async (
   assertTransportInvariants(body);
 });
 
-Deno.test("politique d'opérateur admise : decide_operator_change ajouté, 7 outils", async () => {
+Deno.test("politique d'opérateur admise : decide_operator_change ajouté, 6 outils", async () => {
   const observed: WireBody[] = [];
   const agent = agentWith(
     [() => toolUseResponse("reply", replyInput())],
@@ -279,7 +276,6 @@ Deno.test("politique d'opérateur admise : decide_operator_change ajouté, 7 out
       "reply",
       "propose_tool",
       "invoke_tool",
-      "invoke_behavior",
       "propose_mandate_change",
       "decide_operator_change",
       "propose_agent_creation",
@@ -376,14 +372,14 @@ Deno.test("4.8d D2: without a policy, requests awaiting the person are read-only
   );
 });
 
-Deno.test("contexte complet : 11 outils filtrés, schéma étendu à 18 avec création fusionnée", async () => {
+Deno.test("contexte complet : 10 outils filtrés, schéma étendu à 18 avec création fusionnée", async () => {
   const observed: WireBody[] = [];
   const agent = agentWith(
     [() => toolUseResponse("reply", replyInput())],
     observed,
   );
   await agent.decide(fullContext);
-  equal(observed[0]!.tools.length, 11);
+  equal(observed[0]!.tools.length, 10);
   assertTransportInvariants(observed[0]!);
   // Pure: 19 variants become 18 tools, with creation roles merged. The two actions
   // d'admission restent absentes du contexte sans cette délégation.
@@ -1124,7 +1120,7 @@ Deno.test("transport : fetch et AbortError restent bornés, sans corps fournisse
 });
 
 Deno.test({
-  name: "réel : concepteur à 11 outils sans 400, préfixe relu au second appel",
+  name: "réel : concepteur à 10 outils sans 400, préfixe relu au second appel",
   ignore: !realClaude,
   async fn() {
     const usages: RealUsage[] = [];

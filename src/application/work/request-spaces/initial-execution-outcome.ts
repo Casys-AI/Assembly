@@ -3,7 +3,7 @@ import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { isOpenCase } from "../../../domain/work/entities/cases.ts";
 import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
 import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
-import type { NativeExecutionPort } from "../runtime/execution.ts";
+import type { NativeExecutionPort } from "../native-execution/contract.ts";
 import type { OperatorExecutionDispatchPort } from "../operators/execution.ts";
 
 export interface RequestInitialExecutionReader {

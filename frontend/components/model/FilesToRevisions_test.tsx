@@ -49,7 +49,12 @@ async function lastChangeLink(
   ok(listing.status === "ready", "the files could be listed");
   await files.readSources(listing.version);
   const html = renderToString(
-    <FilesPage location={{ search }} files={files} now={NOW} />,
+    <FilesPage
+      versionInfo={{ source: { kind: "main" } }}
+      location={{ search }}
+      files={files}
+      now={NOW}
+    />,
   );
   const href = /<a class="last" href="([^"]+)"/.exec(html)?.[1];
   ok(href, "the page shows the last change");
@@ -237,7 +242,12 @@ Deno.test("a file of a waiting proposal's line opens at the proposal's version, 
   await files.open(OPEN);
   await files.readSources(OPEN);
   const page = renderToString(
-    <FilesPage location={{ search }} files={files} now={NOW} />,
+    <FilesPage
+      versionInfo={{ source: { kind: "main" } }}
+      location={{ search }}
+      files={files}
+      now={NOW}
+    />,
   );
   match(page, /part def Ranker;/);
   // ...and the last change to it is the proposal, which Revisions opens.

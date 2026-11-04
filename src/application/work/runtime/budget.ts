@@ -1,3 +1,4 @@
+import type { ClockPort } from "./ports.ts";
 import {
   caseBudgetPolicy,
   caseExecutionContext,
@@ -34,6 +35,7 @@ export interface RuntimeBudgetHost {
     | "designer"
   >;
   readonly ports: {
+    clock: ClockPort;
     workBudget?: WorkBudgetPort;
     providerCallContext?: ProviderCallContextPort;
   };
@@ -230,6 +232,7 @@ export async function suspendBudget(
     delete s.error;
     s.events.push(
       makeEvent(
+        this.ports.clock,
         "work-budget-wait",
         error.message,
         candidateId

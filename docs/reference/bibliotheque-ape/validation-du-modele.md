@@ -5,17 +5,17 @@ block execution. Compiler refusals retain their own mechanism.
 
 ## Available rules
 
-As of 25 October 2026, `lintModelDiagnostics` emits five rules. Severity
-describes the recommendation; `finding` describes what the model facts
-establish. `present` is not proof of execution, and `indeterminate` does not
-prove absence.
+As of 4 November 2026, `lintModelDiagnostics` still emits five rules in
+production. Severity describes the recommendation; `finding` describes what the
+model facts establish. `present` is not proof of execution, and `indeterminate`
+does not prove absence.
 
 | Code                        | Severity | Finding       | Scope                                                                                          |
 | --------------------------- | -------- | ------------- | ---------------------------------------------------------------------------------------------- |
 | `LOOP_WITHOUT_BUDGET`       | warning  | absent        | Executable conversation or plan without an invocation budget policy                            |
 | `SELF_ADMINISTERED`         | info     | present       | Admission of an operator's own candidates assigned to that operator (`admissionMode: builder`) |
 | `NO_ACCOUNTABLE_OWNER`      | warning  | indeterminate | The projector does not provide a human accountability declaration for the unit                 |
-| `EFFECT_NOT_VERIFIED`       | warning  | absent        | Exposed behavior with a typed effect but no `WorkResultContract` associated with that exposure |
+| `EFFECT_NOT_VERIFIED`       | warning  | absent        | Exposed tool reuse without a `WorkResultContract` associated with that exposure and caller     |
 | `CAPABILITY_BEYOND_MANDATE` | warning  | present       | `SkillPolicy` hosts outside the network mandate's hosts                                        |
 
 `EFFECT_WITHOUT_ADMISSION` and a source diagnostic named `AUTHORITY_INVARIANT`
@@ -83,6 +83,51 @@ its `proposalVersion`.
 and `remedy` are optional. Positions refer to the sources of the version being
 read. Diagnostics are sorted stably and cached by source digest; masks are
 reread on every consultation.
+
+## Native SHACL-SPARQL checks — 4 November 2026
+
+The separate shapes route evaluates the two budget and host patterns on the full
+pinned model graph using grouped SELECT constraints. Compiler associations
+select exact admitted systems, their exposed plans, budget occurrences and
+SkillPolicies. The queries verify the actual budget owner/type and compare the
+model's network host values. Precomputed TypeScript budget booleans and
+outside-host differences are not inputs to this evaluator; the five-rule Doctor
+remains the comparison reference and keeps its masking behavior.
+
+The old SHACL Core validator and its small graph of TypeScript verdicts have
+been removed. The five-rule TypeScript Doctor remains a separate production
+implementation: it is not merely a test oracle. The two migrated patterns
+therefore still have two implementations during this migration; the other three
+have no SHACL implementation. The backend compares the two common patterns,
+while the shapes HTTP route returns only its versioned report. Doctor masks do
+not modify that report.
+
+Toolkit syntax and contextual checks validate SysML. Assembly compilation admits
+its executable subset and establishes native identities and associations.
+Model-level diagnostics assess declared system properties; they do not authorize
+an action or consume its budget. Runtime authority checks, immutable identity
+verification and transactional budget accounting retain their own enforcement.
+
+The RDF projection uses the OpenMBEE SysML class/property vocabulary with
+explicit Assembly identity and ordered-list extensions. The original literals
+and complete index remain available to model queries. Reports include their
+projection and compiler-context identities; the cache additionally covers build
+provenance, shapes, engine versions, options and limits. Incomplete or truncated
+native reads fail validation, and corrupt cached reports are not treated as
+clean results.
+
+Post-publication notifications also request this native validation in the
+background. It can prepare and load a previously absent RDF index, even before
+an explicit graph consultation. Publication and view announcement do not await
+that background validation; a burst retains only its latest pending version. An
+absent network-host attribute represents an empty mandate. An unrelated
+array-valued attribute on the same owner cannot supply that missing mandate.
+
+This is a bounded parameterized SHACL-SPARQL profile for two patterns, not full
+SHACL Core or SHACL 1.2. See the
+[adapter profile](../../../src/adapters/out/shacl/README.md) and
+[semantic index](../modeles/index-semantique-natif.md) for its native query
+limits, vocabulary and retained full-graph allocation boundaries.
 
 ## Masking
 
@@ -179,26 +224,41 @@ establish a human identity. Only the main chat context receives up to 20
 unmasked warnings and errors. The agent reports them on opening and proposes a
 revision through the authorized paths, without making patterns mandatory.
 
-Recognized effects are construction through `reuse-tool`, memory writes through
-`capture`/`revise`/`review`/`withdraw`, and skill operations through
-`install`/`load`/`unload`. Task text, an inbox, a plan or an untyped external
-publication is not enough to prove an effect. Current rights do not support
-generic comparison of a `BehaviorAccess` action against its mandate; that
-comparison is excluded. Violations already refused by compilation remain
-refusals.
+The source projector recognizes work construction through `reuse-tool`. Native
+memory capture, revision, review and withdrawal, and skill installation, loading
+and unloading, commit local state through their CAS stores and return an audited
+receipt only after that commit succeeds. They do not require a second
+`WorkResultContract` for this local state transition. This exemption does not
+cover the later work performed using a skill or memory. The generic diagnostic
+rule still warns for an unverified write supplied by another facts producer.
+Task text, an inbox, a plan or an untyped external publication is not enough to
+prove an effect. Compilation refusals remain separate.
 
-The initial model now declares a human owner holding the authority root.
-However, `projectModelDiagnosticFacts` still sets
-`accountableHumanDeclared: false` for conversations and plans, without reading
-`ownerAuthority`. `NO_ACCOUNTABLE_OWNER` must therefore not be read as proof
-that the model contains no owner. The connection to this declaration and its
-scope per unit remain to be checked. An owner declaration does not prove
-acceptance of accountability either; human admission and `humanInput` do not
-prove it.
+A diagnostic-only declaration identifies a responsible human for one unit:
+
+```sysml
+part accountability : APEAccountability::AccountabilityAssignment;
+bind accountability.accountable = owner;
+```
+
+Include [`accountability.sysml`](../../../models/accountability.sysml). The
+assignment must be directly contained by the conversation system or exact
+exposed work plan. Its unique local binding must refer to a concrete typed
+`AssemblyCore::HumanOperator` in that same conversation system. A conversation's
+assignment does not cover its plans or another system. Missing, ambiguous or
+foreign bindings leave `accountableHumanDeclared` false. Names, prose, an
+owner's authority root, human admission and `humanInput` do not substitute for
+this assignment.
+
+The declaration suppresses `NO_ACCOUNTABLE_OWNER` for that unit, but neither
+identifies an authenticated person nor establishes acceptance of accountability.
+It grants no execution right and adds no executable-contract field. The initial
+foundation declares the local owner explicitly; persisted systems keep their own
+declarations until a source revision is accepted and adopted.
 
 The API, masks and reporting to the agent are available. The diagnostic panel,
 source underlines and frontend correction actions remain open work.
 
 Sources: [rules](../../../src/domain/model/policies/diagnostics.ts),
-[facts projection](../../../src/adapters/model/diagnostics/source.ts) and
+[facts projection](../../../src/domain/model/policies/diagnostics.ts) and
 [modeled authority](../operateurs/autorite-du-modele.md).

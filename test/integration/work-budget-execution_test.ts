@@ -1,3 +1,4 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 /** Native source admission → real PostgreSQL journal and cumulative budget.
  * AgentPort is a reply double; no external model provider is contacted. */
@@ -9,13 +10,11 @@ import type { PostgresWorkBudgetStore } from "../../src/adapters/out/postgres/bu
 import type { PostgresSystemStateStore } from "../../src/adapters/out/postgres/system-state-store.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  SourceModel,
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import type { SourceModel } from "../../src/application/model/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { ModelContextInformation } from "../../src/application/model/consultation/context-information.ts";
 import { ModelContextReader } from "../../src/application/model/consultation/source-reader.ts";
-import { queryModelRevision } from "../../src/adapters/model/sources/editing/tooling.ts";
+import { queryModelRevision } from "../../src/application/model/editing/query-revision.ts";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import {
   openPostgresDatabase,
@@ -120,7 +119,7 @@ Deno.test({
       });
       const open = async () => {
         const tooling = new SysmlToolkitAdapter({ packageDir: packageDir! });
-        const model = new SourceModel({
+        const model = createSourceModel({
           tooling,
           repository,
           projectId,

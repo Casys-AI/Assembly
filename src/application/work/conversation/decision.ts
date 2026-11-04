@@ -92,6 +92,7 @@ async function consultModel(
       s.phase = "Consultation du modèle";
       s.events.push(
         makeEvent(
+          this.ports.clock,
           "model-tool-called",
           `Consultation du modèle : ${operation}`,
         ),
@@ -110,6 +111,7 @@ async function consultModel(
     await this.update((s) => {
       s.events.push(
         makeEvent(
+          this.ports.clock,
           "model-tool-completed",
           `Consultation terminée : ${operation}`,
         ),
@@ -130,6 +132,7 @@ async function consultModel(
     await this.update((s) => {
       s.events.push(
         makeEvent(
+          this.ports.clock,
           "model-tool-refused",
           `Consultation refusée : ${operation}`,
         ),

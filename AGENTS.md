@@ -118,17 +118,18 @@ deno task test:heavy --allow-slow                    # deliberate final campaign
 - Iterate with a targeted task or `test:changed`; run `check` and the normal
   suite once for the stabilized change. Tests do not repeat type checking.
 - All maintained test tasks use `tools/test-runner.ts`: finite duration,
-  controlled integration flags, one process group at a time across this
-  repository's worktrees, parallel workers for unit, setup and interface stages
-  (one for integration and slow profiles), and low CPU scheduling priority. A
-  second launcher names the holder and waits up to 15 minutes (`--wait=0` fails
-  at once); `--no-fail-fast` collects every failure.
-- Slow profiles (`test:toolkit`, `test:postgres`, `test:semantic`, `test:heavy`,
-  `test:full`) require `--allow-slow`. Heavy suites live in `test/heavy/` and
-  are excluded from every standard task. Run one heavy campaign on the
-  stabilized lot when required; do not repeat it per subagent or per small edit.
-  Raw `deno test` bypasses the launcher protections; do not use it for campaign
-  execution.
+  controlled integration flags and low CPU scheduling priority. Only slow
+  profiles share an exclusive lock across this repository's worktrees; normal
+  profiles can run alongside them. Unit, setup and interface stages use parallel
+  workers (one for integration and slow profiles). A second slow launcher names
+  the holder and waits up to 15 minutes (`--wait=0` fails at once);
+  `--no-fail-fast` collects every failure.
+- Slow profiles (`test:integration:full`, `test:toolkit`, `test:postgres`,
+  `test:postgres-toolkit`, `test:semantic`, `test:heavy`, `test:full`) require
+  `--allow-slow`. Heavy suites live in `test/heavy/` and are excluded from every
+  standard task. Run one heavy campaign on the stabilized lot when required; do
+  not repeat it per subagent or per small edit. Raw `deno test` bypasses the
+  launcher protections; do not use it for campaign execution.
 - A budget overrun is a failed run to diagnose, not a reason to silently skip
   tests or raise the normal budget. Inspect `--plan` before broadening a run.
   Temporary directories stay in `.data/test-runs/`; successful runs clean only
@@ -151,17 +152,17 @@ and `infrastructure/`. The long form is in
   `infrastructure/`, never `composition/`.
 - `infrastructure/` holds technical services shared by every context (clock,
   logging, environment, SSE, native process client). It may import
-  `application/` and `domain/`; seven imports of `adapters/` are tracked by a
+  `application/` and `domain/`; six imports of `adapters/` are tracked by a
   shrinking warn-list in the test.
 - `composition/` is the composition root. It builds adapters and use cases and
   fixes the startup and stop order; `main.ts` calls it. It may import every
   folder.
-- Where to look in `adapters/`: `in/` (routes in `in/http/<context>/`, local
-  controls in `in/local/`) and `out/<system>/` (`postgres`, `git`,
-  `sysml-toolkit`, `llm-providers`…) are grouped by technical system; `work/`,
-  `model/`, `governance/` and `skills/` are grouped by context and build on
-  `out/`. Search by name when unsure: the execution ledger is in
-  `work/runtime/`, other Postgres stores in `out/postgres/`.
+- Where to look in `adapters/`: `in/` receives routes in `in/http/<context>/`
+  and local controls in `in/local/`; `out/<system>/` holds technical adapters
+  (`postgres`, `git`, `sysml-toolkit`, `llm-providers`…). Context adapters are
+  forbidden: only `in/`, `out/` and the frozen toolkit pin remain at this level.
+  Most Postgres stores are in `out/postgres/`; the native execution ensemble,
+  including its Postgres ledger, stays together in `out/native-execution/`.
 - The admitted SysML model and its identities are the source of truth.
   Refactoring never changes canonical encodings, digests or journals.
 - Full conventions: the code boundaries of `CONTRIBUTING.md` and

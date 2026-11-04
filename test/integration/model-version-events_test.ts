@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 import { observeModelRevisions } from "../../src/application/model/diagnostics/events.ts";
 import { ModelVersionEvents } from "../../src/application/model/revisions/version-events.ts";
 import type { ModelVersionEvent } from "../../src/application/model/revisions/ports/out/version-events.port.ts";

@@ -70,13 +70,13 @@ As of 25 October 2026, `compileCaseTypes` uses these readers. Their availability
 does not mean that network, editing, administration, skill or memory policies
 have stopped using JSON strings. Those migrations remain open.
 
-- [Entry projection](../../../src/adapters/model/projections/graph/source.ts):
+- [Entry projection](../../../src/domain/model/projections/source-values.ts):
   `sourceValues`.
-- [Native expressions](../../../src/adapters/model/sources/values/expressions.ts):
+- [Native expressions](../../../src/domain/model/value-objects/expressions.ts):
   `SourceValue` and `sourceExpressionReader`.
-- [Multiplicities](../../../src/adapters/model/sources/values/multiplicity.ts):
+- [Multiplicities](../../../src/domain/model/value-objects/multiplicity.ts):
   `sourceMultiplicityReader`.
-- [Readers and errors](../../../src/adapters/model/sources/values/readers.ts):
+- [Readers and errors](../../../src/domain/model/value-objects/readers.ts):
   `sourceValueReaders` and `SourceValueReadError`.
 - Existing Toolkit tests:
   [values](../../../test/integration/source-values_test.ts),

@@ -1,10 +1,8 @@
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
-import { sourceSnapshot } from "../../src/adapters/model/projections/graph/source.ts";
+import { sourceSnapshot } from "../../src/domain/model/projections/source-facts.ts";
 import {
   AuthorityInvariantError,
   exerciseOwnerAuthority,

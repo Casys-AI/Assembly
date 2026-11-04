@@ -1,5 +1,8 @@
-import { DiagnosticsMessageText } from "./DiagnosticsMessageText.tsx";
+import { MessageText } from "./MessageText.tsx";
+import { caseOperatorName } from "../../lib/cases/operator-names.ts";
+import { ToolSteps } from "./ToolSteps.tsx";
 import type { ProposalDecisionState } from "./ChatProposalCard.tsx";
+import { Fragment } from "preact";
 import { useEffect } from "preact/hooks";
 import type { WorkbenchState } from "../../lib/workbench/state.ts";
 import type {
@@ -36,7 +39,10 @@ import {
 import { caseHref, caseTitle, messageCaseId } from "../../lib/cases/cases.ts";
 import { conversationHref } from "../../lib/workbench/desk.ts";
 import { operatorName } from "../../lib/model/revisions/change.ts";
-import { readOperatorNotice } from "../../lib/conversations/operator-notice.ts";
+import {
+  type OperatorNotice,
+  readOperatorNotice,
+} from "../../lib/conversations/operator-notice.ts";
 import {
   newToolPatch,
   ProposalCodeDiff,
@@ -367,9 +373,8 @@ export function chatEntries(
     if (
       !record || record.origin.operatorId !== nativeId ||
       messages.some((message) => {
-        const captured = messageEvolution(message);
+        const captured = evolutionOf(message, nativeId);
         return captured &&
-          evolutionOriginMatches(captured, nativeId, message) &&
           captured.dossierId === record.dossierId &&
           captured.proposalId === record.proposalId &&
           captured.proposalDigest === record.proposalDigest;
@@ -638,11 +643,7 @@ function latestNoticeMessages(
 ): readonly Message[] {
   const latest = new Map<string, { index: number; at: number }>();
   const keys = messages.map((message, index) => {
-    const captured = messageEvolution(message);
-    const evolution =
-      captured && evolutionOriginMatches(captured, operatorId, message)
-        ? captured
-        : undefined;
+    const evolution = evolutionOf(message, operatorId);
     const notice = readOperatorNotice(message);
     const key = evolution
       ? JSON.stringify([
@@ -671,9 +672,66 @@ function latestNoticeMessages(
   );
 }
 
+/** The evolution receipt a message records for this thread's own operator. */
+function evolutionOf(message: Message, operatorId: string | undefined) {
+  const captured = messageEvolution(message);
+  return captured && evolutionOriginMatches(captured, operatorId, message)
+    ? captured
+    : undefined;
+}
+
 /**
- * What another agent said for a Case, as plain messages, in the order given.
- * An operator's report is one line leading to its Request, as in the thread.
+ * How a thread shows one message: an evolution receipt, an operator's notice,
+ * a host or tool record folded with its neighbours, or a message. A thread
+ * that does not read receipts and notices (a Request's own) folds them too.
+ */
+type Shown =
+  | { kind: "captured"; record: EvolutionConversationRecord }
+  | { kind: "notice"; notice: OperatorNotice }
+  | { kind: "step" }
+  | { kind: "message" };
+
+function shownAs(
+  message: Message,
+  operatorId: string | undefined,
+  readsReceipts: boolean,
+): Shown {
+  const record = readsReceipts ? evolutionOf(message, operatorId) : undefined;
+  if (record) return { kind: "captured", record };
+  const notice = readsReceipts ? readOperatorNotice(message) : undefined;
+  if (notice) return { kind: "notice", notice };
+  return message.role === "tool" && !message.work
+    ? { kind: "step" }
+    : { kind: "message" };
+}
+
+/**
+ * A thread's items in order, with the steps in a row grouped where the first
+ * one is. A fold ends at anything else, and where the Case changes.
+ */
+function foldSteps<T>(
+  items: readonly T[],
+  stepOf: (item: T) => Message | undefined,
+): { item: T; index: number; steps?: Message[] }[] {
+  const units: { item: T; index: number; steps?: Message[] }[] = [];
+  let fold: Message[] | undefined;
+  items.forEach((item, index) => {
+    const step = stepOf(item);
+    if (step && fold && messageCaseId(fold[0]) === messageCaseId(step)) {
+      fold.push(step);
+      return;
+    }
+    fold = step ? [step] : undefined;
+    units.push(fold ? { item, index, steps: fold } : { item, index });
+  });
+  return units;
+}
+
+/**
+ * What another agent said for a Case, in the order given; its messages, its
+ * requests included, are agents' words. An operator's report is one line
+ * leading to its Request, as in the thread; host and tool records in a row
+ * fold into one line.
  */
 export function ExchangeMessages(
   { messages, state, conversation }: {
@@ -682,51 +740,54 @@ export function ExchangeMessages(
     conversation?: AgentConversation;
   },
 ) {
+  const listed = state
+    ? latestNoticeMessages(messages, conversation?.nativeId)
+    : messages;
+  const shown = new Map(
+    listed.map((message) => [
+      message,
+      shownAs(message, conversation?.nativeId, Boolean(state)),
+    ]),
+  );
   return (
     <>
-      {(state
-        ? latestNoticeMessages(messages, conversation?.nativeId)
-        : messages).map((message) => {
-          const observation = state && messageEvolution(message);
-          const captured = observation &&
-              evolutionOriginMatches(
-                observation,
-                conversation?.nativeId,
-                message,
-              )
-            ? observation
-            : undefined;
-          if (captured && state) {
-            return (
-              <RecordedEvolutionCard
-                key={message.id}
-                captured={captured}
-                state={state}
-                conversation={conversation}
-                scope={message}
-              />
-            );
-          }
-          const notice = state && readOperatorNotice(message);
-          return notice
-            ? (
-              <OperatorNoticeRow
-                key={message.id}
-                notice={notice}
-                state={state}
-              />
-            )
-            : (
-              <article
-                key={message.id}
-                class={`message ${message.work ? "tool" : message.role}`}
-              >
-                <div class="message-body">
-                  <DiagnosticsMessageText text={message.text} />
-                </div>
-              </article>
-            );
-        })}
+      {foldSteps(
+        listed,
+        (message) => shown.get(message)!.kind === "step" ? message : undefined,
+      ).map(({ item: message, steps }) => {
+        const as = shown.get(message)!;
+        if (as.kind === "captured" && state) {
+          return (
+            <RecordedEvolutionCard
+              key={message.id}
+              captured={as.record}
+              state={state}
+              conversation={conversation}
+              scope={message}
+            />
+          );
+        }
+        if (as.kind === "notice" && state) {
+          return (
+            <OperatorNoticeRow
+              key={message.id}
+              notice={as.notice}
+              state={state}
+            />
+          );
+        }
+        if (steps) return <ToolSteps key={message.id} messages={steps} />;
+        return (
+          <article
+            key={message.id}
+            class={`message ${message.work ? "tool" : message.role}`}
+          >
+            <div class="message-body">
+              <MessageText text={message.text} />
+            </div>
+          </article>
+        );
+      })}
     </>
   );
 }
@@ -760,7 +821,7 @@ function ExchangeRow(
 export function ChatTimeline(
   {
     state,
-    entries,
+    entries: recordedEntries,
     conversation = state.selectedConversation.value,
     caseLinks = true,
     independentRequest = false,
@@ -775,13 +836,53 @@ export function ChatTimeline(
     independentRequest?: boolean;
   },
 ) {
-  useMessageCaseDetails(state, entries, !independentRequest);
   const operatorId = conversation?.nativeId ||
     state.displayed.value?.executionModel?.identity.builderId;
-  const visibleMessages = new Set(latestNoticeMessages(
-    entries.flatMap((entry) => entry.kind === "message" ? [entry.message] : []),
+  // Resolve replacements first: a new operator assignment supersedes the old
+  // human request even though Main does not show the new notice itself.
+  const latest = new Set(latestNoticeMessages(
+    recordedEntries.flatMap((entry) =>
+      entry.kind === "message" ? [entry.message] : []
+    ),
     operatorId,
   ));
+  // Filter before folding steps and finding Case boundaries. The journal and
+  // the Main's model context retain every record.
+  const entries = recordedEntries.filter((entry) => {
+    if (entry.kind !== "message") return true;
+    if (!latest.has(entry.message)) return false;
+    if (independentRequest || !conversation?.primary) return true;
+    if (entry.message.work) return false;
+    const notice = readOperatorNotice(entry.message);
+    return !notice ||
+      notice.kind === "authority-escalation" &&
+        notice.decisionAuthority !== "operator" ||
+      notice.kind === "request-completed" &&
+        notice.status === "closed-abandoned";
+  });
+  useMessageCaseDetails(state, entries, !independentRequest);
+  const visible = entries.flatMap((entry) =>
+    entry.kind === "message" ? [entry.message] : []
+  );
+  const shown = new Map(
+    visible.map((message) => [
+      message,
+      shownAs(message, operatorId, !independentRequest),
+    ]),
+  );
+  const units = foldSteps(
+    entries,
+    (entry) =>
+      entry.kind === "message" && shown.get(entry.message)?.kind === "step"
+        ? entry.message
+        : undefined,
+  );
+  // A teammate's update is named from the roster of the thread's own space.
+  const roster = !independentRequest
+    ? state.conversationSnapshot.value?.conversations
+    : requestCaseId
+    ? state.requests.snapshots.value.get(requestCaseId)?.conversations
+    : undefined;
   return (
     <>
       {independentRequest && requestCaseId && conversation &&
@@ -790,7 +891,7 @@ export function ChatTimeline(
           {state.caseChangeNotice(requestCaseId, conversation.agentId)}
         </p>
       )}
-      {entries.map((entry, index) => {
+      {units.map(({ item: entry, index, steps }) => {
         if (entry.kind === "evolution") {
           if (state.readOnly.value) return null;
           return (
@@ -808,15 +909,10 @@ export function ChatTimeline(
           );
         }
         if (entry.kind === "model-update") {
-          const affectedOperator =
-            independentRequest && entry.update.operatorId !== operatorId
-              ? entry.update.operatorId
-              : entry.update.operatorId !== operatorId
-              ? operatorName(
-                state.conversationSnapshot.value?.conversations,
-                entry.update.operatorId,
-              ) || entry.update.operatorId
-              : undefined;
+          const affectedOperator = entry.update.operatorId !== operatorId
+            ? operatorName(roster, entry.update.operatorId) ||
+              entry.update.operatorId
+            : undefined;
           return (
             <ModelUpdateDivider
               key={entry.id}
@@ -876,31 +972,26 @@ export function ChatTimeline(
           );
         }
         const message = entry.message;
-        if (!visibleMessages.has(message)) return null;
-        const observation = independentRequest
-          ? undefined
-          : messageEvolution(message);
-        const captured = observation &&
-            evolutionOriginMatches(observation, operatorId, message)
-          ? observation
-          : undefined;
-        if (captured) {
+        const as = shown.get(message);
+        if (!as) return null;
+        if (as.kind === "captured") {
           return (
             <RecordedEvolutionCard
               key={entry.id}
-              captured={captured}
+              captured={as.record}
               state={state}
               conversation={conversation}
               scope={message}
             />
           );
         }
-        const notice = independentRequest
-          ? undefined
-          : readOperatorNotice(message);
-        if (notice) {
+        if (as.kind === "notice") {
           return (
-            <OperatorNoticeRow key={entry.id} notice={notice} state={state} />
+            <OperatorNoticeRow
+              key={entry.id}
+              notice={as.notice}
+              state={state}
+            />
           );
         }
         // A message the host attached to a Case points to it, discreetly:
@@ -913,45 +1004,52 @@ export function ChatTimeline(
           (previous?.kind !== "message" ||
             messageCaseId(previous.message) !== caseId);
         const record = caseId ? state.cases.byId(caseId) : null;
+        const chip = showCase && (
+          <a class="case-chip" href={caseHref(caseId, record?.type)}>
+            {record ? caseTitle(record, 28) : "Case"}
+          </a>
+        );
+        if (steps) {
+          return (
+            <Fragment key={entry.id}>
+              {chip}
+              <ToolSteps messages={steps} />
+            </Fragment>
+          );
+        }
+        const work = message.work &&
+          (message.work.callerId === operatorId ? "returned" : "received");
         return (
           <article
             key={entry.id}
-            class={`message ${message.work ? "tool" : message.role}`}
+            class={`message ${work ? "tool" : message.role}`}
           >
-            {showCase && (
-              <a class="case-chip" href={caseHref(caseId, record?.type)}>
-                {record ? caseTitle(record, 28) : "Case"}
-              </a>
-            )}
+            {chip}
             <div class="message-label">
-              {message.work
-                ? message.work.callerId === operatorId
-                  ? "Work returned"
-                  : "Work received"
+              {work
+                ? `Work ${work}`
                 : message.role === "user"
                 ? "You"
-                : message.role === "tool"
-                ? "Tool result"
-                : conversation?.name || "System"}
+                : caseOperatorName(
+                  conversation?.name || "System",
+                  state.requests.cases.byId(requestCaseId),
+                )}
             </div>
-            {message.role === "tool" || message.work
+            {work
               ? (
                 <details data-key={`message:${message.id}`}>
-                  <summary>
-                    {message.work
-                      ? message.work.callerId === operatorId
-                        ? "View returned work"
-                        : "View received work"
-                      : "View result"}
-                  </summary>
+                  <summary>{`View ${work} work`}</summary>
                   <div class="message-body">
-                    <DiagnosticsMessageText text={message.text} />
+                    <MessageText text={message.text} />
                   </div>
                 </details>
               )
               : (
                 <div class="message-body">
-                  <DiagnosticsMessageText text={message.text} />
+                  {/* What the person wrote stays exactly as written. */}
+                  {message.role === "user"
+                    ? message.text
+                    : <MessageText text={message.text} />}
                 </div>
               )}
           </article>

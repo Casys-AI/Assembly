@@ -1,6 +1,6 @@
 /** Construct native policy source through the shared writer; this grants nothing by itself. */
 import type { ResolvedModelEdit } from "../../../src/domain/model/editing/tooling.ts";
-import type { ModelIdentity } from "../../../src/domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../src/domain/shared-kernel/model-identity.ts";
 import {
   type EvolutionGrant,
   parseEvolutionGrants,
@@ -11,9 +11,9 @@ import { sameProductName } from "../../../src/domain/model/sysml-product-names.t
 import {
   sourceLiterals,
   sourceSnapshot,
-} from "../../../src/adapters/model/projections/graph/source.ts";
-import { modelToolingTarget } from "../../../src/adapters/model/sources/editing/tooling.ts";
-import type { SourceRevision } from "../../../src/adapters/model/sources/source-model.ts";
+} from "../../../src/domain/model/projections/source-facts.ts";
+import { modelToolingTarget } from "../../../src/domain/model/editing/source-index.ts";
+import type { SourceRevision } from "../../../src/domain/model/records/source-revision.ts";
 import { compileEvolutionPolicy } from "../../../src/adapters/out/sysml-toolkit/compilation-policies/governance/model-access/evolution/policy.ts";
 
 export function buildEvolutionPolicyEdits(

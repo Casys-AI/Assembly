@@ -1,6 +1,6 @@
 import { toolkitSubprocessPermissions } from "./toolkit-subprocess-permissions.ts";
 import type { ModelRevision } from "../../src/domain/model/records/revision.ts";
-import type { validateSourceExecutables } from "../../src/adapters/model/sources/source-model.ts";
+import type { validateSourceExecutables } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import type { ModelRevisionId } from "../../src/domain/shared-kernel/revision-id.ts";
 
 export type MatrixArtifactFixtureName =
@@ -105,7 +105,7 @@ if (import.meta.main) {
     throw new Error("Incomplete matrix artifact setup arguments");
   }
   const { validateSourceExecutables } = await import(
-    "../../src/adapters/model/sources/source-model.ts"
+    "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts"
   );
   const { loadInitialSources } = await import(
     "../../src/adapters/out/filesystem/initial-model-sources.ts"

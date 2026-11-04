@@ -240,7 +240,7 @@ Deno.test("delayed auth failure from a deselected Case does not invalidate anoth
     });
   const pending = h.editor.propose();
   h.editor.select("case-b", true);
-  fail(new RequestSourceApiError("old request", 403, "FORBIDDEN"));
+  fail(new RequestSourceApiError("old request", 403, "FORBIDDEN", true));
   await pending;
   assert.equal(h.unauthorized(), 0);
   assert.equal(h.editor.intent.peek(), null);
@@ -286,22 +286,25 @@ Deno.test("a resumed result with another source digest is not confirmed", async 
   assert.equal(h.editor.intent.peek()?.commandId, "proposal-a");
 });
 
-Deno.test("action 403 preserves control; FORBIDDEN invalidates it without losing approval identity", async () => {
+Deno.test("action 403 preserves control; an explicit session refusal invalidates it without losing approval identity", async () => {
   for (
-    const code of [
-      "REQUEST_SOURCE_OWNER_REFUSED",
-      "EDIT_SCOPE_DENIED",
-      "UNKNOWN",
-      "FORBIDDEN",
-    ]
+    const [code, sessionInvalid] of [
+      ["REQUEST_SOURCE_OWNER_REFUSED", false],
+      ["EDIT_SCOPE_DENIED", false],
+      ["UNKNOWN", false],
+      ["FORBIDDEN", false],
+      ["FORBIDDEN", true],
+    ] as const
   ) {
     const h = editHarness();
     h.draft();
     await h.editor.propose();
     h.behavior.accept = () =>
-      Promise.reject(new RequestSourceApiError("refused", 403, code));
+      Promise.reject(
+        new RequestSourceApiError("refused", 403, code, sessionInvalid),
+      );
     await h.editor.accept();
-    assert.equal(h.unauthorized(), code === "FORBIDDEN" ? 1 : 0);
+    assert.equal(h.unauthorized(), sessionInvalid ? 1 : 0);
     assert.equal(h.editor.intent.peek()?.commandId, "proposal-a");
     assert.equal(h.editor.intent.peek()?.acceptAttempted, true);
     assert.equal(h.editor.receipt.peek(), null);

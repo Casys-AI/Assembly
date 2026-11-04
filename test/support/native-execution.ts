@@ -1,3 +1,8 @@
+import {
+  nativeFlowContractDigest,
+  nativeUnchangedContractDigest,
+} from "../../src/domain/model/execution/flow-contract.ts";
+import { nativeFrameworkNodeName } from "../../src/application/work/native-execution/framework-node-name.ts";
 import { parseAcceptedCommand } from "../../src/application/work/operators/command-delivery.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
@@ -17,14 +22,14 @@ import {
   type NativeExecutionLedger,
   type NativeExecutionSession,
   NativeGraphExecution,
-} from "../../src/adapters/work/runtime/conversation.ts";
+} from "../../src/adapters/out/native-execution/conversation.ts";
 import {
   type NativeContinuationReceipt,
   NativeExecutionAdmissionRefused,
   type NativeExecutionRequest,
   type NativeExecutionSnapshot,
   type RuntimeStateHistoryPort,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import type {
   OperatorDeliveryReceipt,
   OperatorExecutionDelivery,
@@ -43,41 +48,40 @@ import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import {
   nativeCandidateConversationAdvanceEvidence,
   nativeCatalogAdvanceEvidence,
-  nativeFlowContractDigest,
   nativeMandateAdvanceEvidence,
   nativeTeamAdvanceEvidence,
-  nativeUnchangedContractDigest,
-} from "../../src/application/work/runtime/model-advance.ts";
+} from "../../src/application/work/native-execution/model-advance.ts";
 import { valueDigest } from "../../src/application/work/runtime/values.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";
 import {
   type BudgetProposalCheckpoint,
   nativeScalarBudgetProposal,
   verifyScalarBudgetFamily,
-} from "../../src/adapters/work/runtime/native-budget-proposal.ts";
+} from "../../src/application/work/native-execution/native-budget-proposal.ts";
 import type {
   BudgetCeilingManifest,
   BudgetCeilingMember,
 } from "../../src/domain/work/records/budget-ceiling-transition.ts";
 import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";
-import type { ModelIdentity } from "../../src/domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import type { BehaviorModelVersion } from "../../src/domain/shared-kernel/behavior-model-version.ts";
 import type { WorkPlanExecution } from "../../src/application/work/plans/commands/inputs.ts";
 import type { CompiledFlowNode } from "../../src/domain/model/execution/flow.ts";
 import {
-  nativeFrameworkNodeName,
   type NativeState,
-} from "../../src/adapters/work/runtime/native-graph.ts";
+} from "../../src/adapters/out/native-execution/native-graph.ts";
 import {
   budgetSourceFromWait,
-  checkpointConsumptions,
-  checkpointInterruptEvidence,
   effectResultDigest,
   type NativeWaitConsumptionEvidence,
   type NativeWaitEvidence,
   parseNativeWaitEvidence,
+} from "../../src/application/work/native-execution/wait-evidence.ts";
+import {
+  checkpointConsumptions,
+  checkpointInterruptEvidence,
   verifyOfficialFork,
-} from "../../src/adapters/work/runtime/checkpoint-wait-evidence.ts";
+} from "../../src/adapters/out/native-execution/checkpoint-wait-evidence.ts";
 import {
   workTaskInvocationId,
 } from "../../src/application/work/plans/executor.ts";
@@ -96,7 +100,7 @@ import {
   encodeNativeObservation,
   type NativeObservationRecord,
   verifyNativeObservationBatches,
-} from "../../src/adapters/work/runtime/native-observation.ts";
+} from "../../src/domain/model/execution/native-observation.ts";
 
 interface Thread {
   id: string;

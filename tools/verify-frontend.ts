@@ -35,8 +35,8 @@ for (const entry of Object.values(manifest)) {
 // ?page=flows with the flow it reads as ?flow=, Requirements
 // ?page=requirements, Parts and Allocations are in its More menu, an element a
 // page opens in place is ?select=), Model is /model with /revisions as an
-// address of its own, an old graph link (?revision=) lands on Model, and To
-// decide is /decide.
+// address of its own, an old graph link (?revision=) lands on Model, and
+// Activity is /activity.
 const routes = [
   ["/", "chat"],
   ["/tools", "tools"],
@@ -66,7 +66,7 @@ const routes = [
   ["/revisions", "model"],
   ["/revisions?commit=commit%3Asample&from=empty", "model"],
   ["/revisions?proposal=p1", "model"],
-  ["/decide", "decide"],
+  ["/activity", "activity"],
   ["/system?select=unit-1&fresh-partial=true", "system"],
   ["/system?page=explore&select=unit-1&fresh-partial=true", "system"],
   ["/system?page=parts&select=unit-1&fresh-partial=true", "system"],
@@ -86,6 +86,16 @@ for (const [path, view] of routes) {
   collectAssets(html, url.href);
 }
 
+const oldActivity = await dispatch(
+  new Request(`${origin}/decide?from=old&fresh-partial=true`),
+);
+if (
+  oldActivity?.status !== 308 ||
+  oldActivity.headers.get("location") !== "/activity?from=old" ||
+  oldActivity.headers.get("cache-control") !== "no-store"
+) throw new Error("Fresh Activity redirect failed: /decide");
+await oldActivity.body?.cancel();
+
 if (assets.size < 3) throw new Error("Fresh emitted no complete client entry.");
 for (const url of assets) {
   if (visited.has(url)) continue;
@@ -104,5 +114,5 @@ for (const url of assets) {
   }
 }
 console.log(
-  `Fresh integration verified: ${routes.length} routes, ${visited.size} client assets.`,
+  `Fresh integration verified: ${routes.length} routes, 1 redirect, ${visited.size} client assets.`,
 );

@@ -437,15 +437,15 @@ function project(
       reason(state, "history");
       continue;
     }
-    selected.push(
-      projectMessage(
-        message,
-        budget,
-        state,
-        index === requestIndex,
-        exactInspectionIndexes.has(index),
-      ),
+    const projected = projectMessage(
+      message,
+      budget,
+      state,
+      index === requestIndex,
+      exactInspectionIndexes.has(index),
     );
+    if (projected.text !== message.text) state.reference.textOmitted = true;
+    selected.push(projected);
   }
   output.messages = selected;
   output.contextEvidence = {

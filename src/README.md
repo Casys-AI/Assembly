@@ -31,26 +31,35 @@ The business module groups identify their business owner. Domain objects use
 role folders, such as `memory/entities/memory-record.ts` and
 `shared-kernel/revision-id.ts`, with one canonical definition per concept.
 Catalog state uses `records/` until a domain root actually owns its transitions.
-Application and adapter folders group actual use-case and technical families. In
-`adapters/`, `in/` and `out/<system>/` are grouped by technical system, while
-`work/`, `model/`, `governance/` and `skills/` are grouped by context and build
-on `out/`. File names use that context: runtime, compilation and projections
-belong to one `adapters/out/sysml-toolkit/` family, while semantic preparation
-and native index execution have separate owners.
+Application folders group use cases by context. Adapters receive calls through
+`in/http/<context>/` and `in/local/`, and group outgoing technical dependencies
+under `out/<system>/`. The architecture test rejects context adapters. Workspace
+decisions belong to application services; `composition/operator-workspace.ts`
+assembles them and owns their lifecycle. Toolkit runtime, compilation and
+projections belong to one `adapters/out/sysml-toolkit/` family; their domain
+policies and use-case orchestration live in `domain/` and `application/`.
+Semantic preparation and native index execution have separate owners.
 
-The execution ensemble stays together under `adapters/work/runtime`.
-[postgres-ledger.ts](adapters/work/runtime/postgres-ledger.ts) owns durable run
-selection;
-[wait-evidence-ledger.ts](adapters/work/runtime/wait-evidence-ledger.ts) owns
-its immutable wait and consumption receipts. The fenced official saver remains
-in `postgres-ledger.ts`; checkpoint proof adaptation and the explicit historical
-decoder live in
-[checkpoint-wait-evidence.ts](adapters/work/runtime/checkpoint-wait-evidence.ts).
+The execution ensemble stays together under `adapters/out/native-execution`.
+[postgres-ledger.ts](./adapters/out/native-execution/postgres-ledger.ts) owns
+durable run selection, claims, locks and transaction placement. Historical
+authority, exact origin proofs, closure and continuation decisions live in
+`application/work/native-execution`; adoption lineage and retirement safety live
+in `application/work/evolution`. Conditional application readers request one
+fact at its original protocol point, without receiving transactions or locks.
+`encodings.ts` owns the unchanged thread, run-pin and source-reference bytes;
+the ledger retains its consumed thread-ID export.
+
+[wait-evidence-ledger.ts](./adapters/out/native-execution/wait-evidence-ledger.ts)
+owns its immutable wait and consumption receipts. The fenced official saver
+remains in `postgres-ledger.ts`; checkpoint proof adaptation and the explicit
+historical decoder live in
+[checkpoint-wait-evidence.ts](./adapters/out/native-execution/checkpoint-wait-evidence.ts).
 Delivery acceptance alone is not consumption. The native trace and product
 journal remain distinct: since R4b, new native observations go to the
 append-only `ExecutionNativeObservation` journal
-([native-observation.ts](adapters/work/runtime/native-observation.ts)), not to
-checkpoints.
+([native-observation.ts](./domain/model/execution/native-observation.ts)), not
+to checkpoints.
 
 ## Catalogue mapping
 
@@ -66,14 +75,14 @@ checkpoints.
 | **3.4 Verified-Effect Closure**                                    | [verified-effect-closure.ts](domain/work/policies/verified-effect-closure.ts), [result-policy.ts](adapters/out/sysml-toolkit/compilation-policies/work/result-policy.ts), [executor.ts](application/work/plans/executor.ts) | Typed native contract, bounded business predicate and admitted observation; plan dependencies conditioned on verification.            |
 | **3.6 Budget-Bounded Loop**                                        | [budget.ts](domain/work/policies/budget.ts), [service.ts](application/work/budget/service.ts), [agent.ts](application/work/budget/agent.ts)                                                                                 | Persistent counter, reservation and suspension per case; current unit: agent port invocation.                                         |
 | **4.1 Operator Identity & Mandate**                                | [mandates.ts](domain/governance/mandates.ts), [governance.ts](domain/governance/policies/governance.ts), [operator-entry.ts](domain/model/records/operator-entry.ts)                                                        | Holders, versions and native permissions. The structured editing policy bounds files and roots; the `scope` text remains descriptive. |
-| **4.2 Centralized Supervision**                                    | [conversations.ts](application/work/operators/conversations.ts), [operator-workspace.ts](adapters/work/operator-workspace.ts), [operator-inbox.ts](./application/work/behaviors/operator-inbox.ts)                          | Operators, authorized links and correlated contributions. A response does not transfer responsibility for the case.                   |
+| **4.2 Centralized Supervision**                                    | [conversations.ts](application/work/operators/conversations.ts), [workspace-registry.ts](application/work/operators/workspace-registry.ts), [operator-inbox.ts](./application/work/behaviors/operator-inbox.ts)             | Operators, authorized links and correlated contributions. A response does not transfer responsibility for the case.                   |
 | **5.1 Context Separation**                                         | [context-separation.ts](domain/work/policies/context-separation.ts), [separation.ts](application/work/context/separation.ts), [information.ts](./application/model/consultation/context-information.ts)                     | Context preparation, provenance and access to evidence. Consulting information does not grant it authority.                           |
 | **5.2 Governed Memory Promotion**                                  | [governed-memory-promotion.ts](domain/memory/governed-memory-promotion.ts), [governed-memory-promotion.ts](application/memory/governed-memory-promotion.ts), [memory-store.ts](adapters/out/postgres/memory-store.ts)       | Candidate notes, review/admission, recall and withdrawal. Local implementation; no independent review between owners.                 |
 
 For **4.1 Operator Identity & Mandate**,
 [model-delegation.ts](domain/governance/policies/model-delegation.ts) resolves
 granting and redelegation rights, which are distinct from exercising a right.
-[operations.ts](adapters/governance/model-access/administration/operations.ts)
+[operations.ts](./application/governance/model-access/administration/operations.ts)
 builds the exact proposal and checks it again at admission; the
 [administration guide](../docs/how-to/operateurs/administration-deleguee.md)
 describes bounds and revocations.

@@ -1,4 +1,4 @@
-import { nativeFlowContractDigest } from "../runtime/model-advance.ts";
+import { nativeFlowContractDigest } from "../../../domain/model/execution/flow-contract.ts";
 import {
   assertInitialAdmissionCurrentAuthority,
   initialAdmissionDecisionKey,
@@ -7,7 +7,7 @@ import {
   verifyInitialAdmissionSourceSnapshot,
 } from "../runtime/initial-admission-transfer.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
-import { nativeExecutionIdentity } from "../runtime/execution.ts";
+import { nativeExecutionIdentity } from "../native-execution/contract.ts";
 import { isOpenCase } from "../../../domain/work/entities/cases.ts";
 import type {
   InitialToolAdmissionTransfer,
@@ -17,7 +17,7 @@ import type {
   NativeExecutionContribution,
   NativeExecutionPort,
   NativeExecutionSnapshot,
-} from "../runtime/execution.ts";
+} from "../native-execution/contract.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { CompiledFlowNode } from "../../../domain/model/execution/flow.ts";
 import type { MessageObservation } from "../../../domain/work/policies/context-separation.ts";
@@ -530,6 +530,7 @@ export async function decideCandidate(
     ) {
       const start: OperatorWorkContinuationStart = {
         ...makeEvent(
+          this.ports.clock,
           "operator-work-continuation-started",
           delegated
             ? "Continuation du travail après décision déléguée"
@@ -599,6 +600,7 @@ export async function decideCandidate(
           s.events.push(
             {
               ...makeEvent(
+                this.ports.clock,
                 delegated
                   ? "delegated-admission-decided"
                   : "human-admission-decided",
@@ -617,10 +619,13 @@ export async function decideCandidate(
       } catch (error) {
         const detail = errorText(error);
         await this.update((s) => {
-          s.events.push(makeEvent(
-            "initial-tools-preparation-failed",
-            `Suite du catalogue initial interrompue : ${detail}`,
-          ));
+          s.events.push(
+            makeEvent(
+              this.ports.clock,
+              "initial-tools-preparation-failed",
+              `Suite du catalogue initial interrompue : ${detail}`,
+            ),
+          );
         });
         // The primary admission already settled. A failure preparing another
         // selection must not report that its confirmed effect was rejected.
@@ -917,7 +922,12 @@ export async function resumeCandidateDecisions(
         await this.update((s) => {
           s.error = detail;
           s.events.push(
-            makeEvent("candidate-continuation-interrupted", detail, target),
+            makeEvent(
+              this.ports.clock,
+              "candidate-continuation-interrupted",
+              detail,
+              target,
+            ),
           );
         });
       }

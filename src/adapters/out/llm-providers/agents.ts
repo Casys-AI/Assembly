@@ -1,3 +1,4 @@
+import { untrustedObservation } from "./provider-context.ts";
 import { isPlainRecord as isRecord } from "../../../domain/primitives/is-plain-record.ts";
 import { Buffer } from "node:buffer";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -9,7 +10,8 @@ import {
   StructuredAgents,
   type StructuredPromptParts,
 } from "./structured-agents.ts";
-import { batchMemberSchema } from "./provider-tools.ts";
+import { ajvDetail } from "./provider-tools.ts";
+import { compileOutputSchema, relevantErrors } from "./output-validation.ts";
 
 export { decisionSchema, reviewSchema } from "./output-validation.ts";
 export type { StructuredPromptParts } from "./structured-agents.ts";
@@ -94,6 +96,32 @@ export class MuseAgents extends StructuredAgents {
     schema: object,
     parts?: StructuredPromptParts,
   ): Promise<unknown> {
+    const validate = compileOutputSchema(schema);
+    let prompt = shared;
+    for (let attempt = 0;; attempt++) {
+      const value = await this.invoke(prompt, schema, parts);
+      if (validate(value)) return value;
+      if (attempt === 1) {
+        throw new Error(
+          "Invalid agent decision schema after repair (INVALID_OUTPUT_SCHEMA)",
+        );
+      }
+      prompt = JSON.stringify({
+        ...JSON.parse(shared),
+        invalidOutput: untrustedObservation({ value }),
+        repair: {
+          code: "INVALID_OUTPUT_SCHEMA",
+          detail: ajvDetail(relevantErrors(schema, value, validate.errors)),
+          recovery: "Return a corrected decision matching the output schema.",
+        },
+      });
+    }
+  }
+  private async invoke(
+    shared: string,
+    schema: object,
+    parts?: StructuredPromptParts,
+  ): Promise<unknown> {
     // Keep prior inputs and their ordered results without replaying another
     // provider's opaque blocks or repeating a turn brief after every call.
     let inputMessageId: string | undefined;
@@ -102,6 +130,13 @@ export class MuseAgents extends StructuredAgents {
       if (turn) inputMessageId = turn.inputMessageId;
       return {
         ...(startsTurn ? { turn } : {}),
+        ...(!startsTurn && turn?.requestOutcomes?.length
+          ? {
+            observations: untrustedObservation({
+              hostObservations: turn.requestOutcomes,
+            }),
+          }
+          : {}),
         completedToolCalls: results,
       };
     });
@@ -174,13 +209,6 @@ export class MuseAgents extends StructuredAgents {
         throw new Error("Muse did not exit successfully");
       }
       const terminal = parseMuseTerminal(result.stdout);
-      if (
-        batchMemberSchema(schema) &&
-        (!isRecord(terminal) ||
-          Object.keys(terminal).some((key) => key !== "calls"))
-      ) {
-        throw new Error("Invalid Muse decision batch schema");
-      }
       return terminal;
     } finally {
       await rm(root, { recursive: true, force: true });

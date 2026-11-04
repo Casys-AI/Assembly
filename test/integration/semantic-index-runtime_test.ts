@@ -29,8 +29,8 @@ async function fixture(root: string) {
     abi: "napi8",
     rustc: `rustc ${RUST_TOOLCHAIN_VERSION}`,
     napiCli: NAPI_CLI_VERSION,
-    oxigraph: "0.4.11",
-    spargebra: "0.3.5",
+    oxigraph: "0.5.12",
+    spargebra: "0.4.8",
     sourceSha256: "a".repeat(64),
     addonFile: "native/ase-semantic-index-napi.node",
     addonSha256: await hash(bytes),
@@ -54,7 +54,7 @@ Deno.test("semantic runtime verifies installed package without starting a native
     const runtime = await openNativeSemanticIndex({ packageDirectory: root });
     assert.equal(runtime.packageDirectory, root);
     assert.equal(runtime.provenance.version, "0.1.0");
-    assert.equal(runtime.provenance.oxigraph, "0.4.11");
+    assert.equal(runtime.provenance.oxigraph, "0.5.12");
     assert.equal(runtime.provenance.sourceDigest, build.sourceSha256);
     assert.match(runtime.provenance.digest, /^[0-9a-f]{64}$/);
     const again = await openNativeSemanticIndex({ packageDirectory: root });
@@ -86,8 +86,8 @@ Deno.test("semantic runtime rejects incompatible metadata and changed binary byt
         { platform: "unknown" },
         { target: "wrong" },
         { version: "0.2.0" },
-        { oxigraph: "0.5.0" },
-        { spargebra: "0.4.0" },
+        { oxigraph: "0.4.11" },
+        { spargebra: "0.3.5" },
         { abi: "napi9" },
         { sourceSha256: "invalid" },
         { addonFile: "index.js" },

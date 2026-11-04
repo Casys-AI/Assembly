@@ -94,11 +94,11 @@ async function verifyCases(workspace: {
           origin: "http://127.0.0.1:4311",
           "content-type": "application/json",
         },
-        body: JSON.stringify({ outcome: "done" }),
+        body: JSON.stringify({ outcome: "abandoned" }),
       }),
     );
     assert.equal(closed?.status, 200);
-    assert.equal((await closed!.json()).case.status, "closed-done");
+    assert.equal((await closed!.json()).case.status, "closed-abandoned");
     assert.equal(
       workspace.runtimeFor(primary.agentId)!.runtime.cases.cases[0].status,
       "waiting",
@@ -119,7 +119,7 @@ async function verifyCases(workspace: {
     assert.equal(
       events.at(-1)!.cases.find((entry) => entry.id === secondaryCase.id)!
         .status,
-      "closed-done",
+      "closed-abandoned",
     );
     const missing = await handle(
       new Request("http://127.0.0.1:4311/api/cases/missing"),

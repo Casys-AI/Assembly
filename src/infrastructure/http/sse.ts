@@ -27,14 +27,33 @@ export function broadcastSse(
  * when it opens and leaves when it closes.
  */
 export class SseAudience<Member> {
-  readonly #members = new Map<SseClient, Member>();
+  readonly #members = new Map<
+    SseClient,
+    { member: Member; disconnect(): void }
+  >();
 
-  join(client: SseClient, member: Member): void {
-    this.#members.set(client, member);
+  /** The transport can close its stream together with its timers and listeners. */
+  join(
+    client: SseClient,
+    member: Member,
+    disconnect: () => void = () => client.close(),
+  ): void {
+    this.#members.set(client, { member, disconnect });
   }
 
   leave(client: SseClient): void {
     this.#members.delete(client);
+  }
+
+  /** Close streams registered with this exact member identity. */
+  disconnect(member: Member): void {
+    for (const [client, registered] of this.#members) {
+      if (registered.member !== member) continue;
+      this.#members.delete(client);
+      try {
+        registered.disconnect();
+      } catch { /* The stream may already have disconnected. */ }
+    }
   }
 
   async send(
@@ -43,7 +62,7 @@ export class SseAudience<Member> {
     value: unknown,
   ): Promise<void> {
     const bytes = encode(event, value);
-    for (const [client, member] of [...this.#members]) {
+    for (const [client, { member }] of [...this.#members]) {
       let admitted = false;
       try {
         admitted = await admit(member);

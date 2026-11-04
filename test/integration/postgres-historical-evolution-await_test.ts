@@ -46,7 +46,7 @@ import {
   emptyNativeEvolutionAwait,
   evolutionCheckpoint,
 } from "../../src/application/work/runtime/evolution.ts";
-import { runtimeRevisionReference } from "../../src/application/work/runtime/execution.ts";
+import { runtimeRevisionReference } from "../../src/application/work/native-execution/contract.ts";
 import { AjvSchemaValidator } from "../../src/infrastructure/ajv-schema-validation.ts";
 import { executableFixture } from "../support/execution-fixture.ts";
 import {

@@ -5,9 +5,9 @@ import type {
   ElementRecord,
   ModelSnapshot,
 } from "../../../../../domain/model/records/snapshot.ts";
-import type { NativeLiteral } from "./execution-model.ts";
+import type { NativeLiteral } from "../../../../../domain/model/records/native-literal.ts";
 import type { NativeBehaviorContract } from "../../../../../domain/model/execution/native-contracts.ts";
-import type { ModelIdentity } from "../../../../../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../../../domain/shared-kernel/model-identity.ts";
 import { canonical } from "../../../../../domain/primitives/canonical-json.ts";
 import { compileNativeResultCondition } from "./result-condition.ts";
 import { validateWorkResultContractTemplate } from "../../../../../domain/work/policies/verified-effect-closure.ts";

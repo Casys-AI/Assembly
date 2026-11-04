@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { memoryUsage } from "node:process";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
-import { ToolkitModelBoardReader } from "../../src/adapters/model/projections/board-reader.ts";
+import { ToolkitModelBoardReader } from "../../src/adapters/out/sysml-toolkit/projections/board-reader.ts";
 import { ModelBoardService } from "../../src/application/model/projections/board.ts";
 import { createModelBoardHandler } from "../../src/adapters/in/http/model/board.ts";
 import type {

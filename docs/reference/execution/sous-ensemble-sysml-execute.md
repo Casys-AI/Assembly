@@ -30,9 +30,9 @@ informational digest of a reduced IR; it is not the model's identity.
 Sources:
 [compiler](../../../src/adapters/out/sysml-toolkit/compilation/compiler.ts),
 [normalizer](../../../src/adapters/out/sysml-toolkit/compilation/normalizer.ts),
-[materialization](../../../src/adapters/model/builds/materialization/artifact.ts),
+[materialization](../../../src/domain/model/value-objects/artifact.ts),
 [compiled contract](../../../src/domain/model/records/compiled-model.ts),
-[LangGraph adapter](../../../src/adapters/work/runtime/native-graph.ts).
+[LangGraph adapter](../../../src/adapters/out/native-execution/native-graph.ts).
 
 ## Flow coverage
 
@@ -57,7 +57,7 @@ JavaScript-style short-circuiting.
 Sources:
 [flow compilation and expression evaluation](../../../src/domain/model/execution/flow.ts),
 [flow tests](../../../src/domain/model/execution/flow_test.ts),
-[runtime graph](../../../src/adapters/work/runtime/native-graph.ts).
+[runtime graph](../../../src/adapters/out/native-execution/native-graph.ts).
 
 ## Bounded immutable consultation profile
 
@@ -71,7 +71,7 @@ Existing admitted pins retain their selected profile.
 
 Sources: [conversation template](../../../models/conversation.sysml),
 [profile compiler](../../../src/adapters/out/sysml-toolkit/compilation-policies/work/operator-flow.ts),
-[native graph](../../../src/adapters/work/runtime/native-graph.ts).
+[native graph](../../../src/adapters/out/native-execution/native-graph.ts).
 
 ## Workbench coupling
 
@@ -132,6 +132,6 @@ remain readable but are not the current runtime scheduler.
 Sources:
 [conversation turn](../../../src/application/work/conversation/turn.ts),
 [promotion flow](../../../src/application/work/candidates/promotion-flow.ts),
-[PostgreSQL runtime](../../../src/adapters/work/runtime/postgres.ts),
-[execution ledger](../../../src/adapters/work/runtime/postgres-ledger.ts),
+[PostgreSQL runtime](../../../src/adapters/out/native-execution/postgres.ts),
+[execution ledger](../../../src/adapters/out/native-execution/postgres-ledger.ts),
 [model adoption](../../../src/application/work/runtime/model-adoption.ts).

@@ -2,13 +2,11 @@ import assert from "node:assert/strict";
 import { caseTypesForModel } from "../../src/domain/work/records/case-types.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
-import { resolveModelEdits } from "../../src/adapters/model/sources/editing/tooling.ts";
+import { resolveModelEdits } from "../../src/domain/model/editing/source-index.ts";
 import type { ModelEdit } from "../../src/domain/model/editing/tooling.ts";
 import { CaseError } from "../../src/domain/work/errors/case.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");

@@ -1,7 +1,7 @@
 // deno-lint-ignore-file require-await -- Async store/compiler doubles return deterministic in-memory responses.
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 import {
   ModelBuildService,
   sha256HexOfBytes,

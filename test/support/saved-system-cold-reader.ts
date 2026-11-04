@@ -3,7 +3,7 @@ import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import { FileBuildVault } from "../../src/adapters/out/filesystem/build-vault.ts";
 import { ModelBuildService } from "../../src/application/model/builds/service.ts";
 import { createColdBuildStore } from "./cold-build-store.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 const [projectDir, repositoryId, vaultDirectory, version, serializedReference] =
   Deno.args;
 const vault = new FileBuildVault({ directory: vaultDirectory });

@@ -143,20 +143,27 @@ function events(
   initial: unknown,
   request: Request,
   additional: Array<{ name: string; value: unknown }> = [],
-  lifecycle?: { open(client: SseClient): void; close(client: SseClient): void },
+  lifecycle?: {
+    open(client: SseClient, disconnect: () => void): void;
+    close(client: SseClient): void;
+  },
 ): Response {
   let controller: ReadableStreamDefaultController<Uint8Array>;
   let timer: ReturnType<typeof setInterval>;
   const cleanup = () => {
     clearInterval(timer);
+    request.signal.removeEventListener("abort", cleanup);
     set.delete(controller);
     lifecycle?.close(controller);
+  };
+  const disconnect = () => {
+    cleanup();
+    controller.close();
   };
   const stream = new ReadableStream<Uint8Array>({
     start(c) {
       controller = c;
       set.add(c);
-      lifecycle?.open(c);
       c.enqueue(
         encoder.encode(`event: ${name}\ndata: ${JSON.stringify(initial)}\n\n`),
       );
@@ -175,6 +182,7 @@ function events(
         }
       }, 15000);
       request.signal.addEventListener("abort", cleanup, { once: true });
+      lifecycle?.open(c, disconnect);
     },
     cancel: cleanup,
   });
@@ -462,7 +470,8 @@ export function createHttpApp(
       }, ...modelVersionInitial],
       audience && member
         ? {
-          open: (client) => audience.audience.join(client, member),
+          open: (client, disconnect) =>
+            audience.audience.join(client, member, disconnect),
           close: (client) => audience.audience.leave(client),
         }
         : undefined,

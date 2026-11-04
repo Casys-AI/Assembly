@@ -8,8 +8,8 @@ import { KvModelBuildStore } from "../../src/adapters/out/deno-kv/kv-store.ts";
 import {
   materialize,
   sha256,
-} from "../../src/adapters/model/builds/materialization/artifact.ts";
-import { storedBuildMaterializer } from "../../src/adapters/model/builds/materialization/stored.ts";
+} from "../../src/domain/model/value-objects/artifact.ts";
+import { storedBuildMaterializer } from "../../src/adapters/out/sysml-toolkit/compilation/stored-materializer.ts";
 import { resolveRepositoryLayout } from "../../src/adapters/out/filesystem/layout.ts";
 import { inspectModelProject } from "../../src/adapters/out/git/project-inspection.ts";
 import {

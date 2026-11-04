@@ -216,9 +216,7 @@ export function SysmlPage(props: SysmlPageProps) {
             pinned={props.requestExecutionVersion === undefined
               ? Boolean(address.version)
               : listing.version !== props.requestExecutionVersion}
-            currentLabel={props.requestExecutionVersion === undefined
-              ? undefined
-              : "Request model"}
+            info={props.versionInfo}
             home={sysmlHref({ view: summary?.id })}
           >
             <span>SysML Toolkit {listing.list.toolkit}</span>

@@ -1,3 +1,4 @@
+import { ACCEPTED_CASE_CLOSURE } from "../support/case-closure.ts";
 import { unexpectedModelAuthoring } from "../support/model-authoring.ts";
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import { executableFixture } from "../support/execution-fixture.ts";
@@ -440,7 +441,7 @@ Deno.test("runtime separates Cases from chat, tags questions and traces, closes 
   );
   equal(runtime.snapshot.workBudget!.consumed, 2);
   f.clock("2026-10-24T04:00:00.000Z");
-  await runtime.closeCase(first.id, "done");
+  await runtime.closeCase(first.id, "done", ACCEPTED_CASE_CLOSURE);
   equal(runtime.cases.cases[0].closedAt, "2026-10-24T04:00:00.000Z");
   await turn(runtime, "Autre objectif");
   equal(runtime.snapshot.id, sessionId);
@@ -451,9 +452,12 @@ Deno.test("runtime separates Cases from chat, tags questions and traces, closes 
     f.records.get(first.id)!.events.filter((e) => e.kind === "reserve").length,
     2,
   );
-  await rejects(() => runtime.closeCase(first.id, "done"), {
-    code: "CASE_CLOSED",
-  });
+  await rejects(
+    () => runtime.closeCase(first.id, "done", ACCEPTED_CASE_CLOSURE),
+    {
+      code: "CASE_CLOSED",
+    },
+  );
 });
 
 Deno.test("parallel Requests isolate history, objective, replies, budgets and closure across reload", async () => {
@@ -501,8 +505,9 @@ Deno.test("parallel Requests isolate history, objective, replies, budgets and cl
     "Suite B",
   ]);
   equal(runtime.snapshot.workBudget?.consumed, 2);
-  f.answer({ kind: "reply", text: "Terminé A", caseClosure: "done" });
+  f.answer({ kind: "reply", text: "Terminé A" });
   await turn(runtime, "Fin A", a);
+  await runtime.closeCase(a, "done", ACCEPTED_CASE_CLOSURE);
   equal(
     runtime.cases.cases.find((record) => record.id === a)?.status,
     "closed-done",
@@ -568,7 +573,7 @@ Deno.test("a busy runtime refuses another Request and new conversations without 
   );
 });
 
-Deno.test("agent closure is explicit and preserves birth pin across a separate explicit model adoption", async () => {
+Deno.test("human closure preserves birth pin across a separate explicit model adoption", async () => {
   const f = runtimeFixture();
   const runtime = f.create();
   await runtime.initialize();
@@ -587,8 +592,13 @@ Deno.test("agent closure is explicit and preserves birth pin across a separate e
     expectedVersion: "source-2",
   });
   deepStrictEqual(runtime.cases.cases[0].modelPin, birth);
-  f.answer({ kind: "reply", text: "Terminé", caseClosure: "done" });
+  f.answer({ kind: "reply", text: "Terminé" });
   await turn(runtime, "Fin", runtime.cases.cases[0].id);
+  await runtime.closeCase(
+    runtime.cases.cases[0].id,
+    "done",
+    ACCEPTED_CASE_CLOSURE,
+  );
   equal(runtime.cases.cases[0].status, "closed-done");
   f.answer({ kind: "reply", text: "Abandonné", caseClosure: "abandoned" });
   await turn(runtime);
@@ -661,7 +671,7 @@ Deno.test("adopting a smaller budget between Cases never rewrites the closed Cas
   await turn(runtime);
   await turn(runtime, "Suite", runtime.cases.cases[0].id);
   const first = runtime.cases.cases[0];
-  await runtime.closeCase(first.id, "done");
+  await runtime.closeCase(first.id, "done", ACCEPTED_CASE_CLOSURE);
   const ledger = structuredClone(f.records.get(first.budget!.scopeId));
   f.model.workBudgetPolicy!.limit = 1;
   f.model.workBudgetPolicy!.revision = 2;
@@ -793,13 +803,16 @@ Deno.test("runtime closure awaits the shared Case reservation and leaves the Cas
       return await action();
     },
   });
-  await rejects(() => runtime.closeCase(record.id, "done"), {
-    code: "CASE_BUSY",
-  });
+  await rejects(
+    () => runtime.closeCase(record.id, "done", ACCEPTED_CASE_CLOSURE),
+    {
+      code: "CASE_BUSY",
+    },
+  );
   equal(runtime.cases.cases[0].status, "waiting");
   equal(runtime.cases.cases[0].closedAt, undefined);
   specialistBusy = false;
-  const closure = runtime.closeCase(record.id, "done");
+  const closure = runtime.closeCase(record.id, "done", ACCEPTED_CASE_CLOSURE);
   await entered.promise;
   equal(runtime.cases.cases[0].closedAt, undefined);
   released.resolve();

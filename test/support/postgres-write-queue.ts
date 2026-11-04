@@ -1,7 +1,7 @@
-import { PostgresModelWriteQueue } from "../../src/adapters/model/repository/writing/postgres-write-queue.ts";
+import { PostgresModelWriteQueue } from "../../src/adapters/out/postgres/model-write-queue.ts";
 import { repositoryWriterLock } from "../../src/adapters/out/git/writer-lock.ts";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 import type {
   SettleOutcome,
   WriteLease,

@@ -30,7 +30,7 @@ export function requestOpeningReceipt(
     return undefined;
   }
   const href = `/cases?${new URLSearchParams({ case: opening.caseId })}`;
-  return `[Request n° ${opening.caseNumber}](${href}) ouverte : ${decision.objective}`;
+  return `[Request ${opening.caseNumber}](${href}) opened: ${decision.objective}`;
 }
 
 /** The recorded terminal command ends this response. Keep explicit receipts

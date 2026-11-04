@@ -54,7 +54,16 @@ export function revealTop(blob: Revealable | null, line: number | null) {
  * window stays put while the lines of it are clicked and cleared.
  */
 export function FileBlob(
-  { entry, text, line, version, sourceVersion, onRetry, now, actions }: {
+  {
+    entry,
+    text,
+    line,
+    version,
+    sourceVersion,
+    onRetry,
+    now,
+    actions,
+  }: {
     entry: ModelFileLastChange;
     text: FileText;
     /** The line the address points at, counted from 1. */

@@ -3,12 +3,41 @@ import {
   createDevelopmentSessionIssuer,
   createSpaceSessionHandler,
   SPACE_SESSION_COOKIE,
+  spaceHttpError,
+  spaceSessionSecret,
 } from "./space-session.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
 
 const servedOrigin = "http://127.0.0.1:4399";
 const policy = { servedOrigin, environment: "development" as const };
 const expiresAt = "2099-01-01T00:00:00.000Z";
 const sessionSecret = "a".repeat(64);
+Deno.test("missing and malformed session cookies retain 403 with an explicit session marker", async () => {
+  for (
+    const cookie of [
+      "",
+      `${SPACE_SESSION_COOKIE}=invalid`,
+      `${SPACE_SESSION_COOKIE}=${sessionSecret}; ${SPACE_SESSION_COOKIE}=${sessionSecret}`,
+    ]
+  ) {
+    let failure: unknown;
+    try {
+      spaceSessionSecret(new Request(servedOrigin, { headers: { cookie } }));
+    } catch (error) {
+      failure = error;
+    }
+    const response = spaceHttpError(failure);
+    assert.equal(response.status, 403);
+    const body = await response.json();
+    assert.equal(body.code, "FORBIDDEN");
+    assert.deepEqual(body.context, { session: "invalid" });
+  }
+  const refusal = spaceHttpError(
+    new RequestSpaceError("FORBIDDEN", "Not owned"),
+  );
+  assert.equal(refusal.status, 403);
+  assert.equal((await refusal.json()).context, undefined);
+});
 Deno.test("development issuer resolves modeled owner and exchanges its real capability", async () => {
   const calls: string[] = [];
   const issue = createDevelopmentSessionIssuer({

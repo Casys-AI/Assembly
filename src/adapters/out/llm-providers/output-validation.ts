@@ -148,7 +148,11 @@ export const decisionSchema = {
     object({
       kind: { const: "invoke_behavior" },
       text: string,
-      behaviorId: string,
+      behaviorId: {
+        ...string,
+        description:
+          "Use exactly behaviors[].id from the pin card, never its name.",
+      },
       inputJson: { ...string, maxLength: 65_536 },
     }),
     object({
@@ -649,9 +653,14 @@ export const reviewSchema = object({
   verdict: { enum: ["approve", "refuse"] },
   reason: string,
 });
-const ajv = new Ajv({ strict: true });
-export const validateDecision = ajv.compile<ChatDecision>(decisionSchema);
-export const validateReview = ajv.compile<ReviewDecision>(reviewSchema);
+/** Dynamic context schemas belong to one invocation, not a shared Ajv cache. */
+export function compileOutputSchema<T = unknown>(schema: object) {
+  return new Ajv({ strict: true }).compile<T>(schema);
+}
+export const validateDecision = compileOutputSchema<ChatDecision>(
+  decisionSchema,
+);
+export const validateReview = compileOutputSchema<ReviewDecision>(reviewSchema);
 
 type ValidationError = NonNullable<typeof validateDecision.errors>[number];
 

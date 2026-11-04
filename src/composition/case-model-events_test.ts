@@ -10,7 +10,9 @@ import {
   isCaseModelVersion,
 } from "../application/work/request-spaces/case-model-notifications.ts";
 import type { SpaceController } from "../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../domain/work/request-spaces.ts";
 import type { SseClient } from "../infrastructure/http/sse.ts";
+import { REQUEST_CONVERSATIONS_INVALIDATED } from "../application/work/request-spaces/conversation-notifications.ts";
 
 const a = `commit:${"a".repeat(40)}`;
 const b = `commit:${"b".repeat(40)}`;
@@ -23,6 +25,7 @@ Deno.test("a Case's model change reaches its owner's streams once, and no foreig
   const revoked = new Set<string>();
   const events = createCaseModelEvents({
     versions: (caseId) => Promise.resolve(versions[caseId] ?? null),
+    conversationOwner: () => Promise.resolve(null),
     controls: {
       authenticateSession: (value) =>
         Promise.resolve({
@@ -101,6 +104,98 @@ Deno.test("a Case's model change reaches its owner's streams once, and no foreig
   deepStrictEqual(frames.get("revoked"), []);
   deepStrictEqual(frames.get("anonymous"), []);
   for (const frame of told) equal(isCaseModelVersion(frame), true);
+});
+
+Deno.test("Request conversation advice reaches only the current owner's valid streams and stops after close", async () => {
+  const revoked = new Set<string>();
+  const unavailable = new Set<string>();
+  const events = createCaseModelEvents({
+    versions: () => Promise.resolve(null),
+    conversationOwner: (caseId) =>
+      Promise.resolve(
+        caseId === "case-A" ? "a" : caseId === "case-B" ? "b" : null,
+      ),
+    controls: {
+      authenticateSession: (value) =>
+        Promise.resolve(
+          { ownerId: value[0], sessionId: value } as unknown as SpaceController,
+        ),
+      revalidate: (controller) => {
+        if (controller.kind === "host") return Promise.resolve();
+        if (revoked.has(controller.sessionId)) {
+          return Promise.reject(
+            new RequestSpaceError("FORBIDDEN", "revoked", {
+              context: { session: "invalid" },
+            }),
+          );
+        }
+        return unavailable.has(controller.sessionId)
+          ? Promise.reject(new Error("temporary storage failure"))
+          : Promise.resolve();
+      },
+    },
+  });
+  const frames = new Map<string, unknown[]>();
+  const clients = new Map<string, SseClient>();
+  const sessions = new Map<string, string>();
+  const closed = new Map<string, number>();
+  for (
+    const [index, name] of ["owner", "foreign", "revoked", "transient"]
+      .entries()
+  ) {
+    const session = secret(name === "foreign" ? "b" : "a").slice(0, 63) +
+      String(index);
+    sessions.set(name, session);
+    const member = await events.eventAudience.identify(
+      new Request("http://127.0.0.1/api/events", {
+        headers: { cookie: `${SPACE_SESSION_COOKIE}=${session}` },
+      }),
+    );
+    const received: unknown[] = [];
+    frames.set(name, received);
+    const client = {
+      enqueue(bytes: Uint8Array) {
+        const [event, data] = new TextDecoder().decode(bytes).split("\n");
+        equal(event, `event: ${REQUEST_CONVERSATIONS_INVALIDATED}`);
+        received.push(JSON.parse(data.slice("data: ".length)));
+      },
+      close() {
+        closed.set(name, (closed.get(name) ?? 0) + 1);
+      },
+    } as unknown as SseClient;
+    clients.set(name, client);
+    events.eventAudience.audience.join(client, member);
+    if (name === "revoked") revoked.add(session);
+    if (name === "transient") unavailable.add(session);
+  }
+  await events.observeConversations("case-A");
+  await events.observeConversations("missing");
+  deepStrictEqual(frames.get("owner"), [{
+    schemaVersion: 1,
+    caseId: "case-A",
+  }]);
+  deepStrictEqual(frames.get("foreign"), []);
+  deepStrictEqual(frames.get("revoked"), []);
+  deepStrictEqual(frames.get("transient"), []);
+  equal(closed.get("revoked"), 1);
+  equal(closed.get("owner") ?? 0, 0);
+  equal(closed.get("foreign") ?? 0, 0);
+  equal(closed.get("transient") ?? 0, 0);
+  await events.observeConversations("case-B");
+  deepStrictEqual(frames.get("foreign"), [{
+    schemaVersion: 1,
+    caseId: "case-B",
+  }]);
+  unavailable.delete(sessions.get("transient")!);
+  await events.observeConversations("case-A");
+  equal(frames.get("transient")!.length, 1);
+  equal(frames.get("owner")!.length, 2);
+  equal(closed.get("revoked"), 1);
+  events.eventAudience.audience.leave(clients.get("owner")!);
+  await events.observeConversations("case-A");
+  await events.close();
+  await events.observeConversations("case-A");
+  equal(frames.get("owner")!.length, 2);
 });
 
 Deno.test("only a successful Request write naming its Case observes that Case again", async () => {

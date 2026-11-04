@@ -1,3 +1,5 @@
+import { isPrimaryDesigner } from "../../../../../domain/model/records/primary-designer.ts";
+import type { NativeLiteral } from "../../../../../domain/model/records/native-literal.ts";
 import {
   type ModelRightField,
   ModelRightsError,
@@ -34,25 +36,13 @@ import {
   type FlowProjection,
 } from "../../../../../domain/model/execution/flow.ts";
 import { validateNetworkScope } from "../../../../../domain/governance/policies/network-policy.ts";
-import { type ModelIdentity } from "../../../../../domain/work/dialogue.ts";
-import {
-  type SystemConfiguration,
-} from "../../../../../domain/governance/records/system-configuration.ts";
+import { type ModelIdentity } from "../../../../../domain/shared-kernel/model-identity.ts";
+import { type SystemConfiguration } from "../../../../../domain/governance/records/system-configuration.ts";
 import {
   TOOL_KINDS,
   type ToolKind,
 } from "../../../../../domain/shared-kernel/tool-kind.ts";
 
-export interface NativeLiteral {
-  owner: string;
-  name: string;
-  attributeId: string;
-  literalId: string;
-  kind: string;
-  value: string;
-  typeIds: string[];
-  typeNames: string[];
-}
 export interface NativeMandate {
   nativeId: string;
   holderNativeId: string;
@@ -100,22 +90,6 @@ export interface NativeAuthority {
   capabilities: NativeCapability[];
   contracts: ExecutableModel["contracts"];
   sourceIds: string[];
-}
-/** The modeled primary contact; the default designer when no system declares one. */
-export function isPrimaryDesigner(
-  native: Pick<NativeAuthority, "operator">,
-  systemQualifiedName: string | undefined,
-  literals: readonly NativeLiteral[],
-): boolean {
-  return native.operator?.primary ??
-    (sameProductName(
-      systemQualifiedName ?? "ASELiveBuilder::liveBuilder",
-      "AssemblyLiveBuilder::liveBuilder",
-    ) &&
-      !literals.some((l) =>
-        l.name === "primaryContact" && l.kind === "LiteralBoolean" &&
-        l.value === "true"
-      ));
 }
 const rights = [
   "mayProposeReadWebPage",

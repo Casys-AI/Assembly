@@ -1,5 +1,9 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
+import { ACCEPTED_CASE_CLOSURE } from "../support/case-closure.ts";
 /** Scripted production runtime, Git, Toolkit and PostgreSQL. No provider or network. */
 import assert from "node:assert/strict";
+import { type LogRecord, reset } from "@logtape/logtape";
+import { configureTechnicalLogging } from "../../src/infrastructure/logging.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import { SystemRuntime } from "../../src/application/work/runtime/system.ts";
 import { openPostgresRuntimeFixture } from "../support/postgres-runtime-fixture.ts";
@@ -9,20 +13,19 @@ import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilatio
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import {
-  SourceModel,
+  sourceCompilation,
+  sourceEvolutionCompilation,
   validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
-import { NativeModelSourceAuthorization } from "../../src/adapters/governance/model-access/source-authorization.ts";
-import { compareModelSources } from "../../src/adapters/model/sources/changes/diff.ts";
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { NativeModelSourceAuthorization } from "../../src/application/governance/model-access/source-authorization.ts";
+import { compareModelSources } from "../../src/application/model/revisions/source-diff.ts";
 import { createConversationsHandler } from "../../src/adapters/in/http/work/conversations.ts";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
 import type {
   ChatContext,
   ChatDecision,
 } from "../../src/domain/work/dialogue.ts";
-import type {
-  PendingChange,
-} from "../../src/domain/governance/records/pending-change.ts";
+import type { PendingChange } from "../../src/domain/governance/records/pending-change.ts";
 import {
   type BehaviorInvocationPort,
   BehaviorInvocationRegistry,
@@ -39,10 +42,9 @@ import {
   isTeamOperatorSpec,
   OperatorAuthorityError,
 } from "../../src/domain/governance/operator-authority.ts";
-import {
-  operatorAuthorityRequests,
-  requestOperatorSystemName,
-} from "../../src/adapters/governance/authority/operator/writer.ts";
+import { operatorAuthorityRequests } from "../../src/composition/source-model-services.ts";
+import { requestOperatorSystemName } from "../../src/application/governance/operator-authority-values.ts";
+import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
 
 Deno.test({
   name:
@@ -56,10 +58,14 @@ Deno.test({
       const repositoryOptions = {
         projectDir: directory,
         compiler: new ToolkitCompiler({ packageDir }),
-        sourceAuthorization: new NativeModelSourceAuthorization(projectId),
+        sourceAuthorization: new NativeModelSourceAuthorization(
+          projectId,
+          sourceCompilation,
+          sourceEvolutionCompilation,
+        ),
       };
       const repository = await GitModelRepository.open(repositoryOptions);
-      const model = new SourceModel({
+      const model = createSourceModel({
         repository,
         projectId,
         tooling: new SysmlToolkitAdapter({ packageDir }),
@@ -177,7 +183,7 @@ Deno.test({
         } bytes of headroom (${bytes} bytes used)`,
       );
       const reopened = await GitModelRepository.open(repositoryOptions);
-      const recovered = await new SourceModel({
+      const recovered = await createSourceModel({
         repository: reopened,
         projectId,
         tooling: new SysmlToolkitAdapter({ packageDir }),
@@ -254,7 +260,6 @@ for (const verdict of ["approve", "refuse"] as const) {
                   kind: "reply",
                   text: "Request completed with the admitted scope. " +
                     "y".repeat(2000),
-                  caseClosure: "done",
                 },
               ]);
             }
@@ -349,6 +354,8 @@ for (const verdict of ["approve", "refuse"] as const) {
           );
           assert(response);
           assert.equal(response.status, 202, await response.text());
+          await postgres!.idle(runtime);
+          assert.equal(runtime.snapshot.error, undefined);
         };
         const grant: ChatDecision = {
           kind: "propose_mandate_change",
@@ -384,6 +391,18 @@ for (const verdict of ["approve", "refuse"] as const) {
           { kind: "reply", text: "Request opened." },
           { kind: "reply", text: "Other conversation." },
         ]);
+        const executionPin = structuredClone(
+          primary.snapshot.executionModel!.version,
+        );
+        const beforePreview = await repository.current();
+        const previewBase = await repository.publishSystemSources(
+          {
+            ...beforePreview.sources,
+            "unrelated.sysml": "package Unrelated { part value; }",
+          },
+          beforePreview.version,
+          "unrelated qualification before preview",
+        );
         const parentCaseId = await conversations.submitHuman({
           agentId: primaryId,
           expectedRevision: primary.snapshot.revision,
@@ -397,6 +416,16 @@ for (const verdict of ["approve", "refuse"] as const) {
         assert.equal(pendingGrant.caseId, parentCaseId);
         assert.equal(pendingGrant.requestedBy, primaryId);
         assert(pendingGrant.diff);
+        assert.deepEqual(
+          primary.snapshot.executionModel!.version,
+          executionPin,
+        );
+        assert.notEqual(previewBase.version, executionPin.repositoryVersion);
+        assert.equal(
+          pendingGrant.diff.base.repositoryVersion,
+          previewBase.version,
+        );
+        assert.equal(pendingGrant.diff.base.modelDigest, executionPin.digest);
         assert(pendingGrant.diff.patch.includes("modelEditPolicy"));
         assert.equal(
           primary.snapshot.executionModel!.modelEditPolicy,
@@ -473,25 +502,29 @@ for (const verdict of ["approve", "refuse"] as const) {
             error.code === "PUBLICATION_NOT_APPLICABLE",
         );
         assert.equal((await repository.current()).version, beforeGrant.version);
-        await repository.publishSystemSources(
-          {
-            ...beforeGrant.sources,
-            "unrelated.sysml": "package Unrelated { part value; }",
-          },
-          beforeGrant.version,
-          "unrelated qualification",
-        );
         await decide(primary, pendingGrant);
         assert.deepEqual(
           primary.snapshot.executionModel!.modelEditPolicy!.operations,
           ["insert-member"],
         );
         const afterGrant = await repository.current();
+        const publication = await repository.findPublication(pendingGrant.id);
+        assert(publication?.receipt);
+        assert(publication.receipt.type !== "candidate-activation");
+        assert.deepEqual(publication.receipt.adoptedPin, {
+          digest: executionPin.digest,
+          repositoryVersion: executionPin.repositoryVersion,
+        });
         assert.deepEqual(
-          compareModelSources({
-            ...beforeGrant.sources,
-            "unrelated.sysml": "package Unrelated { part value; }",
-          }, afterGrant.sources),
+          publication.receipt.approvedSourceBase,
+          pendingGrant.diff.base,
+        );
+        assert.equal(
+          afterGrant.sources["unrelated.sysml"],
+          previewBase.sources["unrelated.sysml"],
+        );
+        assert.deepEqual(
+          compareModelSources(beforeGrant.sources, afterGrant.sources),
           {
             patch: pendingGrant.diff.patch,
             files: pendingGrant.diff.files,
@@ -527,7 +560,28 @@ for (const verdict of ["approve", "refuse"] as const) {
         )!.configuration!.changes.find((entry) =>
           entry.id === pendingCreation.id
         )!;
-        assert.equal(agentChange.status, "approved");
+        const creationPublication = await repository.findPublication(
+          pendingCreation.id,
+        );
+        assert(creationPublication);
+        assert.equal(agentChange.status, "pending");
+        assert.equal(agentChange.caseId, parentCaseId);
+        assert.equal(
+          agentChange.publishedCommit,
+          creationPublication.revision.version,
+        );
+        const completedCreation = primary.snapshot.configuration!.changes.find(
+          (entry) => entry.id === pendingCreation.id,
+        )!;
+        assert.equal(completedCreation.status, "approved");
+        assert.equal(
+          completedCreation.publishedCommit,
+          creationPublication.revision.version,
+        );
+        assert.equal(
+          primary.snapshot.changeDecisionContinuations?.[pendingCreation.id],
+          "resumed",
+        );
         assert(agentChange.diff!.files.length);
         assert(!("patch" in agentChange.diff!));
         assert(!("operator" in agentChange));
@@ -556,7 +610,8 @@ for (const verdict of ["approve", "refuse"] as const) {
         assert.equal(escalation.caseId, child.id);
         assert.equal(escalation.requestedBy, peerView.agentId);
         const notice = primary.snapshot.messages.find((entry) =>
-          entry.operatorNotice?.kind === "authority-escalation"
+          entry.operatorNotice?.kind === "authority-escalation" &&
+          entry.operatorNotice.changeId === escalation.id
         )!;
         assert.equal(notice.caseId, parentCaseId);
         assert(notice.operatorNotice?.kind === "authority-escalation");
@@ -608,12 +663,14 @@ for (const verdict of ["approve", "refuse"] as const) {
         });
         await postgres!.idle(peer);
         assert.equal(peer.snapshot.error, undefined);
+        await peer.closeCase(child.id, "done", ACCEPTED_CASE_CLOSURE);
         assert.equal(
           peer.cases.cases.find((entry) => entry.id === child.id)!.status,
           "closed-done",
         );
         const receipt = primary.snapshot.messages.find((entry) =>
-          entry.operatorNotice?.kind === "request-completed"
+          entry.operatorNotice?.kind === "request-completed" &&
+          entry.operatorNotice.caseId === child.id
         )!;
         assert.equal(receipt.caseId, parentCaseId);
         assert.deepEqual(receipt.operatorNotice, {
@@ -684,6 +741,14 @@ for (const verdict of ["approve", "refuse"] as const) {
               projectId,
               scope,
             );
+            assert.deepEqual(
+              (prospective.initialTools ?? []).map(({ id, draft }) => ({
+                id,
+                code: draft.code,
+              })),
+              runtime === primary ? [{ id: "adopted-reader", code }] : [],
+              "the source selection belongs exactly to Main's local catalog",
+            );
             const command = {
               agentId: prospective.identity.builderId,
               expectedDigest: prospective.version.digest,
@@ -693,14 +758,32 @@ for (const verdict of ["approve", "refuse"] as const) {
               command,
               () => runtime.adoptModelVersion(command),
             );
+            assert.equal(
+              runtime.snapshot.executionModel!.version.digest,
+              prospective.version.digest,
+            );
+            assert.equal(
+              runtime.snapshot.executionModel!.version.repositoryVersion,
+              changed.version,
+            );
           }
+          // Adoption accepts durable preparation; inspect its result only after
+          // the fixture worker has settled the exact selected seed.
+          await postgres.idle(primary);
+          assert.equal(primary.snapshot.error, undefined);
           assert(
             primary.snapshot.candidates.some((candidate) =>
               candidate.initialToolSeed?.id === "adopted-reader" &&
               candidate.stage === "awaiting-admission"
             ),
-            "adoption prepares the newly selected tool immediately",
+            "adoption enqueues preparation of the newly selected tool",
           );
+          const prepared = primary.snapshot.candidates.filter((candidate) =>
+            candidate.initialToolSeed?.id === "adopted-reader"
+          );
+          assert.equal(prepared.length, 1);
+          const candidate = prepared[0]!;
+          assert.equal(candidate.code, code);
           const callsBeforeRestart = contexts.length;
           await workspace.close();
           workspace = await openOperatorWorkspace({
@@ -718,6 +801,7 @@ for (const verdict of ["approve", "refuse"] as const) {
             workBudget,
           });
           await postgres.start(workspace);
+          await postgres.idle(primary);
           assert.equal(
             contexts.length,
             callsBeforeRestart,
@@ -729,13 +813,65 @@ for (const verdict of ["approve", "refuse"] as const) {
             ) => record.openedFrom.changeId === pendingCreation.id).length,
             1,
           );
+          const retained = primary.snapshot.candidates.filter((entry) =>
+            entry.initialToolSeed?.id === "adopted-reader"
+          );
+          assert.equal(retained.length, 1);
+          assert.equal(retained[0]!.id, candidate.id);
+          assert.equal(retained[0]!.digest, candidate.digest);
+          assert.equal(retained[0]!.stage, "awaiting-admission");
+          assert.deepEqual(
+            retained[0]!.initialToolSeed,
+            candidate.initialToolSeed,
+          );
+
+          // Settle this exact admission before changing its source selection.
+          // A pending native promotion must continue to block model adoption.
+          await primary.decideCandidate({
+            candidateId: candidate.id,
+            candidateDigest: candidate.digest,
+            verdict: "refuse",
+            reason: "Decline the selected reader before removing its source",
+          });
+          await postgres.idle(primary);
+          assert.equal(primary.snapshot.error, undefined);
+          assert.equal(
+            primary.snapshot.candidates.find((entry) =>
+              entry.id === candidate.id
+            )!.stage,
+            "refused",
+          );
+          assert.equal(contexts.length, callsBeforeRestart);
 
           // Remove the created operator after its first Request, then adopt the removal.
-          const removed = await repository.publishSystemSources(
-            afterGrant.sources,
-            (await repository.current()).version,
-            "remove the completed Request operator",
+          // Only the removed root's owner covers this effect (invariant 3):
+          // the fixture default exercises the primary root, so admit the
+          // removal with the peer's own exercise.
+          const beforeRemoval = await repository.current();
+          const removalAuthority = exerciseOwnerAuthority(
+            await validateSourceExecutable(
+              beforeRemoval,
+              projectId,
+              peerScope,
+            ),
+            "model-revision",
           );
+          const removalProposal = await repository.propose({
+            baseVersion: beforeRemoval.version,
+            sources: afterGrant.sources,
+            author: "local-owner",
+            reason: "remove the completed Request operator",
+            authorization: {
+              kind: "local-owner",
+              authorityExercise: removalAuthority,
+            },
+          });
+          const removed = await repository.accept({
+            id: removalProposal.id,
+            expectedVersion: beforeRemoval.version,
+            author: "local-owner",
+            decisionAuthorityExercise: removalAuthority,
+          });
           const withoutPeer = await validateSourceExecutable(
             removed,
             projectId,
@@ -750,10 +886,14 @@ for (const verdict of ["approve", "refuse"] as const) {
             () => primary.adoptModelVersion(command),
           );
           await workspace.close();
-          const errors: unknown[][] = [];
-          const log = console.error;
+          const errors: LogRecord[] = [];
           try {
-            console.error = (...args) => errors.push(args);
+            await configureTechnicalLogging({
+              level: "error",
+              sink: (record) => {
+                errors.push(record);
+              },
+            });
             workspace = await openOperatorWorkspace({
               ...postgres.workspacePorts,
               createSourceModel: postgres.backend.createSourceModel,
@@ -768,18 +908,23 @@ for (const verdict of ["approve", "refuse"] as const) {
               caseNumbers,
               workBudget,
             });
+            await postgres.start(workspace);
+            await postgres.idle(primary);
+            assert.equal(contexts.length, callsBeforeRestart);
+            assert(
+              errors.some((record) =>
+                record.category.length === 1 &&
+                record.category[0] === "scheduler" &&
+                record.level === "error" &&
+                record.properties.code === "OPERATOR_OPEN_FAILED" &&
+                (record.properties.context as { changeId?: string } | undefined)
+                    ?.changeId === pendingCreation.id
+              ),
+              "a historical missing operator is logged without aborting startup",
+            );
           } finally {
-            console.error = log;
+            await reset();
           }
-          await postgres.start(workspace);
-          assert.equal(contexts.length, callsBeforeRestart);
-          assert(
-            errors.some((args) =>
-              args[0] === "OPERATOR_OPEN_FAILED" &&
-              (args[2] as { changeId: string }).changeId === pendingCreation.id
-            ),
-            "a historical missing operator is logged without aborting startup",
-          );
         }
       } finally {
         await postgres?.close();

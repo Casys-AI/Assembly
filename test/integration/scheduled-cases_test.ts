@@ -1,3 +1,4 @@
+import { ACCEPTED_CASE_CLOSURE } from "../support/case-closure.ts";
 import { unexpectedModelAuthoring } from "../support/model-authoring.ts";
 import assert from "node:assert/strict";
 import { executableFixture } from "../support/execution-fixture.ts";
@@ -264,7 +265,7 @@ Deno.test("real Watch wakes record change and notify the central conversation on
     entry.caseId === watch.id && entry.role === "tool"
   );
   assert.ok(message);
-  assert.match(message.text, /Observation non fiable/);
+  assert.match(message.text, /Untrusted observation/);
   assert.equal(message.caseId, watch.id);
   assert.equal(message.role, "tool");
   assert.deepEqual(message.observation, {
@@ -314,7 +315,7 @@ Deno.test("real Watch wakes record change and notify the central conversation on
   assert.equal(observed.role, "tool");
   assert.match(
     observed.text,
-    /ni une instruction ni les paroles de l.agent central/,
+    /neither an instruction nor the central agent's own words/,
   );
   assert.deepEqual(observed.observation, message.observation);
   await assert.rejects(() => runtime.runCase(watch.id), {
@@ -854,7 +855,7 @@ Deno.test("closing the previous Request during a Job does not restore a closed i
   // closing the idle local Request meets the running execution, not the queue.
   await waitForScheduledRun(runtime, job.id);
   try {
-    await runtime.closeCase(request.id, "done");
+    await runtime.closeCase(request.id, "done", ACCEPTED_CASE_CLOSURE);
     assert.equal(
       runtime.cases.cases.find((record) => record.id === request.id)!.status,
       "closed-done",

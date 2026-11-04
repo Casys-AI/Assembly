@@ -1,3 +1,4 @@
+import { REQUEST_OUTCOME_MESSAGE_PREFIX } from "./host-observations.ts";
 import { assertRequestNetworkChange } from "../../../domain/governance/records/request-network-change.ts";
 import {
   assertRequestCreationPolicyChange,
@@ -15,7 +16,7 @@ import {
   parseRequestNetworkRefusalContinuation,
   parseRequestTeamContinuation,
   parseRequestTeamRefusalContinuation,
-} from "../runtime/execution.ts";
+} from "../native-execution/contract.ts";
 
 /** What a Branch Operator reads, as a fact, once its network request is
  * settled: the host's own record of the decision, never a free-text report. */
@@ -237,7 +238,7 @@ export function recordRequestNetworkOutcome(
       teamAdoption === undefined && teamRefusal === undefined
   ) return;
   const team = teamAdoption !== undefined || teamRefusal !== undefined;
-  const id = `request-network-outcome:${delivery.id}`;
+  const id = `${REQUEST_OUTCOME_MESSAGE_PREFIX}${delivery.id}`;
   if (state.messages.some((message) => message.id === id)) return;
   const approved = networkAdoption !== undefined ||
     teamAdoption !== undefined;

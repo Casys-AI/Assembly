@@ -1,3 +1,4 @@
+import { CONTRIBUTION_OBSERVATION_MESSAGE_PREFIX } from "./host-observations.ts";
 import {
   assertBudgetResumeAdmission,
   bindBudgetResume,
@@ -18,7 +19,7 @@ import {
   parseRequestTeamContinuation,
   parseRequestTeamRefusalContinuation,
   runtimeRevisionReference,
-} from "../runtime/execution.ts";
+} from "../native-execution/contract.ts";
 import {
   evolutionHumanSettlement,
   type EvolutionInputSettlement,
@@ -195,7 +196,7 @@ export async function submitWork(
  * ceiling continuation is admitted. An independent invocation is unaffected. */
 function assertNoLiveBudgetWait(
   state: SystemRuntimeState,
-  identity: import("../runtime/execution.ts").NativeExecutionIdentity,
+  identity: import("../native-execution/contract.ts").NativeExecutionIdentity,
   snapshots: readonly NativeExecutionSnapshot[],
 ): void {
   const nativeWait = snapshots.some((snapshot) =>
@@ -621,7 +622,7 @@ export async function processAcceptedContribution(
         pending.completionId = payload.sourceCompletionId;
       }
       if (payload.observation !== undefined) {
-        const id = `contribution-observation:${delivery.id}`;
+        const id = `${CONTRIBUTION_OBSERVATION_MESSAGE_PREFIX}${delivery.id}`;
         if (!state.messages.some((message) => message.id === id)) {
           state.messages.push({
             id,
@@ -657,6 +658,7 @@ export async function processAcceptedContribution(
     if (!state.events.some((event) => event.id === id)) {
       state.events.push({
         ...makeEvent(
+          this.ports.clock,
           work ? "operator-work-received" : "turn-started",
           "Accepted durable operator contribution",
         ),
@@ -736,7 +738,10 @@ export async function processAcceptedContribution(
       state.error = errorText(error);
       const id = `accepted-delivery-error:${delivery.id}`;
       if (!state.events.some((event) => event.id === id)) {
-        state.events.push({ ...makeEvent("turn-failed", state.error), id });
+        state.events.push({
+          ...makeEvent(this.ports.clock, "turn-failed", state.error),
+          id,
+        });
       }
     });
   } finally {
@@ -903,7 +908,11 @@ export async function workCompletion(
     ).map((candidate) => this.artifactEvidence(candidate, native)),
   );
   return {
-    ...makeEvent(`operator-work-${status}`, "Résultat du travail enregistré"),
+    ...makeEvent(
+      this.ports.clock,
+      `operator-work-${status}`,
+      "Résultat du travail enregistré",
+    ),
     work: {
       ...(work.caseId ? { caseId: work.caseId } : {}),
       callerId: work.callerId,

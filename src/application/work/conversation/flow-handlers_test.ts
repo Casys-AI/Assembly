@@ -78,6 +78,7 @@ async function checkRefusal(
           operatorId: "operator",
           executionSpaceId: "branch",
           branchTeamSize: 1,
+          memberIds: ["operator"],
         },
       },
     },

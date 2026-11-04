@@ -26,11 +26,11 @@ from a branch name. `domain/model/entities/project.ts`,
 these concepts visible in the source tree. Adapters do not own their domain
 definitions.
 
-`application/work/system-runtime.ts` drives a session of the modeled system:
+`application/work/runtime/system.ts` drives a session of the modeled system:
 conversation, admission and execution, with its participating operators,
 including the builder and reviewer. `SystemRuntimeState` describes that state;
-`adapters/work/storage/system-state-store.ts` preserves it. A system can
-therefore include multiple operators. `adapters/work/operator-workspace.ts`
+`adapters/out/postgres/system-state-store.ts` preserves it. A system can
+therefore include multiple operators. `composition/operator-workspace.ts`
 assembles conversational units and their exchanges around the shared model
 repository.
 

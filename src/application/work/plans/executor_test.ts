@@ -107,6 +107,7 @@ Deno.test("task case correlation is checked before dispatch and copied into prov
   const store = new MemoryPlans();
   const requests: BehaviorInvocationRequest[] = [];
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: async (request) => {
       requests.push(request);
@@ -129,6 +130,7 @@ Deno.test("a concurrent replay from another Case cannot observe the active plan"
   const gate = deferred<BehaviorInvocationResult>();
   let dispatched!: BehaviorInvocationRequest;
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store: new MemoryPlans(),
     invokeTarget: (request) => {
       dispatched = request;
@@ -153,6 +155,7 @@ Deno.test("a concurrent replay from another Case cannot observe the active plan"
 
 Deno.test("a target receipt for another Case cannot complete an admitted task", async () => {
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store: new MemoryPlans(),
     invokeTarget: async (request) => ({
       ...receipt(request),
@@ -173,6 +176,7 @@ Deno.test("a whole graph and every admitted input are checked before storing or 
   const store = new MemoryPlans();
   let calls = 0;
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: async (r) => {
       calls++;
@@ -204,6 +208,7 @@ Deno.test("independent targets run together and dependencies wait for both exact
   >();
   const requests: BehaviorInvocationRequest[] = [];
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: (request) => {
       requests.push(request);
@@ -252,6 +257,7 @@ Deno.test("the same native resource is sequential even between two concurrently 
   const requests: BehaviorInvocationRequest[] = [];
   const gates: ReturnType<typeof deferred<BehaviorInvocationResult>>[] = [];
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: (request) => {
       requests.push(request);
@@ -284,6 +290,7 @@ Deno.test("reported failures retain receipts and block their dependents without 
   const store = new MemoryPlans();
   const calls: string[] = [];
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: async (r) => {
       calls.push(String(r.input.text));
@@ -313,6 +320,7 @@ Deno.test("waiting work requires explicit reconciliation and keeps its original 
   const calls: BehaviorInvocationRequest[] = [];
   let waiting = true;
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: async (r) => {
       calls.push(r);
@@ -343,6 +351,7 @@ Deno.test("one failed branch cannot prevent explicit reconciliation of independe
   const calls: string[] = [];
   let waiting = true;
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: async (r) => {
       const id = String(r.input.text);
@@ -390,6 +399,7 @@ Deno.test("restart marks unknown in-flight work and rejects a stale writer; comp
     uncertain = deferred<BehaviorInvocationResult>();
   const calls: BehaviorInvocationRequest[] = [];
   const first = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: async (r) => {
       calls.push(r);
@@ -409,6 +419,7 @@ Deno.test("restart marks unknown in-flight work and rejects a stale writer; comp
   await started.promise;
   let newCalls = 0;
   const restarted = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: async (r) => {
       newCalls++;
@@ -437,6 +448,7 @@ Deno.test("a failed reservation CAS prevents the first effect and foreign receip
   store.failRevision = 2;
   let calls = 0;
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: async (r) => {
       calls++;
@@ -448,6 +460,7 @@ Deno.test("a failed reservation CAS prevents the first effect and foreign receip
   equal(calls, 0);
   const foreignStore = new MemoryPlans();
   const foreign = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store: foreignStore,
     invokeTarget: async (r) => ({
       ...receipt(r),
@@ -464,6 +477,7 @@ Deno.test("plan identity replays cannot replace another payload or create delimi
   const store = new MemoryPlans();
   let calls = 0;
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: async (r) => {
       calls++;
@@ -564,6 +578,7 @@ Deno.test("result read blocks dependencies then explicit read-only continuation 
   const effects: string[] = [];
   let available = false;
   const ports = {
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: async (r: BehaviorInvocationRequest) => {
       effects.push(r.behavior.id);
@@ -595,6 +610,7 @@ Deno.test("wrong observation correlations and exhausted budget never release dep
     let writes = 0;
     let reads = 0;
     const executor = new WorkPlanExecutor({
+      now: () => "2026-11-03T00:00:00.000Z",
       store: new MemoryPlans(),
       invokeTarget: async (r) => {
         writes++;
@@ -617,6 +633,7 @@ Deno.test("wrong observation correlations and exhausted budget never release dep
 Deno.test("required observation executor preflight refuses effects", async () => {
   let effects = 0;
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store: new MemoryPlans(),
     invokeTarget: async (r) => {
       effects++;
@@ -636,6 +653,7 @@ Deno.test("lost acknowledgement recovers by correlated source read without a rep
   const request = plan("lost", [work, await task("lost", "b", "b", ["a"])]);
   let effects = 0;
   const ports = {
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: async (r: BehaviorInvocationRequest) => {
       effects++;
@@ -670,6 +688,7 @@ Deno.test("persisted observation reservation consumes budget after a failed resu
     await task("crashed-read", "b", "b", ["a"]),
   ]);
   const ports = {
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: async (r: BehaviorInvocationRequest) => {
       effects++;
@@ -717,6 +736,7 @@ Deno.test("native query literal fields remain pinned to admitted observation and
   );
   let effects = 0;
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store: new MemoryPlans(),
     invokeTarget: async (r) => {
       effects++;
@@ -817,6 +837,7 @@ Deno.test("resolved native record input bindings are checked before effects and 
   );
   let effects = 0;
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store: new MemoryPlans(),
     invokeTarget: async (r) => {
       effects++;

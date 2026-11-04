@@ -1,5 +1,9 @@
 import { createDiagnosticsApi } from "../../lib/system/diagnostics.ts";
 import {
+  requestVersionInfo,
+  type VersionInfo,
+} from "../../lib/workbench/version-label.ts";
+import {
   type DiagnosticsApi,
   useSystemDiagnostics,
 } from "./useSystemDiagnostics.ts";
@@ -32,7 +36,12 @@ import type { MatrixStore } from "../../lib/system/rights/store.ts";
 import type { ModelLive } from "../../lib/model/live.ts";
 import type { RevisionLocation } from "../../lib/model/revisions/api.ts";
 import { ownerIdsFor } from "../../lib/system/tools/candidates.ts";
-import { type BranchRef, teamOf } from "../../lib/system/team/projection.ts";
+import {
+  agentsByOperator,
+  type BranchRef,
+  teamOf,
+} from "../../lib/system/team/projection.ts";
+import { performanceView } from "../../lib/system/performance/kpis.ts";
 import { caseTitle } from "../../lib/cases/cases.ts";
 import { branchOperatorName } from "../../lib/cases/operator-names.ts";
 import {
@@ -135,13 +144,32 @@ interface SystemFrameProps {
   branchMatrixReader?: BranchMatrixReader;
   /** How the viewer likes the pages told; the browser's own choice when absent. */
   prefs?: ViewPrefs;
-  /** Host-resolved execution pin of a Request, when present. */
-  executionVersion?: string;
   /** Optional caller-owned shared readout, matching the board/matrix injection pattern. */
   performance?: PerformanceStore;
   /** Uses the same scoped fetch as the board for Request diagnostics. */
   diagnosticsApi?: DiagnosticsApi;
 }
+
+interface ResolvedSystemFrameProps extends SystemFrameProps {
+  versionInfo: VersionInfo;
+  /** Host-resolved execution pin of a Request, when present. */
+  executionVersion?: string;
+}
+
+const REQUEST_MORE: readonly SystemPage[] = [
+  "explore",
+  "flows",
+  "requirements",
+  "diagnostics",
+  ...SYSTEM_MORE,
+];
+const systemNavigation = (request: boolean) =>
+  request
+    ? {
+      tabs: SYSTEM_TABS.filter((page) => !REQUEST_MORE.includes(page)),
+      more: REQUEST_MORE,
+    }
+    : { tabs: SYSTEM_TABS, more: SYSTEM_MORE };
 
 export function SystemFrame(props: SystemFrameProps) {
   const { page, location, prefs = viewPrefs } = props;
@@ -166,6 +194,10 @@ export function SystemFrame(props: SystemFrameProps) {
         render={(scope, request, scopedSearch) => (
           <ScopedSystemFrame
             {...props}
+            versionInfo={requestVersionInfo(
+              props.state.requests.cases.byId(caseId) ?? { id: caseId },
+              scope,
+            )}
             location={{ search: scopedSearch }}
             request={request}
             executionVersion={scope.executionVersion}
@@ -176,6 +208,7 @@ export function SystemFrame(props: SystemFrameProps) {
     );
   }
   if (unavailable) {
+    const navigation = systemNavigation(Boolean(caseId));
     const link = (id: SystemPage) => ({
       id,
       label: SYSTEM_PAGE_NAMES[id],
@@ -190,8 +223,8 @@ export function SystemFrame(props: SystemFrameProps) {
       <PageFrame
         label="System pages"
         title={SYSTEM_PAGE_NAMES[page]}
-        tabs={SYSTEM_TABS.map(link)}
-        more={{ tabs: SYSTEM_MORE.map(link) }}
+        tabs={navigation.tabs.map(link)}
+        more={{ tabs: navigation.more.map(link) }}
         current={page}
         layout="column"
       >
@@ -202,7 +235,17 @@ export function SystemFrame(props: SystemFrameProps) {
       </PageFrame>
     );
   }
-  return <MainSystemFrame {...props} />;
+  return (
+    <MainSystemFrame
+      {...props}
+      versionInfo={{
+        source: { kind: "main" },
+        inService: props.state.current.value?.executionModel?.version
+          .repositoryVersion,
+        readOnly: search.has("version"),
+      }}
+    />
+  );
 }
 
 function MainSystemFrame(
@@ -221,19 +264,20 @@ function MainSystemFrame(
     executionVersion,
     performance,
     diagnosticsApi,
-  }: SystemFrameProps,
+    versionInfo,
+  }: ResolvedSystemFrameProps,
 ) {
   const address = { searchParams: new URLSearchParams(location.search) };
   const requestCaseId = address.searchParams.get("caseBranch");
+  const navigation = systemNavigation(Boolean(requestCaseId));
   const requestCase = requestCaseId
     ? state.requests.cases.byId(requestCaseId)
     : undefined;
-  const requestOwnerId = requestCase?.type === "request"
-    ? requestCase.owner
-    : undefined;
+  const requestRecord = requestCase?.type === "request" ? requestCase : null;
+  const requestOwnerId = requestRecord?.owner;
   // The Case's operator goes by a name on the Case's initials.
-  const branchName = requestCase?.type === "request"
-    ? branchOperatorName(requestCase)
+  const branchName = requestRecord
+    ? branchOperatorName(requestRecord)
     : undefined;
   const asked = versionOf(address) ?? undefined;
   const selected = selectionOf(address);
@@ -301,6 +345,7 @@ function MainSystemFrame(
     sessionReady: state.requests.sessionReady.value,
     refreshGeneration: state.performanceGeneration.value,
     sessionGeneration: state.requests.sessionGeneration.value,
+    closedAt: requestRecord?.closedAt,
   });
   const diagnostics = useSystemDiagnostics({
     api: diagnosticsApi,
@@ -385,6 +430,32 @@ function MainSystemFrame(
       }),
     [branches, branchMatrices],
   );
+  // Provider calls name operators by element: the board names them as Team does.
+  const performanceShown = useMemo(() => {
+    const agents = read?.board
+      ? agentsByOperator(
+        read.board,
+        roster ?? NO_ROSTER,
+        requestOwnerId,
+        branchName,
+      )
+      : undefined;
+    return performanceView({
+      read: performanceRead,
+      scope: requestCaseId
+        ? { kind: "request", record: requestRecord }
+        : { kind: "main" },
+      agentOf: (operatorId) => agents?.get(operatorId),
+    });
+  }, [
+    read?.board,
+    roster,
+    requestOwnerId,
+    branchName,
+    performanceRead,
+    requestCaseId,
+    requestRecord,
+  ]);
   const catalogue = showRuntime ? state.visibleOperatorTools.value : null;
   const runtime = showRuntime
     ? {
@@ -394,9 +465,6 @@ function MainSystemFrame(
       error: state.operatorTools.error.value,
     }
     : undefined;
-  const inService = executionVersion ??
-    state.current.value?.executionModel?.version
-      .repositoryVersion;
   const problem = read?.problem;
   // Reading again helps when the host or the Toolkit did not answer, not when
   // the version asked for is not one or the answer is not a board.
@@ -445,15 +513,17 @@ function MainSystemFrame(
     <PageFrame
       label="System pages"
       title={SYSTEM_PAGE_NAMES[page]}
-      tabs={SYSTEM_TABS.map(pageLink(asked)).map((tab) => ({
-        ...tab,
-        href: inheritModelViewContext(tab.href, location.search),
-      }))}
-      more={{
-        tabs: SYSTEM_MORE.map(pageLink(asked)).map((tab) => ({
+      tabs={navigation.tabs.map(pageLink(asked))
+        .map((tab) => ({
           ...tab,
           href: inheritModelViewContext(tab.href, location.search),
-        })),
+        }))}
+      more={{
+        tabs: navigation.more.map(pageLink(asked))
+          .map((tab) => ({
+            ...tab,
+            href: inheritModelViewContext(tab.href, location.search),
+          })),
       }}
       current={page}
       layout="column"
@@ -476,10 +546,12 @@ function MainSystemFrame(
           pinned={executionVersion === undefined
             ? asked !== undefined
             : read.version !== executionVersion}
-          currentLabel={executionVersion === undefined
-            ? undefined
-            : "Request model"}
-          inService={inService}
+          info={{
+            ...versionInfo,
+            headVersion: versionInfo.source.kind === "main" && !asked
+              ? read.version
+              : versionInfo.headVersion,
+          }}
           home={atHead}
         />
       )}
@@ -503,7 +575,7 @@ function MainSystemFrame(
         <div class="system-team-layout">
           <aside class="system-performance-rail">
             <PerformanceSummary
-              read={performanceRead}
+              view={performanceShown}
               href={inheritModelViewContext(
                 systemHref("performance", { version: asked }),
                 location.search,
@@ -532,7 +604,12 @@ function MainSystemFrame(
         </div>
       )}
       {read?.board && page === "performance" && (
-        <PerformancePage read={performanceRead} />
+        <PerformancePage
+          key={performanceRead.key ?? "unavailable"}
+          view={performanceShown}
+          hrefOf={(agentId) =>
+            systemHref("team", { select: agentId, version: asked })}
+        />
       )}
       {read?.board && read.version && page === "diagnostics" && (
         <>
@@ -604,7 +681,7 @@ function MainSystemFrame(
 const NO_ROSTER: readonly never[] = [];
 
 function ScopedSystemFrame(
-  props: SystemFrameProps & { request: typeof fetch },
+  props: ResolvedSystemFrameProps & { request: typeof fetch },
 ) {
   const api = useMemo(() => createBoardApi({ fetch: props.request }), [
     props.request,

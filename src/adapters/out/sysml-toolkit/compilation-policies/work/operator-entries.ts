@@ -1,8 +1,8 @@
 import { assert as requireValue } from "../../../../../domain/primitives/assert.ts";
 import { persistedOrder } from "../../../../../domain/primitives/persisted-order.ts";
-import type { ModelIdentity } from "../../../../../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../../../domain/shared-kernel/model-identity.ts";
 import type { OperatorEntry } from "../../../../../domain/model/records/operator-entry.ts";
-import { sourceSnapshot } from "../../../../model/projections/graph/source.ts";
+import { sourceSnapshot } from "../../../../../domain/model/projections/source-facts.ts";
 import { sameProductName } from "../../../../../domain/model/sysml-product-names.ts";
 
 const signatures = {

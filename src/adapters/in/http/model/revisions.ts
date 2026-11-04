@@ -14,8 +14,8 @@ import type { ModelPort } from "../../../../application/work/runtime/ports.ts";
 import type { SystemRuntimeState } from "../../../../domain/work/dialogue.ts";
 import type { ExecutableModel } from "../../../../domain/model/execution/executable-model.ts";
 import type { ModelRepositoryPort } from "../../../../application/model/repository.ts";
-import { compareModelSources } from "../../../model/sources/changes/diff.ts";
-import { modelProposalPreview } from "../../../model/sources/changes/proposal-preview.ts";
+import { compareModelSources } from "../../../../application/model/revisions/source-diff.ts";
+import { modelProposalPreview } from "../../../../application/model/revisions/proposal-preview.ts";
 import { exerciseOwnerAuthority } from "../../../../domain/governance/authority.ts";
 import {
   isDevelopmentOriginAllowed,

@@ -3,9 +3,9 @@ import {
   requestWriteAuthorityPrior,
 } from "../../../application/model/source-admission/request-delegated-authority.ts";
 import { assertRequestSpaceBirth } from "../../../application/work/runtime/initialization.ts";
-import { requestSpaceSeed } from "../../work/request-space-runtime.ts";
+import { requestSpaceSeed } from "../../../application/work/runtime/initialization.ts";
 import { PostgresRequestExecutionBindingReader } from "./request-execution-binding.ts";
-import type { PostgresRequestPublicationParticipant } from "../../model/repository/writing/postgres-write-queue.ts";
+import type { PostgresRequestPublicationParticipant } from "./model-write-queue.ts";
 import type { RequestSourcePublicationContext } from "../../../application/model/publication/ports/out/request-source-publication.port.ts";
 import {
   modelWriteDossierDigestV2,

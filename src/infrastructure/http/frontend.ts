@@ -15,6 +15,7 @@ const views = new Set([
   "/model",
   "/revisions",
   "/decide",
+  "/activity",
 ]);
 
 export function createFrontendDispatcher(frontend: BuiltFrontend) {

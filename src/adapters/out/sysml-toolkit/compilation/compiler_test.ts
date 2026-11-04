@@ -4,7 +4,7 @@ import {
   ToolkitCompiler,
 } from "./compiler.ts";
 import { ARTIFACT_SCHEMA } from "../../../../domain/model/value-objects/build.ts";
-import { IR_VERSION } from "../../../model/builds/materialization/artifact.ts";
+import { IR_VERSION } from "../../../../domain/model/value-objects/artifact.ts";
 import { NORMALIZER_VERSION } from "./normalizer.ts";
 import {
   SYSML_TOOLKIT_VERSION,

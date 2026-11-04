@@ -10,6 +10,7 @@
     "@preact/signals": "npm:@preact/signals@2.11.3",
     "preact-render-to-string": "npm:preact-render-to-string@6.8.1",
     "diff": "npm:diff@9.0.0",
+    "marked": "npm:marked@18.1.1",
     "diff2html": "npm:diff2html@3.4.56/lib/diff2html.js",
     "diff2html/css": "npm:diff2html@3.4.56/bundles/css/diff2html.min.css",
     "cytoscape": "npm:cytoscape@3.34.4",

@@ -10,7 +10,7 @@ import type { ModelCompilerRecipe } from "../../../../application/model/builds/p
 import {
   IR_VERSION,
   materialize,
-} from "../../../model/builds/materialization/artifact.ts";
+} from "../../../../domain/model/value-objects/artifact.ts";
 import { validateModelSources as validateSources } from "../../../../domain/model/value-objects/sources.ts";
 import {
   SYSML_TOOLKIT_VERSION,

@@ -31,7 +31,9 @@ function fixture() {
   let host = { ...RELEASE_HOST };
   let response: (input: ReleaseSaveCommand) => Promise<SavedSystemView> = () =>
     Promise.reject(new Error("ACK lost"));
-  let inspected = localSkillRelease("accepted", "caseA");
+  // The host's record is the last one it acknowledged, unless a test sets it.
+  let recorded = localSkillRelease("accepted", "caseA");
+  let inspected: SavedSystemView | null = null;
   let listCalls = 0;
   let listing: () => Promise<SavedSystemView[]> = () => Promise.resolve([]);
   const api: SavedSystemsApi = {
@@ -42,7 +44,7 @@ function fixture() {
     },
     inspect: () => {
       reads++;
-      return Promise.resolve(structuredClone(inspected));
+      return Promise.resolve(structuredClone(inspected ?? recorded));
     },
     save: (input) => {
       // A byte-for-byte recoverable command already exists at send time.
@@ -53,7 +55,10 @@ function fixture() {
         ),
       );
       sent.push(structuredClone(input));
-      return response(input);
+      return response(input).then((view) => {
+        recorded = view;
+        return view;
+      });
     },
   };
   const options = {
@@ -357,7 +362,32 @@ Deno.test("exact incomplete PREREQUISITES_REQUIRED ACK frees uncertainty, permit
   await next.repair(source);
   deepStrictEqual(f.sent[2], original);
   equal(f.keys(), 2);
-  equal(f.reads(), 2);
+  // One read for each of the three acknowledgements, the inspection, and the
+  // repair's own canonical read.
+  equal(f.reads(), 5);
+});
+Deno.test("each acknowledged save, retry and repair is read at once, so readiness is the host's", async () => {
+  const f = fixture();
+  const c = f.controller();
+  await c.save("Original", "Purpose", source, tag);
+  equal(f.reads(), 0, "a lost acknowledgement reads nothing");
+  f.respond((input) => Promise.resolve(receipt(input)));
+  f.inspected({
+    ...receipt(f.sent[0]),
+    assetAvailability: "verified",
+    openingAvailability: "ready",
+    openingIssues: [],
+  });
+  await c.retry(source);
+  equal(f.reads(), 1);
+  equal(c.state.selected?.openingAvailability, "ready");
+  await c.repair(source);
+  equal(f.sent.length, 3);
+  equal(f.reads(), 3, "the repair's canonical read, then its acknowledgement");
+  await c.save("Another", "Purpose", source, tag);
+  equal(f.sent.length, 4);
+  equal(f.reads(), 4);
+  c.dispose();
 });
 Deno.test("pending ACK is acknowledged, while 403, receipt removal failure and source drift preserve exact recovery", async () => {
   const pending = fixture();

@@ -666,9 +666,9 @@ for (
           );
           const wrap = (
             native:
-              import("../../src/adapters/work/runtime/conversation.ts").NativeExecutionSession,
+              import("../../src/adapters/out/native-execution/conversation.ts").NativeExecutionSession,
             purpose: string,
-          ): import("../../src/adapters/work/runtime/conversation.ts").NativeExecutionSession => ({
+          ): import("../../src/adapters/out/native-execution/conversation.ts").NativeExecutionSession => ({
             ...native,
             effect: async (key, node, operation, admit) => {
               const result = await native.effect(key, node, operation, admit);
@@ -737,8 +737,8 @@ for (
         session.native.ledger.open = async (request) => {
           const wrap = (
             native:
-              import("../../src/adapters/work/runtime/conversation.ts").NativeExecutionSession,
-          ): import("../../src/adapters/work/runtime/conversation.ts").NativeExecutionSession => ({
+              import("../../src/adapters/out/native-execution/conversation.ts").NativeExecutionSession,
+          ): import("../../src/adapters/out/native-execution/conversation.ts").NativeExecutionSession => ({
             ...native,
             async effect(key, node, operation, admit) {
               try {

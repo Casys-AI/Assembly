@@ -51,17 +51,24 @@ Deno.test("technical log sink is pretty in development, JSON otherwise", () => {
 });
 
 Deno.test("technical errors keep the coded shape plus error detail", () => {
-  const coded = Object.assign(new Error("boom"), {
-    code: "SOME_CODE",
-    context: { path: "p" },
-    recovery: "fix it",
-  });
+  const cause = new Error('constraint "retained_constraint" failed');
+  const close = new Error("storage close failed");
+  const coded = Object.assign(
+    new Error("boom", { cause: new AggregateError([cause, close]) }),
+    {
+      code: "SOME_CODE",
+      context: { path: "p" },
+      recovery: "fix it",
+    },
+  );
   const properties = errorLogProperties(coded);
   equal(properties.code, "SOME_CODE");
   deepEqual(properties.context, { path: "p" });
   equal(properties.recovery, "fix it");
   equal(properties.error, "boom");
   ok(typeof properties.stack === "string");
+  ok(properties.stack.includes(cause.message));
+  ok(properties.stack.includes(close.message));
   deepEqual(errorLogProperties("plain"), { error: "plain" });
   deepEqual(errorLogProperties(undefined), { error: "undefined" });
 });

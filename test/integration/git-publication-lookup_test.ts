@@ -3,7 +3,7 @@ import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { deflateSync } from "node:zlib";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import { resolveRepositoryLayout } from "../../src/adapters/out/filesystem/layout.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 import {
   ModelBuildService,
   ModelBuildServiceError,

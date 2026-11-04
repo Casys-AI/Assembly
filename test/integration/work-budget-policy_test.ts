@@ -6,11 +6,11 @@ import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilatio
 import {
   sourceLiterals,
   sourceSnapshot,
-} from "../../src/adapters/model/projections/graph/source.ts";
+} from "../../src/domain/model/projections/source-facts.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import {
   sourceModelIdentity,
-} from "../../src/adapters/model/sources/source-model.ts";
+} from "../../src/domain/model/records/source-identity.ts";
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");
 const part = `part budget : APEWorkBudget::InvocationBudgetPolicy {
  attribute :>> id = "budget";

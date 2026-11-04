@@ -1,4 +1,11 @@
 import { RequestSource } from "./RequestSource.tsx";
+import {
+  caseOperatorName,
+  GENERIC_BRANCH_NAME,
+} from "../../lib/cases/operator-names.ts";
+import { requestVersionInfo } from "../../lib/workbench/version-label.ts";
+import { VersionPill } from "../view/VersionPill.tsx";
+import { caseSourceMetadataRevision } from "../../lib/case-model-scope.ts";
 import { useEffect, useRef } from "preact/hooks";
 import { withModelViewContext } from "../../lib/workbench/model-context.ts";
 import { followsLink, modelHref } from "../../lib/workbench/desk.ts";
@@ -6,7 +13,6 @@ import { viewHref } from "../../lib/workbench/view-location.ts";
 import {
   caseAgentHref,
   caseHref,
-  caseKindLabel,
   type CaseRecord,
   caseStatusLabel,
   caseTitle,
@@ -22,6 +28,7 @@ import type { WorkbenchState } from "../../lib/workbench/state.ts";
 import { AgentPanel } from "../conversations/AgentPanel.tsx";
 import { CaseTree } from "./CaseTree.tsx";
 import { ChatView } from "../conversations/ChatView.tsx";
+import { RequestClosure } from "../conversations/RequestClosure.tsx";
 import { caseActivity } from "../../lib/cases/seen.ts";
 import { ChatTimeline, entriesFor } from "../conversations/ChatTimeline.tsx";
 
@@ -36,6 +43,31 @@ const pinMark = (
     <path d="M6 2.5h4M6.8 2.5v4L4.5 9h7L9.2 6.5v-4M8 9v4.5" />
   </svg>
 );
+
+const REQUEST_SCOPE_PRELOAD_LIMIT = 10;
+
+/** Only the first open rows read metadata; other rows reuse already known scopes. */
+function RequestVersion(
+  { state, record, readScope }: {
+    state: WorkbenchState;
+    record: CaseRecord;
+    readScope: boolean;
+  },
+) {
+  const ready = state.requests.sessionReady.value;
+  const session = state.requests.sessionGeneration.value;
+  useEffect(() => {
+    if (ready && readScope) void state.requests.loadScope(record.id);
+  }, [record.id, ready, session, readScope]);
+  return (
+    <VersionPill
+      {...requestVersionInfo(
+        record,
+        state.requests.scopes.value.get(record.id),
+      )}
+    />
+  );
+}
 
 /** Newest first: an open Request by its start, a closed one by its end. */
 function newestFirst(records: CaseRecord[]): CaseRecord[] {
@@ -105,22 +137,26 @@ export function CasesPage(
   const agents = selectedId
     ? state.requests.snapshots.value.get(selectedId)?.conversations ?? []
     : [];
+  const sessionReady = state.requests.sessionReady.value;
+  const host = state.requests.context.value;
+  const sourceRevision = selectedId
+    ? caseSourceMetadataRevision(selectedId)
+    : 0;
   useEffect(() => {
     if (!active || !selectedId) return;
     void cases.ensure(selectedId);
     void state.requests.loadScope(selectedId);
-    const refresh = () => {
-      if (
-        state.requests.sessionReady.peek() &&
-        (typeof document === "undefined" ||
-          document.visibilityState === "visible")
-      ) void state.requests.refresh(selectedId);
-    };
-    refresh();
-    // Request SSE is not connected. Only the selected read is polled; no work starts.
-    const timer = setInterval(refresh, 2000);
-    return () => clearInterval(timer);
-  }, [active, selectedId, state.requests.sessionReady.value]);
+    if (sessionReady && host) void state.requests.loadReleases();
+    if (sessionReady) return state.requests.retain(selectedId);
+  }, [
+    state,
+    active,
+    selectedId,
+    sessionReady,
+    host?.projectId,
+    host?.systemId,
+    sourceRevision,
+  ]);
   // Writing in a new Case replaces the list by the Case's own field while the
   // Case loads: the person keeps writing there.
   const root = useRef<HTMLDivElement>(null);
@@ -151,7 +187,7 @@ export function CasesPage(
       state.caseSeen.mark(selected.id, activity[selected.id]);
     }
   }, [Boolean(snapshot), active, selected?.id, seenKey]);
-  const renderRow = (record: CaseRecord) => {
+  const renderRow = (record: CaseRecord, readScope: boolean) => {
     const needsYou = isOpenCase(record) &&
       caseHasPendingDecision(
         record,
@@ -177,6 +213,11 @@ export function CasesPage(
           />
           <span class="rev-title">{caseTitle(record, 80)}</span>
           <span class="rev-meta">
+            <RequestVersion
+              state={state}
+              record={record}
+              readScope={readScope}
+            />
             <span>
               {since(
                 isOpenCase(record)
@@ -217,7 +258,15 @@ export function CasesPage(
                     <p class="feed-group">
                       {group === "open" ? "Open" : "Done"}
                     </p>
-                    <ol>{lists[group].map(renderRow)}</ol>
+                    <ol>
+                      {lists[group].map((record, index) =>
+                        renderRow(
+                          record,
+                          active && group === "open" &&
+                            index < REQUEST_SCOPE_PRELOAD_LIMIT,
+                        )
+                      )}
+                    </ol>
                   </section>
                 )
               )}
@@ -249,7 +298,7 @@ export function CasesPage(
         ref={root}
       >
         {backLink(onBack, mainHidden)}
-        <section class="cases-detail chat" aria-label="Case">
+        <section class="cases-detail chat" aria-label="Request">
           <CaseUnavailable state={state} caseId={selectedId} />
           <RequestSource state={state} active={active} authOnly />
         </section>
@@ -257,6 +306,7 @@ export function CasesPage(
     );
   }
   const owner = ownerOf(selected);
+  const ownerName = owner ? caseOperatorName(owner.name, selected) : undefined;
   const tree = caseTree(agents, selected, owner ?? null);
   // An agent that took no part in this Case leaves the owner's thread selected.
   const reading = caseTreeAgent(tree, agentId);
@@ -283,12 +333,15 @@ export function CasesPage(
       <CaseHead
         state={state}
         record={selected}
-        owner={owner?.name}
+        owner={ownerName}
         agentId={agentId}
       />
       {compact && agentId && (
         <p class="cases-selected-conversation">
-          {reading?.name ?? (agentId === owner?.agentId ? owner.name : agentId)}
+          {reading?.name ??
+            (agentId === owner?.agentId
+              ? ownerName
+              : "Conversation unavailable")}
         </p>
       )}
       <div class={`cases-body${shown.agent ? "" : " no-panel"}`}>
@@ -366,6 +419,7 @@ export function CasesPage(
                 independentRequest
                 placeholder="Reply…"
                 composer={isOpenCase(selected)}
+                beforeComposer={<RequestClosure record={selected} />}
               />
             </section>
           )}
@@ -409,9 +463,15 @@ function CaseHead(
 ) {
   const name = caseTitle(record, 96);
   const scope = state.requests.scopes.value.get(record.id);
+  const originRelease = scope?.release
+    ? state.requests.releaseCatalogue.value.find((release) =>
+      release.id === scope.release!.id &&
+      release.digest === scope.release!.digest
+    )
+    : undefined;
   const pinned = state.pins.has(record.id);
   const current = state.requests.snapshots.value.get(record.id);
-  // Current conversation polling owns this selected observation, including its
+  // The held conversation reader owns this selected observation, including its
   // disappearance after a later input. An older cases-cache flag cannot revive it.
   const outcome = current
     ? current.conversations.find((agent) =>
@@ -422,13 +482,14 @@ function CaseHead(
   return (
     <header class="cases-detail-head">
       <h2>{name}</h2>
-      <p class="workspace-model-version" title={scope?.version}>
-        {scope
-          ? `Request · ${scope.branchId} · Model ${
-            scope.version.replace(/^commit:/, "").slice(0, 8)
-          } · read-only`
-          : "Request · model version unavailable"}
-      </p>
+      {scope?.release && (
+        <p class="workspace-model-version" title={scope.release.id}>
+          {originRelease
+            ? `From Release ${originRelease.metadata.name}`
+            : "Origin Release · name unavailable"}
+        </p>
+      )}
+      <VersionPill {...requestVersionInfo(record, scope)} inspect />
       {/* The full request only when it says more than its name. */}
       {name.replace(/[.?!\s]+$/, "") !==
           record.objective.trim().replace(/[.?!\s]+$/, "") && (
@@ -438,12 +499,13 @@ function CaseHead(
       )}
       <div class="cases-bar">
         <div class="cases-chips">
-          <span class="chip">{caseKindLabel[record.type]}</span>
           <span class="chip">{caseStatusLabel[record.status]}</span>
           {outcome === "refused" && (
             <span class="chip">Initial execution refused</span>
           )}
-          {owner && <span class="chip ghost">{owner}</span>}
+          {owner && (
+            <span class="chip ghost" title={GENERIC_BRANCH_NAME}>{owner}</span>
+          )}
         </div>
         <div class="decide">
           <a
@@ -454,8 +516,29 @@ function CaseHead(
           >
             View model
           </a>
-          <button type="button" onClick={() => state.pins.toggle(record.id)}>
-            {pinned ? "Unpin" : "Pin"}
+          {scope && (
+            <a
+              href={viewHref(
+                withModelViewContext(modelHref("releases"), {
+                  caseId: record.id,
+                  agentId: agentId ?? null,
+                }),
+                { create: "1", version: scope.branchVersion },
+              )}
+            >
+              Create release
+            </a>
+          )}
+          <button
+            type="button"
+            title="Keep in Dock"
+            aria-label="Keep in Dock"
+            aria-pressed={pinned ? "true" : "false"}
+            onClick={() => state.pins.toggle(record.id)}
+          >
+            <svg class="cases-pin" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M6 2.5h4M6.8 2.5v4L4.5 9h7L9.2 6.5v-4M8 9v4.5" />
+            </svg>
           </button>
         </div>
       </div>

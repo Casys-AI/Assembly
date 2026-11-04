@@ -164,6 +164,7 @@ Deno.test("creation context in a branch counts the whole team, inherited childre
       executionSpaceId: "space-x",
     },
     branchTeamSize,
+    currentCaseId: state.cases![0].id,
   });
   // Main reading stays exhausted by its native children list.
   equal(
@@ -308,6 +309,7 @@ Deno.test("only a grantless BO in its own open branch can discover a creation gr
     operatorId: f.model.identity.builderId,
     executionSpaceId: "branch",
     branchTeamSize: 0,
+    memberIds: [],
   };
   equal(await available(), true);
   f.model.operatorCreationPolicies = [existing];
@@ -429,6 +431,7 @@ Deno.test("admitted revision rights stay identical across execution spaces witho
       operatorId: "operator",
       executionSpaceId: "request-branch",
       branchTeamSize: 1,
+      memberIds: [],
     };
     const request = await f.build();
     equal(request.executionPolicy!.mayConsultModel, true);
@@ -449,4 +452,42 @@ Deno.test("admitted revision rights stay identical across execution spaces witho
     equal(f.fullReads(), revision ? 1 : 0);
     deepStrictEqual(f.model, before);
   }
+});
+
+Deno.test("decision context carries host observations independently of compacted journal excerpts", async () => {
+  const f = decisionFixture(false, false);
+  f.model.contextPolicy = {
+    kind: "separated-context",
+    pattern: "5.1",
+    id: "context",
+    revision: 1,
+    elementId: "context-policy",
+    sourceIds: [],
+    recentMessages: 1,
+    maxMessageCharacters: 256,
+    maxCollectionItems: 1,
+    maxContextCharacters: 16000,
+  };
+  const value = {
+    kind: "request-creation-policy-outcome",
+    verdict: "approved",
+  };
+  f.state.messages.push({
+    id: "request-network-outcome:decision",
+    role: "tool",
+    text: "Recorded",
+    at: "now",
+    observation: { kind: "tool-result", value },
+  }, { id: "later", role: "tool", text: "Later observation", at: "later" });
+  const context = await f.build();
+  equal(
+    context.messages.some(({ id }) =>
+      id === "request-network-outcome:decision"
+    ),
+    false,
+  );
+  deepStrictEqual(context.hostObservations, [{
+    messageId: "request-network-outcome:decision",
+    value,
+  }]);
 });

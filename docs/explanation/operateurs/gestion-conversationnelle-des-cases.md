@@ -34,27 +34,27 @@ pattern.
    operator and its delegated decision is recorded successfully, the flow waits
    for input without issuing a further assistant reply. A successful
    `open_request` from the exact person's input ends at the same modeled input
-   wait after the host records `Request n° N ouverte : <objective>`, with the
-   Request number linked to `/cases?case=<caseId>`. This receipt requires the
-   persisted opening's `dispatched` phase; an incomplete opening or refusal
-   returns through observation for another choice. It confirms opening and
-   dispatch, never completion of the new Request's work. Other command outcomes
-   keep their ordinary reply path. A quiet preamble does not end the waking
-   turn: termination follows the recorded delegated decision, and any queued
-   provider calls after it are cancelled with explicit receipts. The same
-   cancellation applies after a successful opening, so a queued generated reply
-   does not run. A command refusal, failure or turn limit without that recorded
-   result follows the ordinary flow and its limits. This route requires a newly
-   compiled contract declaring the command's `submission` output; existing
-   admitted pins retain their original behavior.
+   wait after the host records `Request N opened: <objective>`, with the Request
+   number linked to `/cases?case=<caseId>`. This receipt requires the persisted
+   opening's `dispatched` phase; an incomplete opening or refusal returns
+   through observation for another choice. It confirms opening and dispatch,
+   never completion of the new Request's work. Other command outcomes keep their
+   ordinary reply path. A quiet preamble does not end the waking turn:
+   termination follows the recorded delegated decision, and any queued provider
+   calls after it are cancelled with explicit receipts. The same cancellation
+   applies after a successful opening, so a queued generated reply does not run.
+   A command refusal, failure or turn limit without that recorded result follows
+   the ordinary flow and its limits. This route requires a newly compiled
+   contract declaring the command's `submission` output; existing admitted pins
+   retain their original behavior.
 4. **Wait for input.** After a reply, or while waiting for an external decision,
    `AwaitCaseInput` suspends the flow. Another contribution allows it to resume
    under its retained admitted model pin.
 
 The model's successions, guards and bindings determine these transitions. The
-[runtime adapter](../../../src/adapters/work/runtime/native-graph.ts) compiles
-them to LangGraph nodes and edges; LangGraph schedules transitions and owns
-interrupts and checkpoints. The
+[runtime adapter](../../../src/adapters/out/native-execution/native-graph.ts)
+compiles them to LangGraph nodes and edges; LangGraph schedules transitions and
+owns interrupts and checkpoints. The
 [conversation service](../../../src/application/work/conversation/turn.ts)
 supplies host primitives and records observations. A request or admission alone
 does not prove that the requested effect succeeded.

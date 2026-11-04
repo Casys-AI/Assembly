@@ -11,7 +11,9 @@ export interface ProviderResourceQuery extends ProviderCallHostScope {
   readonly repositoryVersion: string;
   readonly modelDigest: string;
   readonly endedThrough: string;
-  /** Optional narrower Request selection inside an authorized execution space. */
+  /** A Request selects its entire lifetime, across model pins and operators.
+   * Version/digest then describe the current selection anchor, not a filter.
+   * Without caseId, Main remains restricted to the exact execution pin. */
   readonly caseId?: string;
 }
 
@@ -20,6 +22,15 @@ export interface ObservedResourceAmount {
   readonly presentCalls: number;
   readonly missingCalls: number;
   readonly state: "known" | "partial" | "unknown" | "overflow";
+}
+
+/** Derived only when every selected call reports the relevant token units.
+ * Null means missing evidence, no calls, overflow or a zero share denominator. */
+export interface ProviderTokenSummary {
+  readonly total: number | null;
+  readonly meanPerCall: number | null;
+  /** Cache-read tokens divided by all input tokens, including cache creation. */
+  readonly cacheReadShare: number | null;
 }
 
 export type ProviderResourceUnit =
@@ -39,6 +50,7 @@ interface ProviderOperatorResourceGroup {
   readonly outcomes: ProviderResourceReadout["outcomes"];
   readonly providerElapsedMs: ObservedResourceAmount;
   readonly units: ProviderResourceReadout["units"];
+  readonly tokenSummary: ProviderTokenSummary;
 }
 
 export interface ProviderResourceReadout {
@@ -63,6 +75,8 @@ export interface ProviderResourceReadout {
   /** Absent only on older readouts. Present groups exhaust this same snapshot,
    * with exact string IDs in code-unit order and unattributed null last. */
   readonly operatorGroups?: readonly ProviderOperatorResourceGroup[];
+  /** Absent on older readouts. Raw units retain partial observed subtotals. */
+  readonly tokenSummary?: ProviderTokenSummary;
 }
 
 export interface ProviderResourceReader {
@@ -148,7 +162,37 @@ const usageOf: Record<
 };
 const unitNames = Object.keys(usageOf) as ProviderResourceUnit[];
 
-/** One calculation for totals and operator partitions, including missingness. */
+/** Shared with the browser reader, which checks the summary it receives. */
+export function tokenSummary(
+  units: ProviderResourceReadout["units"],
+  calls: number,
+): ProviderTokenSummary {
+  const sum = (names: readonly ProviderResourceUnit[]): number | null => {
+    if (names.some((name) => units[name].state !== "known")) return null;
+    const value = names.reduce(
+      (total, name) => total + units[name].observedSubtotal!,
+      0,
+    );
+    return Number.isSafeInteger(value) ? value : null;
+  };
+  const input = [
+    "input_tokens",
+    "cache_creation_input_tokens",
+    "cache_read_input_tokens",
+  ] as const;
+  const inputTotal = sum(input);
+  const total = sum([...input, "output_tokens"]);
+  return Object.freeze({
+    total,
+    meanPerCall: total === null || calls === 0 ? null : total / calls,
+    cacheReadShare: inputTotal === null || inputTotal === 0
+      ? null
+      : units.cache_read_input_tokens.observedSubtotal! / inputTotal,
+  });
+}
+
+/** One calculation for totals and operator partitions, including missingness
+ * and token summaries. */
 class ResourceAccumulator {
   #calls = 0;
   readonly #outcomes = { returned: 0, failed: 0, cancelled: 0, "timed-out": 0 };
@@ -168,17 +212,16 @@ class ResourceAccumulator {
     }
   }
 
-  finish(): Pick<
-    ProviderResourceReadout,
-    "calls" | "outcomes" | "providerElapsedMs" | "units"
-  > {
+  finish(): Omit<ProviderOperatorResourceGroup, "operatorId"> {
+    const units = Object.freeze(Object.fromEntries(
+      unitNames.map((unit) => [unit, this.#units[unit].read(this.#calls)]),
+    )) as ProviderResourceReadout["units"];
     return Object.freeze({
       calls: this.#calls,
       outcomes: Object.freeze({ ...this.#outcomes }),
       providerElapsedMs: this.#elapsed.read(this.#calls),
-      units: Object.freeze(Object.fromEntries(
-        unitNames.map((unit) => [unit, this.#units[unit].read(this.#calls)]),
-      )) as ProviderResourceReadout["units"],
+      units,
+      tokenSummary: tokenSummary(units, this.#calls),
     });
   }
 }
@@ -217,8 +260,9 @@ export class ProviderResourceAggregation {
       scope.executionSpaceId !== this.#query.executionSpaceId
     ) throw new Error("Provider resource observation scope mismatch");
     if (
-      context.repositoryVersion !== this.#query.repositoryVersion ||
-      context.modelDigest !== this.#query.modelDigest ||
+      (this.#query.caseId === undefined &&
+        (context.repositoryVersion !== this.#query.repositoryVersion ||
+          context.modelDigest !== this.#query.modelDigest)) ||
       observation.endedAt > this.#query.endedThrough ||
       (this.#query.caseId !== undefined &&
         context.caseId !== this.#query.caseId)

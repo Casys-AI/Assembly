@@ -7,12 +7,12 @@ import { decodePostgresRuntimeState } from "../../src/adapters/out/postgres/runt
 import assert from "node:assert/strict";
 import { fromPrisma } from "pg-boss";
 import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
+import { parseNativeWaitEvidence } from "../../src/application/work/native-execution/wait-evidence.ts";
 import {
   checkpointConsumptions,
-  parseNativeWaitEvidence,
   verifyOfficialWaitCheckpoint,
-} from "../../src/adapters/work/runtime/checkpoint-wait-evidence.ts";
-import { compileNativeOperatorGraph } from "../../src/adapters/work/runtime/native-graph.ts";
+} from "../../src/adapters/out/native-execution/checkpoint-wait-evidence.ts";
+import { compileNativeOperatorGraph } from "../../src/adapters/out/native-execution/native-graph.ts";
 import {
   postgresTestEnabled,
   withPostgresDatabase,
@@ -31,11 +31,11 @@ import {
 import { caseNetworkWitnessAgent } from "../support/request-case-network-witness.ts";
 import type {
   NativeChangeApprovalWait,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import {
   parseRequestNetworkContinuation,
   parseRequestNetworkRefusalContinuation,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { sha256 } from "../../src/domain/primitives/execution-digest.ts";
 import { RequestAdoptionError } from "../../src/application/model/evolution/request-adoption-ports.ts";

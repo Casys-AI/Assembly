@@ -1,21 +1,29 @@
-/** Bounded verification for the one initial-tool admission transition.
- * No database, graph scheduling or historical authority grant lives here. */
+import type { OperatorExecutionDelivery } from "../operators/execution.ts";
+import { parseAcceptedCommand } from "../operators/command-delivery.ts";
+import type {
+  NativeExecutionActionResult,
+  NativeExecutionRequest,
+  NativeExecutionSnapshot,
+} from "../native-execution/contract.ts";
+import {
+  effectResultDigest,
+  type NativeWaitEvidence,
+} from "../native-execution/wait-evidence.ts";
 import type {
   Candidate,
   InitialToolAdmissionTransfer,
 } from "../../../domain/work/candidates.ts";
 import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
-import type {
-  NativeExecutionRequest,
-  NativeExecutionSnapshot,
-} from "./execution.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
 import { exerciseOwnerAuthority } from "../../../domain/governance/authority.ts";
 import { type Case, isOpenCase } from "../../../domain/work/entities/cases.ts";
 import { invocationKey } from "../operators/journal.ts";
 import { draftDigest, valueDigest } from "./values.ts";
-import { nativeFlowContractDigest } from "./model-advance.ts";
+import { nativeFlowContractDigest } from "../../../domain/model/execution/flow-contract.ts";
+
+/** Bounded verification for the one initial-tool admission transition.
+ * No database, graph scheduling or historical authority grant lives here. */
 
 export class InitialAdmissionTransferRefused extends Error {
   readonly code = "INITIAL_ADMISSION_TRANSFER_REFUSED";
@@ -46,7 +54,13 @@ export async function initialAdmissionDecisionKey(
 export async function initialAdmissionTargetCaseDigest(
   record: Case,
 ): Promise<string> {
-  const { status: _status, closedAt: _closedAt, ...birth } = record;
+  const {
+    status: _status,
+    closedAt: _closedAt,
+    closedBy: _closedBy,
+    verdict: _verdict,
+    ...birth
+  } = record;
   return await valueDigest(birth);
 }
 
@@ -299,7 +313,9 @@ export async function verifySelectedInitialAdmissionTransfer(
     model.version.digest !== intent.pin.modelDigest ||
     model.version.repositoryVersion !== intent.pin.repositoryVersion
   ) {
-    const { nativeCatalogAdvanceEvidence } = await import("./model-advance.ts");
+    const { nativeCatalogAdvanceEvidence } = await import(
+      "../native-execution/model-advance.ts"
+    );
     const evidence = await nativeCatalogAdvanceEvidence(
       original.model,
       current,
@@ -328,4 +344,57 @@ export function assertInitialAdmissionCurrentAuthority(
     canonical(actual) === canonical(expected),
     "current-authority",
   );
+}
+
+export function verifyInitialAdmissionClaim(
+  intent: NativeExecutionRequest["initialAdmissionTransfer"],
+  delivery: OperatorExecutionDelivery,
+) {
+  const command = parseAcceptedCommand(delivery);
+  if (
+    !intent || !command ||
+    command.command.kind !== "decide-candidate" ||
+    command.command.delegated ||
+    command.command.input.candidateId !== intent.candidateId ||
+    command.command.input.candidateDigest !== intent.candidateDigest ||
+    (command.command.input.caseId !== undefined &&
+      command.command.input.caseId !== intent.source.caseId) ||
+    command.command.input.verdict !== intent.decision.verdict ||
+    command.command.input.reason.trim() !== intent.decision.reason ||
+    delivery.identity.operatorId !== intent.operatorId ||
+    delivery.identity.scope.kind !== "designer" ||
+    delivery.modelPin.modelDigest !== intent.pin.modelDigest ||
+    delivery.modelPin.repositoryVersion !== intent.pin.repositoryVersion
+  ) {
+    throw new InitialAdmissionTransferRefused("claim-or-command");
+  }
+
+  return intent;
+}
+
+export function verifyInitialAdmissionEffect(
+  result: NativeExecutionActionResult,
+) {
+  if (
+    !result.suspend || result.suspensionKind !== "decision" ||
+    result.modelAdvance
+  ) {
+    throw new InitialAdmissionTransferRefused("source-effect-result");
+  }
+}
+
+export async function verifyInitialAdmissionWait(
+  intent: InitialToolAdmissionTransfer,
+  sourceWait: NativeWaitEvidence,
+  sourceEffectResult: NativeExecutionActionResult | undefined,
+) {
+  if (
+    sourceWait.kind !== "decision" ||
+    sourceWait.nodeId !== intent.source.occurrenceId ||
+    sourceWait.actionId !== intent.source.actionId ||
+    sourceWait.effectKey !== intent.source.settledEffectKey ||
+    sourceWait.preparedNodeId !== intent.source.preparedNodeId ||
+    sourceWait.rootRequestId !== intent.source.caseId ||
+    await effectResultDigest(sourceEffectResult) !== sourceWait.resultDigest
+  ) throw new InitialAdmissionTransferRefused("source-wait-proof");
 }

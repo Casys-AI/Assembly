@@ -1,8 +1,5 @@
 import { deepStrictEqual, rejects } from "node:assert/strict";
-import {
-  diffSources,
-  mergeSources,
-} from "../../src/adapters/model/sources/changes/merge.ts";
+import { diffSources, mergeSources } from "../../src/adapters/out/git/merge.ts";
 
 Deno.test("source merge preserves independent changes, additions and deletions", async () => {
   const base = {

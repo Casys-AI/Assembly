@@ -3,7 +3,7 @@ import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import { equal, ok, rejects } from "node:assert/strict";
 import { join } from "node:path";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
-import { validateSourceExecutable } from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { WorkPlanBehavior } from "../support/work-plan-behavior.ts";
 import { openPostgresFixtureHost } from "../support/postgres-runtime-fixture.ts";
 import type { PostgresTestDatabase } from "../support/postgres.ts";
@@ -157,6 +157,7 @@ Deno.test({
           });
           store = (await host.storage.operator(model.identity.builderId)).plans;
           const executor = new WorkPlanExecutor({
+            now: () => "2026-11-03T00:00:00.000Z",
             store,
             invokeTarget: (request) => workInvoker.invoke(request),
             observeTarget: (request) => observer.invoke(request),

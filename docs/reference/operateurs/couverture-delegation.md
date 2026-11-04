@@ -69,7 +69,7 @@ policy; revocation prohibits both a new approval and a new delegated refusal.
 Reconciling an already-attested publication is not a new exercise.
 
 `SourceModel.#prepareApprovedChange` now routes `operatorAuthority` to
-[`operatorAuthorityRequests`](../../../src/adapters/governance/authority/operator/writer.ts),
+[`operatorAuthorityRequests`](../../../src/application/governance/operator-writer.ts),
 variant `publishOperatorAuthorityPolicy`. The writer produces an `authority`
 insertion with one member expectation and eight literal expectations. Primary
 role prevalidation and compiled-policy checks remain on the host; a new
@@ -117,7 +117,7 @@ repeating a Main Operator decision.
 
 After this admission, the host publishes the SysML catalogue and verifies its
 binding:
-[`SourceModel.activateCandidate`](../../../src/adapters/model/sources/source-model.ts)
+[`SourceModel.activateCandidate`](../../../src/application/model/source-model.ts)
 and [`activation.ts`](../../../src/application/work/candidates/activation.ts).
 The catalogue is adopted automatically if the executable contract's digest
 remains identical. This path has no second publication approval. This activation
@@ -128,13 +128,13 @@ does not prove a general power to adopt a changed contract in D8.
 `ModelEditPolicy` bounds editing exercise by operations, files and roots.
 `createOperatorEditAuthorization` and `NativeModelSourceAuthorization.validate`
 in
-[`source-authorization.ts`](../../../src/adapters/governance/model-access/source-authorization.ts)
+[`source-authorization.ts`](../../../src/application/governance/model-access/source-authorization.ts)
 check rights during preparation and at acceptance. An ordinary edit cannot turn
 into a change to authority or the delegation registry.
 
 `ModelAdministrationPolicy` is a separate power to propose grants/revocations of
 editing rights.
-[`operations.ts`](../../../src/adapters/governance/model-access/administration/operations.ts)
+[`operations.ts`](../../../src/application/governance/model-access/administration/operations.ts)
 and
 [`model-delegation.ts`](../../../src/domain/governance/policies/model-delegation.ts)
 check recipients, inclusion of operations and roots, parent, depth and the

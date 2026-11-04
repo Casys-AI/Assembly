@@ -9,7 +9,7 @@ import type { WorkBudgetPort } from "../budget/ports.ts";
 import {
   nativeExecutionIdentity,
   type NativeExecutionPort,
-} from "./execution.ts";
+} from "../native-execution/contract.ts";
 
 type Disposition = NonNullable<
   SystemRuntimeState["candidateRecoveryDispositions"]

@@ -20,7 +20,7 @@ import type {
 import type { ModelPort, StorePort } from "./ports.ts";
 import { createTestNativeExecution } from "../../../../test/support/native-execution.ts";
 import type { OperatorExecutionDelivery } from "../operators/execution.ts";
-import type { NativeExecutionPort } from "./execution.ts";
+import type { NativeExecutionPort } from "../native-execution/contract.ts";
 
 /** Public opening now acknowledges queue acceptance. Scenario assertions below
  * still inspect the actual completed worker, never an enqueue as execution. */
@@ -377,10 +377,12 @@ Deno.test("closed Request worker restores its interrupted resume receipt from th
   f.decisions([{
     kind: "reply",
     text: "Exact terminal reply",
-    caseClosure: "done",
+    caseClosure: "abandoned",
   }]);
   await settled(f.service, f.service.resumeRequest(resume));
   const expected = f.service.snapshot.requestResumptions![0]!.outcome;
+  equal(f.service.snapshot.cases![0].closedBy, undefined);
+  equal(f.service.snapshot.cases![0].verdict, undefined);
   const delivery = [...f.acceptedDeliveries.values()].find((entry) =>
     entry.payload?.inputMessageId === `${id}:resume:${resume.resumeId}`
   )!;
@@ -966,7 +968,7 @@ Deno.test("the real conversation dispatch calls the host opening port and record
   // Cost lot 3: the host writes the opening receipt; no second provider call.
   equal(
     f.service.snapshot.messages.at(-1)?.text.includes(
-      "ouverte : Compare sources",
+      "opened: Compare sources",
     ),
     true,
   );
@@ -1227,7 +1229,10 @@ Deno.test("busy and closed Requests reject continuation without a message or bud
   );
   release();
   await pending;
-  await f.service.closeCase(id, "done");
+  await f.service.closeCase(id, "done", {
+    closedBy: "host-owner",
+    verdict: "accepted",
+  });
   await rejects(
     () => f.service.resumeRequest({ ...resume, resumeId: "closed" }),
     { code: "CASE_CLOSED" },
@@ -1307,12 +1312,12 @@ Deno.test("a completed continuation receipt remains replayable after it closes i
     conversationId: f.input.openedFrom.conversationId,
     designerScopeId: f.input.openedFrom.designerScopeId!,
   };
-  f.decisions([{ kind: "reply", text: "Complete", caseClosure: "done" }]);
+  f.decisions([{ kind: "reply", text: "Complete", caseClosure: "abandoned" }]);
   await settled(f.service, f.service.resumeRequest(resume));
   const outcome = f.service.snapshot.requestResumptions!.find((receipt) =>
     receipt.resumeId === resume.resumeId
   )!.outcome!;
-  equal(outcome.status, "closed-done");
+  equal(outcome.status, "closed-abandoned");
   const budget = structuredClone([...f.budgets]);
   const calls = f.calls();
   const messages = structuredClone(f.service.snapshot.messages);
@@ -1894,7 +1899,10 @@ Deno.test("4.8e: a local Request notice wakes its BO once and ends silently afte
       ),
     { code: "AUTHORITY_OUT_OF_BOUNDS" },
   );
-  await f.service.closeCase(caseId, "done");
+  await f.service.closeCase(caseId, "done", {
+    closedBy: "host-owner",
+    verdict: "accepted",
+  });
   await rejects(
     () =>
       f.service.receiveOperatorNotice(
@@ -1904,4 +1912,51 @@ Deno.test("4.8e: a local Request notice wakes its BO once and ends silently afte
       ),
     { code: "AUTHORITY_OUT_OF_BOUNDS" },
   );
+});
+
+Deno.test("explicit Request completion refuses a missing verdict before mutation", async () => {
+  const f = await fixture(true);
+  const id = await settled(
+    f.service,
+    f.service.openOperatorRequest({ ...f.input, changeId: "verdict-required" }),
+  );
+  const before = structuredClone(f.service.snapshot);
+  await rejects(() => f.service.closeCase(id, "done"), {
+    code: "CASE_VERDICT_REQUIRED",
+  });
+  deepStrictEqual(f.service.snapshot, before);
+  await f.service.closeCase(id, "done", {
+    closedBy: "host-owner",
+    verdict: "rejected",
+  });
+  equal(f.service.snapshot.cases![0].closedBy, "host-owner");
+  equal(f.service.snapshot.cases![0].verdict, "rejected");
+});
+
+Deno.test("a provider reply does not assign the person's Request verdict", async () => {
+  for (const grouped of [false, true]) {
+    const f = await fixture(false, grouped, true);
+    if (grouped) f.batch([{ kind: "reply", text: "Request accepted" }]);
+    const id = await settled(f.service, f.service.openOperatorRequest(f.input));
+    const completion = [{
+      kind: "reply",
+      text: "Complete",
+    }] satisfies ChatDecision[];
+    if (grouped) f.batch(completion);
+    else f.decisions(completion);
+    await settled(
+      f.service,
+      f.service.resumeRequest({
+        caseId: id,
+        resumeId: "technical-completion",
+        instruction: "Complete",
+        openedBy: f.input.openedBy,
+        conversationId: f.input.openedFrom.conversationId,
+        designerScopeId: f.input.openedFrom.designerScopeId!,
+      }),
+    );
+    equal(f.service.snapshot.cases![0].status, "waiting");
+    equal(f.service.snapshot.cases![0].closedBy, undefined);
+    equal(f.service.snapshot.cases![0].verdict, undefined);
+  }
 });

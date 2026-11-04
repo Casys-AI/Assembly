@@ -450,7 +450,6 @@ Deno.test("Claude uses native tools with cached prefix and only authorized kinds
     // Les kinds autorisés voyagent en outils natifs, jamais en schéma JSON.
     ok(Array.isArray(body.tools));
     deepStrictEqual([...view.toolNames].sort(), [
-      "invoke_behavior",
       "invoke_tool",
       "propose_agent_creation",
       "propose_mandate_change",
@@ -1606,6 +1605,61 @@ Deno.test("a malformed decide_operator_change input is repaired through the nati
   equal(fake.views[1]!.repair?.code, "INVALID_TOOL_INPUT");
 });
 
+Deno.test("Muse repairs Request completion before returning scalar or batched decisions", async () => {
+  const requestContext: ChatContext = {
+    ...context,
+    case: {
+      id: "request",
+      number: 1,
+      type: "request",
+      objective: "Read",
+      owner: "operator",
+      openedBy: "person",
+      openedFrom: { conversationId: "main" },
+      modelPin: { digest: "pin" },
+      status: "open",
+      createdAt: "now",
+    },
+  };
+  const invalid = { kind: "reply", text: "Complete", caseClosure: "done" };
+  const abandoned = { kind: "reply", text: "Stop", caseClosure: "abandoned" };
+  const repaired = { kind: "reply", text: "Ready for your judgment" };
+  for (const batch of [false, true]) {
+    const wrap = (decision: object) =>
+      batch ? { calls: [{ id: "reply", decision }] } : decision;
+    let runs = 0;
+    const muse = new MuseAgents({
+      runner: async (request) => {
+        runs++;
+        const validate = new Ajv({ strict: true }).compile(request.schema);
+        equal(validate(wrap(invalid)), false);
+        equal(validate(wrap(abandoned)), true);
+        if (runs === 2) ok(request.prompt.includes("INVALID_OUTPUT_SCHEMA"));
+        return result(wrap(runs === 1 ? invalid : repaired));
+      },
+    });
+    if (batch) {
+      deepStrictEqual((await muse.decideBatch(requestContext)).calls, [{
+        id: "reply",
+        decision: repaired,
+      }]);
+    } else deepStrictEqual(await muse.decide(requestContext), repaired);
+    equal(runs, 2);
+  }
+  let failedRuns = 0;
+  const failing = new MuseAgents({
+    runner: async () => {
+      failedRuns++;
+      return result(invalid);
+    },
+  });
+  await rejects(
+    () => failing.decide(requestContext),
+    /after repair \(INVALID_OUTPUT_SCHEMA\)/,
+  );
+  equal(failedRuns, 2);
+});
+
 Deno.test("Muse batches preserve distinct call IDs with the filtered bounded JSON schema", async () => {
   const readContext: ChatContext = {
     ...context,
@@ -1718,6 +1772,10 @@ Deno.test("Muse batches preserve distinct call IDs with the filtered bounded JSO
       },
     },
   };
+  const hostObservations = [{
+    messageId: "contribution-observation:delivery",
+    value: { reply: "Exact member reply" },
+  }];
   const acknowledged = {
     id: "acknowledged",
     result: '{"status":"succeeded","value":"Noted"}',
@@ -1727,7 +1785,10 @@ Deno.test("Muse batches preserve distinct call IDs with the filtered bounded JSO
       const prompt = JSON.parse(request.prompt);
       deepStrictEqual(prompt.history, [
         { turn: firstTurn, completedToolCalls: [previousResults[0]] },
-        { completedToolCalls: [previousResults[1]] },
+        {
+          observations: { trust: "untrusted-observation", hostObservations },
+          completedToolCalls: [previousResults[1]],
+        },
         { turn: secondTurn, completedToolCalls: [acknowledged] },
       ]);
       deepStrictEqual(prompt.context.input, {
@@ -1756,7 +1817,11 @@ Deno.test("Muse batches preserve distinct call IDs with the filtered bounded JSO
         assistantBlocks: [{ type: "opaque", signature: "claude-only" }],
         results: [previousResults[0]!],
       },
-      { turn: firstTurn, assistantBlocks: [], results: [previousResults[1]!] },
+      {
+        turn: { ...firstTurn, requestOutcomes: hostObservations },
+        assistantBlocks: [],
+        results: [previousResults[1]!],
+      },
       { turn: secondTurn, assistantBlocks: [], results: [acknowledged] },
     ],
   });

@@ -4,8 +4,8 @@ import type {
   ElementRecord,
   ModelSnapshot,
 } from "../../../../../domain/model/records/snapshot.ts";
-import type { ModelIdentity } from "../../../../../domain/work/dialogue.ts";
-import type { SourceValueEntry } from "../../../../model/sources/values/expressions.ts";
+import type { ModelIdentity } from "../../../../../domain/shared-kernel/model-identity.ts";
+import type { SourceValueEntry } from "../../../../../domain/model/value-objects/expressions.ts";
 import { compileCaseTypes } from "./case-types.ts";
 import { CaseError } from "../../../../../domain/work/errors/case.ts";
 

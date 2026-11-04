@@ -20,7 +20,7 @@ import {
   spaceControlAuthorityMatchesBinding,
   spaceControlOwnerIdentity,
 } from "../../../domain/work/request-space-authority.ts";
-import type { ModelIdentity } from "../../../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../domain/shared-kernel/model-identity.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import {
   parseRequestModelWriteDestination,

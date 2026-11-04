@@ -1,9 +1,16 @@
-import { type CasesSnapshot } from "../../../domain/work/entities/cases.ts";
+import {
+  type CaseClosureEvidence,
+  type CasesSnapshot,
+} from "../../../domain/work/entities/cases.ts";
 import { CaseError } from "../../../domain/work/errors/case.ts";
 
 interface CaseRuntime {
   readonly cases: CasesSnapshot;
-  closeCase(id: string, outcome: "done" | "abandoned"): Promise<void>;
+  closeCase(
+    id: string,
+    outcome: "done" | "abandoned",
+    evidence?: CaseClosureEvidence,
+  ): Promise<void>;
   runCase(id: string): Promise<void>;
   pauseCase(id: string): Promise<void>;
   resumeCase(id: string): Promise<void>;
@@ -33,8 +40,12 @@ export class OperatorCases {
     };
   }
 
-  async closeCase(id: string, outcome: "done" | "abandoned"): Promise<void> {
-    await this.runtimeFor(id).closeCase(id, outcome);
+  async closeCase(
+    id: string,
+    outcome: "done" | "abandoned",
+    evidence?: CaseClosureEvidence,
+  ): Promise<void> {
+    await this.runtimeFor(id).closeCase(id, outcome, evidence);
   }
 
   async runCase(id: string): Promise<void> {

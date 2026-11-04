@@ -17,7 +17,7 @@ interpretation of the sources.
 
 - The [board contract](../../../src/domain/model/records/board.ts) types its
   values, closes its unions and reads no SysML.
-  [`ToolkitModelBoardReader`](../../../src/adapters/model/projections/board-reader.ts)
+  [`ToolkitModelBoardReader`](../../../src/adapters/out/sysml-toolkit/projections/board-reader.ts)
   produces it by reading the commit's sources and requesting a board from the
   Toolkit.
 - The matrix starts from different material: the compiled artifact resolved for
@@ -32,7 +32,7 @@ that projectors do not reconstruct guards through `RegExp`, `.exec(` or
 `decisionBranches`.
 
 Any future editing from a page must go through
-[`host-writer.ts`](../../../src/adapters/model/sources/editing/host-writer.ts):
+[`host-writer.ts`](../../../src/application/model/editing/host-writer.ts):
 `applyEdits`, then `verifyEdits`. A projection is not permission to rewrite the
 model text directly.
 
@@ -71,22 +71,24 @@ avoids repeating reads:
   handling, described under “What this costs”.
 
 These service caches are not the whole storage path. Production also wires
-[`createCachedModelProjections`](../../../src/adapters/model/projections/cache.ts)
-to `ModelBuildStore` in [`main.ts`](../../../src/main.ts). Its projection
-registry has a byte-bounded resident LRU, 64 MiB by default, and persists
-encoded projections through the build store. A restart loses resident values but
-can reuse verified persisted projections rather than necessarily recalculating
-all of them. Projection kind, projector version, artifact and parameters
-identify the derived value; version pins keep the requested commit distinct from
-a value that happens to be reusable. The
+[`createCachedModelProjections`](../../../src/application/model/projections/cached-projections.ts)
+to `ModelBuildStore` in
+[`model-projections.ts`](../../../src/composition/model-projections.ts). Its
+projection registry has a byte-bounded resident LRU, 64 MiB by default, and
+persists encoded projections through the build store. A restart loses resident
+values but can reuse verified persisted projections rather than necessarily
+recalculating all of them. Projection kind, projector version, artifact and
+parameters identify the derived value; version pins keep the requested commit
+distinct from a value that happens to be reusable. The
 [build-store reference](../../reference/modeles/magasin-des-builds.md) and
 [native pipeline](pipeline-modele-natif.md) describe this separation.
 
 After listening, the host prewarms the current board, attention, view list and
 matrix. Failures in these background reads do not turn them into a startup
 prerequisite. Current-version projection requests also start the required pure
-reads in the background ([`main.ts`](../../../src/main.ts),
-[`cache.ts`](../../../src/adapters/model/projections/cache.ts)).
+reads in the background
+([`model-projections.ts`](../../../src/composition/model-projections.ts),
+[`cached-projections.ts`](../../../src/application/model/projections/cached-projections.ts)).
 
 ## A pinned, isolated and bounded native Toolkit
 
@@ -183,7 +185,7 @@ never a count containing an unavailable item. An absent count does not mean
 zero. The event does not wait for this calculation: it starts in the background,
 then the host publishes again. It also republishes after a mask change
 ([`version-events.ts`](../../../src/application/model/revisions/version-events.ts),
-[`main.ts`](../../../src/main.ts)).
+[`root.ts`](../../../src/composition/root.ts)).
 
 ## How the frontend follows the head
 
@@ -234,7 +236,8 @@ replaces periodic polling of the head.
 - **The 3 s ceiling and 30 s refusal window** can affect ordinary models. Work
   to revisit them is proposed.
 - **Event following does not cover everything.** The host still refreshes the
-  legacy graph every 5 s ([`main.ts`](../../../src/main.ts)), and the frontend
+  legacy graph every 5 s
+  ([`live-graph.ts`](../../../src/composition/live-graph.ts)), and the frontend
   polls proposal decisions every 30 s
   ([`state.ts`](../../../frontend/lib/workbench/state.ts)).
 - **Not all event metadata is consumed.** The native SysML page reads view lists

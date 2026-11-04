@@ -16,6 +16,7 @@ import {
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { sha256 } from "../../../domain/primitives/execution-digest.ts";
 import { exerciseOwnerAuthority } from "../../../domain/governance/authority.ts";
+import { errorLogProperties } from "../../../infrastructure/logging.ts";
 
 Deno.test("member adoption preserves the BO source pin and every bystander admission digest", async () => {
   const f = await requestAdoptionFixture();
@@ -187,7 +188,7 @@ Deno.test("host member adoption reserves its scoped native runtime before any tr
   assert.deepEqual(selected, requester);
 });
 
-Deno.test("armed adoption failure retains its original internal cause and dossier", async () => {
+Deno.test("armed adoption failure preserves the PostgreSQL code and original constraint without changing the dossier", async () => {
   const f = await requestAdoptionFixture();
   const armed: RequestOwnerAdoptionDossier = {
     ...f.dossier,
@@ -196,7 +197,13 @@ Deno.test("armed adoption failure retains its original internal cause and dossie
     completion: f.decision,
   };
   const before = structuredClone(armed);
-  const original = new Error("Private controlled transition failure");
+  const original = Object.assign(
+    new Error('new row violates check constraint "retained_constraint"'),
+    {
+      code: "P2010",
+      meta: { driverAdapterError: { cause: { originalCode: "23514" } } },
+    },
+  );
   const client = {} as PrismaClient;
   const primary = new PostgresPrimarySpaceControlSource(client, {
     scope: f.target.host,
@@ -246,7 +253,13 @@ Deno.test("armed adoption failure retains its original internal cause and dossie
       Object.getOwnPropertyDescriptor(error, "cause")?.enumerable,
       false,
     );
-    assert(!JSON.stringify(error).includes(original.message));
+    assert.deepEqual(error.context, {
+      dossierId: armed.id,
+      adoptionKey: armed.intent.adoptionKey,
+      cause: { code: "23514" },
+    });
+    assert.deepEqual(errorLogProperties(error).context, error.context);
+    assert(String(errorLogProperties(error).stack).includes(original.message));
     return true;
   });
   assert.equal(rereads, 1);

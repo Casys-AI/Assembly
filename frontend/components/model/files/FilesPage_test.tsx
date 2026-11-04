@@ -1,4 +1,6 @@
-import { textOf } from "../../../test/support/dom.ts";
+import { caseScope } from "../../../test/support/case-fixture.ts";
+import { requestVersionInfo } from "../../../lib/workbench/version-label.ts";
+import { parse, textOf } from "../../../test/support/dom.ts";
 import { createSavedSystemsApi } from "../../../lib/system/saved-systems.ts";
 import { ModelLinkContext } from "../../view/ModelContextLink.tsx";
 import {
@@ -73,7 +75,12 @@ async function open(
     if (listing.status === "ready") await files.readSources(listing.version);
   }
   const page = (location: string) => (
-    <FilesPage location={{ search: location }} files={files} now={NOW} />
+    <FilesPage
+      versionInfo={{ source: { kind: "main" }, inService: HEAD }}
+      location={{ search: location }}
+      files={files}
+      now={NOW}
+    />
   );
   return {
     host,
@@ -103,8 +110,8 @@ Deno.test("the bare address shows the files of the head, grouped by directory, w
   const { render } = await open("", { data, sources });
   const html = render();
   // The version shown: the head of main, by its commit.
-  match(html, new RegExp(`<code title="${HEAD}">ccccccc</code>`));
-  match(html, /<span class="chip" title="The head of main">main<\/span>/);
+  match(html, new RegExp(`Version: ${HEAD}`));
+  match(html, /aria-label="Inspect Main · In service"/);
   doesNotMatch(html, /Show current model/);
   // The tree: the root's files, then each directory with its files.
   const groups = tree(html);
@@ -184,17 +191,33 @@ Deno.test("a line the address cannot point at highlights nothing and breaks noth
   }
 });
 
-Deno.test("the last change to the file links to that commit in Revisions, with its message, short hash and date", async () => {
-  const { render } = await open("?page=files&file=reader.sysml");
+Deno.test("the last change to the file links to that commit in Revisions, with its message, short hash and one date", async () => {
+  const { render, files } = await open("?page=files&file=reader.sysml");
   const html = render();
   match(
     html,
-    new RegExp(
-      `<a class="last" href="/model\\?commit=${
-        encodeURIComponent(PARENT)
-      }" title="Last change to this file" aria-current="false"><span class="msg">Add the reader</span><code>bbbbbbb</code><time datetime="2026-10-23T10:30:00Z">yesterday</time></a>`,
-    ),
+    new RegExp(`href="/model\\?commit=${encodeURIComponent(PARENT)}"`),
   );
+  match(html, /<span class="msg">Add the reader<\/span>/);
+  match(html, /<code>bbbbbbb<\/code>/);
+  match(html, /<time datetime="2026-10-23T10:30:00Z">yesterday<\/time>/);
+  // This Main commit predates the Request; its identity cannot inherit the Request label.
+  const request = renderToString(
+    <FilesPage
+      location={{ search: "?page=files&file=reader.sysml" }}
+      files={files}
+      now={NOW}
+      versionInfo={requestVersionInfo(
+        { id: "request", number: 1 },
+        caseScope("request", HEAD),
+      )}
+      caseReadOnly
+    />,
+  );
+  const last = parse(request).querySelector(".last")!;
+  equal(last.querySelector("code")!.textContent, "bbbbbbb");
+  equal(last.querySelectorAll("time").length, 1);
+  doesNotMatch(last.textContent!, /Request|modified|23 Oct/);
   // Another file, another commit: the first the history lists it in.
   const other = render("?page=files&file=lib%2Funits.sysml");
   match(other, new RegExp(`commit=${encodeURIComponent(ROOT)}"`));
@@ -231,8 +254,13 @@ Deno.test("at an older version the files are those of that version, the links ke
   const { render, host } = await open(version);
   const html = render();
   // Asked for by its identity: the version is shown, with a way back to main.
-  match(html, new RegExp(`<code title="${ROOT}">aaaaaaa</code>`));
-  doesNotMatch(html, /class="chip"[^>]*>main/);
+  match(html, new RegExp(`Version: ${ROOT}`));
+  const versionLabel = parse(html).querySelector(".repo-version summary")!;
+  equal(versionLabel.textContent, "Main");
+  equal(
+    versionLabel.getAttribute("aria-label"),
+    "Inspect Main · Not in service · Read-only",
+  );
   match(html, /<a href="\/model\?page=files">Show current model<\/a>/);
   equal((tree(html).match(/class="tree-file"/g) || []).length, 2);
   // Every file link and line link keeps the version.
@@ -540,6 +568,7 @@ Deno.test("Files creates a Release from its displayed exact source and the Relea
   );
   const html = renderToString(
     <FilesPage
+      versionInfo={{ source: { kind: "main" }, inService: HEAD }}
       releases
       location={{ search: `?version=${encodeURIComponent(PARENT)}&create=1` }}
       files={f.files}
@@ -555,7 +584,7 @@ Deno.test("Files creates a Release from its displayed exact source and the Relea
   match(
     html,
     new RegExp(
-      `title="main · exact source ${PARENT}"><code>[0-9a-f]{7}</code>`,
+      `title="main · exact source ${PARENT}"><span class="chip"`,
     ),
   );
   doesNotMatch(html, /View files|<h3>Releases/);
@@ -569,6 +598,10 @@ Deno.test("rendered Request file, line and revision links follow the selected Ca
     tidy(renderToString(
       <ModelLinkContext.Provider value={`?caseBranch=${caseId}&agent=operator`}>
         <FilesPage
+          versionInfo={requestVersionInfo(
+            { id: caseId },
+            caseScope(caseId, HEAD),
+          )}
           location={{ search: `?version=${HEAD}` }}
           files={files}
           caseReadOnly
@@ -605,6 +638,10 @@ Deno.test("read-only Request Files expose the existing Release rightbar for the 
       renderToString(
         <ModelLinkContext.Provider value="?caseBranch=caseA&agent=selected-child">
           <FilesPage
+            versionInfo={requestVersionInfo(
+              { id: "caseA" },
+              caseScope("caseA", HEAD),
+            )}
             location={{ search: `?version=${HEAD}` }}
             files={files}
             caseReadOnly
@@ -631,6 +668,10 @@ Deno.test("read-only Request Files expose the existing Release rightbar for the 
       renderToString(
         <ModelLinkContext.Provider value="?caseBranch=caseA&agent=selected-child">
           <FilesPage
+            versionInfo={requestVersionInfo(
+              { id: "caseA" },
+              caseScope("caseA", HEAD),
+            )}
             releases
             location={{ search: `?version=${HEAD}&create=1` }}
             files={files}
@@ -648,6 +689,7 @@ Deno.test("read-only Request Files expose the existing Release rightbar for the 
     doesNotMatch(release, /main · exact source/);
     const unavailable = renderToString(
       <FilesPage
+        versionInfo={requestVersionInfo({ id: "caseA" })}
         releases
         location={{ search: `?version=${HEAD}&create=1` }}
         files={files}
@@ -678,6 +720,14 @@ Deno.test("Request current admitted A1 offers exact Release creation independent
       renderToString(
         <ModelLinkContext.Provider value="?caseBranch=caseA&agent=selected-child">
           <FilesPage
+            versionInfo={requestVersionInfo(
+              { id: "caseA" },
+              caseScope("caseA", HEAD, {
+                executionVersion,
+                branchVersion,
+                baseVersion: PARENT,
+              }),
+            )}
             location={{ search: `?version=${HEAD}&create=1` }}
             files={files}
             caseReadOnly
@@ -693,21 +743,22 @@ Deno.test("Request current admitted A1 offers exact Release creation independent
     const adoptedA1 = inspect(HEAD, HEAD);
     match(adoptedA1, /Create release/);
     match(adoptedA1, /<button[^>]*>Create tag<\/button>/);
-    doesNotMatch(adoptedA1, /<h3>Releases<\/h3>|release-source-context/);
+    equal(
+      parse(adoptedA1).querySelector(".repo-version summary")!.getAttribute(
+        "aria-label",
+      ),
+      "Inspect Request · modified · In service · Read-only",
+    );
     const a1 = inspect(PARENT, HEAD);
     match(a1, /Show current model/);
     match(a1, /Create release/);
     match(a1, /caseBranch=caseA/);
     match(a1, /agent=selected-child/);
-    // The release source is a small chip; its exact sentence is the tooltip.
-    match(
-      a1,
-      new RegExp(
-        `title="Release source ${HEAD} · execution remains ${PARENT}\\. Creating a Release does not adopt this source\\.">not running</span>`,
-      ),
-    );
+    // The unified pill retains the execution gap and both exact identities.
+    match(a1, /aria-label="Request · modified · Not in service · Read-only"/);
+    match(a1, new RegExp(`In service: ${PARENT}`));
     const a1Releases = inspect(PARENT, HEAD, true);
-    match(a1Releases, /Current admitted Request source/);
+    match(a1Releases, /Admitted source/);
     match(a1Releases, /saved-systems-form/);
     match(a1Releases, /Request caseA.*exact source/s);
     match(a1Releases, new RegExp(HEAD));
@@ -716,7 +767,7 @@ Deno.test("Request current admitted A1 offers exact Release creation independent
       /An exact eligible source is required|Show current model|main · exact source/,
     );
     const b0WithAdvancedHead = inspect(HEAD, `commit:${"d".repeat(40)}`);
-    match(b0WithAdvancedHead, /Request model/);
+    match(b0WithAdvancedHead, /Request · modified/);
     match(
       b0WithAdvancedHead,
       /Only the current admitted Request version can be tagged/,

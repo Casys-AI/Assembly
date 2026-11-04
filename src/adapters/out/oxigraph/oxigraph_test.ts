@@ -87,7 +87,7 @@ Deno.test("semantic loader requires private verified A even when installation be
         paths.push(path);
         deepStrictEqual(files.get(path), new Uint8Array([65, 65, 65]));
         equal(modes.get(path), 0o400);
-        return { storeVersion: () => "0.1.0", oxigraphVersion: () => "0.4.11" };
+        return { storeVersion: () => "0.1.0", oxigraphVersion: () => "0.5.12" };
       },
     },
   );

@@ -1,3 +1,4 @@
+import { isRequestTeamMember } from "../../../domain/work/request-spaces.ts";
 import { ModelRightsError } from "../../../domain/model/consultation/model-read-policy.ts";
 import { withRecipientSpace } from "../../governance/mandate-change-decisions.ts";
 import { budgetPromotionPendingSelection } from "../runtime/budget-transition.ts";
@@ -72,10 +73,13 @@ async function proposeDelegation(
   );
   await host.currentModel();
   await host.update((s) => {
-    s.events.push(makeEvent(
-      "model-revision-proposed",
-      `Administration déléguée proposée : ${proposal.id} — ${decision.reason}`,
-    ));
+    s.events.push(
+      makeEvent(
+        host.ports.clock,
+        "model-revision-proposed",
+        `Administration déléguée proposée : ${proposal.id} — ${decision.reason}`,
+      ),
+    );
   });
   await host.feedback(
     `Administration déléguée proposée : ${
@@ -138,10 +142,13 @@ async function proposeEdit(
   );
   await host.currentModel();
   await host.update((s) => {
-    s.events.push(makeEvent(
-      "model-revision-proposed",
-      `Édition SysML ciblée proposée : ${proposal.id} — ${decision.reason}`,
-    ));
+    s.events.push(
+      makeEvent(
+        host.ports.clock,
+        "model-revision-proposed",
+        `Édition SysML ciblée proposée : ${proposal.id} — ${decision.reason}`,
+      ),
+    );
   });
   await host.feedback(
     `Édition SysML ciblée proposée : ${
@@ -217,6 +224,7 @@ async function proposeRevision(
   await host.update((s) => {
     s.events.push(
       makeEvent(
+        host.ports.clock,
         "model-revision-proposed",
         `Révision SysML proposée : ${proposal.id} — ${decision.reason}`,
       ),
@@ -350,7 +358,7 @@ export async function submitProposal(
         invocation?.kind === "delegated" &&
           invocation.work.caseId === requestScope.caseId &&
           invocation.work.caseContext.caseId === requestScope.caseId &&
-          current.operatorTeam?.requestId === requestScope.caseId) &&
+          isRequestTeamMember(current.identity.builderId, requestScope)) &&
       requestScope.operatorId === current.identity.builderId &&
       proposal.status === "pending" && proposal.changeId &&
       proposal.proposalIntentDigest &&
@@ -405,7 +413,11 @@ export async function submitProposal(
       `Choix non pris en charge par la soumission native : ${decision.kind}`,
     );
   }
-  if (hasQueuedBatchCall(this.state)) awaitingInput = false;
+  // Draining a response does not settle its Request proposal. await_input
+  // already lets queued calls finish before parking on the exact decision.
+  if (!turn.changeApprovalProposal && hasQueuedBatchCall(this.state)) {
+    awaitingInput = false;
+  }
   return {
     outputs: {
       submission: { awaitingInput },

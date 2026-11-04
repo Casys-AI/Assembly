@@ -1,11 +1,13 @@
 # Build service, projections and vault
 
 The service is assembled in
-[`backend.ts`](../../../src/composition/model-backend.ts) with the Git
-repository, KV store, vault and durable writer. Projection readers and their
-notifications are connected in [`main.ts`](../../../src/main.ts). This wiring
-does not constitute overall acceptance of the delivery. S/R/K/A identities and
-the KV store remain described in the [build store](magasin-des-builds.md).
+[`model-backend.ts`](../../../src/composition/model-backend.ts) with the Git
+repository, KV store, vault and durable writer. Projection readers are assembled
+in [`model-projections.ts`](../../../src/composition/model-projections.ts);
+[`root.ts`](../../../src/composition/root.ts) connects their notifications. This
+wiring does not constitute overall acceptance of the delivery. S/R/K/A
+identities and the KV store remain described in the
+[build store](magasin-des-builds.md).
 
 ## Build service
 
@@ -31,13 +33,17 @@ orchestrates the storage, vault, compilation and materialization ports:
   with a verified put before release. A failed resolution is evicted.
 
 The service separately bounds resolutions in progress and retained snapshots.
-The weighted cache defaults to 64 MiB; the workbench composition gives it 256
-MiB, configurable through `buildMemoryCacheBytes`. On the qualified 19-source
-corpus, a build weighs approximately 112.7 MB according to the conservative
-estimator; two builds fit within this envelope. This weight represents neither
-the V8 heap nor the process RSS. `clearMemory()` forces subsequent reads to
-verify storage again and prevents reads from an earlier generation from
-repopulating it.
+The weighted cache defaults to 64 MiB; the workbench composition gives it 512
+MiB, configurable through `buildMemoryCacheBytes`. A Release-opening measurement
+on 4 November 2026 used two source builds weighing approximately 147.8 and 164.0
+MiB under the conservative estimator. They need about 311.9 MiB together; the
+former 256 MiB composition budget made them evict each other during repeated
+source inspections. The 512 MiB budget accommodates this observed pair with
+headroom; larger working sets still follow the weighted LRU eviction policy.
+This weight represents neither the V8 heap nor the process RSS; in-flight reads
+and references outside the cache have their own lifetimes. `clearMemory()`
+forces subsequent reads to verify storage again and prevents reads from an
+earlier generation from repopulating it.
 
 <a id="dual-read-git-format"></a>
 
@@ -58,23 +64,25 @@ mode does not rename or reconstruct old artifacts.
 
 ## Projections
 
-[`ModelProjectionRegistry`](../../../src/application/model/projections/registry.ts)
+[`ModelProjectionRegistry`](../../../src/application/model/projections/cached-projections.ts)
 uses the kind, projector version, A and canonical parameters as its key. Its
 memory cache is
 [weighted by bytes](../../../src/application/support/weighted-lru.ts),
 computation is shared, and `pending/ready/failed` statuses are published to SSE
-subscribers. The requested/available current pointer is separate for each kind
-and parameter set: a slow projection of an old A never replaces a B requested
-later. Eviction also removes the announced availability if its bytes no longer
-reside in memory.
+subscribers. Registry status reports `ready` only while the encoded bytes remain
+resident. The versioned read facade separately tracks requested and available
+model versions for current projections: a slow read of an older version never
+replaces a newer current request.
 
 The cache retains encoded bytes and decodes a fresh object on each read. It
-retains neither runtime state nor authority. The
-[`cache.ts`](../../../src/adapters/model/projections/cache.ts) composition
-connects `board`, `authority-matrix`, `views`, `view-diagram` and `plantuml`,
-with optional persistence in the KV store. RDF and SHACL projections use their
-own services. Live tracking in System and the viewer does not depend on loading
-the RDF index; an explicitly pinned historical query retains its version.
+retains neither runtime state nor authority. The application cache in
+[`cached-projections.ts`](../../../src/application/model/projections/cached-projections.ts)
+manages projection pins and optional persistence in the KV store.
+[`model-projections.ts`](../../../src/composition/model-projections.ts) supplies
+the concrete `board`, `authority-matrix`, `views`, `view-diagram` and `plantuml`
+readers. RDF and SHACL projections use their own services. Live tracking in
+System and the viewer does not depend on loading the RDF index; an explicitly
+pinned historical query retains its version.
 
 ## Vault and retention
 

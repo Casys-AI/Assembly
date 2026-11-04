@@ -9,10 +9,8 @@ import {
   type SourcePublication,
 } from "../../src/domain/model/publication/change.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
-import type {
-  SourceRepository,
-  SourceRevision,
-} from "../../src/adapters/model/sources/source-model.ts";
+import type { SourceRepository } from "../../src/application/model/source-repository.ts";
+import type { SourceRevision } from "../../src/domain/model/records/source-revision.ts";
 
 /** Preparation never advances storage; shared with the durable recovery fixture. */
 export async function compileVerifiedSources(

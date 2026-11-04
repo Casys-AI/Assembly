@@ -17,7 +17,7 @@ import {
   scopedSoftwareSourceAdmissionRef,
   scopedSoftwareSourceCommandRef,
 } from "../../../domain/model/editing/request-source-publication.ts";
-import type { ModelIdentity } from "../../../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../domain/shared-kernel/model-identity.ts";
 import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
 import {
   assertScopedSoftwareWriteMatchesEvolution,

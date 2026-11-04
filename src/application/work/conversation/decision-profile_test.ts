@@ -79,6 +79,7 @@ function fixture() {
       return structuredClone(state);
     },
     ports: {
+      clock: { now: () => "2026-11-03T00:00:00.000Z" },
       execution: native.execution,
       stateHistory: native.stateHistory,
       model: {},
@@ -507,7 +508,7 @@ Deno.test("a person-opened Request turn writes a linked host receipt and waits a
   await runTurn.call(f.host);
   equal(f.contexts.length, 1);
   deepStrictEqual(said, [
-    "[Request n° 7](/cases?case=request%3A7) ouverte : Review the source",
+    "[Request 7](/cases?case=request%3A7) opened: Review the source",
   ]);
   const calls = f.state.conversationBatches![0].calls;
   equal(calls[0].status, "completed");

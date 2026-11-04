@@ -65,7 +65,7 @@ import { tidy } from "../../test/support/markup.ts";
 import { nameOf, textOf, within } from "../../test/support/dom.ts";
 import type { ComponentChildren } from "preact";
 import type { CaseModelScope } from "../../lib/case-model-scope.ts";
-import { caseRecord } from "../../test/support/case-fixture.ts";
+import { caseRecord, caseScope } from "../../test/support/case-fixture.ts";
 import { branchOperatorName } from "../../lib/cases/operator-names.ts";
 import { ModelLinkContext } from "../view/ModelContextLink.tsx";
 
@@ -123,7 +123,6 @@ async function frame(
     page?: SystemPage;
     prefs?: ViewPrefs;
     performance?: PerformanceStore;
-    executionVersion?: string;
   } = {},
 ) {
   const host = boardHost(options.host);
@@ -146,7 +145,6 @@ async function frame(
         board={board}
         matrix={matrix}
         performance={options.performance}
-        executionVersion={options.executionVersion}
         prefs={options.prefs ?? preferences().prefs}
       />,
     ));
@@ -324,12 +322,12 @@ Deno.test("until the board is read the page says it is being read, and draws not
   equal(view(page).title(), "Team");
 });
 
-Deno.test("the version read is shown as the short commit, on the head of main", async () => {
+Deno.test("the version read is named Main with its exact commit in inspection", async () => {
   const { html } = await frame();
   const page = html();
   match(page, new RegExp(`<div class="repo-version" data-version="${HEAD}">`));
-  match(page, /<code title="commit:a{40}">a{7}<\/code>/);
-  match(page, /<span class="chip" title="The head of main">main<\/span>/);
+  match(page, /Version: commit:a{40}/);
+  match(page, /aria-label="Inspect Main · In service"/);
   doesNotMatch(page, /Show current model/);
 });
 
@@ -343,21 +341,17 @@ Deno.test("when the model in service is another commit, the gap is said beside t
       board={(await frame()).board}
     />,
   ));
-  match(
-    gap,
-    /<span class="chip warn" title="The model in service is commit:c{40}" data-gap="true">In service: c{7}<\/span>/,
-  );
-  // The same commit, written with or without its prefix: no gap.
+  match(gap, /aria-label="Main · Not in service"/);
+  match(gap, /In service: commit:c{40}/);
   for (const same of [HEAD, HEAD.replace("commit:", "")]) {
-    doesNotMatch(
+    match(
       (await frame({ state: workbench(same) })).html(),
-      /data-gap|In service/,
+      /aria-label="Main · In service"/,
     );
   }
-  // Nothing in service that the shell knows of: nothing to compare, nothing said.
-  doesNotMatch(
+  match(
     (await frame({ state: workbench() })).html(),
-    /data-gap|In service/,
+    /Service status unavailable/,
   );
 });
 
@@ -371,7 +365,7 @@ Deno.test("a version the address names is the version read, with the way back to
   deepStrictEqual(host.requests.map((request) => request.path), [
     `/api/model/board?version=${encodeURIComponent(OLDER)}`,
   ]);
-  match(page, /<code title="commit:b{40}">b{7}<\/code>/);
+  match(page, /Version: commit:b{40}/);
   match(
     page,
     new RegExp(
@@ -760,7 +754,7 @@ Deno.test("a board that cannot be read again stays on show, with the reason besi
   match(page, /Try again/);
   // The team it had is still drawn, with the version it was read at.
   match(page, /class="tmap"/);
-  match(page, /<code title="commit:a{40}">/);
+  match(page, /Version: commit:a{40}/);
   host.state.fail = undefined;
   await board.open();
   doesNotMatch(html(), /board-timeout|Try again/);
@@ -1437,6 +1431,25 @@ Deno.test("unsupported Case or branch scope never displays a previously read mai
   }
 });
 
+Deno.test("Request navigation keeps its advanced pages under More and Main retains its tabs", async () => {
+  const request =
+    (await frame({ search: "?caseBranch=request&branch=unavailable" })).html();
+  const main = (await frame()).html();
+  for (const name of ["Explore", "Flows", "Requirements", "Diagnostics"]) {
+    const requestLink = within(request).byRole("link", { name });
+    ok(requestLink.closest("details"), `${name} belongs under More`);
+    equal(within(main).byRole("link", { name }).closest("details"), null);
+    equal(
+      new URL(requestLink.getAttribute("href")!, "http://localhost")
+        .searchParams.get("caseBranch"),
+      "request",
+    );
+  }
+  for (const name of ["Team", "Performance", "Rights"]) {
+    equal(within(request).byRole("link", { name }).closest("details"), null);
+  }
+});
+
 Deno.test("Performance shares the exact historical System source and conversation without a metrics fallback", async () => {
   const { html, host, matrices } = await frame({
     page: "performance",
@@ -1448,9 +1461,14 @@ Deno.test("Performance shares the exact historical System source and conversatio
   equal(shown.mounted, "performance");
   equal(shown.title(), "Performance");
   match(page, /class="repo-version"/);
-  match(page, /Measurements are not available for this scope\./);
-  equal((page.match(/<dd>N\/A<\/dd>/g) ?? []).length, 3);
-  doesNotMatch(page, /class="tmap"|class="profile"|view-mode|<svg|<select/);
+  match(page, /role="status"[^>]*>Reading measurements…</);
+  doesNotMatch(page, /<dt>Tokens|N\/A/);
+  const content = within(page).root.querySelector("[data-page=performance]")!;
+  content.querySelector(".repo-version")!.remove();
+  doesNotMatch(
+    content.innerHTML,
+    /class="tmap"|class="profile"|view-mode|<select|<svg/,
+  );
   for (const [, href] of shown.tabs()) {
     const query = new URL(href!, "http://atelier.test").searchParams;
     equal(query.get("version"), OLDER);
@@ -1487,7 +1505,7 @@ Deno.test("Team keeps the system summary independent of the selected operator an
     const page = (await frame({ host: { boards: { [HEAD]: board } } })).html();
     match(page, expected);
     match(page, /href="\/system\?page=performance">Open Performance<\/a>/);
-    equal((page.match(/<dd>N\/A<\/dd>/g) ?? []).length, 3);
+    match(page, /role="status"[^>]*>Reading measurements…</);
   }
 });
 
@@ -1532,9 +1550,11 @@ Deno.test("Team and Performance consume the same exact board-version readout wit
     const team = (await frame({ performance })).html();
     const page = (await frame({ performance, page: "performance" })).html();
     match(team, /class="system-performance-rail"/);
-    match(team, /3 retained calls/);
-    match(page, /3 retained calls/);
-    match(page, /Physical call outcomes/);
+    const tokens =
+      /<dt>Tokens<\/dt><dd title="Usage missing for 3 of 3 calls\.">N\/A/;
+    match(team, tokens);
+    match(page, tokens);
+    match(page, /Input 10 \(1 missing\)/);
     equal(calls, 1);
     const older = (await frame({
       performance,
@@ -1542,26 +1562,56 @@ Deno.test("Team and Performance consume the same exact board-version readout wit
       search: `?version=${encodeURIComponent(OLDER)}`,
       host: { boards: { [HEAD]: initialBoard(), [OLDER]: initialBoard() } },
     })).html();
-    doesNotMatch(older, /3 retained calls|Input tokens: 10/);
-    match(older, /Measurements are not available for this scope/);
+    doesNotMatch(older, /<dt>Tokens|Input 10/);
+    match(older, /Reading measurements…/);
   } finally {
     performance.dispose();
   }
 });
 
-Deno.test("Request System labels the executing model as current and a different inspection as in-service gap", async () => {
-  const current = (await frame({
-    search: `?version=${encodeURIComponent(HEAD)}`,
-    executionVersion: HEAD,
-  })).html();
-  match(current, /Request model/);
-  doesNotMatch(current, /Show current model|data-gap|head of main/);
-  const inspected = (await frame({
-    search: `?version=${encodeURIComponent(HEAD)}`,
-    executionVersion: OLDER,
-  })).html();
+Deno.test("Request System identifies the executing source and never marks another inspection in service", async () => {
+  const { board, state } = await frame();
+  await board.open(HEAD);
+  const search = `?caseBranch=A&version=${encodeURIComponent(HEAD)}`;
+  function Request({ executionVersion }: { executionVersion: string }) {
+    const boundary = SystemFrame({
+      state,
+      page: "team",
+      location: { search },
+      board,
+    }) as unknown as {
+      props: {
+        render(
+          scope: CaseModelScope,
+          request: typeof fetch,
+          search: string,
+        ): ComponentChildren;
+      };
+    };
+    return boundary.props.render(
+      caseScope("A", HEAD, { executionVersion, baseVersion: OLDER }),
+      fetch,
+      search,
+    );
+  }
+  const current = renderToString(<Request executionVersion={HEAD} />);
+  const currentLabel = within(current).root.querySelector(
+    ".repo-version summary",
+  )!;
+  equal(
+    currentLabel.getAttribute("aria-label"),
+    "Inspect Request · modified · In service · Read-only",
+  );
+  doesNotMatch(current, /Show current model|head of main/);
+  const inspected = renderToString(<Request executionVersion={OLDER} />);
   match(inspected, /Show current model/);
-  match(inspected, /data-gap="true"/);
+  const inspectedLabel = within(inspected).root.querySelector(
+    ".repo-version summary",
+  )!;
+  equal(
+    inspectedLabel.getAttribute("aria-label"),
+    "Inspect Request · modified · Not in service · Read-only",
+  );
 });
 
 Deno.test("System search is available with the board and retains the view mode control", async () => {

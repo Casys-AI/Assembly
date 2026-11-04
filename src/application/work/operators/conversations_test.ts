@@ -1289,7 +1289,10 @@ Deno.test("only an explicitly migrated dossier can reuse a historical receipt wi
     await f.manager.submitWork("worker", "Collecter", "legacy", f.proof()),
     legacy,
   );
-  await migrated.closeCase(f.primary.state.cases![0].id, "done");
+  await migrated.closeCase(f.primary.state.cases![0].id, "done", {
+    closedBy: "host-owner",
+    verdict: "accepted",
+  });
   await migrated.submit("A new request", undefined, undefined, true);
   await migrated.idle();
   f.primary.state = migrated.snapshot;
@@ -3583,6 +3586,8 @@ Deno.test("a parent contribution through the member's native inbox is authorized
  * explicitly gives access to the worker's inbox (spec 4.8e E6). */
 async function subordinateOrderFixture(
   onNoticeError?: (error: OperatorConversationError) => void,
+  retained = false,
+  verifiedMemberIds = ["worker", "sibling"],
 ) {
   const primary = new Runtime(model("primary", true, true));
   const worker = new Runtime(model("worker", false));
@@ -3606,7 +3611,7 @@ async function subordinateOrderFixture(
   const team = {
     parentOperatorId: "primary",
     requestOwnerId: "primary",
-    requestId: "primary-request",
+    requestId: retained ? "original-request" : "primary-request",
   };
   worker.state.executionModel!.operatorTeam = structuredClone(team);
   sibling.state.executionModel!.operatorTeam = structuredClone(team);
@@ -3655,6 +3660,14 @@ async function subordinateOrderFixture(
   const manager = new OperatorConversations({
     primary,
     onNoticeError,
+    ...(retained
+      ? {
+        requestTeam: {
+          caseId: "primary-request",
+          memberIds: verifiedMemberIds,
+        },
+      }
+      : {}),
     factory: {
       open: (unit) =>
         Promise.resolve(members.get(unit.model.identity.builderId)!),
@@ -3699,6 +3712,45 @@ async function subordinateOrderFixture(
   };
   return { primary, worker, sibling, manager, proof, mainProof };
 }
+
+Deno.test("a foreign team lineage cannot contribute through another Request's native inbox", async () => {
+  const f = await subordinateOrderFixture();
+  f.worker.state.executionModel!.operatorTeam!.requestId = "foreign-request";
+  try {
+    await rejects(
+      () =>
+        f.manager.submitWork(
+          "worker",
+          "Collect",
+          "foreign-member",
+          f.proof(f.primary, "foreign-member"),
+        ),
+      { code: "WORK_CASE_MISMATCH" },
+    );
+    equal(f.worker.calls.length, 0);
+  } finally {
+    await f.manager.dispose();
+  }
+});
+
+Deno.test("a Request contribution refuses a member absent from the verified opening roster", async () => {
+  const f = await subordinateOrderFixture(undefined, true, []);
+  try {
+    await rejects(
+      () =>
+        f.manager.submitWork(
+          "worker",
+          "Collect",
+          "unadmitted-member",
+          f.proof(f.primary, "unadmitted-member"),
+        ),
+      { code: "WORK_CASE_MISMATCH" },
+    );
+    equal(f.worker.calls.length, 0);
+  } finally {
+    await f.manager.dispose();
+  }
+});
 
 Deno.test("4.8e Q7: a host Main order records its crossing and notifies the parent once; a forged ordinary call is refused", async () => {
   const f = await subordinateOrderFixture();
@@ -4052,5 +4104,24 @@ Deno.test("Q7 Main order to a nested member informs its BO once", async () => {
   equal(f.primary.notices.length, 1);
   equal(f.sibling.notices.length, 0);
   f.worker.finish();
+  await f.manager.dispose();
+});
+
+Deno.test("a retained team registry authorizes and observes work in its new Case without rewriting source lineage", async () => {
+  const f = await subordinateOrderFixture(undefined, true);
+  const original = structuredClone(f.worker.state.executionModel);
+  const pending = f.manager.submitWork(
+    "worker",
+    "Collect",
+    "retained-work",
+    f.proof(f.sibling, "retained-invoke"),
+  );
+  await Promise.resolve();
+  equal(f.worker.calls.length, 1);
+  f.worker.finish();
+  await pending;
+  deepStrictEqual(f.worker.state.executionModel, original);
+  const notice = f.primary.notices.at(-1);
+  equal(notice?.notice.caseId, "primary-request");
   await f.manager.dispose();
 });

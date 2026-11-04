@@ -14,7 +14,7 @@ import { SystemRuntime } from "../support/system-runtime.ts";
 import { enableCommandFixtureProfile } from "../support/execution-fixture.ts";
 import { unexpectedModelAuthoring } from "../support/model-authoring.ts";
 import { ModelContextReader } from "../../src/application/model/consultation/source-reader.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 import type { ChatContext } from "../../src/domain/work/dialogue.ts";
 
 function fixture() {

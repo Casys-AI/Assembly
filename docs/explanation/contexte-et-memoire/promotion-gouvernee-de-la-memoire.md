@@ -49,8 +49,8 @@ Content includes `text`, `origin`, `scope`, `validUntil` and `outcome`.
 `origin.decisionId` identifies an actual assistant decision; `message:<id>`
 references identify local journal messages. For a `known` outcome, evidence must
 point to recorded tool observations. The
-[workspace verifier](../../../src/adapters/work/operator-workspace.ts) resolves
-these links. It establishes provenance; it does not by itself prove the
+[workspace verifier](../../../src/application/memory/workspace-memory-provenance.ts)
+resolves these links. It establishes provenance; it does not by itself prove the
 correctness of the written conclusion.
 
 `outcome: {status: "pending"}` retains an unknown outcome. Capture remains

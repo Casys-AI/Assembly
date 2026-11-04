@@ -1,7 +1,10 @@
 import type { CurrentProviderResourceReadout } from "../../../../src/application/telemetry/current-provider-resources.ts";
-import type {
-  ObservedResourceAmount,
-  ProviderResourceUnit,
+import type { RequestKpis } from "../../../../src/application/telemetry/request-kpis.ts";
+import {
+  type ObservedResourceAmount,
+  type ProviderResourceUnit,
+  type ProviderTokenSummary,
+  tokenSummary,
 } from "../../../../src/application/telemetry/provider-resource-readout.ts";
 
 export interface PerformanceSelection {
@@ -92,6 +95,39 @@ const OUTCOMES = ["returned", "failed", "cancelled", "timed-out"] as const;
 const sameKeys = (value: Record<string, unknown>, keys: readonly string[]) =>
   Object.keys(value).sort().join(",") === [...keys].sort().join(",");
 
+/** The summary must be the shared calculation over the units it summarizes. */
+function summaryOf(
+  value: unknown,
+  units: Record<ProviderResourceUnit, ObservedResourceAmount>,
+  calls: number,
+): ProviderTokenSummary {
+  const expected = tokenSummary(units, calls);
+  if (
+    !object(value) || !sameKeys(value, Object.keys(expected)) ||
+    (Object.keys(expected) as (keyof ProviderTokenSummary)[]).some((key) =>
+      value[key] !== expected[key]
+    )
+  ) return invalid();
+  return expected;
+}
+
+function requestKpisOf(value: unknown): RequestKpis {
+  if (
+    !object(value) ||
+    !(value.durationMs === null || counter(value.durationMs)) ||
+    !object(value.humanInterventions) ||
+    !counter(value.humanInterventions.messages) ||
+    !counter(value.humanInterventions.decisions)
+  ) return invalid();
+  return {
+    durationMs: value.durationMs,
+    humanInterventions: {
+      messages: value.humanInterventions.messages,
+      decisions: value.humanInterventions.decisions,
+    },
+  };
+}
+
 /** Reconcile the complete partition without interpreting unknown as an observation. */
 function reconcileAmount(
   parent: ObservedResourceAmount,
@@ -176,6 +212,7 @@ function operatorGroups(
         "outcomes",
         "providerElapsedMs",
         "units",
+        "tokenSummary",
       ]) ||
       !(entry.operatorId === null || operatorReference(entry.operatorId)) ||
       !counter(entry.calls) || entry.calls === 0 ||
@@ -239,6 +276,7 @@ function operatorGroups(
       outcomes: groupOutcomes,
       providerElapsedMs: groupElapsed,
       units: groupUnits,
+      tokenSummary: summaryOf(entry.tokenSummary, groupUnits, entry.calls),
     };
   });
   if (
@@ -324,6 +362,13 @@ export function parsePerformanceReadout(
     providerElapsedMs.presentCalls !== resources.calls ||
     providerElapsedMs.missingCalls !== 0
   ) return invalid();
+  const summary = summaryOf(resources.tokenSummary, units, calls);
+  // Request KPIs belong to a Request read and never to Main.
+  const request = kind === "case"
+    ? requestKpisOf(value.request)
+    : value.request === undefined
+    ? undefined
+    : invalid();
   const groups = "operatorGroups" in resources
     ? operatorGroups(
       resources.operatorGroups,
@@ -365,8 +410,10 @@ export function parsePerformanceReadout(
       outcomes,
       providerElapsedMs,
       units,
+      tokenSummary: summary,
       ...(groups === undefined ? {} : { operatorGroups: groups }),
     },
+    ...(request === undefined ? {} : { request }),
   };
 }
 

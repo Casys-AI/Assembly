@@ -80,6 +80,29 @@ export function isTechnicalLogJson(
   return env !== "development" && env !== "dev";
 }
 
+/** Preserve nested Error and AggregateError diagnostics in the private log. */
+function errorStack(
+  error: object,
+  seen = new Set<object>(),
+): string | undefined {
+  if (seen.has(error)) return undefined;
+  seen.add(error);
+  const record = error as { stack?: unknown; cause?: unknown };
+  const nested = [
+    ...(record.cause === undefined ? [] : [record.cause]),
+    ...(error instanceof AggregateError ? error.errors : []),
+  ].map((cause) =>
+    typeof cause === "object" && cause !== null
+      ? errorStack(cause, seen)
+      : String(cause)
+  ).filter((stack) => stack !== undefined);
+  return [
+    typeof record.stack === "string" ? record.stack : undefined,
+    ...nested,
+  ]
+    .filter((stack) => stack !== undefined).join("\nCaused by: ") || undefined;
+}
+
 /** Extract `{code, context, recovery}` plus error detail from anything thrown. */
 export function errorLogProperties(error: unknown): TechnicalLogProperties {
   if (typeof error !== "object" || error === null) {
@@ -92,6 +115,7 @@ export function errorLogProperties(error: unknown): TechnicalLogProperties {
     message?: unknown;
     stack?: unknown;
   };
+  const stack = errorStack(error);
   return {
     ...(typeof record.code === "string" ? { code: record.code } : {}),
     ...(record.context !== undefined ? { context: record.context } : {}),
@@ -99,7 +123,7 @@ export function errorLogProperties(error: unknown): TechnicalLogProperties {
       ? { recovery: record.recovery }
       : {}),
     ...(typeof record.message === "string" ? { error: record.message } : {}),
-    ...(typeof record.stack === "string" ? { stack: record.stack } : {}),
+    ...(stack ? { stack } : {}),
   };
 }
 

@@ -1,6 +1,9 @@
 import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
 import { MAX_OPERATOR_UNITS } from "../../../src/domain/work/records/conversations.ts";
-import { isTeamOperatorSpec } from "../../../src/domain/governance/operator-authority.ts";
+import {
+  isTeamOperatorSpec,
+  type TeamOperatorSpec,
+} from "../../../src/domain/governance/operator-authority.ts";
 import type { Candidate } from "../../../src/domain/work/candidates.ts";
 import type {
   PendingChange,
@@ -159,13 +162,8 @@ export function changeScope(change: PendingChange): string[] {
   }
   if (change.kind === "operator-creation" && change.operator) {
     if (isTeamOperatorSpec(change.operator)) {
-      const { provision, creationGrant } = change.operator;
-      // Creations persisted before E2 carry hosts at the spec root and no
-      // provision: display those recorded hosts, never invent a provision.
-      const networkHosts = provision?.networkHosts ??
-        (change.operator as unknown as { networkHosts?: string[] })
-          .networkHosts ??
-        [];
+      const { creationGrant } = change.operator;
+      const networkHosts = memberHosts(change.operator);
       return [
         change.teamOrigin?.requestId
           ? `Originating Request: ${change.teamOrigin.requestId}`
@@ -200,6 +198,48 @@ export function changeScope(change: PendingChange): string[] {
     ];
   }
   return [];
+}
+/**
+ * The hosts a new team member may reach. Creations persisted before E2 carry
+ * them at the spec root and no provision: those recorded hosts are shown,
+ * never an invented provision.
+ */
+function memberHosts(spec: TeamOperatorSpec): string[] {
+  return spec.provision?.networkHosts ??
+    (spec as unknown as { networkHosts?: string[] }).networkHosts ?? [];
+}
+
+/** One right of a new team member: a mark, a few words, the exact sentence. */
+export interface MemberFact {
+  kind: "request" | "network" | "creation";
+  label: string;
+  detail: string;
+}
+
+/**
+ * Where a new team member works, what it reaches and whom it may create, read
+ * from the rights its creation records: a member always works in its Request.
+ */
+export function memberFacts(spec: TeamOperatorSpec): MemberFact[] {
+  const hosts = memberHosts(spec);
+  const grant = spec.creationGrant;
+  return [{
+    kind: "request",
+    label: "this Request",
+    detail: "Contributes within this Request; opens no other Request",
+  }, {
+    kind: "network",
+    label: hosts.length ? hosts.join(", ") : "no network",
+    detail: hosts.length ? `Network hosts: ${hosts.join(", ")}` : "No network",
+  }, {
+    kind: "creation",
+    label: grant ? `creates ≤ ${grant.maxChildren}` : "creates no one",
+    detail: grant
+      ? `Creation grant: up to ${grant.maxChildren} operators · delegation depth ${grant.maxDelegationDepth} · hosts ${
+        grant.networkHosts.join(", ") || "none"
+      }`
+      : "No operator creation rights",
+  }];
 }
 /** Current configuration is a valid before only for a still-pending exact base. */
 export function changeDifferences(

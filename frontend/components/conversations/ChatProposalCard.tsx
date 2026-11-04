@@ -42,7 +42,8 @@ export interface ProposalDecisionProps {
 export interface ChatProposalCardProps extends ProposalDecisionProps {
   id: string;
   title: string;
-  status: string;
+  /** A word, or the chip of a decision's state. */
+  status: ComponentChildren;
   open: boolean;
   actions?: boolean;
   rows?: ProposalDifference[];
@@ -354,7 +355,10 @@ export function ChatProposalCard(props: ChatProposalCardProps) {
           </>
         )
         : (
-          <details class="proposal-receipt">
+          <details
+            class="proposal-receipt"
+            open={Boolean(props.notice || flow.error)}
+          >
             <summary>
               <span>{props.title}</span>
               <span class="proposal-status">

@@ -1,3 +1,4 @@
+import { ACCEPTED_CASE_CLOSURE } from "../support/case-closure.ts";
 /** Real compiler/Git/queued writer/PostgreSQL lifecycle/runtime. Zero real provider calls. */
 import assert from "node:assert/strict";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
@@ -11,12 +12,15 @@ import { editRequest, nativeId } from "../fixtures/model-edit-mandate.ts";
 import type { ModelEdit } from "../../src/domain/model/editing/tooling.ts";
 import type { EvolutionCategory } from "../../src/domain/model/evolution/policy.ts";
 import type { EvolutionDossier } from "../../src/application/model/evolution/ports.ts";
-import { validateSourceExecutable } from "../../src/adapters/model/sources/source-model.ts";
-import { NativeEvolutionSourceAssessment } from "../../src/adapters/model/evolution/assessment.ts";
-import { NativeEvolutionAuthority } from "../../src/adapters/model/evolution/authority.ts";
+import {
+  sourceEvolutionCompilation,
+  validateSourceExecutable,
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { NativeEvolutionSourceAssessment } from "../../src/application/model/evolution/assessment.ts";
+import { NativeEvolutionAuthority } from "../../src/application/model/evolution/authority.ts";
 import { buildEvolutionPolicyEdits } from "../support/evolution-policy/writer.ts";
 import { budgetState } from "../../src/domain/work/policies/budget.ts";
-import { sourceSnapshot } from "../../src/adapters/model/projections/graph/source.ts";
+import { sourceSnapshot } from "../../src/domain/model/projections/source-facts.ts";
 import { selectedFlowRoot } from "../../src/adapters/out/sysml-toolkit/compilation-policies/work/operator-flow.ts";
 import { caseMessages } from "../../src/application/work/cases/runtime.ts";
 import { readDecisionContextEvidence } from "../../src/application/work/context/separation.ts";
@@ -923,7 +927,9 @@ Deno.test({
           requestId,
         );
         assert.equal(d.origin.requestId, requestId);
-        if (closeOrigin) await f.primary.closeCase(requestId, "done");
+        if (closeOrigin) {
+          await f.primary.closeCase(requestId, "done", ACCEPTED_CASE_CLOSURE);
+        }
         await accept(f, d);
         await f.turn(
           [{
@@ -999,7 +1005,10 @@ Deno.test({
         nativeEvolutionPeer,
       );
       const repository = f.backend.createEvolutionRepository(
-        new NativeEvolutionSourceAssessment({ projectId: f.backend.projectId }),
+        new NativeEvolutionSourceAssessment({
+          compilation: sourceEvolutionCompilation,
+          projectId: f.backend.projectId,
+        }),
       );
       const input = {
         id: "refusal",
@@ -1078,6 +1087,7 @@ Deno.test({
         "Human revokes the prior instruction grant",
       );
       const authority = new NativeEvolutionAuthority({
+        compilation: sourceEvolutionCompilation,
         projectId: f.backend.projectId,
         repository: f.backend.repository,
       });

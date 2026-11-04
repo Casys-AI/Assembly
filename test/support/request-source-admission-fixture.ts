@@ -1,5 +1,5 @@
 /** Synthetic integrity fixture: no credential, Git anchor or publication is real. */
-import type { ModelIdentity } from "../../src/domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { sha256 } from "../../src/domain/primitives/execution-digest.ts";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";

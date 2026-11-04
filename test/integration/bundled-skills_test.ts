@@ -2,14 +2,16 @@ import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import {
-  bundledSkillReader,
   BundledSkillReadError,
   type BundledSkillReadErrorCode,
+} from "../../src/application/skills/ports.ts";
+import {
+  bundledSkillReader,
   pinBundledSkillDigests,
 } from "../../src/adapters/out/filesystem/skill-bundles.ts";
 import { artifactModel } from "../support/tool-artifact-fixture.ts";
 import { skillContentDigest } from "../../src/domain/skills/context-skills.ts";
-import { inspectRequestInitialSkills } from "../../src/adapters/skills/request-initial-skills.ts";
+import { inspectRequestInitialSkills } from "../../src/application/skills/request-initial-skills.ts";
 
 const readerFailure = (code: BundledSkillReadErrorCode) => (error: unknown) =>
   error instanceof BundledSkillReadError && error.code === code;

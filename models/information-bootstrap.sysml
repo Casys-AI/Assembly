@@ -1,5 +1,15 @@
 // Fragment inserted into the concrete initial ConversationSystem.
 // Classic generated tools remain in its separate catalog.
+part accountability : APEAccountability::AccountabilityAssignment;
+bind accountability.accountable = owner;
+part invocationBudget : APEWorkBudget::InvocationBudgetPolicy {
+    attribute :>> id = "initial-dossier-invocations";
+    attribute :>> revision = 1;
+    attribute :>> unit = "agent-invocation";
+    attribute :>> limit = 1000;
+    attribute :>> onExhausted = "wait";
+    attribute :>> exhaustionRecipient = "local-control";
+}
 part context {
     part policy : APEContext::DecisionContextPolicy {
         attribute :>> id = "decision-context-v1";
@@ -20,7 +30,7 @@ part context {
         part policy : APESkills::SkillPolicy {
             attribute :>> id = "context-skills-v1";
             attribute :>> revision = 1;
-            attribute :>> allowedHosts = "[\"raw.githubusercontent.com\"]";
+            attribute :>> allowedHosts = "[]";
             attribute :>> maxSkillBytes = 65536;
             attribute :>> maxInstalledSkills = 32;
             attribute :>> maxLoadedSkills = 4;

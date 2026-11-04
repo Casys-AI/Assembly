@@ -5,7 +5,7 @@ import {
   instantiateWorkResultContract,
 } from "../../src/domain/work/policies/verified-effect-closure.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
-import { validateSourceExecutable } from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import {
   verifiedBoundRecordSources,
   verifiedRecordSources,

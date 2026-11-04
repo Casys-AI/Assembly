@@ -10,13 +10,14 @@ import {
   type AuthorityReading,
   type AuthorityRoster,
   currentAuthorityLabel,
-  delegatedDecisionLabel,
+  decidedByLabel,
   recordedCandidateDelegation,
   recordedDelegation,
   recordedOwnerAuthority,
 } from "../../lib/conversations/operator-authority.ts";
 import type { WorkbenchState } from "../../lib/workbench/state.ts";
 import { modelLive } from "../../lib/model/live.ts";
+import { type Fact, FactList } from "./DecisionParts.tsx";
 
 type AuthorityStore = WorkbenchState["chatProposals"];
 const sourceFollowers = new WeakMap<
@@ -47,7 +48,11 @@ function followAuthority(store: AuthorityStore, owner: string) {
   };
 }
 
-/** Recorded facts inside an existing change card, never a decision surface. */
+/**
+ * The authority a change asks for or was decided under, as exact values for
+ * the inspector of its card; never a decision surface. The change's own
+ * identity, Request and commit are the card's facts, not repeated here.
+ */
 export function OperatorAuthorityFacts(
   { change, roster = [], reading, historical = false }: {
     change: PendingChange;
@@ -72,18 +77,6 @@ export function OperatorAuthorityFacts(
   const revision = request
     ? request.expectedPolicyRevision + 1
     : delegated!.policyRevision;
-  const title = delegatedDecisionLabel(change, roster) ??
-    (change.status === "pending"
-      ? "Awaiting person"
-      : change.status === "refused"
-      ? "Policy proposal declined"
-      : !change.publishedCommit
-      ? "Approved · publication pending"
-      : request?.enabled
-      ? request.expectedPolicyRevision === 0
-        ? "Policy grant published"
-        : "Policy revision published"
-      : "Policy revocation published");
   const person = recordedOwnerAuthority(change);
   const actor = delegated?.actorId ?? person?.operatorNativeId;
   const toolAdmission = request && "toolKinds" in request;
@@ -94,7 +87,7 @@ export function OperatorAuthorityFacts(
         : []);
   const recipients = request?.recipients ?? [delegated!.requestedBy];
   const space = request?.recipientExecutionSpaceId;
-  const rows: Array<{ label: string; value: string; identity?: string }> = [
+  const facts: Fact[] = [
     {
       label: "Policy",
       value: request ? policyId : `${policyId} · revision ${revision}`,
@@ -110,7 +103,6 @@ export function OperatorAuthorityFacts(
         value: String(revision),
       }]
       : []),
-    { label: "Change", value: change.id },
     ...(actor
       ? [{
         label: "Decided by",
@@ -154,58 +146,26 @@ export function OperatorAuthorityFacts(
         value: hosts.join(", "),
       }, { label: "Tool admission", value: "Not included" }]),
     { label: "Further delegation", value: "Not allowed · depth 0" },
+    ...(!historical
+      ? [{
+        label: "Current sources",
+        value: currentAuthorityLabel(change, reading),
+      }]
+      : []),
   ];
   return (
-    <details
-      class="proposal-rationale operator-authority"
+    <div
+      class="operator-authority"
       data-authority={toolAdmission ? "tool-admission" : "network"}
     >
-      <summary>{title}</summary>
-      <dl class="operator-authority-facts">
-        {rows.map((row) => (
-          <div key={row.label}>
-            <dt>{row.label}</dt>
-            <dd>{row.value}{row.identity && <code>{row.identity}</code>}</dd>
-          </div>
-        ))}
-        {change.caseId && (
-          <div>
-            <dt>Request</dt>
-            <dd>
-              <a href={caseHref(change.caseId)}>{change.caseId}</a>
-            </dd>
-          </div>
-        )}
-        {change.publishedCommit && (
-          <div>
-            <dt>Published commit</dt>
-            <dd>
-              <code>{change.publishedCommit}</code>
-            </dd>
-          </div>
-        )}
-        {change.designerScopeId && (
-          <div>
-            <dt>Design conversation</dt>
-            <dd>
-              <code>{change.designerScopeId}</code>
-            </dd>
-          </div>
-        )}
-        {!historical && (
-          <div>
-            <dt>Current sources</dt>
-            <dd>{currentAuthorityLabel(change, reading)}</dd>
-          </div>
-        )}
-      </dl>
+      <FactList facts={facts} />
       {historical && (
         <p>
           Recorded at this revision. This receipt does not describe current
           policy status.
         </p>
       )}
-    </details>
+    </div>
   );
 }
 
@@ -226,21 +186,17 @@ export function CandidateAuthorityFacts(
       ? <p class="proposal-notice">Decision receipt unavailable</p>
       : null;
   }
-  const verdict = candidate.admissionDecision!.verdict;
-  const label = verdict === "refuse"
-    ? "Declined"
-    : candidate.admission
-    ? "Admitted"
-    : "Decided";
   return (
     <details
       class="proposal-rationale operator-authority"
       data-authority="candidate-admission"
     >
       <summary>
-        {label} by {authorityName(roster, proof.actorId)} · {proof.policyId}
-        {" "}
-        revision {proof.policyRevision}
+        {decidedByLabel({
+          by: authorityName(roster, proof.actorId),
+          rule: proof.policyId,
+          revision: proof.policyRevision,
+        })}
       </summary>
       <dl class="operator-authority-facts">
         <div>

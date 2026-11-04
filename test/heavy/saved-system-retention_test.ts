@@ -8,9 +8,7 @@ import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import { openPostgresRuntimeFixture } from "../support/postgres-runtime-fixture.ts";
 import { openOperatorWorkspace } from "../support/operator-workspace.ts";
 import { savedSystemReadFixture } from "../support/saved-system-read-fixture.ts";
-import {
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { SystemRuntime } from "../../src/application/work/runtime/system.ts";
 import { WorkBudgetService } from "../../src/application/work/budget/service.ts";
 import {

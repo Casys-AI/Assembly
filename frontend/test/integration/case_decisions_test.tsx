@@ -72,7 +72,7 @@ function renderCases(
   );
 }
 
-/** What the To decide place lists: the decisions are read on its page. */
+/** What the Activity place lists: the decisions are read on its page. */
 const decisions = (...args: [number, string?, Record<string, string>?]) =>
   renderCases(args[0], args[1], args[2], "/decide");
 
@@ -90,20 +90,20 @@ Deno.test("two Main Job Cases of one owner show a decision badge only on its rec
   doesNotMatch(tile(html, 1), /dock-badge|decision waiting/);
   match(tile(html, 2), /dock-badge/);
   match(tile(html, 2), /decision waiting/);
-  match(html, /aria-label="To decide, 1 pending"/);
+  match(html, /aria-label="Activity, 1 pending"/);
   match(
     decisions(2, "ui-fixture:case:2"),
     /<span class="decide-text">Authorize mandate change<\/span>/,
   );
 });
 
-Deno.test("an unscoped decision marks only the owner's sole open Case and stays in To decide", () => {
+Deno.test("an unscoped decision marks only the owner's sole open Case and stays in Activity", () => {
   for (const count of [1, 2]) {
     const html = renderCases(count);
     for (let id = 1; id <= count; id++) {
       equal(tile(html, id).includes('class="dock-badge"'), count === 1);
     }
-    match(html, /aria-label="To decide, 1 pending"/);
+    match(html, /aria-label="Activity, 1 pending"/);
     match(
       decisions(count),
       /<span class="decide-text">Authorize mandate change<\/span>/,
@@ -115,7 +115,7 @@ Deno.test("a decision recorded in an open Case lights that Case, not its agent's
   const scoped = renderCases(2, "ui-fixture:case:2");
   match(tile(scoped, 2), /dock-badge/);
   doesNotMatch(scoped, /dock-circle-badge/);
-  // The decision stays in To decide and leads to the Case.
+  // The decision stays in Activity and leads to the Case.
   match(
     decisions(2, "ui-fixture:case:2"),
     /href="\/cases\?case=ui-fixture%3Acase%3A2"[^>]*>\s*<span[^>]*><\/span><span class="decide-text">Authorize/,
@@ -130,7 +130,7 @@ Deno.test("a decision made in the designer's own conversation lights the circle 
   const html = renderCases(1, undefined, { designerScopeId: "scope:1" });
   match(html, /dock-circle-badge/);
   doesNotMatch(tile(html, 1), /dock-badge/);
-  match(html, /aria-label="To decide, 1 pending"/);
+  match(html, /aria-label="Activity, 1 pending"/);
   match(
     decisions(1, undefined, { designerScopeId: "scope:1" }),
     /href="\/chat\?agent=coordinator"[^>]*>\s*<span[^>]*><\/span><span class="decide-text">Authorize/,

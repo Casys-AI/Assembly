@@ -1,9 +1,14 @@
 /** Real Toolkit proposals preserve diagnostic intent without adopting the revision. */
+import {
+  sourceCompilation,
+  sourceEvolutionCompilation,
+  sourceExecutablesCompilation,
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import assert from "node:assert/strict";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
-import { NativeModelSourceAuthorization } from "../../src/adapters/governance/model-access/source-authorization.ts";
+import { NativeModelSourceAuthorization } from "../../src/application/governance/model-access/source-authorization.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
-import { SourceModelDiagnosticsReader } from "../../src/adapters/model/diagnostics/source.ts";
+import { SourceModelDiagnosticsReader } from "../../src/application/model/diagnostics/source-diagnostics-reader.ts";
 import { ModelDiagnosticsService } from "../../src/application/model/diagnostics/service.ts";
 import { requireExistingDiagnosticAddresses } from "../../src/domain/model/value-objects/diagnostic-address.ts";
 import {
@@ -26,7 +31,11 @@ Deno.test({
       const base = await f.repository.current();
       const current = await f.primary.readExecutableModel(f.primaryIdentity);
       const service = new ModelDiagnosticsService(
-        new SourceModelDiagnosticsReader(f.repository, f.projectId),
+        new SourceModelDiagnosticsReader(
+          f.repository,
+          f.projectId,
+          sourceExecutablesCompilation,
+        ),
         { list: () => Promise.resolve([]), set: () => Promise.resolve() },
       );
       const original = await service.list(base.version);
@@ -84,7 +93,11 @@ Deno.test({
       const reopened = await GitModelRepository.open({
         projectDir: f.directory,
         compiler: new ToolkitCompiler({ packageDir: packageDir! }),
-        sourceAuthorization: new NativeModelSourceAuthorization(f.projectId),
+        sourceAuthorization: new NativeModelSourceAuthorization(
+          f.projectId,
+          sourceCompilation,
+          sourceEvolutionCompilation,
+        ),
       });
       assert.deepEqual(
         (await reopened.listProposals()).map((p) => p.addresses),

@@ -1,7 +1,8 @@
+import { sourceExecutablesCompilation } from "../adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import type { createRequestReleasesComposition } from "./request-releases.ts";
 import type { ModelBuildService } from "../application/model/builds/service.ts";
-import { RequestOpeningSources } from "../adapters/work/request-opening-sources.ts";
-import { RequestOpeningHost } from "../adapters/work/request-opening-host.ts";
+import { RequestOpeningSources } from "../application/work/request-spaces/opening-sources.ts";
+import { RequestOpeningHost } from "../application/work/request-spaces/opening-host.ts";
 import { GitModelRepository } from "../adapters/out/git/repository.ts";
 import { GitRequestBranches } from "../adapters/out/git/request-branches.ts";
 import type { RepositoryWriterLock } from "../adapters/out/git/writer-lock.ts";
@@ -43,6 +44,7 @@ export function createRequestOpeningSourcesComposition(
       buildService: options.buildService,
     });
   const host = new RequestOpeningHost({
+    compilation: sourceExecutablesCompilation,
     scope: sourceScope,
     sourceProjectId,
     repositoryId: options.repositoryId,
@@ -57,6 +59,7 @@ export function createRequestOpeningSourcesComposition(
       : undefined,
   });
   const source = new RequestOpeningSources({
+    compilation: sourceExecutablesCompilation,
     sourceScope,
     sourceProjectId,
     registry: options.savedSystems.assets,

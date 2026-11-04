@@ -147,6 +147,63 @@ Deno.test("performance parser rejects other versions/Cases, contradictory counts
   );
 });
 
+Deno.test("token summary and Request KPIs are kept only when they match their units and scope", () => {
+  const selection = { expectedVersion: PERFORMANCE_VERSION, caseId: "caseA" };
+  const value = JSON.parse(JSON.stringify(performanceReadout(selection, 2)));
+  const known = (observedSubtotal: number) => ({
+    observedSubtotal,
+    presentCalls: 2,
+    missingCalls: 0,
+    state: "known",
+  });
+  value.resources.units.cache_creation_input_tokens = known(6);
+  value.resources.units.cache_read_input_tokens = known(4);
+  value.resources.tokenSummary = {
+    total: 20,
+    meanPerCall: 10,
+    cacheReadShare: 0.2,
+  };
+  value.request = {
+    durationMs: 559_000,
+    humanInterventions: { messages: 1, decisions: 2 },
+  };
+  const parsed = parsePerformanceReadout(value, selection);
+  deepStrictEqual(parsed.resources.tokenSummary, value.resources.tokenSummary);
+  deepStrictEqual(parsed.request, value.request);
+  const variants = [
+    (v: typeof value) => {
+      v.resources.tokenSummary.total = 21;
+    },
+    (v: typeof value) => {
+      delete v.resources.tokenSummary;
+    },
+    (v: typeof value) => {
+      delete v.request;
+    },
+    (v: typeof value) => {
+      v.request.durationMs = -1;
+    },
+    (v: typeof value) => {
+      v.request.humanInterventions.messages = 1.5;
+    },
+  ];
+  for (const change of variants) {
+    const copy = structuredClone(value);
+    change(copy);
+    throws(
+      () => parsePerformanceReadout(copy, selection),
+      PerformanceReadError,
+    );
+  }
+  const main = JSON.parse(JSON.stringify(performanceReadout()));
+  main.request = value.request;
+  throws(
+    () =>
+      parsePerformanceReadout(main, { expectedVersion: PERFORMANCE_VERSION }),
+    PerformanceReadError,
+  );
+});
+
 Deno.test("operator partition is exact, complete and rejects malformed or inconsistent groups", () => {
   const selection = { expectedVersion: PERFORMANCE_VERSION };
   const value = JSON.parse(JSON.stringify(performanceReadout()));
@@ -156,6 +213,7 @@ Deno.test("operator partition is exact, complete and rejects malformed or incons
     outcomes: structuredClone(value.resources.outcomes),
     providerElapsedMs: structuredClone(value.resources.providerElapsedMs),
     units: structuredClone(value.resources.units),
+    tokenSummary: structuredClone(value.resources.tokenSummary),
   }];
   equal(
     parsePerformanceReadout(value, selection).resources.operatorGroups?.[0]
@@ -188,6 +246,9 @@ Deno.test("operator partition is exact, complete and rejects malformed or incons
     },
     (v: typeof value) => {
       v.resources.operatorGroups[0].providerElapsedMs.observedSubtotal = 13;
+    },
+    (v: typeof value) => {
+      v.resources.operatorGroups[0].tokenSummary.total = 1;
     },
     (v: typeof value) => {
       v.resources.operatorGroups = [];
@@ -265,6 +326,7 @@ Deno.test("operator totals reconcile integers, overflow and floating point round
         state: "known",
       },
       units,
+      tokenSummary: { total: null, meanPerCall: null, cacheReadShare: null },
     };
   };
   value.resources.operatorGroups = [

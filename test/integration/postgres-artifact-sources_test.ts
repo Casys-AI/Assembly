@@ -11,7 +11,7 @@ import {
 } from "../support/postgres-write-queue.ts";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import { repositoryWriterLock } from "../../src/adapters/out/git/writer-lock.ts";
-import { PostgresModelWriteQueue } from "../../src/adapters/model/repository/writing/postgres-write-queue.ts";
+import { PostgresModelWriteQueue } from "../../src/adapters/out/postgres/model-write-queue.ts";
 import { QueuedModelWriter } from "../../src/application/model/publication/queued-writer.ts";
 import { DurableQueuedArtifactSourcePublisher } from "../../src/application/model/write-queue/queued-artifact-source-publisher.ts";
 import { ModelWriteWorker } from "../../src/application/model/publication/write-queue.ts";
@@ -22,7 +22,7 @@ import {
   ArtifactSourceService,
   type BoundArtifactSource,
 } from "../../src/application/work/artifacts/publication.ts";
-import { PostgresArtifactBindings } from "../../src/adapters/work/artifacts/postgres-bindings.ts";
+import { PostgresArtifactBindings } from "../../src/adapters/out/postgres/artifact-source-bindings.ts";
 import { ArtifactSourceError } from "../../src/domain/work/artifacts/source-reference.ts";
 import { skillContentDigest } from "../../src/domain/skills/context-skills.ts";
 import {

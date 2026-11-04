@@ -9,8 +9,9 @@ import {
   ModelContextError,
   type ModelSourceRange,
 } from "../../../domain/model/consultation/context.ts";
-import { ModelContextReader, utf8SourceSpan } from "./source-reader.ts";
-import { materialize } from "../../../adapters/model/builds/materialization/artifact.ts";
+import { ModelContextReader } from "./source-reader.ts";
+import { utf8SourceSpan } from "../../../domain/model/value-objects/source-span.ts";
+import { materialize } from "../../../domain/model/value-objects/artifact.ts";
 import type { JsonObject } from "../../../domain/model/records/compiled-model.ts";
 import type { ModelRevision } from "../../../domain/model/records/revision.ts";
 

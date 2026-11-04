@@ -5,7 +5,7 @@ import {
 import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
 import { spaceJson, spaceSessionSecret } from "../work/space-session.ts";
 
-/** GET is a current-execution read, not an arbitrary scope/version query. */
+/** GET authorizes the current selection; a Request includes its historical pins. */
 export function createProviderResourcesHandler(
   service: Pick<CurrentProviderResources, "read">,
 ) {
@@ -54,7 +54,10 @@ export function createProviderResourcesHandler(
         ? 409
         : 503;
       const safe = new ProviderResourceAccessError(code);
-      return spaceJson({ code, error: safe.message }, status);
+      return spaceJson({
+        code,
+        error: safe.message,
+      }, status);
     }
   };
 }

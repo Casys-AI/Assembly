@@ -370,7 +370,6 @@ export function validateRequestOperatorSpec(
 }
 
 export const MAIN_EXECUTION_SPACE_ID = "main";
-export type { ExecutionSpaceRef, ScopedOperatorRef } from "./authority.ts";
 
 /** A Branch Operator shares its Main Operator's native ID: only the space tells them apart. */
 export function sameScopedOperator(

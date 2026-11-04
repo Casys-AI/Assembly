@@ -1,7 +1,7 @@
 /** Native profile smoke check. It does not qualify the end-to-end Request flow. */
 import assert from "node:assert/strict";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
-import { validateSourceExecutable } from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import {
   openRequestValueFixture,
   requestValueContextPolicy,

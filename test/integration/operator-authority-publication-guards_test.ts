@@ -1,14 +1,12 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 import assert from "node:assert/strict";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import { MemorySourceRepository } from "../support/memory-source-repository.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  SourceModel,
-  sourceModelIdentity,
-} from "../../src/adapters/model/sources/source-model.ts";
-import { compareModelSources } from "../../src/adapters/model/sources/changes/diff.ts";
+import { sourceModelIdentity } from "../../src/domain/model/records/source-identity.ts";
+import { compareModelSources } from "../../src/application/model/revisions/source-diff.ts";
 import { modelSourceDigest } from "../../src/domain/model/value-objects/sources.ts";
 import {
   assertApprovable,
@@ -64,7 +62,7 @@ Deno.test({
       projectId,
       "AssemblyLiveBuilder::mainContact",
     );
-    const model = new SourceModel({
+    const model = createSourceModel({
       repository,
       projectId,
       tooling: new SysmlToolkitAdapter({ packageDir }),

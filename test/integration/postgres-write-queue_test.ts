@@ -20,7 +20,7 @@ import { repositoryWriterLock } from "../../src/adapters/out/git/writer-lock.ts"
 import { Client } from "pg";
 import {
   PostgresModelWriteQueue,
-} from "../../src/adapters/model/repository/writing/postgres-write-queue.ts";
+} from "../../src/adapters/out/postgres/model-write-queue.ts";
 import { buildApprovedChangeCommand } from "../../src/application/model/publication/write-queue.ts";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
 import { changePublication } from "../../src/domain/model/publication/change.ts";

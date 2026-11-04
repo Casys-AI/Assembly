@@ -1,3 +1,5 @@
+import type { ResolvedOperatorScope } from "../native-execution/contract.ts";
+import type { OperatorExecutionDelivery } from "../operators/execution.ts";
 import type { ToolDraft } from "../../../domain/work/candidates.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type {
@@ -125,6 +127,12 @@ export interface RequestBranchPort {
   assertRetainedExecutionVersion(
     record: OpeningRecord,
     version: string,
+  ): Promise<void>;
+}
+export interface RequestSpaceDispatchPort {
+  processAcceptedContribution(
+    delivery: OperatorExecutionDelivery,
+    scope: ResolvedOperatorScope,
   ): Promise<void>;
 }
 export interface RequestSpaceRuntimePort {

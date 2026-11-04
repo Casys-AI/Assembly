@@ -3,7 +3,7 @@ import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import { equal } from "node:assert/strict";
 import { WorkArtifactObservationBehavior } from "../../src/application/work/behaviors/artifact-observation.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
-import { validateSourceExecutable } from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { operatorWorkFingerprint } from "../../src/application/work/operators/journal.ts";
 import type { ModelPort } from "../../src/application/work/runtime/ports.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";

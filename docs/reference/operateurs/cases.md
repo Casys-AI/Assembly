@@ -15,10 +15,10 @@ distinguished below from the outstanding work.
 
 A Case carries `id`, a `number` durably allocated within the system, `type`
 (`request`, `job`, `watch`), `objective`, `owner`, `openedBy`, `openedFrom`,
-`modelPin`, `status`, `createdAt` and optionally `closedAt` and `budget`.
-`status` is `open`, `waiting`, `closed-done` or `closed-abandoned`. The
-objective is a label bounded to 2,000 characters by `String.length`; the full
-request text remains in its journal message.
+`modelPin`, `status`, `createdAt` and optionally `closedAt`, `closedBy`,
+`verdict` and `budget`. `status` is `open`, `waiting`, `closed-done` or
+`closed-abandoned`. The objective is a label bounded to 2,000 characters by
+`String.length`; the full request text remains in its journal message.
 
 `modelPin` retains the digest and, when available, the commit at creation. This
 is immutable provenance. A Case executes the `executionModel` of its runtime,
@@ -164,11 +164,16 @@ The response is the opening view. `release` is `null` for `current-main`.
  phase, revision, sourceVersion, release, admissionId, issues}
 ```
 
-Refusals have the form `{code, error}`: HTTP 400 `INVALID_COMMAND`; 403
-`FORBIDDEN` or `ADMISSION_REFUSED`; 409 `OPENING_CONFLICT`; 503 for any other
-code. A step that fails for another reason does not throw. The opening keeps the
-phase it reached and the view returns one code in `issues`, without exception
-text. Sending the same command again resumes it.
+Refusals have the form `{code, error}` with optional `context` and `recovery`:
+HTTP 400 `INVALID_COMMAND`; 403 `FORBIDDEN` or `ADMISSION_REFUSED`; 409
+`OPENING_CONFLICT`; 503 for any other code. An invalid control session is a 403
+`FORBIDDEN` carrying `context.session: "invalid"`. A scoped action's 403 without
+that marker does not invalidate the session or require reconnecting the event
+stream.
+
+A step that fails for another reason does not throw. The opening keeps the phase
+it reached and the view returns one code in `issues`, without exception text.
+Sending the same command again resumes it.
 
 ### Opening by the Main Operator
 
@@ -215,9 +220,11 @@ sends nothing new.
 The **Branch Operator** (BO) is the operator that runs a Request space. It is
 the base's `primary` operator, the one that owns the Request CaseType (see
 **Eligible base**). The role comes from the space, never from a name: the
-interface labels the principal of a Case in a non-main space "Branch Operator",
-and its conversation replaces the generic name "Main Operator" with "Branch
-Operator". Custom names and persisted identifiers are kept.
+conversation of a Request space names its principal "Branch Operator" in place
+of the generic name "Main Operator". The interface then shows an invented
+two-word name drawn from the Case, on the initials of its title; "Branch
+Operator" stays in the tooltip of the Request header's chip. Custom names and
+persisted identifiers are kept.
 
 - **Declaration.** The BO executes the declaration of the primary operator at
   the pinned base commit, as compiled: instructions, mandate, tools and flows.
@@ -233,8 +240,9 @@ Operator". Custom names and persisted identifiers are kept.
   identifier, the opening `id` and the `initialContributionId`.
 - **Concurrency.** Deliveries are serialized for each space and operator, so
   each operator runs one invocation at a time; a parked wait releases the slot.
-  Spaces do not share a runtime. The shared worker pool bounds the total: 3
-  deliveries at once by default, 1 to 8 when configured.
+  Spaces do not share a runtime. The shared worker pool bounds the total: up to
+  16 ordinary deliveries at once, plus one reserved Main worker; further
+  deliveries wait in the queue.
 
 ### Isolation
 
@@ -267,6 +275,44 @@ Operator". Custom names and persisted identifiers are kept.
 These routes need the control session and an exact `caseId`. A scoped selection
 is terminal: it never falls back to the main runtime.
 
+`GET /api/performance/provider-resources?caseId=:id` reads retained provider
+observations for the exact Request and execution space through the read cutoff.
+It includes correlated operators and model versions across the Request's
+lifetime. The execution pin describes the current runtime; `expectedVersion`,
+when supplied, checks that pin rather than selecting historical calls. Operator
+groups use exact IDs, including former team members, and a null ID for
+unattributed calls. Calls lacking Request correlation cannot be attributed;
+physical call coverage is unknown and observed totals are lower bounds.
+
+The response counts retained physical provider outcomes (`returned`, `failed`,
+`timed-out`, `cancelled`), not business verdicts. Each usage unit provides an
+observed subtotal, counts of present and missing values, and a state. A subtotal
+is null if no value is known; missing usage is not zero. Cache breakdowns are
+separate units and are not added to their parent. Provider elapsed time is the
+sum of call latencies, not Request duration, since calls can overlap.
+
+The total and each operator group have a `tokenSummary` with `total`,
+`meanPerCall` and `cacheReadShare`, computed over their own calls. Total adds
+input, output, cache creation and cache read tokens only when all four units are
+known for every call; mean divides it by calls. Cache read share divides cache
+read by input plus cache creation plus cache read. Missing data, overflow or no
+calls produces null where the calculation is unavailable; mean and share are
+also null for a zero denominator. The 5-minute and 1-hour cache creation
+breakdowns are not added to their parent. Partial unit subtotals remain
+available independently.
+
+For a Request, `request` contains `durationMs` and `humanInterventions` with
+`messages` and `decisions`. Duration is `Case.closedAt - Case.createdAt`, or
+null while open. Messages are retained `user` messages with the exact Case ID,
+excluding the opening message identified by its conversation and message IDs,
+work, operator notices and observations. Decisions have the exact Case ID, human
+authority and a recorded decision time; a decision counts even if publication is
+pending, while automatic abandonment does not. The counts read the BO journal
+and available team states; journal coverage is unknown. The lifecycle and team
+states are read separately from the provider snapshot and cutoff, so they are
+not one atomic snapshot. Case status, author and verdict remain on the Case, not
+duplicated in these KPIs.
+
 | Route                                                                                  | Result                                                                                                                    |
 | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `GET /api/cases?space=requests`                                                        | `{systemId, cases}` for the owner's spaces in phase `runtime-ready`, `admitted` or `dispatched`.                          |
@@ -277,9 +323,19 @@ is terminal: it never falls back to the main runtime.
 | `POST /api/conversations/:agentId/changes/:changeId/decision?space=requests`           | `{"caseId":"…","expectedRevision":42,"configurationRevision":3,"verdict":"approve"}`; `verdict` is `approve` or `refuse`. |
 | `POST /api/conversations/:agentId/changes/:changeId/decision/resume?space=requests`    | `{"caseId":"…"}`; resumes a decision whose adoption was interrupted.                                                      |
 
-The Case actions `run`, `pause`, `resume`, `stop` and `close` of the main
-runtime are refused with `INVALID_REQUEST_SELECTION` (HTTP 400) when `space` is
-present.
+The main runtime's scheduled Case actions `run`, `pause`, `resume` and `stop`
+are refused with `INVALID_REQUEST_SELECTION` (HTTP 400) when `space` is present.
+Scoped closure uses the Request's authenticated command below.
+
+`POST /api/cases/:id/close?space=requests` accepts `outcome: "done"` with
+`verdict: "accepted"` or `"rejected"`. Omitting the verdict returns
+`CASE_VERDICT_REQUIRED`. The interface has no button for it since 3 November
+2026: a closed Request shows only “Closed · …”, with “accepted by you” or
+“rejected by you” when a verdict was recorded. Archiving is planned. `closedBy`
+records the authenticated local control session's `ownerId`, not an inferred
+human name. Internal closure records neither a person nor a verdict. An operator
+response requesting `done` for a Request is refused at response validation; Job
+and Watch behavior is unchanged.
 
 ### What the BO can change in its branch
 
@@ -358,14 +414,16 @@ This section describes what the space does with a team.
 - **Reading.** Besides the conversation list above,
   `GET /api/system/supervision` lists one `team` instance per member, with its
   `parent`; a member that cannot be read is an `unavailable` instance with its
-  reason, never an omitted row. This is data for a rights matrix that is not
-  designed yet; the interface shows no sub-operator presentation.
+  reason, never an omitted row. The interface reads the team from the
+  conversation snapshot, not from this route: the Request's tree, Team and
+  Rights show its members.
 - **Orders.** A member accepts any caller its source model explicitly exposes to
   its inbox, inside its originating Request. When the caller is not the parent,
   the parent receives one `subordinate-order` notice after the order was
   accepted. The notice never blocks the order; its fields are in the
   [authority reference](autorite-des-operateurs.md#sub-operators-in-a-request-branch).
-  The Case thread shows it on one line.
+  The Request's own thread folds it into its “··· n steps” line; Activity lists
+  it as “… gave … an order”.
 
 ### Current limits of Request spaces
 
@@ -417,8 +475,9 @@ These limits describe the present code. They are not the target design.
   retry correction has unit witnesses and awaits integration rerun.
 - **Active-agent cap.** Ordinary deliveries use 16 workers; further deliveries
   wait in the queue. Main has the existing reserved lane.
-- **Presentation.** The interface has no presentation of sub-operators and no
-  rights matrix beyond the data above.
+- **Presentation.** A Request lists its team as a tree, with each member's
+  panel. Team and Rights show members and their rights, and the creation of a
+  member reads as a “New member” card.
 - **Delegated acts.** The Main Operator decides a BO's request only for
   `addNetworkHosts`; every other kind waits for the person.
 - **Lifecycle.** Closing and reusing spaces are not described here.
@@ -436,17 +495,17 @@ and non-empty text of 1 to 100,000 characters; the HTTP body is bounded to
 
 | Route                                       | Body                                                                  |
 | ------------------------------------------- | --------------------------------------------------------------------- |
-| `POST /api/messages` (central agent)        | `{"text":"Bonjour"}` or `{"text":"Suite","caseId":"session:case:12"}` |
+| `POST /api/messages` (central operator)     | `{"text":"Bonjour"}` or `{"text":"Suite","caseId":"session:case:12"}` |
 | `POST /api/conversations/:agentId/messages` | `{"text":"Suite","expectedRevision":42,"caseId":"session:case:12"}`   |
 
-The agent identity in the path must be encoded. `expectedRevision` is the
-revision of that agent's runtime, supplied by `GET /api/conversations`, not a
+The operator identity in the path must be encoded. `expectedRevision` is the
+revision of that operator's runtime, supplied by `GET /api/conversations`, not a
 Request-specific revision. The central route keeps its historical body without
 `expectedRevision`; the host takes its current revision at reservation.
 
 - With `caseId`: resume that open Request (`open` or `waiting`), owned by the
-  target agent. An initialization Case, Job or Watch cannot receive this human
-  message.
+  target operator. An initialization Case, Job or Watch cannot receive this
+  human message.
 - Without `caseId` or `newConversation`: send to the designer's perpetual
   conversation without creating a Case.
 - `"newConversation":true`: create a new Request in the main space, even if
@@ -463,32 +522,32 @@ Business-level send refusals have the form
 
 | Code                 | HTTP | Context and recovery                                                                                                                                                                       |
 | -------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `CASE_NOT_FOUND`     | 404  | `{caseId, agentId}`; choose an open Request belonging to that agent or send `newConversation:true`.                                                                                        |
+| `CASE_NOT_FOUND`     | 404  | `{caseId, agentId}`; choose an open Request belonging to that operator or send `newConversation:true`.                                                                                     |
 | `CASE_NOT_OWNED`     | 403  | `{caseId, agentId}`; same recovery, without transferring the Case.                                                                                                                         |
 | `CASE_CLOSED`        | 409  | `{caseId, agentId}`; choose an open Request or create a new conversation.                                                                                                                  |
 | `INVALID_CASE`       | 409  | `{caseId, agentId}`; the Case must be a conversational Request, outside initialization.                                                                                                    |
 | `AGENT_BUSY`         | 409  | `{agentId, caseId?}`; `recovery` is exactly `retry after the current reply`. No message or Request is created, and there is no queue. This refusal takes precedence over a stale revision. |
 | `INVALID_MESSAGE`    | 400  | Invalid selection or content; correct the body.                                                                                                                                            |
-| `STALE_CONVERSATION` | 409  | Reload `GET /api/conversations` and resend with the agent's revision.                                                                                                                      |
+| `STALE_CONVERSATION` | 409  | Reload `GET /api/conversations` and resend with the operator's revision.                                                                                                                   |
 
 The existing access, admission and closure checks still apply
 (`READ_ONLY_AGENT`, `UNKNOWN_AGENT`, `MODEL_ADMISSION_BUSY`, `CASE_BUSY`, etc.).
 Errors reported by the application expose their code; context and recovery may
-be absent. The HTTP precheck for a read-only agent keeps HTTP 403 with
+be absent. The HTTP precheck for a read-only operator keeps HTTP 403 with
 `{error: string}`. Transport errors (JSON, size, origin) keep their HTTP status
 and `error` field.
 
 To list conversations, `GET /api/cases` and the `cases` SSE already provide
-`{systemId, cases}` for all agents of the main runtime. Keep entries with
+`{systemId, cases}` for all operators of the main runtime. Keep entries with
 `type:"request"`, without `openedFrom.origin:"initialization"`, and with status
 `open` or `waiting`. `id` is the send `caseId`; `owner` is the `agentId`;
-`number`, `objective` and `createdAt` serve presentation. Agent messages remain
-available in `GET /api/conversations`, attached through `messages[].caseId`. A
-Case receives only messages with its `caseId`, with no greeting or history from
-the designer or other Cases. The designer's conversation receives its messages
-without `caseId`; `designerScopeId` distinguishes delegated contributions from
-another designer conversation in a specialist runtime. Context reads use the
-same filtering.
+`number`, `objective` and `createdAt` serve presentation. Operator messages
+remain available in `GET /api/conversations`, attached through
+`messages[].caseId`. A Case receives only messages with its `caseId`, with no
+greeting or history from the designer or other Cases. The designer's
+conversation receives its messages without `caseId`; `designerScopeId`
+distinguishes delegated contributions from another designer conversation in a
+specialist runtime. Context reads use the same filtering.
 
 The durable selection `caseInvocation.kind:"designer"` and `designer.scopeId`
 explicitly identify the designer; absence of a Case never provides a fallback to
@@ -496,11 +555,11 @@ this scope. Its budget uses the admitted `workBudgetPolicy` in the separate
 `<runtime.id>:designer` ledger. CaseType ceilings apply to Cases, not the
 designer. Switching threads or restarting preserves consumption in each ledger.
 `modelDiagnostics` warnings are supplied to the central designer, filtered as
-before, never to Cases. `caseClosure` is ignored in designer scope; within a
-Request it closes only the selected Case. Mandate, grants, subagents and tools
-remain the same in both scopes; a designer delegation explicitly forwards its
-scope and budget without creating a Case. `AGENT_BUSY` preserves one invocation
-per runtime.
+before, never to Cases. `caseClosure` is ignored in designer scope; an operator
+cannot request `done` for a Request. Other applicable closures remain scoped to
+the selected Case. Mandate, grants, suboperators and tools remain the same in
+both scopes; a designer delegation explicitly forwards its scope and budget
+without creating a Case. `AGENT_BUSY` preserves one invocation per runtime.
 
 ### Legacy-dossier migration
 
@@ -530,10 +589,10 @@ durable Case per declaration, with its objective, `owner`, `behavior` and
 creation-version pin. A deadline adds a run or wake to this Case; it does not
 create a new Case.
 
-The central agent proposes the occurrence with `propose_sysml_edit`, a Toolkit
-`insert-member` operation targeting the system's native identity. The occurrence
-name carries the objective. Adapt this example to the references actually
-present in the system:
+The central operator proposes the occurrence with `propose_sysml_edit`, a
+Toolkit `insert-member` operation targeting the system's native identity. The
+occurrence name carries the objective. Adapt this example to the references
+actually present in the system:
 
 ```sysml
 part 'Morning summary' : AssemblyCases::CaseType {
@@ -589,11 +648,16 @@ observation and sends a `role: "tool"` message attached to `caseId` in the
 central conversation if `changed` is `true`. Its structured `watch-notification`
 observation carries the source Watch, its owner (`ownerId`), `caseId`, summary
 and `trust: "untrusted"`. The text and central prompt present it as an untrusted
-observed datum, never as an instruction or the central agent's own words. Old
-queue entries with no owner explicitly say `unknown`. `ChatTimeline` already
-displays this role as "Tool result", with a chip linking to the Case; no
-functional frontend change is needed. A missing or invalid result does not mean
-that nothing changed.
+observed datum, never as an instruction or the central operator's own words. Old
+queue entries with no owner explicitly say `unknown`. `ChatTimeline` folds
+consecutive `role: "tool"` records into one "··· n steps" line; opening it shows
+each record's exact text. Work deliveries are never folded. Outside a Request's
+own thread, evolution receipts and the operator notices that need the person (a
+human decision, an unresolved escalation, an abandoned Request) keep their own
+line or card; the Main's thread hides its work records and the other notices,
+which Activity lists. A fold ends at any other entry and where the Case changes;
+when the thread enters a Case with a fold, the Case chip precedes it. A missing
+or invalid result does not mean that nothing changed.
 
 The notification is recorded in a durable outbox with the wake result. The
 central conversation deduplicates receipt by notification identity; the outbox
@@ -613,13 +677,13 @@ pin are retained. The contract read by `frontend/lib/cases/cases.ts` adds:
 - Watch: `watch: {state, nextWakeAt?, wakes: [{at, changed, summary?}]}`, where
   `state` is `watching`, `paused` or `stopped`.
 
-| Action           | Endpoint                     | Body                                              | Response                             |
-| ---------------- | ---------------------------- | ------------------------------------------------- | ------------------------------------ |
-| Run now, Job     | `POST /api/cases/:id/run`    | `{}`                                              | `{systemId, case, action: "run"}`    |
-| Pause, Watch     | `POST /api/cases/:id/pause`  | `{}`                                              | `{systemId, case, action: "pause"}`  |
-| Resume, Watch    | `POST /api/cases/:id/resume` | `{}`                                              | `{systemId, case, action: "resume"}` |
-| Stop, Watch      | `POST /api/cases/:id/stop`   | `{}`                                              | `{systemId, case, action: "stop"}`   |
-| Close, all Cases | `POST /api/cases/:id/close`  | `{"outcome":"done"}` or `{"outcome":"abandoned"}` | `{systemId, case, closed: true}`     |
+| Action                  | Endpoint                     | Body                                                                                | Response                             |
+| ----------------------- | ---------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------ |
+| Run now, Job            | `POST /api/cases/:id/run`    | `{}`                                                                                | `{systemId, case, action: "run"}`    |
+| Pause, Watch            | `POST /api/cases/:id/pause`  | `{}`                                                                                | `{systemId, case, action: "pause"}`  |
+| Resume, Watch           | `POST /api/cases/:id/resume` | `{}`                                                                                | `{systemId, case, action: "resume"}` |
+| Stop, Watch             | `POST /api/cases/:id/stop`   | `{}`                                                                                | `{systemId, case, action: "stop"}`   |
+| Close, main-space Cases | `POST /api/cases/:id/close`  | `{"outcome":"done"}` or `{"outcome":"abandoned"}`; a Request `done` is refused here | `{systemId, case, closed: true}`     |
 
 Pause, resume, stop and close are runtime actions without model edits. Every
 command requires a JSON object bounded to 1,024 bytes; extra fields are refused.
@@ -631,13 +695,13 @@ and a conflict or busy execution gives HTTP 409.
 
 ### Limits of this increment
 
-Wakes consult a source through the agent's already admitted means; no webhook or
-external event provider is added. The executed behavior is the one referenced by
-the declaration: the owner's conversational flow or another native compiled flow
-with the same allocation and mandate checks. Available primitives remain those
-of the conversational engine; an action with no executable flow or with invalid
-allocations is refused on read. Proposing a Job or Watch grants no editing or
-execution rights.
+Wakes consult a source through the operator's already admitted means; no webhook
+or external event provider is added. The executed behavior is the one referenced
+by the declaration: the owner's conversational flow or another native compiled
+flow with the same allocation and mandate checks. Available primitives remain
+those of the conversational engine; an action with no executable flow or with
+invalid allocations is refused on read. Proposing a Job or Watch grants no
+editing or execution rights.
 
 The process polls the scheduler every second and serializes each operator's
 work. A deadline therefore waits for an invocation already in progress to
@@ -647,7 +711,7 @@ a Job marks its run `abandoned`; for a Watch, the wake summary reports the
 interruption. History and notifications remain persisted in the existing session
 store.
 
-A SysML proposal remains bounded by admitted editing rights. The agent may
+A SysML proposal remains bounded by admitted editing rights. The operator may
 propose a `grantModelEditing` grant only if that variant appears in
 `mandate.supportedChanges`. The request grants nothing: see
 [editing rights by mandate](../../how-to/operateurs/droits-edition-par-mandat.md).
@@ -693,7 +757,7 @@ shared with conversation, Request-space and local-control commands.
   [Watch notifications](../../../src/application/work/runtime/system.ts) and
   [URL admission](../../../src/application/governance/tool-invocation-admission.ts).
 - [Scheduled integration scenarios](../../../test/integration/scheduled-cases_test.ts)
-  with scripted agents and
+  with scripted operators and
   [native type reading](../../../test/integration/case-types_test.ts). Their
   presence does not prove that they ran in a given instance.
 - Request spaces:
@@ -702,8 +766,8 @@ shared with conversation, Request-space and local-control commands.
   [opening records and commands](../../../src/domain/work/request-spaces.ts),
   [identifier allocation](../../../src/adapters/out/postgres/request-space-store.ts),
   [branch refs](../../../src/adapters/out/git/request-branches.ts),
-  [base selection](../../../src/adapters/work/request-opening-sources.ts),
-  [space runtime](../../../src/adapters/work/request-space-runtime.ts),
+  [base selection](../../../src/application/work/request-spaces/opening-sources.ts),
+  [space runtime](../../../src/application/work/request-spaces/runtime.ts),
   [write destination](../../../src/domain/model/editing/request-write-destination.ts),
   [read-only model](../../../src/application/work/request-spaces/request-space-model.ts),
   [Case views](../../../src/adapters/in/http/model/case-branch.ts),

@@ -1,3 +1,4 @@
+import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
 import {
   assertContinuationCases,
   caseBudgetPolicy,
@@ -99,6 +100,7 @@ function applyInitialization(
   if (!this.runtimeRecorded) {
     s.events.push({
       ...makeEvent(
+        this.ports.clock,
         "runtime-started",
         "Provenance du logiciel d’exécution",
       ),
@@ -690,4 +692,21 @@ export async function initializeRequestSpace(
     if (!winner) throw error;
     await restore(winner);
   }
+}
+
+export function requestSpaceSeed(record: OpeningRecord): RequestSpaceSeed {
+  return {
+    runtimeId: `request:${record.executionSpaceId}:${
+      record.base!.requestOwner.operatorId
+    }`,
+    openingId: record.id,
+    caseId: record.caseId,
+    caseNumber: record.caseNumber,
+    caseTypeId: record.base!.requestOwner.caseTypeId,
+    initialContributionId: record.initialContributionId,
+    createdAt: record.createdAt,
+    // A Main Operator opening is opened by it; the space stays the owner's.
+    openedBy: record.command.opener?.operator.operatorId ?? record.ownerId,
+    text: record.command.text,
+  };
 }

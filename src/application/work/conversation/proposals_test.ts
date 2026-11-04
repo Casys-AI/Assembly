@@ -201,6 +201,7 @@ Deno.test("admitted revision denial refuses forced edit, revision and delegation
         operatorId: model.identity.builderId,
         executionSpaceId: "branch",
         branchTeamSize: 0,
+        memberIds: [],
       },
     };
     const choice = {

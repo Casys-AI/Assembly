@@ -19,7 +19,7 @@ import {
   type NativeDeclaredConsultationRefusal,
   nativeExecutionIdentity,
   type NativeExecutionSnapshot,
-} from "./execution.ts";
+} from "../native-execution/contract.ts";
 import { requestNetworkProposalDigest } from "../../../domain/governance/records/request-network-change.ts";
 import { requestChangeProposalDigest } from "../../../domain/governance/records/request-change.ts";
 import { recordRequestNetworkOutcome } from "../operators/request-network-outcome.ts";
@@ -27,7 +27,7 @@ import type { OperatorExecutionDelivery } from "../operators/execution.ts";
 import {
   nativeSettledActionAdvanceEvidence,
   rederiveSettledAdvanceEvidence,
-} from "./model-advance.ts";
+} from "../native-execution/model-advance.ts";
 import { exerciseOwnerAuthority } from "../../../domain/governance/authority.ts";
 import {
   type OperatorWorkHost,
@@ -416,6 +416,52 @@ Deno.test("network readiness preserves the exact approval context beside a compl
   assert.deepEqual(unsettled.blockers.map((blocker) => blocker.code), [
     "EVOLUTION_NATIVE_EXECUTION_UNSETTLED",
   ]);
+});
+
+Deno.test("a completed Main-opened turn retires only with its exact opening provenance", async () => {
+  const { state, execution: approval } = await networkApprovalFixture();
+  state.cases![0].openedFrom = {
+    conversationId: state.id,
+    openingId: "opening",
+    messageId: "opening-input",
+  };
+  state.messages.unshift(
+    {
+      id: "opening-input",
+      role: "tool",
+      text: "Request input",
+      at: "before",
+      caseId: "request-A",
+    },
+    {
+      id: "opening-reply",
+      role: "assistant",
+      text: "Opening reply",
+      at: "before",
+      caseId: "request-A",
+    },
+  );
+  const completed = {
+    ...structuredClone(approval),
+    identity: nativeExecutionIdentity(state, "conversation", "opening-input"),
+    contributionId: "opening-input",
+    threadId: "thread:opening-input",
+    checkpointId: "checkpoint:opening-input",
+    localState: { reply: { kind: "reply", text: "Opening reply" } },
+  };
+  const ready = () =>
+    evolutionNetworkCheckpoint(
+      state,
+      [completed, approval],
+      "change",
+      "request-A",
+    );
+  assert.deepEqual(await ready(), { safe: true, blockers: [] });
+  state.cases![0].openedFrom.conversationId = "foreign";
+  assert.equal((await ready()).safe, false);
+  state.cases![0].openedFrom.conversationId = state.id;
+  state.cases![0].openedFrom.messageId = "foreign";
+  assert.equal((await ready()).safe, false);
 });
 
 function historicalReplyFixture() {

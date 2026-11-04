@@ -1,3 +1,12 @@
+import type { ScopedOperatorRef } from "../../../domain/governance/authority.ts";
+import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { SystemRuntime } from "../../work/runtime/system.ts";
+import type { NativeExecutionSnapshot } from "../../work/native-execution/contract.ts";
+import type { RequestExecutionBinding } from "./request-adoption-ports.ts";
+import type { ScopedSoftwareEvolutionDossierV2 } from "./scoped-software-dossier.ts";
+import type { ScopedSoftwareFinalBoundaryV2 } from "./scoped-software-adoption.ts";
+import type { EvolutionService } from "./service.ts";
 import type { ModelEditRequest } from "../../../domain/model/editing/tooling.ts";
 import type {
   EvolutionAct,
@@ -247,4 +256,51 @@ export class EvolutionError extends Error {
     this.context = options?.context;
     this.recovery = options?.recovery;
   }
+}
+
+/** A real, admitted instance. Root obtains these from RequestSpaceRuntime's
+ * composite resolver; no native-ID-only lookup or OpeningOwner substitution. */
+export interface ScopedSoftwareRuntimeTarget<TStores = unknown> {
+  readonly ref: Readonly<ScopedOperatorRef>;
+  readonly opening: OpeningRecord;
+  readonly runtime: Pick<
+    SystemRuntime,
+    | "snapshot"
+    | "withEvolutionArming"
+    | "withEvolutionReservation"
+    | "evolutionBoundary"
+    | "readPersistedState"
+    | "configureOperatorEvolution"
+    | "bindEvolutionBarrier"
+    | "onState"
+    | "prepareSoftwareEvolutionStates"
+    | "evolutionValidationTarget"
+  >;
+  readonly stores: TStores;
+  readBinding(): Promise<RequestExecutionBinding>;
+  inspectNative(): Promise<NativeExecutionSnapshot[]>;
+}
+export interface ScopedSoftwareAdoptionPort<TStores = unknown> {
+  adopt(input: {
+    dossier: ScopedSoftwareEvolutionDossierV2;
+    target: EvolutionTarget;
+    publication: EvolutionPublication;
+    runtime: ScopedSoftwareRuntimeTarget<TStores>;
+    candidate: ExecutableModel;
+    boundary: ScopedSoftwareFinalBoundaryV2;
+    /** Called again by the transaction bridge under its durable locks. */
+    revalidate(): Promise<void>;
+  }): Promise<EvolutionAdoptionReceipt>;
+  inspect(input: {
+    dossier: ScopedSoftwareEvolutionDossierV2;
+    target: EvolutionTarget;
+    publication: EvolutionPublication;
+    runtime: ScopedSoftwareRuntimeTarget<TStores>;
+  }): Promise<EvolutionAdoptionReceipt | null>;
+}
+export interface ScopedSoftwareEvolutionBinding {
+  readonly service: EvolutionService<ScopedSoftwareEvolutionDossierV2>;
+  recover(): Promise<void>;
+  requestFinalization(): void;
+  dispose(): void;
 }

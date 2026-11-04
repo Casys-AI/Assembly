@@ -4,7 +4,7 @@ import {
   type NativeDeclaredConsultationRefusal,
   nativeExecutionIdentity,
   type NativeExecutionSnapshot,
-} from "./execution.ts";
+} from "../native-execution/contract.ts";
 /** Durable boundary evidence, independent of the currently selected Request. */
 import type {
   EvolutionAdoptionReceipt,
@@ -23,6 +23,7 @@ import {
   hasHostRequestChangeCase,
   invocationInput,
   invocationKey,
+  isLocalRequestInput,
   type OperatorWorkCompletion,
   workReceipt,
 } from "../operators/journal.ts";
@@ -44,33 +45,21 @@ export function evolutionInvocationInput(
   const ordinary = invocationInput(state, invocation);
   if (invocation.kind !== "local") return ordinary;
   const record = state.cases?.find((record) => record.id === invocation.caseId);
-  const candidates = ordinary?.role === "user" ? [ordinary] : [];
-  if (
-    record?.firstRequestDispatched && !record.firstRequestDispatch &&
-    (record.openedFrom.openingId || record.openedFrom.changeId)
-  ) {
-    const objective = state.messages.find((message) =>
-      message.id === `${invocation.caseId}:objective` &&
-      message.role === "tool" && message.caseId === invocation.caseId
-    );
-    if (objective) candidates.push(objective);
-  }
-  for (const receipt of state.requestResumptions ?? []) {
+  return state.messages.findLast((message) => {
+    if (message === ordinary && message.role === "user") return true;
     if (
-      receipt.caseId !== invocation.caseId || receipt.status !== "completed" ||
-      receipt.outcome?.caseId !== invocation.caseId ||
-      receipt.outcome.operatorId !== record?.owner
-    ) continue;
-    const message = state.messages.find((message) =>
-      message.id === `${invocation.caseId}:resume:${receipt.resumeId}` &&
-      message.role === "tool" && message.caseId === invocation.caseId &&
-      message.text === receipt.instruction
+      message.role !== "tool" ||
+      !isLocalRequestInput(state, message, invocation.caseId)
+    ) return false;
+    const receipt = state.requestResumptions?.find((entry) =>
+      message.id === `${invocation.caseId}:resume:${entry.resumeId}`
     );
-    if (message) candidates.push(message);
-  }
-  return candidates.sort((a, b) =>
-    state.messages.indexOf(b) - state.messages.indexOf(a)
-  )[0];
+    return receipt
+      ? receipt.status === "completed" &&
+        receipt.outcome?.caseId === invocation.caseId &&
+        receipt.outcome.operatorId === record?.owner
+      : !!record?.firstRequestDispatched && !record.firstRequestDispatch;
+  });
 }
 
 export interface EvolutionInputSettlement {

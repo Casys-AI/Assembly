@@ -115,8 +115,8 @@ route, rights isolation and finer-grained root grants remain planned work.
   `compileOwnerAuthority`.
 - [Receipt and invariants](../../../src/domain/governance/authority.ts):
   `AuthorityExercise`, `exerciseOwnerAuthority`, `AuthorityInvariantError`.
-- [Source authorization](../../../src/adapters/governance/model-access/source-authorization.ts).
+- [Source authorization](../../../src/application/governance/model-access/source-authorization.ts).
 - [Decision policy](../../../src/domain/governance/policies/operator-authority-policy.ts):
   `delegatedAuthorityExercise`.
 - [Policy compilation](../../../src/adapters/out/sysml-toolkit/compilation-policies/governance/authority/operator/policy.ts).
-- [Declarations through the shared writer](../../../src/adapters/governance/authority/operator/writer.ts).
+- [Declarations through the shared writer](../../../src/application/governance/operator-writer.ts).

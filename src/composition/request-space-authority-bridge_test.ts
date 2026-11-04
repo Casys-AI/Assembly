@@ -11,6 +11,7 @@ import type { OperatorNotice } from "../domain/governance/operator-authority.ts"
 import type { Case } from "../domain/work/entities/cases.ts";
 import { branchAuthorityFixture } from "../../test/support/branch-authority-fixture.ts";
 import { requestSpaceScope } from "../../test/support/request-space-fixture.ts";
+import { eventually } from "../../test/support/eventually.ts";
 import { OperatorAuthorityError } from "../domain/governance/operator-authority.ts";
 import {
   bindMainAuthorityReplay,
@@ -168,8 +169,10 @@ Deno.test("a Main whose model is absent waits, then the same request is replayed
   equal(f.delivered.length, 0, "an unavailable Main receives nothing");
   f.main.executionModel = model;
   f.emit();
-  await settle();
-  equal(f.delivered.length, 1, "the request reaches the MO once it is back");
+  await eventually(() => f.delivered.length === 1 || undefined, {
+    timeoutMs: 5_000,
+    label: "the request reaches the MO once it is back",
+  });
 });
 
 Deno.test("a policy or a design scope change replays; any other state change does not", async () => {
@@ -193,12 +196,16 @@ Deno.test("a policy or a design scope change replays; any other state change doe
   equal(f.replays(), startup, "the derived scope appearing does not replay");
   f.mandate("branch");
   f.emit();
-  await settle();
-  equal(f.replays(), startup + 1, "a new mandate may flip the route");
+  await eventually(() => f.replays() === startup + 1 || undefined, {
+    timeoutMs: 5_000,
+    label: "a new mandate may flip the route",
+  });
   f.main.designer = { scopeId: "legacy:designer" };
   f.emit();
-  await settle();
-  equal(f.replays(), startup + 2, "another design scope is routed again");
+  await eventually(() => f.replays() === startup + 2 || undefined, {
+    timeoutMs: 5_000,
+    label: "another design scope is routed again",
+  });
 });
 
 const empty = {

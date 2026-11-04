@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import {
   parseRequestNetworkContinuation,
   parseRequestNetworkRefusalContinuation,
-} from "./execution.ts";
+} from "../native-execution/contract.ts";
 
 Deno.test("network continuation accepts only the closed receipt-bound shape", () => {
   const intent = {

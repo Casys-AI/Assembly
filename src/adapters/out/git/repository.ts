@@ -1,3 +1,8 @@
+import type {
+  RequestOpeningHostSourceReaderPort,
+  RequestOpeningSourceReaderPort,
+} from "../../../application/work/request-spaces/opening-source-reader.ts";
+import type { ScopedEvolutionSourcePort } from "../../../application/model/evolution/scoped-source.ts";
 import type { ClockPort } from "../../../application/work/runtime/ports.ts";
 import { SystemClock } from "../../../infrastructure/clock.ts";
 import { sha256Bytes as sha256 } from "../../../domain/primitives/sha256-bytes.ts";
@@ -22,6 +27,7 @@ import type {
   ScopedSoftwareSourcePublicationContext,
   ScopedSoftwareSourceWriteFacade,
   ScopedSoftwareSourceWriteOptions,
+  ScopedSoftwareSourceWritePort,
 } from "../../../application/model/publication/ports/out/scoped-software-source-publication.port.ts";
 import {
   parseScopedSoftwareContext,
@@ -38,7 +44,7 @@ import {
   requestTeamCompatibility,
 } from "../../../application/model/evolution/request-adoption-invariants.ts";
 import { requestChangeEffect } from "../../../domain/governance/records/request-change.ts";
-import { requestOperatorSystemName } from "../../governance/authority/operator/writer.ts";
+import { requestOperatorSystemName } from "../../../application/governance/operator-authority-values.ts";
 import { isTeamOperatorSpec } from "../../../domain/governance/operator-authority.ts";
 import { matchesTeamProvision } from "../../../domain/governance/policies/operator-creation-policy.ts";
 import type { HostEditExecutorPort } from "../../../application/model/publication/ports/out/host-edit-executor.port.ts";
@@ -76,10 +82,10 @@ import {
   scopedSoftwareSourceAdmissionRef,
   scopedSoftwareSourceCommandRef,
 } from "../../../domain/model/editing/request-source-publication.ts";
-import { validateSourceEvolutionExecutables } from "../../model/sources/source-model.ts";
+import { validateSourceEvolutionExecutables } from "../sysml-toolkit/compilation/source-executables.ts";
 import { classifyEvolutionEffects } from "../../../domain/model/evolution/semantic-effects.ts";
 import { requireEvolutionEffectBounds } from "../../../domain/model/evolution/authorization.ts";
-import type { ModelIdentity } from "../../../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../domain/shared-kernel/model-identity.ts";
 import {
   type RequestSourcePublicationContext,
   RequestSourcePublicationPending,
@@ -153,7 +159,7 @@ import {
 } from "../../../domain/primitives/canonical-json.ts";
 import type { CompiledModel } from "../../../domain/model/records/compiled-model.ts";
 import type { ModelSources as Sources } from "../../../domain/model/value-objects/sources.ts";
-import { materialize } from "../../model/builds/materialization/artifact.ts";
+import { materialize } from "../../../domain/model/value-objects/artifact.ts";
 import { readModelProject } from "../filesystem/model-project.ts";
 import {
   type RepositoryLayout,
@@ -164,10 +170,7 @@ import {
   MAX_FILE_BYTES,
   MAX_TOTAL_BYTES,
 } from "../../../domain/model/value-objects/sources.ts";
-import {
-  diffSources,
-  mergeSources,
-} from "../../model/sources/changes/merge.ts";
+import { diffSources, mergeSources } from "./merge.ts";
 import {
   ModelRepositoryError,
   type ModelRepositoryPort,
@@ -257,10 +260,9 @@ export interface GitRepositoryOptions {
   };
 }
 /** Historical reads expose no admission, recovery, export or writer surface. */
-export interface GitModelRepositoryReader {
-  readonly repositoryId: string;
+export interface GitModelRepositoryReader
+  extends RequestOpeningSourceReaderPort {
   readonly projectId: string;
-  at(version: string, signal?: AbortSignal): Promise<ModelRevision>;
   descriptorAt(
     version: string,
     signal?: AbortSignal,
@@ -275,11 +277,8 @@ export interface GitModelRepositoryReader {
 
 /** Host-owned eligibility capability; ordinary historical consumers need only
  * GitModelRepositoryReader and never infer a branch from an execution pin. */
-export interface GitModelReleaseSourceReader extends GitModelRepositoryReader {
-  admittedMainSource(
-    version: string,
-  ): Promise<{ headVersion: string; sourceDigest: string }>;
-}
+export interface GitModelReleaseSourceReader
+  extends GitModelRepositoryReader, RequestOpeningHostSourceReaderPort {}
 export interface GitRequestSourceProofReader
   extends GitModelReleaseSourceReader {
   /** Verify immutable publication anchors without following a live branch. */
@@ -473,7 +472,11 @@ interface Manifest {
   status?: "creating" | "ready";
   initialVersion?: string;
 }
-export class GitModelRepository implements ModelRepositoryPort {
+export class GitModelRepository
+  implements
+    ModelRepositoryPort,
+    ScopedEvolutionSourcePort,
+    ScopedSoftwareSourceWritePort {
   readonly #clock: ClockPort;
   readonly engine = "Git";
   readonly directory: string;

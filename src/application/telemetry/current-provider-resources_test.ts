@@ -29,9 +29,19 @@ function fixture(observations: readonly ProviderCallObservation[] = []) {
   let valid = true,
     mainReads = 0,
     caseReads = 0,
+    kpiReads = 0,
     afterRead: (() => void) | undefined;
   const queries: ProviderResourceQuery[] = [];
   const cases = {
+    requestKpis(secret: string, caseId: string) {
+      equal(secret, "session");
+      equal(caseId, "caseA");
+      kpiReads++;
+      return Promise.resolve({
+        durationMs: null,
+        humanInterventions: { messages: 1, decisions: 0 },
+      });
+    },
     execution(secret: string, caseId: string) {
       caseReads++;
       if (!valid || secret !== "session" || caseId !== "caseA") {
@@ -97,6 +107,7 @@ function fixture(observations: readonly ProviderCallObservation[] = []) {
     queries,
     mainReads: () => mainReads,
     caseReads: () => caseReads,
+    kpiReads: () => kpiReads,
     revoke: () => {
       valid = false;
     },
@@ -137,6 +148,9 @@ Deno.test("explicit Case resource reads keep the controller-owned Case and never
   });
   equal(result.execution.kind, "case");
   equal(result.execution.caseId, "caseA");
+  equal(result.request?.durationMs, null);
+  equal(result.request?.humanInterventions.messages, 1);
+  equal(f.kpiReads(), 1);
   equal(f.queries[0].executionSpaceId, "case-space-A");
   equal(f.queries[0].caseId, "caseA");
   equal(f.mainReads(), 0);
@@ -226,9 +240,10 @@ Deno.test("adoption during Case aggregation refuses the old actual pin", async (
   equal(f.queries.length, 1);
   equal(f.queries[0].modelDigest, "a".repeat(64));
   equal(f.caseReads(), 2);
+  equal(f.kpiReads(), 0);
 });
 
-Deno.test("authorized Case readout preserves actual operator partitions within its exact retained pin", async () => {
+Deno.test("authorized Case readout preserves operator partitions across its retained pins", async () => {
   const call: ProviderCallObservation = {
     schemaVersion: 1,
     observationId: "00000000-0000-4000-8000-000000000001",
@@ -264,7 +279,7 @@ Deno.test("authorized Case readout preserves actual operator partitions within i
       correlation: { ...call.correlation, operatorId: null },
       usage: undefined,
     },
-    // The same operator/native identity cannot substitute for Case or version.
+    // Historical pins count; another Case remains excluded.
     ...[
       { caseId: "caseB" },
       { modelDigest: "c".repeat(64) },
@@ -284,16 +299,16 @@ Deno.test("authorized Case readout preserves actual operator partitions within i
   const f = fixture(observations);
   const result = await f.current.read("session", { caseId: "caseA" });
   equal(result.execution.operatorId, "native-operator");
-  equal(result.resources.calls, 3);
+  equal(result.resources.calls, 5);
   deepStrictEqual(
     result.resources.operatorGroups!.map((group) => [
       group.operatorId,
       group.calls,
       group.units.input_tokens.observedSubtotal,
     ]),
-    [["native-operator", 1, 3], ["peer", 1, 7], [null, 1, null]],
+    [["native-operator", 3, 2003], ["peer", 1, 7], [null, 1, null]],
   );
-  equal(result.resources.units.input_tokens.observedSubtotal, 10);
+  equal(result.resources.units.input_tokens.observedSubtotal, 2010);
   equal(result.resources.units.input_tokens.state, "partial");
   equal(result.resources.units.input_tokens.missingCalls, 1);
   equal(f.mainReads(), 0);

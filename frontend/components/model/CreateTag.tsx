@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import {
   assertReleaseTagBinding,
   assertReleaseTagName,
@@ -66,15 +66,23 @@ export async function createModelTag(
   return tag;
 }
 
-export function CreateTag({ source, eligible = true }: {
-  source: SavedSystemSourceSelection;
-  eligible?: boolean;
-}) {
+export function CreateTag(
+  { source, eligible = true, disabled = false, onCreated }: {
+    source: SavedSystemSourceSelection;
+    eligible?: boolean;
+    disabled?: boolean;
+    onCreated?(tag: ReleaseTagBinding): void;
+  },
+) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [created, setCreated] = useState<ReleaseTagBinding | null>(null);
+  const active = useRef(true);
+  useEffect(() => () => {
+    active.current = false;
+  }, []);
   let valid = true;
   try {
     assertReleaseTagName(name);
@@ -94,6 +102,7 @@ export function CreateTag({ source, eligible = true }: {
         <button
           type="button"
           class="chip is-action"
+          disabled={disabled}
           onClick={() => setOpen(true)}
         >
           Create tag
@@ -104,16 +113,21 @@ export function CreateTag({ source, eligible = true }: {
           title={`Tag exact source ${source.sourceVersion}. This does not publish a Release or change the model in service.`}
           onSubmit={(event) => {
             event.preventDefault();
-            if (!valid || busy) return;
+            if (!valid || busy || disabled) return;
             setBusy(true);
             setError("");
-            void createModelTag(source, name).then(setCreated, (failure) => {
+            void createModelTag(source, name).then((tag) => {
+              setCreated(tag);
+              if (active.current) onCreated?.(tag);
+            }, (failure) => {
               setError(
                 failure instanceof Error
                   ? failure.message
                   : "Tag creation is unavailable.",
               );
-            }).finally(() => setBusy(false));
+            }).finally(() => {
+              setBusy(false);
+            });
           }}
         >
           <label>
@@ -135,7 +149,7 @@ export function CreateTag({ source, eligible = true }: {
           <button
             type="submit"
             class="chip is-action"
-            disabled={busy || !valid}
+            disabled={disabled || busy || !valid}
           >
             {busy ? "Creating tag…" : "Create tag"}
           </button>

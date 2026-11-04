@@ -73,6 +73,14 @@ const SHAPES = {
     ["rect", 6, 11, 12, 8.5, 1.5],
     ["path", "M8.5 11V8.5a3.5 3.5 0 0 1 7 0V11"],
   ],
+  globe: [
+    ["circle", 12, 12, 8],
+    [
+      "path",
+      "M4 12h16M12 4c2.2 2.3 3.3 5 3.3 8s-1.1 5.7-3.3 8c-2.2-2.3-3.3-5-3.3-8s1.1-5.7 3.3-8z",
+    ],
+  ],
+  bubble: [["path", "M5 5.5h14v10h-8.5L6 19v-3.5H5z"]],
 } as const satisfies Record<string, readonly Shape[]>;
 
 export type IconName = keyof typeof SHAPES;

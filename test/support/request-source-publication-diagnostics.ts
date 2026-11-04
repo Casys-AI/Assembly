@@ -14,7 +14,14 @@ type Backend = Pick<
 /** Keep plain worker envelopes and their causes useful without dumping payloads. */
 export function sourcePublicationError(error: unknown) {
   const scrub = (value: string, limit = 1200) =>
-    value.replace(/\b[a-z][a-z\d+.-]*:\/\/[^\s"'<>]+/gi, "[redacted URL]")
+    value.replace(/\b[a-z][a-z\d+.-]*:\/\/[^\s"'<>]+/gi, (url) => {
+      const source = url.match(
+        /^file:\/\/\/(?:[^?#]*\/)?([A-Za-z0-9_.-]+\.(?:[cm]?[jt]s|[jt]sx)):(\d+):(\d+)(\)?)$/i,
+      );
+      return source
+        ? `[source ${source[1]}:${source[2]}:${source[3]}]${source[4]}`
+        : "[redacted URL]";
+    })
       .slice(0, limit);
   const pending = [{ path: "error", value: error }];
   const seen = new Set<object>();

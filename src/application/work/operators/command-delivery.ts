@@ -16,7 +16,7 @@ import type { OperatorCommandOutcome } from "../../../domain/work/records/operat
 import type {
   NativeExecutionIdentity,
   RuntimeRevisionReference,
-} from "../runtime/execution.ts";
+} from "../native-execution/contract.ts";
 import type {
   OperatorDeliveryReceipt,
   OperatorExecutionDelivery,

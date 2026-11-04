@@ -26,7 +26,7 @@ import {
 } from "../../../../../domain/governance/records/authority-matrix.ts";
 import { parseModelRevisionId } from "../../../../../domain/shared-kernel/revision-id.ts";
 import type { ModelRevision } from "../../../../../domain/model/records/revision.ts";
-import type { ModelIdentity } from "../../../../../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../../../domain/shared-kernel/model-identity.ts";
 import { TOOL_KINDS } from "../../../../../domain/shared-kernel/tool-kind.ts";
 import {
   MAX_NETWORK_HOST_ADDITIONS,
@@ -42,21 +42,21 @@ import {
 } from "../../../../../domain/governance/policies/model-delegation.ts";
 import { executionDigest } from "../../../../../domain/primitives/execution-digest.ts";
 import { compareCodeUnits } from "../../../../../domain/primitives/canonical-json.ts";
-import type { validateSourceExecutables } from "../../../../model/sources/source-model.ts";
+import type { validateSourceExecutables } from "../../compilation/source-executables.ts";
 import {
   compileNativeAuthority,
   type NativeAuthority,
-  type NativeLiteral,
   type NativeMandate,
 } from "../../compilation-policies/work/execution-model.ts";
+import { type NativeLiteral } from "../../../../../domain/model/records/native-literal.ts";
 import { compileBehaviorCatalog } from "../../compilation-policies/work/behavior-catalog.ts";
-import { readModelDelegations } from "../../../../governance/model-access/delegation/ledger.ts";
-import { delegationIdentity } from "../../../../governance/model-access/delegation/state.ts";
+import { readModelDelegations } from "../../../../../domain/governance/policies/model-delegation-ledger.ts";
+import { delegationIdentity } from "../../../../../application/governance/model-access/delegation/state.ts";
 import {
   sourceLiterals,
   sourceRefs,
   sourceSnapshot,
-} from "../../../../model/projections/graph/source.ts";
+} from "../../../../../domain/model/projections/source-facts.ts";
 /** Executable units are validated by the caller once for this immutable revision.
  * Projection itself performs no source compilation, Toolkit operation or I/O. */
 export type AuthorityMatrixArtifact = Pick<

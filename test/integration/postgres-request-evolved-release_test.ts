@@ -2,10 +2,8 @@
  * Controlled provider, isolated schema; no live server or external API. */
 import assert from "node:assert/strict";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
-import {
-  discoverConversationUnits,
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { discoverConversationUnits } from "../../src/domain/model/records/source-identity.ts";
 import { PostgresRequestSpaceStore } from "../../src/adapters/out/postgres/request-space-store.ts";
 import {
   requestSourceAdmissionRef,

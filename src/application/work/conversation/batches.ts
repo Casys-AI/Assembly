@@ -16,7 +16,6 @@ import {
   designerExecutionContext,
 } from "../cases/runtime.ts";
 import type { ConversationDecisionHost } from "./turn-context.ts";
-import { now } from "../runtime/values.ts";
 import { invocationKey } from "../operators/journal.ts";
 import { ContextRepresentationLimitError } from "../context/separation.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
@@ -170,7 +169,7 @@ export async function recordBatch(
     invocationKey: invocationKey(host.state.caseInvocation!),
     ...(caseId ? { caseId } : { designerScopeId }),
     modelDigest: model.version.digest,
-    createdAt: now(),
+    createdAt: host.ports.clock.now(),
     ...(decisionContextCharacters === undefined
       ? {}
       : { decisionContextCharacters }),

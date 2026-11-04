@@ -193,7 +193,6 @@ export class WorkPlanExecutor {
     concurrency: number,
     resume: boolean,
   ): Promise<WorkPlanRecord> {
-    const clock = this.ports.now ?? (() => new Date().toISOString());
     let record = await this.ports.store.load(input.id);
     if (record) {
       requireExecution(
@@ -208,7 +207,7 @@ export class WorkPlanExecutor {
       );
       record = structuredClone(record);
     } else {
-      const at = clock();
+      const at = this.ports.now();
       record = {
         id: input.id,
         ...(input.caseId ? { caseId: input.caseId } : {}),
@@ -244,7 +243,7 @@ export class WorkPlanExecutor {
         const next = structuredClone(record!);
         change(next);
         next.revision = record!.revision + 1;
-        next.updatedAt = clock();
+        next.updatedAt = this.ports.now();
         await this.ports.store.save(next, record!.revision);
         record = next;
       }).catch((error) => {
@@ -287,7 +286,7 @@ export class WorkPlanExecutor {
           if (attempt?.state === "running") {
             attempt.state = "interrupted";
             attempt.error = structuredClone(task.error);
-            attempt.returnedAt = clock();
+            attempt.returnedAt = this.ports.now();
           }
         }
       });
@@ -333,7 +332,7 @@ export class WorkPlanExecutor {
         if (receipt) task.receipt = structuredClone(receipt);
         if (error) task.error = structuredClone(error);
         else delete task.error;
-        const at = clock();
+        const at = this.ports.now();
         if (state === "completed" || state === "failed") task.completedAt = at;
         const attempt = task.attempts!.at(-1)!;
         attempt.state = state;
@@ -406,7 +405,7 @@ export class WorkPlanExecutor {
           ? "exhausted"
           : status;
         verification.observations.push({
-          at: clock(),
+          at: this.ports.now(),
           status,
           ...(receipt ? { receipt: structuredClone(receipt) } : {}),
           ...(error ? { error } : {}),
@@ -425,7 +424,7 @@ export class WorkPlanExecutor {
     const runTask = async (id: string) => {
       await update((next) => {
         const task = next.tasks.find((task) => task.id === id)!;
-        const at = clock();
+        const at = this.ports.now();
         task.state = "running";
         task.startedAt = at;
         (task.attempts ??= []).push({ startedAt: at, state: "running" });

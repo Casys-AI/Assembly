@@ -1,3 +1,4 @@
+import { untrustedObservation } from "./provider-context.ts";
 import { isPlainRecord as isRecord } from "../../../domain/primitives/is-plain-record.ts";
 import {
   ChatAnthropic,
@@ -21,13 +22,11 @@ import type {
 } from "../../../domain/work/dialogue.ts";
 import { currentProviderCallCorrelation } from "./provider-call-context.ts";
 import {
+  compileOutputSchema,
   decisionBatchError,
-  decisionSchema,
   MAX_DECISION_CALLS,
   relevantErrors,
   reviewSchema,
-  validateDecision,
-  validateReview,
 } from "./output-validation.ts";
 import {
   ajvDetail,
@@ -92,17 +91,47 @@ function contentBlocks(message: Pick<AIMessage, "content">): unknown[] {
 function nativeHistory(parts: StructuredPromptParts): BaseMessage[] {
   const messages: BaseMessage[] = [];
   let inputMessageId: string | undefined;
-  const appendBrief = (turn: NonNullable<StructuredPromptParts["turn"]>) => {
-    if (inputMessageId === turn.inputMessageId) return;
-    messages.push(
-      new HumanMessage({
-        content: [{ type: "text", text: JSON.stringify(turn.brief) }],
-      }),
+  const deliveredObservations = new Set<string>();
+  const appendTurn = (turn: NonNullable<StructuredPromptParts["turn"]>) => {
+    const content: Array<{ type: "text"; text: string }> = [];
+    const startsTurn = inputMessageId !== turn.inputMessageId;
+    if (startsTurn) {
+      content.push({ type: "text", text: JSON.stringify(turn.brief) });
+      inputMessageId = turn.inputMessageId;
+    }
+    const observations = (turn.requestOutcomes ?? []).filter(({ messageId }) =>
+      !deliveredObservations.has(messageId)
     );
-    inputMessageId = turn.inputMessageId;
+    if (observations.length) {
+      content.push({
+        type: "text",
+        text: JSON.stringify(
+          untrustedObservation({ hostObservations: observations }),
+        ),
+      });
+      for (const { messageId } of observations) {
+        deliveredObservations.add(messageId);
+      }
+    }
+    if (content.length) {
+      const previous = messages.at(-1);
+      if (
+        !startsTurn && previous instanceof HumanMessage &&
+        Array.isArray(previous.content)
+      ) {
+        previous.content.push(...content);
+      } else {
+        messages.push(new HumanMessage({ content }));
+      }
+    }
   };
   for (const previous of parts.replay ?? []) {
-    appendBrief(previous.turn ?? parts.turn!);
+    appendTurn(
+      previous.turn ?? {
+        inputMessageId: parts.turn!.inputMessageId,
+        brief: parts.turn!.brief,
+      },
+    );
     for (const repair of previous.repairs ?? []) {
       if (repair.assistantBlocks) {
         messages.push(
@@ -141,16 +170,15 @@ function nativeHistory(parts: StructuredPromptParts): BaseMessage[] {
         new HumanMessage({
           content: [{
             type: "text",
-            text: JSON.stringify({
-              trust: "untrusted-observation",
-              completedToolCalls: previous.results,
-            }),
+            text: JSON.stringify(
+              untrustedObservation({ completedToolCalls: previous.results }),
+            ),
           }],
         }),
       );
     }
   }
-  appendBrief(parts.turn!);
+  appendTurn(parts.turn!);
   const last = messages.at(-1)!;
   if (Array.isArray(last.content) && last.content.length) {
     const index = last.content.length - 1;
@@ -276,7 +304,10 @@ export class LangChainAgents extends StructuredAgents {
     };
     try {
       const isReview = schema === reviewSchema;
-      const batch = batchMemberSchema(schema) !== undefined;
+      const memberSchema = batchMemberSchema(schema);
+      const batch = memberSchema !== undefined;
+      const validationSchema = memberSchema ?? schema;
+      const validate = compileOutputSchema(validationSchema);
       const tools = buildProviderTools(schema);
       if (tools.length) {
         tools[tools.length - 1] = {
@@ -358,10 +389,9 @@ export class LangChainAgents extends StructuredAgents {
         ...(scalarResults.length
           ? [{
             type: "text" as const,
-            text: JSON.stringify({
-              trust: "untrusted-observation",
-              completedToolCalls: scalarResults,
-            }),
+            text: JSON.stringify(
+              untrustedObservation({ completedToolCalls: scalarResults }),
+            ),
           }]
           : []),
         { type: "text" as const, text: JSON.stringify(resolved.payload) },
@@ -525,9 +555,7 @@ export class LangChainAgents extends StructuredAgents {
               detail = "input kind must not override the called tool";
               break;
             }
-            if (
-              isReview ? validateReview(candidate) : validateDecision(candidate)
-            ) {
+            if (validate(candidate)) {
               if (isReview) return candidate;
               candidates.push({
                 id: use.id as string,
@@ -536,10 +564,10 @@ export class LangChainAgents extends StructuredAgents {
             } else {
               code = "INVALID_TOOL_INPUT";
               detail = ajvDetail(
-                isReview ? validateReview.errors : relevantErrors(
-                  decisionSchema,
+                relevantErrors(
+                  validationSchema,
                   candidate,
-                  validateDecision.errors,
+                  validate.errors,
                 ),
               );
               break;

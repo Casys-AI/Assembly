@@ -1,3 +1,7 @@
+import { textOf, within as query } from "../support/dom.ts";
+import { withMountedDom } from "../support/mounted-dom.ts";
+import { decisionState } from "../../lib/conversations/decision-state.ts";
+import { ModelChangeCard } from "../../components/model/changes/ModelChangeCard.tsx";
 import { deepStrictEqual, equal, match, ok } from "node:assert/strict";
 import { render } from "preact";
 import { act } from "preact/test-utils";
@@ -124,6 +128,7 @@ Deno.test("mounted Case timeline loads durable blocked status and retries the ex
       },
     });
     state.requests.sessionReady.value = true;
+    await state.requests.refresh("case/C");
     const root = document.createElement("div");
     document.body.append(root);
     try {
@@ -145,9 +150,10 @@ Deno.test("mounted Case timeline loads durable blocked status and retries the ex
         );
         for (let i = 0; i < 8; i++) await Promise.resolve();
       });
+      // Blocked with a step left: the card reads Applying and offers a retry.
       await waitForVisible(
         root,
-        /Applying blocked/,
+        /Applying[\s\S]*Retry applying/,
         () => state.caseChangeStatus("case/C", "alpha", "network/1"),
       );
       const button = [...root.querySelectorAll("button")].find((item) =>
@@ -167,7 +173,7 @@ Deno.test("mounted Case timeline loads durable blocked status and retries the ex
       }]);
       await waitForVisible(
         root,
-        /Adopted/,
+        /^(?![\s\S]*Retry applying)[\s\S]*Applied/,
         () => state.caseChangeStatus("case/C", "alpha", "network/1"),
       );
       equal(
@@ -250,6 +256,7 @@ Deno.test("mounted refused Case reload offers continuation retry without approvi
       },
     });
     state.requests.sessionReady.value = true;
+    await state.requests.refresh("case/C");
     const root = document.createElement("div");
     document.body.append(root);
     try {
@@ -273,7 +280,7 @@ Deno.test("mounted refused Case reload offers continuation retry without approvi
       });
       await waitForVisible(
         root,
-        /Refused; continuation pending/,
+        /Declined[\s\S]*Retry continuation/,
         () => state.caseChangeStatus("case/C", "alpha", "refused/1"),
       );
       const button = [...root.querySelectorAll("button")].find((item) =>
@@ -290,9 +297,10 @@ Deno.test("mounted refused Case reload offers continuation retry without approvi
         method: "POST",
         body: { caseId: "case/C" },
       }]);
+      // Terminal: still Declined, and no retry nor its reason any more.
       await waitForVisible(
         root,
-        /Refused; continuation accepted/,
+        /^(?![\s\S]*Retry continuation)[\s\S]*Declined/,
         () => state.caseChangeStatus("case/C", "alpha", "refused/1"),
       );
       equal(
@@ -400,7 +408,7 @@ Deno.test("mounted Case status reloads when the initial system identity arrives"
       });
       await waitForVisible(
         root,
-        /Adopted/,
+        /Applied/,
         () => state.caseChangeStatus("case/C", "alpha", "network"),
       );
       equal(reads, 2);
@@ -412,6 +420,91 @@ Deno.test("mounted Case status reloads when the initial system identity arrives"
       await act(() => render(null, root));
       state.dispose();
       root.remove();
+    }
+  });
+});
+
+Deno.test("a decided card keeps a blocker, notice, retry or decision error visible", async () => {
+  await withMountedDom(async (document) => {
+    const root = document.createElement("div");
+    document.body.append(root);
+    const approved = grant({ status: "approved" });
+    for (const reason of ["blocked", "notice", "retry", "error"] as const) {
+      let retries = 0;
+      const draw = (change = approved, disabled = "") =>
+        render(
+          <ModelChangeCard
+            id="change-retry"
+            change={change}
+            decision={decisionState(
+              change,
+              reason === "blocked" ? "blocked" : "publication-pending",
+            )}
+            notice={reason === "notice" ? "Publication unavailable" : undefined}
+            retry={reason === "retry"
+              ? {
+                label: "Retry applying",
+                reason: disabled,
+                onRetry: () => {
+                  retries++;
+                },
+              }
+              : undefined}
+            onDecide={() => Promise.reject(new Error("Decision failed"))}
+            adjustmentMessage={(text) => text}
+            onAdjustment={() => Promise.resolve(true)}
+          />,
+          root,
+        );
+      try {
+        if (reason === "error") {
+          await act(() => draw(grant()));
+          await act(() =>
+            (query(root).byRole("button", {
+              name: "Accept",
+            }) as HTMLButtonElement).click()
+          );
+        }
+        await act(() => draw());
+        const receipt = root.querySelector<HTMLDetailsElement>(
+          ".proposal-receipt",
+        )!;
+        equal(
+          receipt.open,
+          true,
+          `${reason} must be visible without opening the card`,
+        );
+        equal(query(root).queryByRole("button", { name: "Accept" }), null);
+        if (reason === "blocked") {
+          match(
+            receipt.querySelector(".change-chip")!.getAttribute("title")!,
+            /blocked/,
+          );
+        }
+        if (reason === "notice") {
+          equal(
+            textOf(query(receipt).byRole("status")),
+            "Publication unavailable",
+          );
+        }
+        if (reason === "error") {
+          equal(textOf(query(receipt).byRole("alert")), "Decision failed");
+        }
+        if (reason === "retry") {
+          const button = query(receipt).byRole("button", {
+            name: "Retry applying",
+          }) as HTMLButtonElement;
+          button.click();
+          equal(retries, 1);
+          await act(() =>
+            draw(approved, "Connect the local session to retry applying.")
+          );
+          equal(button.disabled, true);
+          match(button.title, /Connect the local session/);
+        }
+      } finally {
+        await act(() => render(null, root));
+      }
     }
   });
 });

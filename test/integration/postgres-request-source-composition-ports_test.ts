@@ -34,7 +34,7 @@ import {
   requestSpaceDigest,
   type SpaceController,
 } from "../../src/domain/work/request-spaces.ts";
-import type { ModelIdentity } from "../../src/domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import type { ModelRevision } from "../../src/domain/model/records/revision.ts";
 import {
   type PostgresTestDatabase,

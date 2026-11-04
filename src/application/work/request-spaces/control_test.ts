@@ -14,6 +14,7 @@ import type {
 import {
   type OpeningRecord,
   requestSpaceDigest,
+  RequestSpaceError,
   type SpaceControlAuthority,
   type SpaceExecutionAdmission,
 } from "../../../domain/work/request-spaces.ts";
@@ -132,6 +133,7 @@ async function fixture(
   };
   return {
     rows,
+    granted,
     controls,
     admissions,
     record,
@@ -168,7 +170,11 @@ Deno.test("local capability/session exchange stores hashes only and resolves the
   f.changePolicy();
   await rejects(
     () => f.controls.authenticateSession(session.secret),
-    /unavailable/,
+    {
+      code: "FORBIDDEN",
+      message: /unavailable/,
+      context: { session: "invalid" },
+    },
   );
 });
 Deno.test("dated conversation admission evaluates only the exact observed source and still refuses revocation", async () => {
@@ -260,8 +266,16 @@ Deno.test("session expiry blocks new control calls while the independent space a
   f.tick(SESSION_MAX_MS + 1);
   await rejects(
     () => f.controls.authenticateSession(session.secret),
-    /unavailable/,
+    {
+      code: "FORBIDDEN",
+      message: /unavailable/,
+      context: { session: "invalid" },
+    },
   );
+  await rejects(() => f.controls.revalidate(actor), {
+    code: "FORBIDDEN",
+    context: { session: "invalid" },
+  });
   await rejects(() => f.admissions.ensure(f.record, actor), /unavailable/);
   await f.admissions.assertDispatch(f.record, admission);
   const nextSession = await f.controls.exchange(capability.secret);
@@ -279,7 +293,18 @@ Deno.test("revoked space admissions and implicit owner authority cannot be reviv
   const actor = await f.controls.authenticateSession(session.secret);
   const admitted = await f.admissions.ensure(f.record, actor);
   await f.admissions.revoke(admitted.id, actor);
-  await rejects(() => f.admissions.ensure(f.record, actor), /unavailable/);
+  await rejects(
+    () => f.admissions.ensure(f.record, actor),
+    (failure: unknown) => {
+      equal(failure instanceof RequestSpaceError, true);
+      equal((failure as RequestSpaceError).context?.session, undefined);
+      return /unavailable/.test((failure as Error).message);
+    },
+  );
+  const replacement = await f.controls.issueCapability("owner");
+  const nextSession = await f.controls.exchange(replacement.secret);
+  const nextActor = await f.controls.authenticateSession(nextSession.secret);
+  await rejects(() => f.admissions.ensure(f.record, nextActor), /unavailable/);
   f.setLegacy();
   await rejects(() => f.controls.issueCapability("owner"), /unavailable/);
 });
@@ -505,7 +530,7 @@ Deno.test("4.8e: a dispatch check reads the pinned team once per pin and creatio
   equal(reads.length, 1);
 });
 
-Deno.test("admission carries the verified branch team after the BO, without widening the person's policy", async () => {
+Deno.test("admission carries the verified branch team after the BO, without widening the person's policy", async (t) => {
   const { legacyOwnerAuthority } = await import(
     "../../../domain/governance/authority.ts"
   );
@@ -514,7 +539,9 @@ Deno.test("admission carries the verified branch team after the BO, without wide
   );
   type Model =
     import("../../../domain/model/execution/executable-model.ts").ExecutableModel;
-  const f = await fixture();
+  const f = await fixture({
+    executionBindings: { read: () => Promise.resolve(dispatchBinding) },
+  });
   const capability = await f.controls.issueCapability("owner");
   const session = await f.controls.exchange(capability.secret);
   const actor = await f.controls.authenticateSession(session.secret);
@@ -585,6 +612,7 @@ Deno.test("admission carries the verified branch team after the BO, without wide
         executionSpaceId: "space",
       },
       branchTeamSize: 0,
+      currentCaseId: "case",
     });
   (parent as { configuration: unknown }).configuration = {
     network: { allowedHosts: [] },
@@ -666,6 +694,7 @@ Deno.test("admission carries the verified branch team after the BO, without wide
         executionSpaceId: "space",
       },
       branchTeamSize: 1,
+      currentCaseId: "case",
     });
   member.operatorCreationPolicies = [{
     ...memberPolicy,
@@ -744,6 +773,57 @@ Deno.test("admission carries the verified branch team after the BO, without wide
   deepStrictEqual(
     (await team(f.record, binding)).map((item) => item.operatorId),
     ["member"],
+  );
+  // A member adoption appends its child after existing permissions, while
+  // branchTeam still returns lexical order (grandchild before member).
+  states = new Map([["member", memberState]]);
+  f.admissions.bindTeamStates(() => Promise.resolve(states as never));
+  const persisted = f.granted.get(admission.id)!;
+  persisted.permissions.operatorIds = ["operator", "member", "grandchild"];
+  persisted.permissions.modelDigests.push("grandchild-digest");
+  f.record.admissionId = admission.id;
+  f.record.phase = "admitted";
+  const dispatchBinding:
+    import("../../model/evolution/request-adoption-ports.ts").RequestExecutionBinding =
+      {
+        ...binding,
+        admission: persisted,
+        pin: {
+          ...binding.pin,
+          source: { version: persisted.permissions.sourceVersion },
+          modelDigest: persisted.permissions.modelDigests[0],
+        },
+      } as never;
+  await t.step("dispatch preserves the admitted member order", async () => {
+    await f.admissions.assertDispatch(f.record, clone(persisted));
+    deepStrictEqual(
+      (await team(f.record, dispatchBinding)).map((item) => item.operatorId),
+      ["grandchild", "member"],
+      "dispatch must not reorder the cached verified team",
+    );
+  });
+  await t.step("dispatch still refuses a changed member digest", async () => {
+    const expected = persisted.permissions.modelDigests[1];
+    persisted.permissions.modelDigests[1] = "changed-member-digest";
+    await rejects(
+      () => f.admissions.assertDispatch(f.record, clone(persisted)),
+      (error) =>
+        error instanceof RequestSpaceError &&
+        error.code === "ADMISSION_REFUSED" &&
+        error.context?.check === "dispatch.permissions",
+    );
+    persisted.permissions.modelDigests[1] = expected;
+  });
+  await t.step(
+    "dispatch still refuses an unverified admitted member",
+    async () => {
+      persisted.permissions.operatorIds.push("unknown-member");
+      persisted.permissions.modelDigests.push("unknown-digest");
+      await rejects(
+        () => f.admissions.assertDispatch(f.record, clone(persisted)),
+        { code: "OPENING_CONFLICT" },
+      );
+    },
   );
 });
 

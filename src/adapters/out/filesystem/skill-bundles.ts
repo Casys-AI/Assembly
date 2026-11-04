@@ -1,19 +1,6 @@
+import { BundledSkillReadError } from "../../../application/skills/ports.ts";
 import { sha256 } from "../../../domain/primitives/execution-digest.ts";
 import { join } from "node:path";
-
-export type BundledSkillReadErrorCode =
-  | "unavailable"
-  | "invalid-content"
-  | "limit";
-
-/** Expected local asset failures carry a fixed diagnostic, never a host path.
- * Unexpected filesystem/permission failures retain their original technical error. */
-export class BundledSkillReadError extends Error {
-  constructor(readonly code: BundledSkillReadErrorCode) {
-    super(`Bundled skill: ${code}`);
-    this.name = "BundledSkillReadError";
-  }
-}
 
 /** Bootstrap templates pin each generation's exact asset. Keep the legacy
  * marker and bundle distinct: substituting the new asset would invalidate an

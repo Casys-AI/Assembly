@@ -10,15 +10,13 @@ import { closeSysmlToolkitWorkers } from "../../src/adapters/out/sysml-toolkit/w
 import { admitBehaviorCall } from "../../src/application/governance/behavior-call-admission.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  sourceModelIdentity,
-  validateSourceEvolutionExecutables,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceEvolutionExecutables } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { sourceModelIdentity } from "../../src/domain/model/records/source-identity.ts";
 import { classifyEvolutionEffects } from "../../src/domain/model/evolution/semantic-effects.ts";
 import {
   sourceRefs,
   sourceSnapshot,
-} from "../../src/adapters/model/projections/graph/source.ts";
+} from "../../src/domain/model/projections/source-facts.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");
 const access = (name = "echoAccess", enabled = true, caller = "builder") =>

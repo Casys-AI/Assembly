@@ -62,10 +62,13 @@ export async function observeOutcome(
     }
     await this.update((s) => {
       s.phase = "L’agent prépare sa réponse";
-      s.events.push(makeEvent(
-        outcome.succeeded ? "behavior-completed" : "behavior-unconfirmed",
-        "Résultat du comportement " + outcome.behaviorId,
-      ));
+      s.events.push(
+        makeEvent(
+          this.ports.clock,
+          outcome.succeeded ? "behavior-completed" : "behavior-unconfirmed",
+          "Résultat du comportement " + outcome.behaviorId,
+        ),
+      );
     });
   } else if (outcome.failure) {
     const failure = outcome.failure;
@@ -113,6 +116,7 @@ export async function observeOutcome(
       delete s.lastToolFailure;
       s.phase = "L’agent prépare sa réponse";
       const event = makeEvent(
+        this.ports.clock,
         "tool-completed",
         `Page reçue : ${outcome.result?.title || outcome.result?.url}`,
         local,

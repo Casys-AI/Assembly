@@ -9,9 +9,11 @@ import {
   authorityChangeForCommit,
   authorityOwner,
   currentAuthorityLabel,
-  delegatedDecisionLabel,
+  decidedBy,
+  decidedByLabel,
   noticeChange,
   recordedCandidateDelegation,
+  recordedCreationDelegation,
   recordedDelegation,
 } from "./operator-authority.ts";
 import type { SourceCommit, SourceRevisions } from "../model/revisions/api.ts";
@@ -282,13 +284,15 @@ Deno.test("delegated evidence names the exact actor rather than the requester or
     change.authorityExercise!.delegation,
   );
   equal(
-    delegatedDecisionLabel(change, roster),
-    "Decided by Main Operator · research-network revision 1",
+    decidedByLabel(decidedBy(change, roster)!),
+    "Decided by Main Operator · rule research-network · rev. 1",
   );
-  equal(
-    delegatedDecisionLabel(exercise({ status: "refused" }), roster),
-    "Declined by Main Operator · research-network revision 1",
-  );
+  // A refusal is a decision too: the chip says Declined, the line who decided.
+  deepStrictEqual(decidedBy(exercise({ status: "refused" }), roster), {
+    by: "Main Operator",
+    rule: "research-network",
+    revision: 1,
+  });
   const grantProposal = grant({
     requestedRights: {
       operatorAuthority: {
@@ -377,7 +381,120 @@ Deno.test("delegated presentation requires the complete exact change, case, requ
     const change = exercise();
     mutate(change);
     equal(recordedDelegation(change), undefined);
-    equal(delegatedDecisionLabel(change, []), undefined);
+    equal(decidedBy(change, []), undefined);
+  }
+});
+
+Deno.test("a person's decision names you under the mandate its receipt records", () => {
+  const ownerReceipt = {
+    ...owner("main-system"),
+    authoritySchema: 2 as const,
+    action: "mandate-change" as const,
+    baseModelDigest: DIGEST,
+    outOfMandate: false,
+  };
+  for (const status of ["approved", "refused"] as const) {
+    const change = grant({
+      status,
+      authority: "human",
+      decidedAt: "2026-10-26T00:00:00Z",
+      baseModelDigest: DIGEST,
+      authorityExercise: ownerReceipt,
+    });
+    equal(
+      decidedByLabel(decidedBy(change, [])!),
+      "Decided by you · rule owner-mandate · rev. 1",
+    );
+  }
+  // Pending, or a receipt of another base, names no one.
+  equal(decidedBy(grant({ authorityExercise: ownerReceipt }), []), undefined);
+  equal(
+    decidedBy(
+      grant({
+        status: "approved",
+        authority: "human",
+        decidedAt: "2026-10-26T00:00:00Z",
+        baseModelDigest: "other-base",
+        authorityExercise: ownerReceipt,
+      }),
+      [],
+    ),
+    undefined,
+  );
+});
+
+Deno.test("an operator's own creation names it under its creation grant, bound to the exact member", () => {
+  const operator = {
+    kind: "request-team-member" as const,
+    instruction: "Review the hooks",
+    provision: {
+      budget: { maxAgentDecisions: 3, maxToolProposals: 1, maxFlowSteps: 20 },
+      networkHosts: [],
+      mayPropose: [],
+      mayInvokeActiveCatalog: false,
+    },
+  };
+  const created = (patch: Partial<PendingChange> = {}) =>
+    grant({
+      id: "member",
+      kind: "operator-creation",
+      requestedBy: PEER,
+      caseId: CASE,
+      status: "approved",
+      authority: "builder",
+      decidedAt: "2026-10-26T00:00:00Z",
+      baseModelDigest: DIGEST,
+      requestedRights: undefined,
+      operator,
+      authorityExercise: {
+        ...owner("research-system"),
+        authoritySchema: 2,
+        action: "mandate-change",
+        baseModelDigest: DIGEST,
+        outOfMandate: false,
+        creationDelegation: {
+          actorId: PEER,
+          policyId: "team-creation",
+          policyRevision: 2,
+          policyElementId: "policy:team",
+          policyIssuer: owner("research-system"),
+          requestedBy: PEER,
+          changeId: "member",
+          caseId: CASE,
+          operator: structuredClone(operator),
+        },
+      },
+      ...patch,
+    });
+  const roster = operatorRoster().conversations;
+  equal(
+    decidedByLabel(decidedBy(created(), roster)!),
+    "Decided by Research · rule team-creation · rev. 2",
+  );
+  // Each binding of the receipt to this exact creation is required.
+  const mutations: Array<(change: PendingChange) => void> = [
+    (c) => c.status = "pending",
+    (c) => c.status = "refused",
+    (c) => c.authority = "human",
+    (c) => delete c.decidedAt,
+    (c) => c.baseModelDigest = "other-base",
+    (c) => c.authorityExercise!.outOfMandate = true,
+    (c) => c.caseId = "other-request",
+    (c) => c.authorityExercise!.creationDelegation!.changeId = "other-change",
+    (c) => c.authorityExercise!.creationDelegation!.requestedBy = MAIN,
+    (c) => c.authorityExercise!.creationDelegation!.actorId = "",
+    (c) => c.authorityExercise!.creationDelegation!.policyRevision = 0,
+    (c) =>
+      c.authorityExercise!.creationDelegation!.operator = {
+        ...operator,
+        instruction: "Something else",
+      },
+  ];
+  for (const mutate of mutations) {
+    const change = created();
+    mutate(change);
+    equal(recordedCreationDelegation(change), undefined);
+    equal(decidedBy(change, roster), undefined);
   }
 });
 
@@ -619,7 +736,7 @@ Deno.test("a published change is joined to a commit only by host-parsed author, 
     authorityChangeForCommit(commit, [...roster, structuredClone(roster[1])]),
     undefined,
   );
-  match(delegatedDecisionLabel(change, [])!, /native:designer/);
+  match(decidedBy(change, [])!.by, /native:designer/);
 });
 
 Deno.test("a policy grant commit requires its prior owner receipt rather than an approved status alone", () => {

@@ -8,7 +8,7 @@ import {
   assertRequestReleaseAdmissionReference,
   type RequestReleaseAdmissionReference,
 } from "./saved-systems.ts";
-import type { ModelIdentity } from "./dialogue.ts";
+import type { ModelIdentity } from "../shared-kernel/model-identity.ts";
 
 /** Projection from an independently verified admission journal, not authority. */
 export interface VerifiedRequestReleaseSource {

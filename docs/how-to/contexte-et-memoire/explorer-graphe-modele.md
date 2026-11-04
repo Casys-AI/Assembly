@@ -114,7 +114,7 @@ user-model PartUsage members per named user-model owner:
 
 ```sparql
 PREFIX ase: <urn:ase:vocab:>
-PREFIX prop: <urn:ase:vocab:prop:>
+PREFIX prop: <https://www.omg.org/spec/SysML#>
 SELECT ?owner ?ownerName (COUNT(DISTINCT ?member) AS ?members)
 WHERE {
   ?owner ase:name ?ownerName ; prop:ownedMember ?member .

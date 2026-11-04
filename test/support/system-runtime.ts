@@ -4,7 +4,7 @@ import { SystemRuntime as Runtime } from "../../src/application/work/runtime/sys
 import type { SchemaValidationPort } from "../../src/application/work/behaviors/schema-validation.ts";
 import { createTestNativeExecution } from "./native-execution.ts";
 
-export { draftDigest } from "../../src/application/work/runtime/system.ts";
+export { draftDigest } from "../../src/application/work/runtime/values.ts";
 
 export class SystemRuntime extends Runtime {
   private readonly nativeFixture: ReturnType<typeof createTestNativeExecution>;

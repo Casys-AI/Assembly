@@ -123,13 +123,15 @@ fn loading_verifies_digest_and_graph_before_any_state() {
     let bytes = sample_quads();
     let wrong_digest = "0".repeat(64);
     let error = load_into_new_store(&StoreOptions::default(), &graph_a(), &bytes, &wrong_digest)
-        .expect_err("digest mismatch refused");
+        .err()
+        .expect("digest mismatch refused");
     assert!(error_text(&error).contains("INTEGRITY"), "{error}");
 
     let digest = sha256_hex(&bytes);
     let other_graph = format!("urn:ase:build:{}", "c".repeat(64));
     let error = load_into_new_store(&StoreOptions::default(), &other_graph, &bytes, &digest)
-        .expect_err("graph mismatch refused");
+        .err()
+        .expect("graph mismatch refused");
     assert!(error_text(&error).contains("INTEGRITY"), "{error}");
 }
 
@@ -159,6 +161,8 @@ fn admission_refuses_updates_service_and_client_datasets() {
         "SELECT * WHERE { { ?s ?p ?o } UNION { SERVICE <https://example.invalid> { ?s ?p ?o } } }",
         "SELECT * WHERE { GRAPH ?g { SERVICE <https://example.invalid> { ?s ?p ?o } } }",
         "SELECT * WHERE { ?s ?p ?o FILTER EXISTS { SERVICE <https://example.invalid> { ?s ?q ?r } } }",
+        "SELECT * WHERE { ?s ?p ?o LATERAL { SERVICE <https://example.invalid> { ?s ?q ?r } } }",
+        "SELECT * WHERE { SERVICE <https://example.invalid> { ?s ?q ?r } LATERAL { ?s ?p ?o } }",
         "SELECT * WHERE { ?s ?p ?o MINUS { SERVICE <https://example.invalid> { ?s ?q ?r } } }",
         "ASK { SERVICE <https://example.invalid> { ?s ?p ?o } }",
         "CONSTRUCT { ?s ?p ?o } WHERE { SERVICE <https://example.invalid> { ?s ?p ?o } }",
@@ -186,6 +190,7 @@ fn admission_refuses_updates_service_and_client_datasets() {
         // Les mots interdits dans les litteraux/IRI n'ont rien d'un mot-cle.
         "SELECT * WHERE { ?s ?p \"SERVICE FROM LOAD\" }",
         "SELECT * WHERE { <urn:ase:vocab:from-service> ?p ?o }",
+        "SELECT * WHERE { ?s ?p ?o LATERAL { ?s ?q ?r } }",
     ] {
         admit_query(admitted)
             .unwrap_or_else(|error| panic!("{admitted} should be admitted: {error}"));
@@ -263,7 +268,8 @@ fn loading_rejects_malformed_oversized_and_overfull_nquads() {
     let malformed = b"<a> <b> not-a-term .\n".to_vec();
     let digest = sha256_hex(&malformed);
     let error = load_into_new_store(&StoreOptions::default(), &graph_a(), &malformed, &digest)
-        .expect_err("malformed N-Quads refused");
+        .err()
+        .expect("malformed N-Quads refused");
     assert!(error_text(&error).contains("INVALID_INPUT"), "{error}");
 
     let bytes = sample_quads();
@@ -273,7 +279,8 @@ fn loading_rejects_malformed_oversized_and_overfull_nquads() {
         ..StoreOptions::default()
     };
     let error = load_into_new_store(&small_bytes, &graph_a(), &bytes, &digest)
-        .expect_err("oversized projection refused");
+        .err()
+        .expect("oversized projection refused");
     assert!(error_text(&error).contains("INVALID_INPUT"), "{error}");
 
     let few_quads = StoreOptions {
@@ -281,7 +288,8 @@ fn loading_rejects_malformed_oversized_and_overfull_nquads() {
         ..StoreOptions::default()
     };
     let error = load_into_new_store(&few_quads, &graph_a(), &bytes, &digest)
-        .expect_err("quad quota refused");
+        .err()
+        .expect("quad quota refused");
     assert!(error_text(&error).contains("QUERY_LIMIT"), "{error}");
 }
 
@@ -342,12 +350,14 @@ fn result_and_byte_quotas_truncate_instead_of_overrunning() {
 fn service_hidden_in_valid_expression_queries_is_refused_by_ast() {
     for sparql in [
         "SELECT (EXISTS { SERVICE <https://example.invalid/> { ?s ?p ?o } } AS ?present) WHERE {}",
+        "SELECT * WHERE { ?s ?p ?o LATERAL { SERVICE <https://example.invalid/> { ?s ?q ?r } } }",
+        "SELECT * WHERE { SERVICE <https://example.invalid/> { ?s ?q ?r } LATERAL { ?s ?p ?o } }",
         "SELECT ?present WHERE { BIND(EXISTS { SERVICE <https://example.invalid/> { ?s ?p ?o } } AS ?present) }",
         "SELECT ?s WHERE { ?s ?p ?o } ORDER BY (EXISTS { SERVICE <https://example.invalid/> { ?a ?b ?c } })",
         "SELECT (COUNT(*) AS ?n) WHERE { ?s ?p ?o } HAVING (EXISTS { SERVICE <https://example.invalid/> { ?a ?b ?c } })",
         "SELECT (SUM(IF(EXISTS { SERVICE <https://example.invalid/> { ?a ?b ?c } }, 1, 0)) AS ?n) WHERE { ?s ?p ?o }",
     ] {
-        Query::parse(sparql, None)
+        SparqlParser::new().parse_query(sparql)
             .unwrap_or_else(|error| panic!("test query must first be syntactically valid: {error}: {sparql}"));
         let error = admit_query(sparql).expect_err("AST expression must refuse federation");
         assert!(error_text(&error).contains("SERVICE patterns are refused"), "{error}");
@@ -442,7 +452,8 @@ fn native_entry_points_reject_unbounded_inputs_and_zero_store_quotas() {
         empty,
         &sha256_hex(empty),
     )
-    .expect_err("graph must have canonical build identity even when empty");
+    .err()
+    .expect("graph must have canonical build identity even when empty");
     assert!(error_text(&error).contains("INVALID_INPUT"), "{error}");
 }
 
@@ -460,4 +471,71 @@ fn panic_poison_is_preserved_and_close_can_clean_a_poisoned_mutex() {
     store.close();
     store.close();
     assert!(store.is_closed());
+}
+
+#[test]
+fn rdf_12_terms_remain_outside_the_projection_contract() {
+    let (store, _) = loaded_store();
+    for sparql in [
+        "SELECT (<<( <urn:s> <urn:p> <urn:o> )>> AS ?triple) WHERE {}",
+        "SELECT (<< <urn:s> <urn:p> <urn:o> >> AS ?triple) WHERE {}",
+    ] {
+        let error = run_query(&store, sparql, limits()).expect_err("triple terms refused");
+        assert!(error_text(&error).contains("QUERY_REFUSED"), "{error}");
+    }
+    let payload: Value = serde_json::from_str(
+        &run_query(
+            &store,
+            "CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }",
+            limits(),
+        )
+        .expect("RDF 1.1 graph result"),
+    )
+    .expect("json");
+    let quads = payload["quads"].as_array().expect("quads");
+    assert!(quads.iter().any(|quad| quad["subject"]["kind"] == "iri"));
+    assert!(quads.iter().any(|quad| quad["subject"]["kind"] == "blank"));
+}
+
+#[test]
+fn failed_reloads_preserve_the_previously_published_build() {
+    let store = SemanticIndexStore::new(None).expect("store");
+    let bytes = sample_quads();
+    let digest = sha256_hex(&bytes);
+    store
+        .load_build(
+            "build".into(),
+            graph_a(),
+            bytes.clone().into(),
+            digest.clone(),
+        )
+        .expect("initial load");
+    let malformed = format!(
+        "{}not a quad\n",
+        String::from_utf8(bytes.clone()).expect("utf8")
+    )
+    .into_bytes();
+    for (graph, replacement, expected_digest) in [
+        (graph_a(), bytes.clone(), "0".repeat(64)),
+        (
+            format!("urn:ase:build:{}", "b".repeat(64)),
+            bytes.clone(),
+            digest,
+        ),
+        (graph_a(), malformed.clone(), sha256_hex(&malformed)),
+    ] {
+        store
+            .load_build("build".into(), graph, replacement.into(), expected_digest)
+            .err()
+            .expect("invalid reload refused");
+        let result = store
+            .query_read_only(
+                "build".into(),
+                "SELECT (COUNT(*) AS ?n) WHERE { ?s ?p ?o }".into(),
+                r#"{"maxResults":100,"maxBytes":1048576,"timeoutMs":5000}"#.into(),
+            )
+            .expect("previous build remains queryable");
+        let payload: Value = serde_json::from_str(&result).expect("json");
+        assert_eq!(payload["rows"][0]["n"]["value"], "18");
+    }
 }

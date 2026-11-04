@@ -73,15 +73,23 @@ Git publication and build A
           ├── new head announcement
           │      └── System, board, views and diagrams advance
           │
-          └── first semantic read of the new build
+          └── semantic consumer: consultation or background SHACL refresh
                  ├── preparation process: verify A from KV or vault
                  ├── RDF absent: calculate → verified KV publication
                  └── native process: read KV reference → load → query
 ```
 
-Finalization therefore does not systematically rebuild the RDF index. It makes
-the new build addressable and triggers the projections needed by the views. The
-exhaustive semantic path is requested when a semantic read needs it.
+Finalization announces the new head before scheduling expensive diagnostics.
+Since the native SHACL-SPARQL integration of 4 November 2026, post-publication
+diagnostic refresh is itself a semantic consumer: it can prepare and load the
+new build's RDF before an explicit graph consultation. This advisory refresh
+runs in the background and keeps only the latest pending revision during a
+burst. Its failure does not undo publication or prevent the views from
+advancing.
+
+The same graph lifecycle applies to that background consumer and to explicit
+reads. The cache and resident state determine whether preparation or loading
+must run; publication does not imply an unconditional reprojection.
 
 Three situations must be distinguished:
 
@@ -135,13 +143,12 @@ published version.
 
 ## The remaining open limitation
 
-The current RDF retains an exhaustive representation of the artifact. It is
-faithful but large. A targeted read index could load fewer facts for the
-questions the workbench actually asks, while keeping `A` as the complete truth.
-
-This choice has not been made. It would require defining which facts are
-covered, versioning the new projector and checking its readers. Reducing the
-data without that contract would simply make information disappear silently.
+The RDF retains the complete artifact, including documentation, nulls and
+ordered duplicate occurrences. The v4 encoding reduces representation cost with
+compact blank-node labels and canonical batch encoding, without filtering this
+graph. Global line storage, sorting and the final byte array remain whole-graph
+memory boundaries; the native input limit remains 256 MiB. Further optimizations
+must preserve this coverage and the source/artifact identity contract.
 
 <a id="décisions-transverses"></a>
 
@@ -243,12 +250,11 @@ query.
 
 - The current exhaustive RDF index is not required to refresh System or
   diagrams.
-- A more targeted read index remains an option to decide. It would require a
-  coverage contract, a new projector version and compatible readers; these
-  decisions do not adopt it.
+- An additional purpose-specific index would require its own coverage contract
+  and decision; this pipeline retains the complete graph.
 - CBOR and DuckDB are not part of this delivered pipeline.
-- Startup/publication prewarming, UI availability and retry controls remain
-  separate work in the index-readiness follow-up. This increment preserves
-  on-demand, awaited reads.
+- Dedicated prewarming controls, index-availability UI and retry controls remain
+  separate work. Background SHACL refresh already requests its exact graph
+  through the same awaited semantic-read contract.
 - Measurements on a single corpus are neither an SLA nor a capacity guarantee
   for three graphs of the same size.

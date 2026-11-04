@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  sourceModelIdentity,
-  type SourceRevision,
-  validateSourceExecutables,
-} from "../../src/adapters/model/sources/source-model.ts";
-import { sourceLiterals } from "../../src/adapters/model/projections/graph/source.ts";
+import { validateSourceExecutables } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { sourceModelIdentity } from "../../src/domain/model/records/source-identity.ts";
+import { type SourceRevision } from "../../src/domain/model/records/source-revision.ts";
+import { sourceLiterals } from "../../src/domain/model/projections/source-facts.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 

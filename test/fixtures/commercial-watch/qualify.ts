@@ -1,10 +1,8 @@
 import { defaultToolkitPackageDir } from "../../../src/infrastructure/native/runtime-location.ts";
 /** Assemble and validate the source set; never initialize a model database. */
 import { ToolkitCompiler } from "../../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
-import {
-  discoverConversationUnits,
-  validateSourceExecutable,
-} from "../../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { discoverConversationUnits } from "../../../src/domain/model/records/source-identity.ts";
 
 const directory = new URL("./", import.meta.url);
 const sources: Record<string, string> = {};

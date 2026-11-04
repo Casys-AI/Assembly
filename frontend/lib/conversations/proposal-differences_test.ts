@@ -7,6 +7,7 @@ import {
   changeDifferences,
   changeScope,
   changeTitle,
+  memberFacts,
 } from "./proposal-differences.ts";
 import { changeOutcome } from "../model/revisions/change.ts";
 import type { PendingChange } from "../../../src/domain/governance/records/pending-change.ts";
@@ -128,6 +129,46 @@ Deno.test("team proposal displays bounded transmitted creation rights", () => {
   ok(scope.includes("Delegation depth: 0"));
   ok(scope.includes("Creation hosts: example.org"));
   ok(scope.includes("Originating Request not recorded"));
+});
+
+Deno.test("a new member's rights read as three facts: its Request, its network, whom it creates", () => {
+  const bare = {
+    kind: "request-team-member" as const,
+    instruction: "Contribute",
+    provision: provision(),
+  };
+  deepStrictEqual(memberFacts(bare).map(({ kind, label }) => [kind, label]), [
+    ["request", "this Request"],
+    ["network", "no network"],
+    ["creation", "creates no one"],
+  ]);
+  const granted = memberFacts({
+    ...bare,
+    provision: provision(["example.org"]),
+    creationGrant: {
+      networkHosts: [],
+      maxChildren: 2,
+      maxDelegationDepth: 0,
+    },
+  });
+  deepStrictEqual(granted.slice(1), [{
+    kind: "network",
+    label: "example.org",
+    detail: "Network hosts: example.org",
+  }, {
+    kind: "creation",
+    label: "creates ≤ 2",
+    detail:
+      "Creation grant: up to 2 operators · delegation depth 0 · hosts none",
+  }]);
+  // Hosts recorded at the spec root before provisions existed still count.
+  equal(
+    memberFacts(
+      { ...bare, provision: undefined, networkHosts: ["a.org"] } as never,
+    )[1]
+      .label,
+    "a.org",
+  );
 });
 
 Deno.test("a team creation persisted before provision existed displays without crashing", () => {

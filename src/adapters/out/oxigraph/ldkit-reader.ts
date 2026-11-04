@@ -36,11 +36,13 @@ import type {
   SemanticQueryLimits,
 } from "../../../application/model/semantic/queries/inputs.ts";
 import {
+  ASE_PROPERTY_VOCAB,
   ASE_VOCAB,
   escapeNQuadsLiteral,
   listPredicate,
   metaclassIri,
   propPredicate,
+  SYSML_VOCAB,
 } from "./rdf.ts";
 
 /** Pinned library used for its factory and RDFJS data model. */
@@ -551,7 +553,7 @@ export interface ModelNeighborPage {
 }
 
 const PREFIXES =
-  `PREFIX ase: <${ASE_VOCAB.base}> PREFIX prop: <urn:ase:vocab:prop:> `;
+  `PREFIX ase: <${ASE_VOCAB.base}> PREFIX prop: <https://www.omg.org/spec/SysML#> `;
 
 function literalOf(
   row: Readonly<Record<string, RdfTermDto>>,
@@ -751,7 +753,7 @@ export class BoundModelReader {
       `FILTER EXISTS { ?other ase:nativeId ?neighborNativeId } ` +
       `FILTER(isIRI(?other) && ?other != <${ASE_VOCAB.nullValue}> && ` +
       `(STRSTARTS(STR(?other), "${userPrefix}") || STRSTARTS(STR(?other), "urn:ase:library:")) && ` +
-      `STRSTARTS(STR(?p), "urn:ase:vocab:prop:"))`;
+      `(STRSTARTS(STR(?p), "${SYSML_VOCAB}") || STRSTARTS(STR(?p), "${ASE_PROPERTY_VOCAB}")))`;
     const branch = (dir: "out" | "in") => {
       const source = dir === "out" ? `<${iri}>` : "?other";
       const value = dir === "out" ? "?other" : `<${iri}>`;
@@ -759,14 +761,16 @@ export class BoundModelReader {
       const listBinding = property
         ? `BIND(<${propPredicate(property)}> AS ?p)`
         : `FILTER(STRSTARTS(STR(?listProperty), "urn:ase:vocab:list:")) ` +
-          `BIND(IRI(CONCAT("urn:ase:vocab:prop:", STRAFTER(STR(?listProperty), "urn:ase:vocab:list:"))) AS ?p)`;
+          `BIND(STRAFTER(STR(?listProperty), "urn:ase:vocab:list:") AS ?propertySuffix) ` +
+          `BIND(IRI(CONCAT(IF(STRSTARTS(?propertySuffix, "sysx%3A"), "${ASE_PROPERTY_VOCAB}", "${SYSML_VOCAB}"), ?propertySuffix)) AS ?p)`;
       const direct = property ? `<${propPredicate(property)}>` : "?p";
       const absentList = property
         ? `FILTER NOT EXISTS { ${source} <${
           listPredicate(property)
         }> ?existingList }`
-        : `FILTER(isIRI(?other) && STRSTARTS(STR(?p), "urn:ase:vocab:prop:")) ` +
-          `BIND(IRI(CONCAT("urn:ase:vocab:list:", STRAFTER(STR(?p), "urn:ase:vocab:prop:"))) AS ?existingListProperty) ` +
+        : `FILTER(isIRI(?other) && (STRSTARTS(STR(?p), "${SYSML_VOCAB}") || STRSTARTS(STR(?p), "${ASE_PROPERTY_VOCAB}"))) ` +
+          `BIND(IF(STRSTARTS(STR(?p), "${SYSML_VOCAB}"), STRAFTER(STR(?p), "${SYSML_VOCAB}"), STRAFTER(STR(?p), "${ASE_PROPERTY_VOCAB}")) AS ?propertySuffix) ` +
+          `BIND(IRI(CONCAT("urn:ase:vocab:list:", ?propertySuffix)) AS ?existingListProperty) ` +
           `FILTER NOT EXISTS { ${source} ?existingListProperty ?existingList }`;
       // A named reverse property can use its direct edge as an anchor.
       // For the unfiltered reverse page, derive p from each matching list
@@ -809,7 +813,12 @@ export class BoundModelReader {
     const items = result.rows.slice(0, limit).map((row): ModelNeighbor => {
       const predicate = iriOf(row, "p");
       const otherIri = iriOf(row, "other");
-      if (!predicate?.startsWith("urn:ase:vocab:prop:") || !otherIri) {
+      const propertyPrefix = predicate?.startsWith(SYSML_VOCAB)
+        ? SYSML_VOCAB
+        : predicate?.startsWith(ASE_PROPERTY_VOCAB)
+        ? ASE_PROPERTY_VOCAB
+        : undefined;
+      if (!predicate || !propertyPrefix || !otherIri) {
         throw new SemanticIndexError(
           "INDEX_PROJECTION_CORRUPT",
           {},
@@ -828,7 +837,7 @@ export class BoundModelReader {
           ? "in"
           : "out",
         property: decodeIriSegment(
-          predicate.slice("urn:ase:vocab:prop:".length),
+          predicate.slice(propertyPrefix.length),
         ),
         predicate,
         otherIri,

@@ -1,3 +1,8 @@
+import {
+  sourceCompilation,
+  sourceEvolutionCompilation,
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 import { SYSML_TOOLKIT_VERSION } from "../../src/adapters/out/sysml-toolkit/runtime/loader.ts";
 import { MemorySourceRepository } from "../support/memory-source-repository.ts";
 import { applyApprovedSourceChange } from "../support/approved-source-change.ts";
@@ -11,11 +16,10 @@ import {
   readModelProject,
   readProjectSources,
 } from "../../src/adapters/out/filesystem/model-project.ts";
-import { SourceModel } from "../../src/adapters/model/sources/source-model.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
-import { resolveModelEdits } from "../../src/adapters/model/sources/editing/tooling.ts";
-import { NativeModelSourceAuthorization } from "../../src/adapters/governance/model-access/source-authorization.ts";
+import { resolveModelEdits } from "../../src/domain/model/editing/source-index.ts";
+import { NativeModelSourceAuthorization } from "../../src/application/governance/model-access/source-authorization.ts";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
 import { SystemGovernance } from "../../src/domain/governance/policies/governance.ts";
 import type { ChatDecision } from "../../src/domain/work/dialogue.ts";
@@ -46,7 +50,7 @@ Deno.test({
       const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR")!;
       const compiler = new ToolkitCompiler({ packageDir });
       const repository = new MemorySourceRepository(compiler);
-      const adapter = new SourceModel({
+      const adapter = createSourceModel({
         tooling: new SysmlToolkitAdapter({ packageDir }),
         repository,
         projectId,
@@ -68,7 +72,11 @@ Deno.test({
       );
       assert.equal(edited.provider.version, SYSML_TOOLKIT_VERSION);
       const candidate = await compiler.compile(edited.sources);
-      const authorizer = new NativeModelSourceAuthorization(projectId);
+      const authorizer = new NativeModelSourceAuthorization(
+        projectId,
+        sourceCompilation,
+        sourceEvolutionCompilation,
+      );
       for (const phase of ["proposal", "acceptance"] as const) {
         await authorizer.validate({
           authority: current,

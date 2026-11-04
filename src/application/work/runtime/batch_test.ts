@@ -1,3 +1,4 @@
+import { ACCEPTED_CASE_CLOSURE } from "../../../../test/support/case-closure.ts";
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
 import { unexpectedModelAuthoring } from "../../../../test/support/model-authoring.ts";
@@ -2339,7 +2340,10 @@ Deno.test("a registered unpublished immutable group blocks completing its Case",
   );
   deepStrictEqual(f.effects.toSorted(), ["read:first", "read:second"]);
   await import("node:assert/strict").then(({ rejects }) =>
-    rejects(() => f.service.closeCase(caseId!, "done"), /awaits publication/)
+    rejects(
+      () => f.service.closeCase(caseId!, "done", ACCEPTED_CASE_CLOSURE),
+      /awaits publication/,
+    )
   );
   ok(
     !f.service.snapshot.cases?.find((item) => item.id === caseId)?.status

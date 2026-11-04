@@ -12,7 +12,7 @@ import { projectEvolutionBudgets } from "./evolution-budget-projection.ts";
 import {
   nativeExecutionIdentity,
   type NativeExecutionSnapshot,
-} from "./execution.ts";
+} from "../native-execution/contract.ts";
 
 async function fixture() {
   const model = artifactModel("owner");

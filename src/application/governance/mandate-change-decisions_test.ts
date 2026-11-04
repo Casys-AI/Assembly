@@ -81,6 +81,7 @@ async function fixture(unrelatedBeforePreview = false) {
       configuration: structuredClone(native.configuration),
     },
     ports: {
+      clock: { now: () => "2026-11-03T00:00:00.000Z" },
       model: {
         ...unexpectedModelAuthoring,
         previewApprovedChange: emptyChangePreview,
@@ -1486,13 +1487,42 @@ Deno.test("team creation rechecks a grant revoked after its preview and preserve
   equal(f.host.state.configuration!.changes[0].status, "pending");
 });
 
+Deno.test("team creation refuses foreign membership with the same owner in Main and a verified scope", async () => {
+  for (const scoped of [false, true]) {
+    const f = await teamCreationFixture();
+    f.host.state.executionModel!.operatorTeam = {
+      parentOperatorId: "builder",
+      requestOwnerId: "builder",
+      requestId: scoped ? f.caseId : "another-request",
+    };
+    if (scoped) {
+      f.host.ports.model = {
+        ...f.host.ports.model,
+        requestChangeScope: {
+          caseId: f.caseId,
+          operatorId: "builder",
+          executionSpaceId: "branch",
+          branchTeamSize: 1,
+          memberIds: ["another-member"],
+        },
+      };
+    }
+    const before = structuredClone(f.host.state);
+    await rejects(() => proposeChange.call(f.host, f.decision), {
+      code: "CASE_SCOPE_MISSING",
+    });
+    deepStrictEqual(f.host.state, before);
+    equal(f.counts().publications, 0);
+  }
+});
+
 Deno.test("a designer conversation cannot disguise a team creation as an active Request", async () => {
   const f = await teamCreationFixture();
   selectDesignerInvocation(f.host.state);
   const before = structuredClone(f.host.state);
   await rejects(
     () => proposeChange.call(f.host, f.decision),
-    /active originating Request/,
+    /active Request/,
   );
   deepStrictEqual(f.host.state, before);
   equal(f.counts().publications, 0);
@@ -1502,7 +1532,7 @@ Deno.test("native promotion dependency refuses mandate approval before publicati
   const f = await fixture();
   const model = f.host.state.executionModel!;
   const promotion:
-    import("../work/runtime/execution.ts").NativeExecutionSnapshot = {
+    import("../work/native-execution/contract.ts").NativeExecutionSnapshot = {
       identity: {
         operatorId: "builder",
         invocationKey: "designer",

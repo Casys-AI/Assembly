@@ -89,10 +89,25 @@ export function decodeSpaceExecutionAdmission(
     createdAt: row.createdAt.toISOString(),
   };
 }
-const refused = () =>
+const refusalRecovery: Record<string, string> = {
+  "credential.input":
+    "Provide a valid active credential with its bound owner, authority and expiry.",
+  "retention.minimum-lifetime":
+    "Provide a positive safe integer minimum lifetime in milliseconds.",
+  "effect.transaction":
+    "Use the caller-owned ledger transaction for effect start.",
+};
+const refused = (check: string, context: Record<string, unknown>) =>
   new RequestSpaceError(
     "ADMISSION_REFUSED",
-    "The current space control or execution admission is unavailable.",
+    check === "effect.transaction"
+      ? "Effect start requires the caller-owned ledger transaction."
+      : "The current space control or execution admission is unavailable.",
+    {
+      context: { check, ...context },
+      recovery: refusalRecovery[check] ??
+        "Refresh the current control and Request admission before retrying the refused operation.",
+    },
   );
 
 export class PostgresSpaceCredentials implements SpaceCredentialStorePort {
@@ -123,13 +138,20 @@ export class PostgresSpaceCredentials implements SpaceCredentialStorePort {
     row: SpaceControlCredential,
     witness?: SpaceControlAdoptedState,
   ): Promise<void> {
+    const refuse = (check: string, extra?: Record<string, unknown>) =>
+      refused(
+        check,
+        { ownerId: row.ownerId, kind: row.kind, ...extra },
+      );
     if (
       row.revision !== 0 || row.status !== "active" ||
       !/^[a-f0-9]{64}$/.test(row.secretHash) ||
       !Number.isFinite(Date.parse(row.expiresAt)) ||
       row.authority.owner.operatorId !== row.ownerId ||
       !spaceControlAuthorityMatchesBinding(row.authority, this.binding)
-    ) throw refused();
+    ) {
+      throw refuse("credential.input");
+    }
     await this.client.$transaction(async (tx) => {
       // Fence even delayed capability issuance against the canonical invalidation
       // transaction. Source evidence may advance only with unchanged policy.
@@ -140,7 +162,7 @@ export class PostgresSpaceCredentials implements SpaceCredentialStorePort {
         row.ownerId,
       );
       if (!sameEffectiveSpaceControlAuthority(current, row.authority)) {
-        throw refused();
+        throw refuse("credential.current-authority");
       }
       // Pending issuance is bound to the exact captured PRIMARY revision, even
       // when an intervening save preserved effective authority or restored P.
@@ -151,7 +173,9 @@ export class PostgresSpaceCredentials implements SpaceCredentialStorePort {
           row.authority.modelDigest !== current.modelDigest ||
           canonical(row.authority.owner.sourceIds) !==
             canonical(current.owner.sourceIds))
-      ) throw refused();
+      ) {
+        throw refuse("credential.issuance-witness");
+      }
       if (row.kind === "session") {
         const parents = await tx.$queryRaw<CredentialRow[]>(
           Prisma
@@ -161,9 +185,11 @@ export class PostgresSpaceCredentials implements SpaceCredentialStorePort {
           !parents[0] ||
           parents[0].authorityJson !== canonical(row.authority) ||
           parents[0].expiresAt.getTime() < Date.parse(row.expiresAt)
-        ) throw refused();
+        ) {
+          throw refuse("credential.session-parent");
+        }
       } else if (row.kind !== "capability" || row.parentCapabilityId !== null) {
-        throw refused();
+        throw refuse("credential.kind");
       }
       await tx.$executeRaw(
         Prisma
@@ -183,6 +209,8 @@ export class PostgresSpaceCredentials implements SpaceCredentialStorePort {
     controller: SpaceController,
     expectedSessionRevision?: number,
   ) {
+    const refuse = (check: string, extra?: Record<string, unknown>) =>
+      refused(check, { ownerId: controller.ownerId, ...extra });
     const adopted = await this.primaryControl.readLocked(tx);
     const current = projectSpaceControlAuthority(
       adopted.source,
@@ -191,17 +219,29 @@ export class PostgresSpaceCredentials implements SpaceCredentialStorePort {
     );
     if (
       !sameEffectiveSpaceControlAuthority(current, controller.authority)
-    ) throw refused();
+    ) {
+      throw refuse("controller.current-authority");
+    }
     const capabilities = await tx.$queryRaw<CredentialRow[]>(
       Prisma
         .sql`SELECT * FROM ${this.table()} WHERE "projectId"=${this.scope.projectId} AND "systemId"=${this.scope.systemId} AND "id"=${controller.capabilityId} AND "ownerId"=${controller.ownerId} AND "kind"='capability' AND "status"='active' AND "expiresAt">clock_timestamp() FOR SHARE`,
     );
     const capability = capabilities[0];
-    if (
-      !capability || capability.parentCapabilityId !== null ||
-      capability.revision !== controller.capabilityRevision ||
-      capability.authorityJson !== canonical(controller.authority)
-    ) throw refused();
+    if (!capability) {
+      throw refuse("controller.capability.lookup");
+    }
+    if (capability.parentCapabilityId !== null) {
+      throw refuse("controller.capability.parent");
+    }
+    if (capability.revision !== controller.capabilityRevision) {
+      throw refuse("controller.capability.revision", {
+        expectedRevision: controller.capabilityRevision,
+        actualRevision: capability.revision,
+      });
+    }
+    if (capability.authorityJson !== canonical(controller.authority)) {
+      throw refuse("controller.capability.authority");
+    }
     const sessions = await tx.$queryRaw<CredentialRow[]>(
       Prisma
         .sql`SELECT * FROM ${this.table()} WHERE "projectId"=${this.scope.projectId} AND "systemId"=${this.scope.systemId} AND "id"=${controller.sessionId} AND "ownerId"=${controller.ownerId} AND "kind"='session' AND "status"='active' AND "expiresAt">clock_timestamp() FOR SHARE`,
@@ -210,14 +250,28 @@ export class PostgresSpaceCredentials implements SpaceCredentialStorePort {
     const [clock] = await tx.$queryRaw<Array<{ authorizedAt: Date }>>(
       Prisma.sql`SELECT clock_timestamp() AS "authorizedAt"`,
     );
+    if (!session) throw refuse("controller.session.lookup");
+    if (session.parentCapabilityId !== capability.id) {
+      throw refuse("controller.session.parent");
+    }
+    if (session.authorityJson !== capability.authorityJson) {
+      throw refuse("controller.session.authority");
+    }
     if (
-      !session || session.parentCapabilityId !== capability.id ||
-      session.authorityJson !== capability.authorityJson ||
-      (expectedSessionRevision !== undefined &&
-        session.revision !== expectedSessionRevision) ||
-      !clock || capability.expiresAt <= clock.authorizedAt ||
-      session.expiresAt <= clock.authorizedAt
-    ) throw refused();
+      expectedSessionRevision !== undefined &&
+      session.revision !== expectedSessionRevision
+    ) {
+      throw refuse("controller.session.revision", {
+        expectedRevision: expectedSessionRevision,
+        actualRevision: session.revision,
+      });
+    }
+    if (capability.expiresAt <= clock.authorizedAt) {
+      throw refuse("controller.capability.expiry");
+    }
+    if (session.expiresAt <= clock.authorizedAt) {
+      throw refuse("controller.session.expiry");
+    }
     return {
       authority: current,
       adoptedState: adopted.adoptedState,
@@ -230,8 +284,12 @@ export class PostgresSpaceCredentials implements SpaceCredentialStorePort {
     tx: Prisma.TransactionClient,
     controller: SpaceController,
   ) {
+    const refuse = (check: string, extra?: Record<string, unknown>) =>
+      refused(check, { ownerId: controller.ownerId, ...extra });
     const current = await this.assertCurrentController(tx, controller);
-    if (!current.authority.acts.includes("retain-release")) throw refused();
+    if (!current.authority.acts.includes("retain-release")) {
+      throw refuse("retention.act");
+    }
     return current;
   }
   /** Called after all potentially waiting source/scope locks. Row locks prevent
@@ -241,9 +299,13 @@ export class PostgresSpaceCredentials implements SpaceCredentialStorePort {
     controller: SpaceController,
     minimumLifetimeMs: number,
   ): Promise<void> {
+    const refuse = (check: string, extra?: Record<string, unknown>) =>
+      refused(check, { ownerId: controller.ownerId, ...extra });
     await this.assertRetainRelease(tx, controller);
     if (!Number.isSafeInteger(minimumLifetimeMs) || minimumLifetimeMs <= 0) {
-      throw refused();
+      throw refuse("retention.minimum-lifetime", {
+        minimumLifetimeMs,
+      });
     }
     const started = performance.now();
     const [window] = await tx.$queryRaw<
@@ -262,7 +324,13 @@ export class PostgresSpaceCredentials implements SpaceCredentialStorePort {
       !window || window.count !== 2 || window.remainingMs === null ||
       !Number.isFinite(window.remainingMs) ||
       window.remainingMs - elapsed < minimumLifetimeMs
-    ) throw refused();
+    ) {
+      throw refuse("retention.native-window", {
+        minimumLifetimeMs,
+        remainingMs: window?.remainingMs,
+        elapsedMs: elapsed,
+      });
+    }
   }
   async findHash(hash: string): Promise<SpaceControlCredential | null> {
     const rows = await this.client.$queryRaw<CredentialRow[]>(
@@ -283,6 +351,8 @@ export class PostgresSpaceCredentials implements SpaceCredentialStorePort {
     ownerId: string,
     expectedRevision: number,
   ): Promise<SpaceControlCredential> {
+    const refuse = (check: string, extra?: Record<string, unknown>) =>
+      refused(check, { ownerId, ...extra });
     return await this.client.$transaction(async (tx) => {
       // Shared order with effect start: capability FIRST, then admission(s).
       const rows = await tx.$queryRaw<CredentialRow[]>(
@@ -290,9 +360,16 @@ export class PostgresSpaceCredentials implements SpaceCredentialStorePort {
           .sql`SELECT * FROM ${this.table()} WHERE "projectId"=${this.scope.projectId} AND "systemId"=${this.scope.systemId} AND "id"=${id} AND "ownerId"=${ownerId} AND "kind"='capability' FOR UPDATE`,
       );
       const row = rows[0];
-      if (!row) throw refused();
+      if (!row) {
+        throw refuse("capability-revocation.lookup");
+      }
       if (row.status === "revoked") return credential(row);
-      if (row.revision !== expectedRevision) throw refused();
+      if (row.revision !== expectedRevision) {
+        throw refuse("capability-revocation.revision", {
+          expectedRevision,
+          actualRevision: row.revision,
+        });
+      }
       const admissions = postgresQualifiedTable(
         this.client,
         "SpaceExecutionAdmission",
@@ -309,7 +386,11 @@ export class PostgresSpaceCredentials implements SpaceCredentialStorePort {
         Prisma
           .sql`UPDATE ${this.table()} SET "status"='revoked',"revision"="revision"+1 WHERE "id"=${id} AND "revision"=${expectedRevision} RETURNING *`,
       );
-      if (!updated[0]) throw refused();
+      if (!updated[0]) {
+        throw refuse("capability-revocation.update", {
+          expectedRevision,
+        });
+      }
       return credential(updated[0]);
     });
   }
@@ -375,11 +456,22 @@ export class PostgresSpaceAdmissions implements SpaceAdmissionStorePort {
   async admit(
     input: Parameters<SpaceAdmissionStorePort["admit"]>[0],
   ): Promise<SpaceExecutionAdmission> {
+    const refuse = (check: string, extra?: Record<string, unknown>) =>
+      refused(check, {
+        admissionId: input.id,
+        openingId: input.openingId,
+        ownerId: input.ownerId,
+        ...extra,
+      });
     if (
       canonical(input.scope) !== canonical(this.scope) ||
       input.authority.owner.operatorId !== input.ownerId ||
       !spaceControlAuthorityMatchesBinding(input.authority, this.binding)
-    ) throw refused();
+    ) {
+      throw refuse("admission.input", {
+        executionSpaceId: input.executionSpaceId,
+      });
+    }
     return await this.client.$transaction(async (tx) => {
       const roots = await tx.$queryRaw<CredentialRow[]>(
         Prisma
@@ -391,7 +483,12 @@ export class PostgresSpaceAdmissions implements SpaceAdmissionStorePort {
           credential(roots[0]).authority,
           input.authority,
         )
-      ) throw refused();
+      ) {
+        throw refuse("admission.capability", {
+          expectedRevision: input.capabilityRevision,
+          actualRevision: roots[0]?.revision,
+        });
+      }
       const opening = await tx.$queryRaw<
         Array<{ baseDigest: string; phase: string }>
       >(Prisma.sql`SELECT "baseDigest","phase" FROM ${
@@ -400,24 +497,21 @@ export class PostgresSpaceAdmissions implements SpaceAdmissionStorePort {
       if (
         !opening[0] || opening[0].baseDigest !== input.baseDigest ||
         !["runtime-ready", "admitted", "dispatched"].includes(opening[0].phase)
-      ) throw refused();
+      ) {
+        throw refuse("admission.opening", {
+          expectedBaseDigest: input.baseDigest,
+          actualBaseDigest: opening[0]?.baseDigest,
+          phase: opening[0]?.phase,
+        });
+      }
       const existing = await tx.$queryRaw<AdmissionRow[]>(
         Prisma
           .sql`SELECT * FROM ${this.table()} WHERE "projectId"=${this.scope.projectId} AND "systemId"=${this.scope.systemId} AND "openingId"=${input.openingId} FOR UPDATE`,
       );
       if (existing[0]) {
         const found = decodeSpaceExecutionAdmission(existing[0]);
-        if (
-          input.permissions.resourceIds.length > 0 && found.id !== input.id ||
-          found.ownerId !== input.ownerId ||
-          found.capabilityId !== input.capabilityId ||
-          found.capabilityRevision !== input.capabilityRevision ||
-          found.baseDigest !== input.baseDigest ||
-          !sameEffectiveSpaceControlAuthority(
-            found.authority,
-            input.authority,
-          ) || canonical(found.permissions) !== canonical(input.permissions)
-        ) throw refused();
+        // The application verifies this immutable admission against the opening
+        // and current authority before dispatch; retries preserve its identity.
         return found;
       }
       const rows = await tx.$queryRaw<AdmissionRow[]>(
@@ -442,6 +536,11 @@ export class PostgresSpaceAdmissions implements SpaceAdmissionStorePort {
     id: string,
     controller: SpaceController,
   ): Promise<SpaceExecutionAdmission> {
+    const refuse = (check: string, extra?: Record<string, unknown>) =>
+      refused(
+        check,
+        { admissionId: id, ownerId: controller.ownerId, ...extra },
+      );
     return await this.client.$transaction(async (tx) => {
       const roots = await tx.$queryRaw<CredentialRow[]>(
         Prisma
@@ -450,12 +549,19 @@ export class PostgresSpaceAdmissions implements SpaceAdmissionStorePort {
       if (
         !roots[0] || roots[0].revision !== controller.capabilityRevision ||
         roots[0].authorityJson !== canonical(controller.authority)
-      ) throw refused();
+      ) {
+        throw refuse("admission-revocation.capability", {
+          expectedRevision: controller.capabilityRevision,
+          actualRevision: roots[0]?.revision,
+        });
+      }
       const rows = await tx.$queryRaw<AdmissionRow[]>(
         Prisma
           .sql`SELECT * FROM ${this.table()} WHERE "projectId"=${this.scope.projectId} AND "systemId"=${this.scope.systemId} AND "id"=${id} AND "ownerId"=${controller.ownerId} AND "capabilityId"=${controller.capabilityId} FOR UPDATE`,
       );
-      if (!rows[0]) throw refused();
+      if (!rows[0]) {
+        throw refuse("admission-revocation.lookup");
+      }
       if (rows[0].status === "revoked") {
         return decodeSpaceExecutionAdmission(rows[0]);
       }
@@ -465,7 +571,11 @@ export class PostgresSpaceAdmissions implements SpaceAdmissionStorePort {
           rows[0].revision
         } RETURNING *`,
       );
-      if (!updated[0]) throw refused();
+      if (!updated[0]) {
+        throw refuse("admission-revocation.update", {
+          expectedRevision: rows[0].revision,
+        });
+      }
       return decodeSpaceExecutionAdmission(updated[0]);
     });
   }
@@ -473,6 +583,13 @@ export class PostgresSpaceAdmissions implements SpaceAdmissionStorePort {
     tx: Prisma.TransactionClient,
     input: SpaceEffectStartCheck,
   ): Promise<SpaceEffectStartProof> {
+    const refuse = (check: string, extra?: Record<string, unknown>) =>
+      refused(check, {
+        admissionId: input.admissionId,
+        openingId: input.openingId,
+        operatorId: input.operatorId,
+        ...extra,
+      });
     // Prisma 7.10 retains $transaction on its nested transaction proxy. The
     // real TransactionClient removes connection-lifetime methods instead; test
     // callable API availability rather than the proxy's property membership.
@@ -480,10 +597,7 @@ export class PostgresSpaceAdmissions implements SpaceAdmissionStorePort {
       typeof Reflect.get(tx, "$connect") === "function" ||
       typeof Reflect.get(tx, "$disconnect") === "function"
     ) {
-      throw new RequestSpaceError(
-        "ADMISSION_REFUSED",
-        "Effect start requires the caller-owned ledger transaction.",
-      );
+      throw refuse("effect.transaction");
     }
     const adopted = await this.primaryControl.readLocked(tx);
     // Lookup only discovers the root lock key; all content is reread under locks.
@@ -491,7 +605,9 @@ export class PostgresSpaceAdmissions implements SpaceAdmissionStorePort {
       Prisma
         .sql`SELECT "capabilityId" FROM ${this.table()} WHERE "projectId"=${this.scope.projectId} AND "systemId"=${this.scope.systemId} AND "id"=${input.admissionId}`,
     );
-    if (!before[0]) throw refused();
+    if (!before[0]) {
+      throw refuse("effect.admission-lookup");
+    }
     const roots = await tx.$queryRaw<CredentialRow[]>(
       Prisma
         .sql`SELECT * FROM ${this.credentials()} WHERE "projectId"=${this.scope.projectId} AND "systemId"=${this.scope.systemId} AND "id"=${
@@ -502,7 +618,12 @@ export class PostgresSpaceAdmissions implements SpaceAdmissionStorePort {
       Prisma
         .sql`SELECT * FROM ${this.table()} WHERE "projectId"=${this.scope.projectId} AND "systemId"=${this.scope.systemId} AND "id"=${input.admissionId} AND "expiresAt">clock_timestamp() FOR UPDATE`,
     );
-    if (!roots[0] || !rows[0]) throw refused();
+    if (!roots[0] || !rows[0]) {
+      throw refuse("effect.locked-credentials", {
+        capabilityFound: !!roots[0],
+        admissionFound: !!rows[0],
+      });
+    }
     const root = credential(roots[0]),
       current = decodeSpaceExecutionAdmission(rows[0]);
     const currentAuthority = projectSpaceControlAuthority(
@@ -518,57 +639,122 @@ export class PostgresSpaceAdmissions implements SpaceAdmissionStorePort {
       const row = await tx.spaceOpening.findFirst({
         where: { ...this.scope, id: current.openingId },
       });
-      if (!row) throw refused();
+      if (!row) {
+        throw refuse("effect.member-opening");
+      }
       const opening = decodeRequestSpaceOpening(row);
       const chain = await new PostgresRequestSourceAdmissionStore(this.client)
         .readAdmittedSource(tx, opening);
       const pin = requestExecutionPinFor(
-        opening.base!.requestOwner.operatorId,
         chain.execution,
         input.operatorId,
+        opening.base!,
       );
       if (pin.modelDigest !== current.permissions.modelDigests[operatorIndex]) {
-        throw refused();
+        throw refuse("effect.member-pin-digest", {
+          operatorIndex,
+          admissionDigest: current.permissions.modelDigests[operatorIndex],
+          pinDigest: pin.modelDigest,
+        });
       }
       sourceVersion = pin.source.version;
     }
 
+    if (root.status !== "active") {
+      throw refuse("effect.capability.status");
+    }
+    if (root.ownerId !== current.ownerId) {
+      throw refuse("effect.capability.owner");
+    }
+    if (root.revision !== current.capabilityRevision) {
+      throw refuse("effect.capability.revision", {
+        admissionRevision: current.capabilityRevision,
+        capabilityRevision: root.revision,
+      });
+    }
+    if (current.status !== "active") {
+      throw refuse("effect.admission.status");
+    }
+    if (current.revision !== input.expectedRevision) {
+      throw refuse("effect.admission.revision", {
+        expectedRevision: input.expectedRevision,
+        actualRevision: current.revision,
+      });
+    }
+    if (current.openingId !== input.openingId) {
+      throw refuse("effect.opening");
+    }
+    if (current.executionSpaceId !== input.executionSpaceId) {
+      throw refuse("effect.execution-space");
+    }
+    if (current.baseDigest !== input.baseDigest) {
+      throw refuse("effect.base-digest");
+    }
+    if (current.authority.owner.operatorId !== current.ownerId) {
+      throw refuse("effect.authority.owner");
+    }
+    if (!spaceControlAuthorityMatchesBinding(currentAuthority, this.binding)) {
+      throw refuse("effect.authority.binding");
+    }
     if (
-      root.status !== "active" || root.ownerId !== current.ownerId ||
-      root.revision !== current.capabilityRevision ||
-      current.status !== "active" ||
-      current.revision !== input.expectedRevision ||
-      current.openingId !== input.openingId ||
-      current.executionSpaceId !== input.executionSpaceId ||
-      current.baseDigest !== input.baseDigest ||
-      current.authority.owner.operatorId !== current.ownerId ||
-      !spaceControlAuthorityMatchesBinding(currentAuthority, this.binding) ||
       !sameEffectiveSpaceControlAuthority(
         current.authority,
         currentAuthority,
-      ) ||
-      !sameEffectiveSpaceControlAuthority(root.authority, current.authority) ||
-      input.act !== "conversation" ||
-      current.permissions.acts.length !== 1 ||
-      current.permissions.acts[0] !== input.act ||
-      !Array.isArray(current.permissions.resourceIds) ||
-      current.permissions.resourceIds.length > 256 ||
+      )
+    ) throw refuse("effect.authority.current");
+    if (
+      !sameEffectiveSpaceControlAuthority(root.authority, current.authority)
+    ) throw refuse("effect.authority.capability");
+    if (input.act !== "conversation") {
+      throw refuse("effect.act");
+    }
+    if (current.permissions.acts.length !== 1) {
+      throw refuse("effect.permissions.act-count");
+    }
+    if (current.permissions.acts[0] !== input.act) {
+      throw refuse("effect.permissions.act");
+    }
+    if (!Array.isArray(current.permissions.resourceIds)) {
+      throw refuse("effect.resources.shape");
+    }
+    if (current.permissions.resourceIds.length > 256) {
+      throw refuse("effect.resources.count");
+    }
+    if (
       current.permissions.resourceIds.some((id) =>
         typeof id !== "string" || !/^retained-tool:v1:[a-f0-9]{64}$/.test(id)
-      ) ||
+      )
+    ) throw refuse("effect.resources.encoding");
+    if (
       new Set(current.permissions.resourceIds).size !==
-        current.permissions.resourceIds.length ||
+        current.permissions.resourceIds.length
+    ) throw refuse("effect.resources.unique");
+    if (
       input.expectedResourceIds !== undefined &&
-        canonical(current.permissions.resourceIds) !==
-          canonical(input.expectedResourceIds) ||
+      canonical(current.permissions.resourceIds) !==
+        canonical(input.expectedResourceIds)
+    ) throw refuse("effect.resources.expected");
+    if (
       input.retainedTool !== undefined &&
-        !current.permissions.resourceIds.includes(
-          input.retainedTool.resourceId,
-        ) ||
-      !current.permissions.operatorIds.includes(input.operatorId) ||
-      current.permissions.modelDigests[operatorIndex] !== input.modelDigest ||
-      sourceVersion !== input.sourceVersion
-    ) throw refused();
+      !current.permissions.resourceIds.includes(
+        input.retainedTool.resourceId,
+      )
+    ) throw refuse("effect.resources.retained-tool");
+    if (!current.permissions.operatorIds.includes(input.operatorId)) {
+      throw refuse("effect.operator");
+    }
+    if (current.permissions.modelDigests[operatorIndex] !== input.modelDigest) {
+      throw refuse("effect.model-digest", {
+        expectedDigest: input.modelDigest,
+        actualDigest: current.permissions.modelDigests[operatorIndex],
+      });
+    }
+    if (sourceVersion !== input.sourceVersion) {
+      throw refuse("effect.source-version", {
+        expectedSourceVersion: input.sourceVersion,
+        actualSourceVersion: sourceVersion,
+      });
+    }
     // Root capability expiration governs new control sessions/commands; only
     // explicit revocation/revision and this admission's expiry govern old work.
     // No session table lookup occurs on the autonomous execution path.

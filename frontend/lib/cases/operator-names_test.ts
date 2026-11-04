@@ -4,6 +4,7 @@ import { caseTitle } from "./cases.ts";
 import {
   branchOperatorName,
   caseOperatorName,
+  caseRoster,
   OPERATOR_NAMES,
 } from "./operator-names.ts";
 
@@ -71,4 +72,15 @@ Deno.test("a Request's conversation gives its generic operator the Branch Operat
   equal(caseOperatorName("Researcher", record), "Researcher");
   // Before its Case is read, the generic name stays.
   equal(caseOperatorName("Branch Operator", undefined), "Branch Operator");
+  // A Request's roster names each agent the same way.
+  deepStrictEqual(
+    caseRoster([
+      { nativeId: "bo", name: "Branch Operator" },
+      { nativeId: "member", name: "Researcher" },
+    ], record),
+    [
+      { nativeId: "bo", name: branchOperatorName(record) },
+      { nativeId: "member", name: "Researcher" },
+    ],
+  );
 });

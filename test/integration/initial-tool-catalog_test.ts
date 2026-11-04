@@ -11,13 +11,13 @@ import { join } from "node:path";
 import {
   compileInitialTools,
   withInitialTools,
-} from "../../src/adapters/work/tools/initial-catalog.ts";
+} from "../../src/adapters/out/sysml-toolkit/compilation-policies/work/initial-catalog.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import {
   sourceLiterals,
   sourceSnapshot,
-} from "../../src/adapters/model/projections/graph/source.ts";
-import type { ModelIdentity } from "../../src/domain/work/dialogue.ts";
+} from "../../src/domain/model/projections/source-facts.ts";
+import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import { preparedSources } from "../../tools/system-workspace.ts";
 
 const base = `package AssemblyLiveBuilder {

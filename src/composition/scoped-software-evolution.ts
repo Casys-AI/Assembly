@@ -1,9 +1,10 @@
+import { PostgresScopedSoftwareAdmissionReader } from "../adapters/out/postgres/scoped-software-admission-reader.ts";
 import type { ClockPort } from "../application/work/runtime/ports.ts";
 import { SystemClock } from "../infrastructure/clock.ts";
 import { repositoryWriterLock } from "../adapters/out/git/writer-lock.ts";
-import { bindHostBackgroundTask } from "../adapters/work/runtime/host-background-task.ts";
+import { bindHostBackgroundTask } from "../infrastructure/host-background-task.ts";
 import type { OperatorExecutionDelivery } from "../application/work/operators/execution.ts";
-import type { ResolvedOperatorScope } from "../adapters/work/runtime/operator-dispatch.ts";
+import type { ResolvedOperatorScope } from "../application/work/native-execution/contract.ts";
 import { isDeepStrictEqual } from "node:util";
 import type { ModelToolingPort } from "../application/model/tooling.ts";
 import type { ModelCompiler } from "../application/model/builds/ports/out/model-compiler.port.ts";
@@ -13,24 +14,23 @@ import { assertScopedSoftwareWriteMatchesEvolution } from "../application/model/
 import { parseScopedSoftwareDossier } from "../application/model/evolution/scoped-software-dossier.ts";
 import { parseScopedSoftwareContext } from "../application/model/evolution/scoped-software-context.ts";
 import { validateBehaviorSettingsChange } from "../application/work/runtime/behavior-settings-validation.ts";
-import type { EvolutionSettingsAssessment } from "../adapters/model/evolution/assessment.ts";
-import { NativeEvolutionSourceAssessment } from "../adapters/model/evolution/assessment.ts";
-import {
-  ScopedNativeEvolutionAuthority,
-  ScopedSoftwareCurrentAuthority,
-} from "../adapters/model/evolution/scoped-authority.ts";
-import { NativeEvolutionRepository } from "../adapters/model/evolution/repository.ts";
+import type { EvolutionSettingsAssessment } from "../application/model/evolution/assessment.ts";
+import { NativeEvolutionSourceAssessment } from "../application/model/evolution/assessment.ts";
+import { ScopedNativeEvolutionAuthority } from "../application/model/evolution/scoped-native-evolution-authority.ts";
+import { ScopedSoftwareCurrentAuthority } from "../adapters/out/postgres/scoped-software-current-authority.ts";
+import { NativeEvolutionRepository } from "../application/model/evolution/repository.ts";
 import {
   ScopedEvolutionPreparation,
   ScopedEvolutionRepository,
   scopedEvolutionSourceOperations,
-} from "../adapters/model/evolution/scoped-repository.ts";
-import { createScopedSoftwareSourceWriteResolver } from "../adapters/model/evolution/scoped-software-source-writer.ts";
+} from "../application/model/evolution/scoped-repository.ts";
+import { createScopedSoftwareSourceWriteResolver } from "../application/model/publication/scoped-software-source-write-resolver.ts";
 import { classifyEvolutionEffects } from "../domain/model/evolution/semantic-effects.ts";
 import {
+  sourceEvolutionCompilation,
   validateSourceEvolutionExecutables,
   validateSourceExecutables,
-} from "../adapters/model/sources/source-model.ts";
+} from "../adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import type { GitModelRepository } from "../adapters/out/git/repository.ts";
 import {
   currentPostgresExecutionTransaction,
@@ -43,7 +43,10 @@ import {
 import { decodePostgresOpening } from "../adapters/out/postgres/request-space-store.ts";
 import type { PostgresSpaceAdmissions } from "../adapters/out/postgres/request-space-control-store.ts";
 import { requireEvolutionEffectBounds } from "../domain/model/evolution/authorization.ts";
-import type { PostgresHostStorage } from "../adapters/out/postgres/host-storage.ts";
+import type {
+  OperatorStorage,
+  PostgresHostStorage,
+} from "../adapters/out/postgres/host-storage.ts";
 import type { PostgresEvolutionStore } from "../adapters/out/postgres/evolution-store.ts";
 import type { PostgresRequestExecutionBindingReader } from "../adapters/out/postgres/request-execution-binding.ts";
 import type {
@@ -53,10 +56,10 @@ import type {
 import type { PostgresRequestSpaceStore } from "../adapters/out/postgres/request-space-store.ts";
 import { PostgresScopedSoftwareSourcePublicationParticipant } from "../adapters/out/postgres/scoped-software-source-publication-participant.ts";
 import { PostgresScopedSoftwareAdoptionTransition } from "../adapters/out/postgres/scoped-software-adoption-transition.ts";
-import type { PostgresModelWriteQueue } from "../adapters/model/repository/writing/postgres-write-queue.ts";
-import type { PostgresAdmittedRequestRuntime } from "../adapters/work/runtime/postgres.ts";
-import type { RequestSpaceRuntimeOptions } from "../adapters/work/request-space-runtime.ts";
-import { createScopedSoftwareEvolution } from "../adapters/work/scoped-software-evolution.ts";
+import type { PostgresModelWriteQueue } from "../adapters/out/postgres/model-write-queue.ts";
+import type { PostgresAdmittedRequestRuntime } from "../adapters/out/native-execution/postgres.ts";
+import type { RequestSpaceRuntimeOptions } from "../application/work/request-spaces/runtime.ts";
+import { createScopedSoftwareEvolution } from "../application/model/evolution/scoped-software-evolution.ts";
 import { canonical } from "../domain/primitives/canonical-json.ts";
 import { parseModelRevisionRef } from "../domain/model/value-objects/element-ref.ts";
 import { EvolutionError } from "../application/model/evolution/ports.ts";
@@ -65,7 +68,9 @@ import { EvolutionError } from "../application/model/evolution/ports.ts";
  * No mutable current-scope slot or source-driven runtime replacement is needed. */
 export async function captureScopedSoftwarePreparationScope(input: {
   actor:
-    import("../adapters/work/scoped-software-evolution.ts").ScopedSoftwareRuntimeTarget;
+    import("../application/model/evolution/ports.ts").ScopedSoftwareRuntimeTarget<
+      OperatorStorage
+    >;
   readAdmittedSource(
     opening: import("../domain/work/request-spaces.ts").OpeningRecord,
   ): Promise<Pick<AdmittedSourceChain, "head">>;
@@ -111,7 +116,7 @@ export function createScopedSoftwareEvolutionComposition(options: {
   openings: PostgresRequestSpaceStore;
   sqlAdmissions: Pick<PostgresSpaceAdmissions, "assertEffectStart">;
   native: PostgresAdmittedRequestRuntime;
-  dependencies: RequestSpaceRuntimeOptions["dependencies"];
+  dependencies: RequestSpaceRuntimeOptions<OperatorStorage>["dependencies"];
   repository: GitModelRepository;
   compiler: ModelCompiler;
   tooling: ModelToolingPort;
@@ -141,7 +146,7 @@ export function createScopedSoftwareEvolutionComposition(options: {
     string,
     {
       binding:
-        import("../adapters/work/scoped-software-evolution.ts").ScopedSoftwareEvolutionBinding;
+        import("../application/model/evolution/ports.ts").ScopedSoftwareEvolutionBinding;
       operatorId: string;
       caseId: string;
     }
@@ -323,6 +328,7 @@ export function createScopedSoftwareEvolutionComposition(options: {
     });
   };
   const currentAuthority = new ScopedSoftwareCurrentAuthority({
+    compilation: sourceEvolutionCompilation,
     client: options.storage.client,
     primaryControl: options.storage.primarySpaceControl,
     sqlAdmissions: options.sqlAdmissions,
@@ -419,7 +425,7 @@ export function createScopedSoftwareEvolutionComposition(options: {
     now,
   });
   const factory: NonNullable<
-    RequestSpaceRuntimeOptions["softwareEvolutionFactory"]
+    RequestSpaceRuntimeOptions<OperatorStorage>["softwareEvolutionFactory"]
   > = async ({ actor, resolve }) => {
     const opening = actor.opening;
     const repositoryId = opening.base!.manifest.source!.repositoryId;
@@ -506,6 +512,7 @@ export function createScopedSoftwareEvolutionComposition(options: {
         compiler: options.compiler,
         tooling: options.tooling,
         assess: new NativeEvolutionSourceAssessment({
+          compilation: sourceEvolutionCompilation,
           projectId: `git:${repositoryId}`,
           admittedActor: async (id) => (await readTarget(id)).model,
           validateSettings,
@@ -518,6 +525,7 @@ export function createScopedSoftwareEvolutionComposition(options: {
       async prepare(input) {
         const captured = await captureScope();
         return await new ScopedEvolutionPreparation({
+          compilation: sourceEvolutionCompilation,
           scope: captured,
           source: sourceAt(captured, input.callerCommandId),
           readTarget,
@@ -530,11 +538,14 @@ export function createScopedSoftwareEvolutionComposition(options: {
       sourceRepository,
       repository: options.repository,
       writer: options.writer,
-      journal: options.journal,
-      client: options.storage.client,
+      admissions: new PostgresScopedSoftwareAdmissionReader(
+        options.storage.client,
+        options.journal,
+      ),
       opening,
     });
     const authority = new ScopedNativeEvolutionAuthority({
+      compilation: sourceEvolutionCompilation,
       scope,
       repository: options.repository,
       readActor: async () => (await actor.readBinding()).state.executionModel!,
@@ -548,7 +559,7 @@ export function createScopedSoftwareEvolutionComposition(options: {
         d: import("../application/model/evolution/scoped-software-dossier.ts").ScopedSoftwareEvolutionDossierV2,
       ) => options.store.scopedSoftware(d.scope).create(d),
     };
-    const bindingController = createScopedSoftwareEvolution({
+    const bindingController = createScopedSoftwareEvolution<OperatorStorage>({
       runInHostContext,
       scope,
       actor,

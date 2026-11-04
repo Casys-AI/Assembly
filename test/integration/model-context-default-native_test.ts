@@ -6,9 +6,7 @@ import { ModelContextInformation } from "../../src/application/model/consultatio
 import { ModelContextReader } from "../../src/application/model/consultation/source-reader.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");
 const projectId = "git:4e8f3d0e-8a66-5704-bcec-e67d7b8d859e";

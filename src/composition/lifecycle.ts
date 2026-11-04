@@ -88,6 +88,8 @@ export interface StoppableAssembly {
     close(): Promise<unknown>;
   };
   nativeRuntime: { stopAccepting(): unknown; stop(): Promise<unknown> };
+  requestEvents: { close(): Promise<void> };
+  requestSpaces: { runtime: { closeConversationObservers(): void } };
   service: { idle(): Promise<unknown> };
   providerObservation: ProviderObservation;
   stopSourceWriter(): Promise<unknown>;
@@ -146,10 +148,14 @@ export function createOrderedStop(
         assembly.operatorWorkspace.stopAcceptingRuntimeDeliveries()
       );
       await attempt(() => assembly.nativeRuntime.stopAccepting());
+      await attempt(() => assembly.requestEvents.close());
       await attempt(() => server.shutdown());
       // Abort and drain owned queue workers before waiting on business-idle
       // promises which may otherwise depend on those workers being woken.
       await attempt(() => assembly.nativeRuntime.stop());
+      await attempt(() =>
+        assembly.requestSpaces.runtime.closeConversationObservers()
+      );
       await attempt(() =>
         Promise.all([
           assembly.service.idle(),

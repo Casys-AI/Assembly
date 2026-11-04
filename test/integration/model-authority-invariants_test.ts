@@ -3,22 +3,22 @@ import assert from "node:assert/strict";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
-import { resolveModelEdits } from "../../src/adapters/model/sources/editing/tooling.ts";
-import { validateSourceExecutable } from "../../src/adapters/model/sources/source-model.ts";
+import { resolveModelEdits } from "../../src/domain/model/editing/source-index.ts";
 import {
-  createOperatorEditAuthorization,
-  NativeModelSourceAuthorization,
-} from "../../src/adapters/governance/model-access/source-authorization.ts";
+  sourceCompilation,
+  sourceEvolutionCompilation,
+  validateSourceExecutable,
+} from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { createOperatorEditAuthorization } from "../../src/application/governance/model-access/operator-edit-authorization.ts";
+import { NativeModelSourceAuthorization } from "../../src/application/governance/model-access/source-authorization.ts";
 import {
   AuthorityInvariantError,
   exerciseOwnerAuthority,
 } from "../../src/domain/governance/authority.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  operatorAuthorityRequests,
-  requestOperatorSystemName,
-} from "../../src/adapters/governance/authority/operator/writer.ts";
-import { applyEdits } from "../../src/adapters/model/sources/editing/host-writer.ts";
+import { operatorAuthorityRequests } from "../../src/composition/source-model-services.ts";
+import { requestOperatorSystemName } from "../../src/application/governance/operator-authority-values.ts";
+import { applyEdits } from "../../src/application/model/editing/host-writer.ts";
 import {
   assertCreationWithinPolicy,
   mainCreationScope,
@@ -61,7 +61,11 @@ Deno.test({
     );
     assert.notEqual(renamed.identity.systemId, model.identity.systemId);
     assert.equal(renamed.ownerAuthority?.ownerSource, "modeled");
-    const authorizer = new NativeModelSourceAuthorization(projectId);
+    const authorizer = new NativeModelSourceAuthorization(
+      projectId,
+      sourceCompilation,
+      sourceEvolutionCompilation,
+    );
     const owner = exerciseOwnerAuthority(model, "model-revision");
     const recovery = exerciseOwnerAuthority(model, "model-revision", {
       outOfMandate: true,
@@ -147,7 +151,11 @@ Deno.test({
     const owner = exerciseOwnerAuthority(primary, "model-revision");
     assert.notEqual(owner.systemId, peer.identity.systemId);
     assert.equal(owner.outOfMandate, false);
-    const authorizer = new NativeModelSourceAuthorization(projectId);
+    const authorizer = new NativeModelSourceAuthorization(
+      projectId,
+      sourceCompilation,
+      sourceEvolutionCompilation,
+    );
     for (const phase of ["proposal", "acceptance"] as const) {
       await authorizer.validate({
         authority: current,
@@ -206,7 +214,11 @@ Deno.test({
       current,
       ["set-value"],
     );
-    const authorizer = new NativeModelSourceAuthorization(projectId);
+    const authorizer = new NativeModelSourceAuthorization(
+      projectId,
+      sourceCompilation,
+      sourceEvolutionCompilation,
+    );
     const author = `agent:${currentModel.identity.builderId}`;
     const isPriorError = (error: unknown) =>
       error instanceof AuthorityInvariantError && error.invariant === 3;
@@ -357,7 +369,11 @@ Deno.test({
     );
     assert.equal(edited.provider.version, SYSML_TOOLKIT_VERSION);
     const candidate = await compiler.compile(edited.sources);
-    const authorizer = new NativeModelSourceAuthorization(projectId);
+    const authorizer = new NativeModelSourceAuthorization(
+      projectId,
+      sourceCompilation,
+      sourceEvolutionCompilation,
+    );
     const base = {
       authority: current,
       before: current,
@@ -608,7 +624,11 @@ Deno.test({
       child.operatorTeam?.parentOperatorId,
       parent.identity.builderId,
     );
-    const authorizer = new NativeModelSourceAuthorization(projectId);
+    const authorizer = new NativeModelSourceAuthorization(
+      projectId,
+      sourceCompilation,
+      sourceEvolutionCompilation,
+    );
     const exercise = exerciseOwnerAuthority(parent, "model-revision");
     const foreign = exerciseOwnerAuthority(
       await validateSourceExecutable(revision, projectId, mainScope),

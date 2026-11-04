@@ -1,3 +1,4 @@
+import type { ClockPort } from "../runtime/ports.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import type {
   ExecutableModel,
@@ -22,6 +23,7 @@ import {
 import { draftDigest, makeEvent } from "../runtime/values.ts";
 
 export interface ToolArtifactImportHost {
+  readonly ports: { clock: ClockPort };
   readonly state: SystemRuntimeState;
   readonly pending: Promise<void> | null;
   readonly execution: ModelExecutionReference | undefined;
@@ -142,13 +144,16 @@ export async function importArtifact(
   }
   const receipt = await this.verifiedToolReuseReceipt(created[0]!.id, false);
   await this.update((state) => {
-    state.events.push(makeEvent(
-      "tool-artifact-imported",
-      `Artefact réutilisé dans le catalogue local : ${
-        created[0]!.name
-      } · ${receipt.stage}`,
-      created[0],
-    ));
+    state.events.push(
+      makeEvent(
+        this.ports.clock,
+        "tool-artifact-imported",
+        `Artefact réutilisé dans le catalogue local : ${
+          created[0]!.name
+        } · ${receipt.stage}`,
+        created[0],
+      ),
+    );
   });
   return receipt;
 }

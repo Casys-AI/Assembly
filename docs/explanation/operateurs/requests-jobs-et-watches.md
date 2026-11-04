@@ -19,11 +19,11 @@ across several runtimes remain in place.
 
 ## Three forms, different implementation states
 
-| Form    | APE envelope                   | Principle                                                 | Current implementation                                                                                                                      |
-| ------- | ------------------------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Request | Conversational Case Management | A contribution advances the same case.                    | Dialogue, waits, resumption, budget and explicit closure.                                                                                   |
-| Job     | Deterministic Envelope         | A scheduled declaration starts a behaviour.               | Typed schedules, execution history and manual start; not a qualification of every route, branch and decision in the Deterministic Envelope. |
-| Watch   | Event-Triggered Reassessment   | The same case reassesses its source and reports a change. | Timed wakes, structured result and durable notification; no external event connector.                                                       |
+| Form    | APE envelope                   | Principle                                                 | Current implementation                                                                                                                        |
+| ------- | ------------------------------ | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Request | Conversational Case Management | A contribution advances the same case.                    | Dialogue, waits, resumption and budget. An operator can abandon a Request; closing it as done is an authenticated command with no button now. |
+| Job     | Deterministic Envelope         | A scheduled declaration starts a behaviour.               | Typed schedules, execution history and manual start; not a qualification of every route, branch and decision in the Deterministic Envelope.   |
+| Watch   | Event-Triggered Reassessment   | The same case reassesses its source and reports a change. | Timed wakes, structured result and durable notification; no external event connector.                                                         |
 
 The envelope is declared on the `CaseType` occurrence. The engine nevertheless
 retains conversational primitives: importing a library or naming an envelope is

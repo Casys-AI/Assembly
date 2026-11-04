@@ -46,6 +46,9 @@ Deno.test("Request decision requires the authenticated owner, exact Case and adm
       },
     },
     runtime: {
+      closeCase: () => {
+        throw new Error("unexpected close");
+      },
       read: () => {
         throw new Error("unexpected read");
       },

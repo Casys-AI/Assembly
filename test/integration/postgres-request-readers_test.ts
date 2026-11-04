@@ -1,11 +1,11 @@
-import { PostgresNativeExecutionLedger } from "../../src/adapters/work/runtime/postgres-ledger.ts";
-import { PostgresOperatorDispatch } from "../../src/adapters/work/runtime/operator-dispatch.ts";
+import { PostgresNativeExecutionLedger } from "../../src/adapters/out/native-execution/postgres-ledger.ts";
+import { PostgresOperatorDispatch } from "../../src/adapters/out/native-execution/operator-dispatch.ts";
 import { readRequestInitialExecutionOutcome } from "../../src/application/work/request-spaces/initial-execution-outcome.ts";
 import { invocationKey } from "../../src/application/work/operators/journal.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
-import { runtimeRevisionReference } from "../../src/application/work/runtime/execution.ts";
+import { runtimeRevisionReference } from "../../src/application/work/native-execution/contract.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";
-import type { NativeExecutionSnapshot } from "../../src/application/work/runtime/execution.ts";
+import type { NativeExecutionSnapshot } from "../../src/application/work/native-execution/contract.ts";
 import type { OperatorExecutionDelivery } from "../../src/application/work/operators/execution.ts";
 import type { OpeningRecord } from "../../src/domain/work/request-spaces.ts";
 /** Actual Prisma/PG readers and persisted codecs; no Toolkit, native engine or provider. */

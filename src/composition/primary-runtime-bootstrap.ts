@@ -3,10 +3,8 @@ import type {
   StorePort,
 } from "../application/work/runtime/ports.ts";
 import type { ExecutableModel } from "../domain/model/execution/executable-model.ts";
-import type {
-  ModelIdentity,
-  SystemRuntimeState,
-} from "../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../domain/shared-kernel/model-identity.ts";
 import { exactSourceVersion } from "../domain/work/request-spaces.ts";
 import { spaceControlSourceFromModel } from "../domain/work/space-control-source.ts";
 import { canonical } from "../domain/primitives/canonical-json.ts";

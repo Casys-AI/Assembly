@@ -1,6 +1,7 @@
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import type { ChatContext } from "../../../domain/work/dialogue.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
+import { projectDecisionContext } from "../../../application/work/context/separation.ts";
 import {
   buildTurnBrief,
   MAX_TURN_BRIEF_CHARACTERS,
@@ -217,6 +218,61 @@ Deno.test("a large opening message has a bounded preview and an exact journal ev
     brief.input?.reference?.messageDigest,
     await executionDigest(input.messages[0]!),
   );
+});
+
+Deno.test("turn briefs distinguish omitted opening text from provenance and observation omissions", async (t) => {
+  for (
+    const [name, text, observationOnly, contextLimit, truncated] of [
+      ["short input with provenance", "x".repeat(191), false, 50000, false],
+      ["omitted observation only", "Recorded observation", true, 50000, false],
+      ["projected opening text", "x".repeat(10000), false, 4096, true],
+      ["provider preview only", "x".repeat(2000), false, 50000, true],
+    ] as const
+  ) {
+    await t.step(name, async () => {
+      const input = context();
+      const message = input.messages[0]!;
+      message.text = text;
+      message.execution = { digest: "pin-a", sourceIds: ["native-source"] };
+      if (observationOnly) {
+        message.role = "tool";
+        message.noticeWake = true;
+        message.observation = {
+          kind: "tool-result",
+          value: { detail: "x".repeat(1000) },
+        };
+      }
+      const original = JSON.stringify(message);
+      const digest = await executionDigest(message);
+      const projected = await projectDecisionContext(input, {
+        kind: "separated-context",
+        pattern: "5.1",
+        recentMessages: 1,
+        maxMessageCharacters: 256,
+        maxCollectionItems: 1,
+        maxContextCharacters: contextLimit,
+      });
+      const evidence = projected.contextEvidence!.references[0]!;
+      ok(evidence.reasons.includes("provenance"));
+      equal(evidence.messageDigest, digest);
+      if (observationOnly) {
+        ok(evidence.reasons.includes("representation-limit"));
+      }
+      if (contextLimit === 4096) {
+        ok(projected.messages[0]!.text.length <= 256);
+      } else equal(projected.messages[0]!.text, text);
+      const brief = await buildTurnBrief(projected);
+      equal(brief.input?.truncated === true, truncated);
+      equal(
+        brief.input?.text,
+        projected.messages[0]!.text.slice(0, 1600),
+      );
+      if (truncated) {
+        equal(brief.input?.reference?.messageDigest, digest);
+      } else equal(brief.input?.reference, undefined);
+      equal(JSON.stringify(message), original);
+    });
+  }
 });
 
 Deno.test("oversized exact task inputs fail with a coded recovery instead of corrupting a URL", async () => {

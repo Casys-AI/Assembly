@@ -26,10 +26,13 @@ exceeded, as described below.
 
 ## Download and install a version
 
-Choose an HTTPS URL pointing to the raw text of a `SKILL.md` file. By default,
-only the host `raw.githubusercontent.com` is allowed. For a reproducible
-version, use a URL containing a commit and provide its SHA-256 digest if it has
-already been verified.
+Choose an HTTPS URL pointing to the raw text of a `SKILL.md` file. New systems
+allow no download hosts. First prepare an accepted and adopted source revision
+that explicitly authorizes the exact host in
+`APESkills::SkillPolicy.allowedHosts`. If the operator network mandate does not
+list that host, `CAPABILITY_BEYOND_MANDATE` reports a warning. For a
+reproducible version, use a URL containing a commit and provide its SHA-256
+digest if it has already been verified.
 
 Ask the agent, replacing the values in angle brackets:
 

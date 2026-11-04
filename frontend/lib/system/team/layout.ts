@@ -10,7 +10,7 @@ import {
   type SimulationNodeDatum,
 } from "d3-force";
 import { seeded, separate } from "../../graph/force-order.ts";
-import { MAIN, type Team, YOU } from "./projection.ts";
+import { MAIN, type Team, type TeamEdge, YOU } from "./projection.ts";
 
 /**
  * Where the team's network puts its nodes. The same elements as the prototype
@@ -37,7 +37,7 @@ export interface LayoutEdge {
   id: string;
   from: string;
   to: string;
-  kind: "talk" | "uses" | "supervises";
+  kind: TeamEdge["kind"];
 }
 
 /** A node placed: its centre, its size, and where the wires meet it. */
@@ -68,7 +68,7 @@ const SEPARATIONS = 60;
 const GAP = 6;
 
 /** Metrics of the nodes (see `.tnode` and `.tres` in view.css), in pixels. */
-const AVATAR = 52;
+export const AVATAR = 52;
 const NODE_PAD = 8;
 const NODE_GAP = 5;
 const NAME_LINE = 18;
@@ -89,8 +89,11 @@ export function boxSize(
       (node.times ? TIMES : 0);
     return { w: Math.min(PILL_MAX, Math.ceil(w)), h: PILL_HEIGHT, ay: 0 };
   }
-  const h = NODE_PAD + AVATAR + NODE_GAP + NAME_LINE + NODE_PAD;
-  const w = Math.ceil(node.label.length * NAME_CHAR) + 2 * NODE_PAD;
+  // A name too long for the widest box takes a second line, never a third.
+  const name = Math.ceil(node.label.length * NAME_CHAR);
+  const lines = name > NODE_MAX - 2 * NODE_PAD ? 2 : 1;
+  const h = NODE_PAD + AVATAR + NODE_GAP + lines * NAME_LINE + NODE_PAD;
+  const w = name + 2 * NODE_PAD;
   return {
     w: Math.min(NODE_MAX, Math.max(NODE_MIN, w)),
     h,

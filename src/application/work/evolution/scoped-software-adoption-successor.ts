@@ -1,3 +1,10 @@
+import { sha256 } from "../../../domain/primitives/execution-digest.ts";
+import type {
+  NeverStartedAdoptionSource,
+  RetainedInertPredecessor,
+} from "./native-adoption-successor.ts";
+import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { NativeThreadAdvanceAuthorization } from "../native-execution/contract.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { canonicalDigest } from "../../../domain/primitives/execution-digest.ts";
 import {
@@ -18,6 +25,15 @@ import {
   scopedSoftwareSourceAdmissionDigest,
   type ScopedSoftwareSourceAdmissionV2,
 } from "../../model/source-admission/scoped-software-source-admission.ts";
+
+interface SoftwareSuccessorSelection {
+  authorization: Extract<
+    NativeThreadAdvanceAuthorization,
+    { kind: "software-evolution-scoped-adoption" }
+  >;
+  source: unknown;
+  target: unknown;
+}
 
 /** Exact last execution lineage. Shape/digest checks do not replace the
  * retained journal, native predecessor or Git anchor verification. */
@@ -144,4 +160,133 @@ export async function parseScopedSoftwareNeverStartedSuccessorContext(
     ) invalid();
   } else invalid();
   return snapshot as ScopedSoftwareNeverStartedSuccessorContext;
+}
+
+export function assertSoftwareSuccessorCurrentPin(
+  context: ScopedSoftwareNeverStartedSuccessorContext,
+  current: SystemRuntimeState,
+) {
+  if (
+    current.executionModel?.version.digest !==
+      context.currentPin.modelDigest ||
+    current.executionModel.version.repositoryVersion !==
+      context.currentPin.source.version
+  ) throw new Error("Software successor current pin changed");
+}
+
+export function assertSoftwareSuccessorSelection(
+  manifest: ScopedSoftwareAdoptionManifestV2,
+  selected: SoftwareSuccessorSelection,
+  authorizationJson: string,
+  authorizationId: string,
+) {
+  if (
+    canonical(selected) !== authorizationJson ||
+    Object.keys(selected).sort().join(",") !==
+      "authorization,source,target" ||
+    selected.authorization?.kind !== "software-evolution-scoped-adoption" ||
+    selected.authorization.dossierId !== manifest.dossierId ||
+    selected.authorization.intentDigest !== manifest.intentDigest ||
+    selected.authorization.proposalDigest !== manifest.proposalDigest ||
+    selected.authorization.authorizationEventId !== authorizationId ||
+    selected.authorization.businessRevision?.__assemblyRuntimeRevision
+        ?.revision !== manifest.authorizationRuntimeRevision ||
+    canonical(selected.authorization.adoptionAuthorization) !==
+      canonical(manifest.adoptionAuthorization)
+  ) throw new Error("Prior software selection authorization differs");
+}
+
+export function assertSoftwareSuccessorAuthorizationHistory(
+  manifest: ScopedSoftwareAdoptionManifestV2,
+  selected: SoftwareSuccessorSelection,
+  authorized: SystemRuntimeState,
+  authorizationId: string,
+) {
+  const event = authorized.events.find((e) => e.id === authorizationId);
+  if (
+    authorized.executionModel?.version.digest !==
+      manifest.boundary.previousPin.modelDigest ||
+    authorized.executionModel.version.repositoryVersion !==
+      manifest.boundary.previousPin.source.version ||
+    event?.kind !== "model-version-admission-authorized" ||
+    event.authorityExercise ||
+    canonical(event.modelAdoptionAuthorization?.softwareEvolution) !==
+      canonical({
+        dossierId: manifest.dossierId,
+        intentDigest: manifest.intentDigest,
+        proposalDigest: manifest.proposalDigest,
+        exercise: manifest.adoptionAuthorization,
+      }) ||
+    canonical(event.modelAdoptionAuthorization?.target) !==
+      canonical(selected.target)
+  ) throw new Error("Prior software authorization history differs");
+}
+
+export function assertSoftwareSuccessorCommittedHistory(
+  context: ScopedSoftwareNeverStartedSuccessorContext,
+  prior: Extract<
+    ScopedSoftwareNeverStartedSuccessorContext["previous"],
+    { kind: "software" }
+  >,
+  operatorId: string,
+  selected: SoftwareSuccessorSelection,
+  committed: SystemRuntimeState,
+) {
+  const manifest = prior.manifest, caseId = prior.source.destination.caseId;
+  const expectedIdentity = prior.source.result.targets.find((t) =>
+    t.operatorId === operatorId
+  )?.identity;
+  if (
+    canonical(committed.executionModel?.identity) !==
+      canonical(expectedIdentity) ||
+    committed.executionModel?.version.digest !==
+      context.currentPin.modelDigest ||
+    committed.executionModel.version.repositoryVersion !==
+      context.currentPin.source.version ||
+    canonical(selected.target) !==
+      canonical({
+        identity: committed.executionModel.identity,
+        version: committed.executionModel.version,
+      }) ||
+    committed.events.filter((e) =>
+        e.id ===
+          `${manifest.dossierId}:software-admitted:${operatorId}` &&
+        e.kind === "model-version-admitted" && e.caseId === caseId
+      ).length !== 1 ||
+    committed.events.filter((e) =>
+        e.effectiveModelUpdate?.dossierId === manifest.dossierId &&
+        e.effectiveModelUpdate.caseId === caseId &&
+        e.effectiveModelUpdate.to.digest === context.currentPin.modelDigest &&
+        e.effectiveModelUpdate.to.repositoryVersion ===
+          context.currentPin.source.version
+      ).length !== 1
+  ) throw new Error("Prior committed software activation history differs");
+}
+
+export async function assertSoftwareInertSourceMarker(
+  marker: NeverStartedAdoptionSource,
+  earlier: RequestExecutionPin["adoption"],
+  authorizationRuntimeRevision: number,
+  identityDigest: string,
+  retained: RetainedInertPredecessor,
+) {
+  if (
+    !earlier || marker.threadId !== retained.threadId ||
+    marker.predecessorThreadId !== retained.predecessorThreadId ||
+    marker.identityDigest !== identityDigest ||
+    earlier.commandId !== marker.previousCommandId ||
+    earlier.receiptDigest !== marker.previousReceiptDigest ||
+    earlier.committedRuntimeRevision !==
+      marker.previousCommittedRuntimeRevision ||
+    marker.previousAuthorizationRuntimeRevision !==
+      earlier.committedRuntimeRevision - 1 ||
+    earlier.committedRuntimeRevision >=
+      authorizationRuntimeRevision ||
+    typeof retained.authorizedPinJson !== "string" ||
+    typeof retained.advanceAuthorizationJson !== "string" ||
+    await sha256(retained.authorizedPinJson) !==
+      marker.authorizedPinDigest ||
+    await sha256(retained.advanceAuthorizationJson) !==
+      marker.advanceAuthorizationDigest
+  ) throw new Error("Software predecessor marker differs");
 }

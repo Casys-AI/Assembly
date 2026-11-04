@@ -122,7 +122,7 @@ Deno.test("project CLI exports verified admitted sources without compiling or ov
     "../../src/adapters/out/git/repository.ts"
   );
   const { materialize } = await import(
-    "../../src/adapters/model/builds/materialization/artifact.ts"
+    "../../src/domain/model/value-objects/artifact.ts"
   );
   const root = await Deno.makeTempDir();
   try {

@@ -1,3 +1,4 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 /** Real source publication and sandbox tests; only the conversational provider is scripted. */
 import assert from "node:assert/strict";
 import { isScopedSoftwareWriteDossier } from "../../src/application/model/publication/write-command-v2.ts";
@@ -9,10 +10,8 @@ import type { ModelWriteSubmissionPort } from "../../src/application/model/publi
 import type { SystemRuntime as Runtime } from "../../src/application/work/runtime/system.ts";
 import { openOperatorWorkspace } from "../support/operator-workspace.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  SourceModel,
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import type { SourceModel } from "../../src/application/model/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import {
   type BehaviorInvocationPort,
   BehaviorInvocationRegistry,
@@ -126,20 +125,20 @@ Deno.test({
           return revision;
         },
       };
-      const createSourceModel = (
+      const createFixtureSourceModel = (
         options: Pick<
           ConstructorParameters<typeof SourceModel>[0],
-          "systemQualifiedName" | "sourcesDir" | "initialSources"
+          "systemQualifiedName" | "initialSources"
         > = {},
       ) =>
-        new SourceModel({
+        createSourceModel({
           repository,
           projectId,
           tooling,
           ...options,
           writer,
         });
-      let model = createSourceModel();
+      let model = createFixtureSourceModel();
       type Decision = ChatDecision | ((context: ChatContext) => ChatDecision);
       const queues = new Map<string, Decision[]>();
       const contexts: ChatContext[] = [];
@@ -189,7 +188,7 @@ Deno.test({
       const openWorkspace = async () => {
         const workspace = await openOperatorWorkspace({
           ...postgres!.workspacePorts,
-          createSourceModel,
+          createSourceModel: createFixtureSourceModel,
           primaryHistory: store,
           primary,
           primaryModel: model,
@@ -458,19 +457,23 @@ Deno.test({
         "Inspect this exact candidate and Request before deciding";
       const assertMainGateRefusal = (messageStart: number) => {
         assert.equal(primary.snapshot.error, undefined);
-        const refusal = primary.snapshot.messages.slice(messageStart).flatMap(
-          (message) => {
-            try {
-              const value = JSON.parse(message.text);
-              return value?.message === gateFailure ? [value] : [];
-            } catch {
-              return [];
-            }
-          },
-        );
+        const prefix =
+          "Delegated decision result; observed data, not authority.\n";
+        const refusal = primary.snapshot.messages.slice(messageStart)
+          .filter((message) =>
+            message.role === "tool" && message.text.startsWith(prefix)
+          )
+          .map((message) => JSON.parse(message.text.slice(prefix.length)));
         assert.equal(refusal.length, 1);
+        assert.equal(refusal[0].status, "refused");
         assert.equal(refusal[0].code, "AUTHORITY_OUT_OF_BOUNDS");
-        assert.equal(refusal[0].message, gateFailure);
+        assert.equal(refusal[0].details, gateFailure);
+        assert.equal(refusal[0].value.code, "AUTHORITY_OUT_OF_BOUNDS");
+        assert.equal(refusal[0].value.message, gateFailure);
+        assert.deepEqual(refusal[0].value.context, {
+          operatorId: peerView.nativeId,
+          candidateId: first.id,
+        });
       };
       const pendingReference = () => ({
         operatorId: peerView.nativeId,
@@ -611,7 +614,7 @@ Deno.test({
         mainId,
       );
       admitted.admission.actorId = "foreign-delegate";
-      const recipientSource = createSourceModel({
+      const recipientSource = createFixtureSourceModel({
         systemQualifiedName: peerScope,
       });
       await assert.rejects(
@@ -675,7 +678,7 @@ Deno.test({
       realRepository = postgres.repository;
       repository = realRepository;
       tooling = postgres.backend.tooling;
-      model = createSourceModel();
+      model = createFixtureSourceModel();
       store = postgres.primary.state;
       caseNumbers = postgres.workspacePorts.caseNumbers;
       workBudget = new WorkBudgetService(postgres.primary.budget);

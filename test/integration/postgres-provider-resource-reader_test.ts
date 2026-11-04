@@ -421,7 +421,7 @@ Deno.test({
 
 Deno.test({
   name:
-    "provider resource PostgreSQL selection preserves exact Request R0/R1 pins and unknown evidence",
+    "provider resource PostgreSQL selection covers the Request lifetime and isolates other Cases",
   ignore: !postgresTestEnabled,
   async fn() {
     await withPostgresDatabase(async ({ client }) => {
@@ -445,6 +445,9 @@ Deno.test({
             scopeKind: "request",
             scopeId: caseId,
             caseId,
+            operatorId: [3001, 3002, 3004, 3007, 3008, 3009].includes(n)
+              ? "branch-operator"
+              : "team-member",
             repositoryVersion: version,
             modelDigest: digest,
           },
@@ -505,8 +508,14 @@ Deno.test({
         modelDigest: digest1,
       };
       const r1result = await reader.read(selected);
-      assert.equal(r1result.calls, 2);
-      assert.equal(r1result.units.input_tokens.observedSubtotal, 10);
+      assert.equal(r1result.calls, 6);
+      assert.equal(r1result.units.input_tokens.observedSubtotal, 122);
+      assert.deepEqual(
+        r1result.operatorGroups!.map((
+          group,
+        ) => [group.operatorId, group.calls]),
+        [["branch-operator", 3], ["team-member", 3]],
+      );
       assert.equal(r1result.retainedPopulation, "complete");
       assert.equal(r1result.physicalCallCoverage, "unknown");
       const old = await reader.read({
@@ -514,14 +523,14 @@ Deno.test({
         repositoryVersion: r0,
         modelDigest: digest0,
       });
-      assert.equal(old.calls, 1);
-      assert.equal(old.units.input_tokens.observedSubtotal, 11);
+      assert.equal(old.calls, 6);
+      assert.equal(old.units.input_tokens.observedSubtotal, 122);
       const sameDigest = await reader.read({
         ...selected,
         repositoryVersion: sameDigestOtherVersion,
       });
-      assert.equal(sameDigest.calls, 1);
-      assert.equal(sameDigest.units.input_tokens.observedSubtotal, 99);
+      assert.equal(sameDigest.calls, 6);
+      assert.equal(sameDigest.units.input_tokens.observedSubtotal, 122);
       assert.deepEqual(
         await client.providerCallObservation.findUniqueOrThrow({
           where: {

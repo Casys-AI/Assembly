@@ -40,7 +40,7 @@ import {
   nativeExecutionIdentity,
   type NativeImmutableConsultationHandlers,
   runtimeRevisionReference,
-} from "../runtime/execution.ts";
+} from "../native-execution/contract.ts";
 import { errorText } from "../runtime/values.ts";
 import type { ModelConsultationPin } from "../context/information-ports.ts";
 import type { ModelContextTool } from "../../../domain/model/consultation/context.ts";

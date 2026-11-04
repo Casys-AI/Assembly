@@ -1,7 +1,8 @@
+import type { ClockPort } from "../runtime/ports.ts";
 import type {
   NativeExecutionPort,
   NativeExecutionSnapshot,
-} from "../runtime/execution.ts";
+} from "../native-execution/contract.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import {
   activationFailure,
@@ -40,6 +41,7 @@ type ActivationOutcome =
 export interface CandidateActivationHost {
   readonly state: SystemRuntimeState;
   readonly ports: {
+    clock: ClockPort;
     execution?: NativeExecutionPort;
     model: CandidateModelPort;
   };
@@ -249,21 +251,24 @@ async function adopt(
     delete c.promotionCursor;
     delete c.promotionContext;
     s.catalogRevision++;
-    applySiblingCatalogRefresh(s, refresh);
+    applySiblingCatalogRefresh(host.ports.clock, s, refresh);
     if (s.executionModel?.version.digest === native.version.digest) {
       s.executionModel = structuredClone(native);
     }
-    s.events.push(makeEvent(
-      "tool-active",
-      trigger === "admission"
-        ? `${c.name} est maintenant disponible`
-        : trigger === "restart"
-        ? `${c.name} : activation reprise après redémarrage`
-        : trigger === "retry"
-        ? `${c.name} : activation reprise`
-        : `${c.name} : activation constatée au catalogue natif`,
-      c,
-    ));
+    s.events.push(
+      makeEvent(
+        host.ports.clock,
+        "tool-active",
+        trigger === "admission"
+          ? `${c.name} est maintenant disponible`
+          : trigger === "restart"
+          ? `${c.name} : activation reprise après redémarrage`
+          : trigger === "retry"
+          ? `${c.name} : activation reprise`
+          : `${c.name} : activation constatée au catalogue natif`,
+        c,
+      ),
+    );
   });
 }
 
@@ -284,7 +289,7 @@ function fail(
     c.error = errorText(error);
     c.errorCode = code;
     s.events.push({
-      ...makeEvent("tool-failed", c.error, c),
+      ...makeEvent(host.ports.clock, "tool-failed", c.error, c),
       code,
     });
   });
@@ -299,7 +304,9 @@ async function interrupt(
   const kept = await writeWhileAdmitted(host, id, (c, s) => {
     c.error = errorText(error);
     if (trigger === "retry") {
-      s.events.push(makeEvent("tool-activation-interrupted", c.error, c));
+      s.events.push(
+        makeEvent(host.ports.clock, "tool-activation-interrupted", c.error, c),
+      );
     }
   });
   return kept ? { status: "interrupted", error } : intentGone(host, id);

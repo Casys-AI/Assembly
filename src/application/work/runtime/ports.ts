@@ -17,13 +17,13 @@ import type {
   ChatContext,
   ChatDecision,
   ChatDecisionBatch,
-  ModelIdentity,
   ModelRevisionProposal,
   ModelRevisionRequest,
   ModelSourceProposalStatus,
   ModelSourceRevision,
   SystemRuntimeState,
 } from "../../../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../domain/shared-kernel/model-identity.ts";
 import type {
   NetworkScope,
   SystemConfiguration,
@@ -38,6 +38,7 @@ import type { ModelDiagnostic } from "../../../domain/model/policies/diagnostics
 import {
   type CreationScope,
   mainCreationScope,
+  requestCreationScope,
 } from "../../../domain/governance/policies/operator-creation-policy.ts";
 
 /** Instance-aware lint observations; they never grant or deny execution authority. */
@@ -103,14 +104,15 @@ export function creationScopeOf(
 ): CreationScope {
   const scoped = port.requestChangeScope;
   if (!scoped) return mainCreationScope(identity);
-  return {
-    space: {
+  return requestCreationScope(
+    {
       projectId: identity.projectId,
       systemId: identity.systemId,
       executionSpaceId: scoped.executionSpaceId,
     },
-    branchTeamSize: scoped.branchTeamSize,
-  };
+    scoped.caseId,
+    scoped.branchTeamSize,
+  );
 }
 
 export interface ModelPort {
@@ -121,6 +123,8 @@ export interface ModelPort {
     /** Branch space and whole-team size at handle open, for creation reads. */
     readonly executionSpaceId: string;
     readonly branchTeamSize: number;
+    /** Identities from the verified opening roster, excluding the owner. */
+    readonly memberIds: readonly string[];
   };
   /** Compile actual model values, bindings and flows, never host expectations. */
   readExecutableModel(

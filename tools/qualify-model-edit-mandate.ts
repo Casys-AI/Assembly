@@ -2,6 +2,7 @@
  * Run with --env-file pointing to the existing primary .env and --live.
  * At most two HTTP provider requests, including unsuccessful responses.
  */
+import { sourceExecutablesCompilation } from "../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import assert from "node:assert/strict";
 import { modelSourceDigest } from "../src/domain/model/value-objects/sources.ts";
 import { ClaudeAgents } from "../src/adapters/out/llm-providers/agents.ts";
@@ -26,7 +27,7 @@ if (!Deno.args.includes("--live")) {
   Deno.exit(0);
 }
 const { openOperatorWorkspace } = await import(
-  "../src/adapters/work/operator-workspace.ts"
+  "../src/composition/operator-workspace.ts"
 );
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");
 const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
@@ -113,7 +114,9 @@ try {
     resumeCandidateContinuations: false,
   });
   workspace = await openOperatorWorkspace({
+    sourceExecutablesCompilation,
     ...postgres.workspacePorts,
+    createSourceModel: postgres.backend.createSourceModel,
     primaryHistory: store,
     caseNumbers,
     schemaValidator,

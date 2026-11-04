@@ -5,12 +5,12 @@ import type {
   ImmutableConsultationGroupSession,
   ImmutableConsultationMemberOutcome,
   NativeExecutionRequest,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import {
   assertImmutableConsultationBusinessSource,
   assertImmutableConsultationManifest,
   assertImmutableConsultationOutcome,
-} from "../../src/adapters/work/runtime/immutable-consultation-ledger.ts";
+} from "../../src/application/work/native-execution/immutable-consultation-checks.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";
 import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";

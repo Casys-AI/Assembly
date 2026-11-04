@@ -962,12 +962,15 @@ async function retainedMemberTeamIntent() {
 
 Deno.test("member team publication baseline parser retains the exact optional member A and old intents without it", async () => {
   const f = await retainedMemberTeamIntent();
-  const without = structuredClone(f.intent);
+  f.intent.team!.publicationBase!.operatorTeam!.requestId = "origin-request";
+  f.intent.candidate.model.operatorTeam!.requestId = "origin-request";
+  const retained = await rehashIntent(f.intent);
+  const without = structuredClone(retained);
   delete (without.team as { publicationBase?: ExecutableModel })
     .publicationBase;
   const old = await rehashIntent(without);
   assert.deepEqual(await parseRequestAdoptionIntent(old), old);
-  assert.deepEqual(await parseRequestAdoptionIntent(f.intent), f.intent);
+  assert.deepEqual(await parseRequestAdoptionIntent(retained), retained);
 });
 
 Deno.test("member team publication baseline parser refuses foreign source provenance and non-member authority", async () => {

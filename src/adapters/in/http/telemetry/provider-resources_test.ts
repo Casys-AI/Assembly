@@ -113,7 +113,8 @@ Deno.test("resource HTTP retains explicit unavailable/mismatch/forbidden errors 
     });
     const response = (await handler(request()))!;
     equal(response.status, status);
-    equal((await response.json()).code, code);
+    const body = await response.json();
+    equal(body.code, code);
   }
   const handler = createProviderResourcesHandler({
     read() {

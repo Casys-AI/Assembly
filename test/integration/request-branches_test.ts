@@ -2,7 +2,7 @@ import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import { GitRequestBranches } from "../../src/adapters/out/git/request-branches.ts";
 import { repositoryWriterLock } from "../../src/adapters/out/git/writer-lock.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 import {
   type OpeningRecord,
   requestSpaceDigest,

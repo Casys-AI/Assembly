@@ -538,6 +538,10 @@ Deno.test({
       assert.equal(batchCall?.status, "completed");
       assert.equal(batchCall?.result?.status, "refused");
       assert.equal(batchCall?.result?.code, "AUTHORITY_POLICY_STALE");
+      // The origin effect suspended before completion, and the resume mints
+      // a new effect key, so the refused outputs never land on the origin
+      // effect that assertCommandOrigin reads. The completed-refusal
+      // decision is witnessed on its owner in origins_test.ts instead.
       assert.equal(notices.length, 1);
       assert.equal(notices[0].sourceCompletionId, receipt.event.id);
       assert.equal(notices[0].inputMessageId, command.origin!.inputMessageId);

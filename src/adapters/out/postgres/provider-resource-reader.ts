@@ -1,5 +1,4 @@
 import {
-  assertProviderResourceQuery,
   ProviderResourceAggregation,
   type ProviderResourceQuery,
   type ProviderResourceReader,
@@ -25,7 +24,6 @@ export class PostgresProviderResourceReader implements ProviderResourceReader {
   constructor(private readonly client: PrismaClient) {}
 
   async read(query: ProviderResourceQuery): Promise<ProviderResourceReadout> {
-    assertProviderResourceQuery(query);
     const aggregate = new ProviderResourceAggregation(query);
     // Capture from the copied allowlist, never caller-mutable query fields.
     const selection = aggregate.selection;
@@ -68,7 +66,7 @@ export class PostgresProviderResourceReader implements ProviderResourceReader {
             ORDER BY "observationId" ASC LIMIT ${PAGE_SIZE}
           `);
           for (const row of rows) {
-            // Decode every scope row before version/digest/cutoff selection.
+            // Decode every scope row before Request or Main-pin/cutoff selection.
             // Corruption never disappears through JSON predicates or NULL sums.
             aggregate.add(
               decodeProviderCall(scope, row.observationId, row.payload),

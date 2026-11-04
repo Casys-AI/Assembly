@@ -9,6 +9,7 @@ import {
   crowdBoard,
   initialBoard,
   item,
+  link,
   LIVE_BUILDER,
   mandate,
   policy,
@@ -18,10 +19,13 @@ import {
   unit,
   values,
   watchBoard,
+  withLinks,
 } from "../../../test/support/board-fixture.ts";
 import { factsOf } from "../board/detail.ts";
 import { indexBoard } from "../board/lookup.ts";
 import {
+  agentsByOperator,
+  agentsOnly,
   profileOf,
   resourceTitle,
   shownAgent,
@@ -109,6 +113,34 @@ Deno.test("Case Team labels only its exact inherited Main owner as Branch Operat
   equal(branch.contact, "indirect");
   deepStrictEqual(branch.nativeIds, ["op"]);
   deepStrictEqual(roster, originalRoster);
+});
+
+Deno.test("an operator identity resolves to its agent, the Case owner to its branch name, and nothing else", () => {
+  const modeled = board({
+    team: [
+      unit({
+        id: "owner-unit",
+        title: "Owner",
+        operator: "owner-op",
+        declared: { operatorName: "Main Operator" },
+      }),
+      unit({
+        id: "custom-unit",
+        title: "Custom",
+        operator: "custom-op",
+        declared: { operatorName: "Researcher" },
+      }),
+    ],
+  });
+  const agents = agentsByOperator(modeled, [], "owner-op", "Lothvane Tyrolis");
+  deepStrictEqual(
+    ["owner-op", "custom-op"].map((id) => [
+      agents.get(id)?.id,
+      agents.get(id)?.name,
+    ]),
+    [["owner-unit", "Lothvane Tyrolis"], ["custom-unit", "Researcher"]],
+  );
+  equal(agents.get("former-op"), undefined);
 });
 
 Deno.test("the initial model's one unit is one agent, named by the model when it names it and by nothing made up when not", () => {
@@ -363,6 +395,42 @@ Deno.test("only the coordinator talks with the person; the specialists are known
     team.edges.filter((edge) => edge.kind === "talk").map((edge) => edge.to),
     [COORDINATOR],
   );
+});
+
+Deno.test("an agent that may call another is joined to it once per direction, from caller to callee; a tool of its own or a disabled access is no call", () => {
+  const model = withLinks(
+    board({
+      team: [
+        unit({ id: "bo", title: "BO" }),
+        unit({ id: "reviewer", title: "Reviewer" }),
+        unit({ id: "other", title: "Other" }),
+      ],
+      cando: [
+        capability("reviewer.inbox", "reviewer", "inbox"),
+        capability("bo.inbox", "bo", "inbox"),
+        capability("other.inbox", "other", "inbox"),
+        tool("bo.read", "bo", "read_web_page"),
+      ],
+    }),
+    [
+      link("can-call", "bo.operator", "reviewer.inbox"),
+      link("can-call", "bo.operator", "reviewer", { id: "again" }),
+      link("can-call", "reviewer.operator", "bo.inbox"),
+      link("can-call", "bo.operator", "bo.read"),
+      link("can-call", "bo.operator", "other.inbox", { enabled: false }),
+    ],
+  );
+  const team = teamOf(model);
+  deepStrictEqual(
+    team.edges.filter((edge) => edge.kind === "calls")
+      .map((edge) => [edge.from, edge.to]),
+    [["bo", "reviewer"], ["reviewer", "bo"]],
+  );
+  // Without what the agents work with, the calls stay.
+  deepStrictEqual(agentsOnly(team).edges.map((edge) => edge.kind), [
+    "calls",
+    "calls",
+  ]);
 });
 
 Deno.test("a resource an agent holds twice counts it once, and a scope is its children's too", () => {

@@ -1,5 +1,4 @@
-import { shortCommit } from "../../../lib/model/revisions/change.ts";
-import { sameSourceVersion } from "../../../lib/model/revisions/api.ts";
+import type { VersionInfo } from "../../../lib/workbench/version-label.ts";
 import { VersionLine } from "../../view/VersionLine.tsx";
 
 /**
@@ -8,35 +7,22 @@ import { VersionLine } from "../../view/VersionLine.tsx";
  * the page then describes what is not yet what runs.
  */
 export function BoardVersion(
-  { version, pinned, inService, home, currentLabel }: {
+  { version, pinned, home, info }: {
     /** The commit the board describes. */
     version: string;
     /** The address named this version: it is not the head. */
     pinned: boolean;
-    /** The commit the central agent runs, when known. */
-    inService?: string;
     /** The address of the same page at the head. */
     home: string;
-    currentLabel?: string;
+    info: VersionInfo;
   },
 ) {
-  const gap = inService !== undefined && !sameSourceVersion(version, inService);
   return (
     <VersionLine
       version={version}
       pinned={pinned}
       home={home}
-      currentLabel={currentLabel}
-    >
-      {gap && (
-        <span
-          class="chip warn"
-          title={`The model in service is ${inService}`}
-          data-gap="true"
-        >
-          In service: {shortCommit(inService)}
-        </span>
-      )}
-    </VersionLine>
+      info={info}
+    />
   );
 }

@@ -158,9 +158,9 @@ bytes and a 5,000 ms query deadline, including query queue residence. Source
 preparation time is separate. Native truncation is explicit.
 
 The RDF projection uses `ase: <urn:ase:vocab:>` for `nativeId`, `metaclass`,
-`name` and `qualifiedName`, and `prop: <urn:ase:vocab:prop:>` for exact Toolkit
-properties such as `owner` and `ownedMember`. RDF types are
-`urn:ase:metaclass:<encoded-class>`. User element IRIs are
+`name` and `qualifiedName`, and `prop: <https://www.omg.org/spec/SysML#>` for
+exact Toolkit properties such as `owner` and `ownedMember`. RDF types are
+`https://www.omg.org/spec/SysML#<encoded-class>`. User element IRIs are
 `urn:ase:model:<encoded-repository>:<encoded-native-id>`; library IRIs are
 `urn:ase:library:<encoded-native-id>`. Use returned identities instead of
 constructing editable targets from these strings. List predicates
@@ -170,7 +170,7 @@ repeated list occurrences.
 
 ```sparql
 PREFIX ase: <urn:ase:vocab:>
-PREFIX prop: <urn:ase:vocab:prop:>
+PREFIX prop: <https://www.omg.org/spec/SysML#>
 SELECT ?ownerName (COUNT(?member) AS ?members) WHERE {
   ?owner ase:name ?ownerName ; prop:ownedMember ?member .
   ?member ase:metaclass "PartUsage" .

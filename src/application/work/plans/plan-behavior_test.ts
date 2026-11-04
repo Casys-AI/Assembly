@@ -104,6 +104,7 @@ function setup(store = new MemoryPlanStore()) {
     },
   };
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store,
     invokeTarget: (request) => invoker.invoke(request),
   });
@@ -456,6 +457,7 @@ Deno.test("waiting work needs an explicit source-typed resume and retains its st
   const f = setup();
   let waiting = true;
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store: f.store,
     invokeTarget: (request) => f.invoker.invoke(request),
     completion: () => waiting ? "waiting" : "completed",
@@ -508,6 +510,7 @@ Deno.test("a later normal behavior admission resumes a persisted plan under a ne
     },
   };
   const executor = new WorkPlanExecutor({
+    now: () => "2026-11-03T00:00:00.000Z",
     store: f.store,
     invokeTarget: (request) => target.invoke(request),
     completion: (receipt) =>

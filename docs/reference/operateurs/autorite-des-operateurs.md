@@ -19,7 +19,7 @@ results and limits of the earlier state. Sub-operators in Request branches (lot
 `propose_agent_creation`, with `role: "operator"`, receives a name and a closed
 specification: `instruction`, `networkHosts`,
 `requestType: {name, maxInvocations}` and `firstRequest: {objective}`. The limit
-is an integer from 1 to 100. No free-form mandate or agent-supplied SysML
+is an integer from 1 to 100. No free-form mandate or operator-supplied SysML
 fragment is accepted. Creation is reserved for the configured primary contact,
 checked before proposal and publication. The historical `mayCreateReviewer`
 field remains the right that makes this proposal eligible; it does not replace
@@ -188,9 +188,9 @@ Main Operator authority over the BO of one Case, its proposal adds
 native ID in `recipients`. The host resolves the Case's verified opening, writes
 its space as `recipientExecutionSpaceId` (SysML `recipientSpace`) and does not
 store the Case. An unknown, closed or foreign Case gives
-`INVALID_AUTHORITY_POLICY` with `context.recipientCaseId`. The agent never sends
-a space; the BO's native ID as a recipient is accepted only with such a Case.
-One policy names one Case.
+`INVALID_AUTHORITY_POLICY` with `context.recipientCaseId`. The operator never
+sends a space; the BO's native ID as a recipient is accepted only with such a
+Case. One policy names one Case.
 
 Every BO request reaches the Main Operator as a notice. Its decision context
 lists, under `operatorAuthority`:
@@ -346,8 +346,9 @@ was accepted:
 - ID `subordinate-order:<invocationId>`, so a replay stores it once;
 - `invocationId`, `caseId`, `subordinate`, `orderedBy` (the caller's
   `operatorId`) and `summary`, bounded text that is data, never an instruction;
-- delivered to the parent's Case thread without waking it; the interface shows
-  it on one line.
+- delivered to the parent's Case thread without waking it; the Request's own
+  thread folds it into its “··· n steps” line, and Activity lists it as “… gave
+  … an order”.
 
 The notice never blocks the order and decides nothing. Replaying an accepted
 order retries notice delivery without re-delivering the order; the deterministic
@@ -444,8 +445,12 @@ Request.
 
 Network proposals expose their bounds in the shared diff card. Delegated
 decisions show the decision-maker and exact policy from the recorded receipt,
-with their Request and commit. A notice alone produces neither this attribution
-nor a decision.
+with their Request and commit. The card's byline reads “Decided by … · rule … ·
+rev. n” (“you” for the person under their own mandate, the operator's name under
+a delegating policy), and an inspector lists the exact identities. The card's
+state is one of **To decide**, **Applying**, **Applied**, **Declined** or
+**Superseded**; the host's own statuses never reach the page. A notice alone
+produces neither this attribution nor a decision.
 
 `GET /api/model-revisions?agentId=...` adds
 `runtime.sourceRights.operatorAuthorityPolicies`, compiled from current sources
@@ -493,8 +498,8 @@ Sources for this reference:
   provenance, decision and recovery;
 - [`runtime.ts`](../../../src/application/work/cases/runtime.ts): tracking and
   closure;
-- [`source-model.ts`](../../../src/adapters/model/sources/source-model.ts) and
-  [`writer.ts`](../../../src/adapters/governance/authority/operator/writer.ts):
+- [`source-model.ts`](../../../src/application/model/source-model.ts) and
+  [`writer.ts`](../../../src/application/governance/operator-writer.ts):
   preparation and publication;
 - [`conversations.ts`](../../../src/adapters/in/http/work/conversations.ts):
   commands.

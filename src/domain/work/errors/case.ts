@@ -9,6 +9,7 @@ export class CaseError extends Error {
       | "AGENT_BUSY"
       | "CASE_BUSY"
       | "CASE_CLOSED"
+      | "CASE_VERDICT_REQUIRED"
       | "CASE_SCOPE_MISSING"
       | "CASE_CONFLICT"
       | "CASE_DISPATCH_UNKNOWN"

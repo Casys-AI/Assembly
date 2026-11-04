@@ -1,3 +1,4 @@
+import { ACCEPTED_CASE_CLOSURE } from "../support/case-closure.ts";
 import { unexpectedModelAuthoring } from "../support/model-authoring.ts";
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import { PostgresWorkPlanStore } from "../../src/adapters/out/postgres/plan-store.ts";
@@ -75,6 +76,7 @@ Deno.test({
       let waiting = true;
       const executor = () =>
         new WorkPlanExecutor({
+          now: () => "2026-11-03T00:00:00.000Z",
           store: store!,
           invokeTarget(request) {
             requests.push(structuredClone(request));
@@ -213,7 +215,7 @@ Deno.test({
       await executor().execute(correlate(request, second), { resume: true });
       equal(requests.length, 3);
 
-      await runtimes[1].closeCase(second.caseId, "done");
+      await runtimes[1].closeCase(second.caseId, "done", ACCEPTED_CASE_CLOSURE);
       await runtimes[1].submit(
         "A new objective after the historical dossier",
         undefined,

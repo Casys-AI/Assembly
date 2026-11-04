@@ -1,40 +1,58 @@
 import assert from "node:assert/strict";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
-import type { ChatDecision } from "../../src/domain/work/dialogue.ts";
+import type {
+  ChatContext,
+  ChatDecision,
+} from "../../src/domain/work/dialogue.ts";
 import { MAX_BRANCH_TEAM } from "../../src/domain/work/records/conversations.ts";
 
 export const PRIMARY_NAME = "Main Operator";
+export const CREATION_GRANT_REPLY = "Meanwhile, here is my own review.";
 
 /** Branch provider double: the BO proposes the teammate it is armed with,
  * every other turn replies. It decides nothing on anyone's behalf. */
-export function branchTeamAgent() {
+export function branchTeamAgent(
+  options: { replyAfterCreationGrant?: boolean } = {},
+) {
   const creations = new Map<
     string,
     Array<{ name: string; operator: string; grant?: boolean }>
   >();
   const contributions = new Map<
     string,
-    { member: string; inputText: string }
+    { member: string; inputText?: string }
   >();
   const proposals = new Map<string, string>();
   const creationGrants = new Set<string>();
-  const seen: Array<{ caseId: string; operator: string; text?: string }> = [];
+  const seen: Array<
+    {
+      caseId: string;
+      operator: string;
+      text?: string;
+      hostObservations?: ChatContext["hostObservations"];
+    }
+  > = [];
   const agent: AgentPort = {
     label: "Controlled branch team witness",
     decide(context) {
       const caseId = context.case?.id ?? "";
       const operator = context.operator?.name ?? "";
-      seen.push({ caseId, operator });
+      seen.push({
+        caseId,
+        operator,
+        hostObservations: structuredClone(context.hostObservations),
+      });
       if (operator === PRIMARY_NAME && creationGrants.delete(caseId)) {
+        // Rehearsal grant: one reviewer, no network, human approval per creation.
         return Promise.resolve({
           kind: "propose_mandate_change",
           text: "Request the right to create sub-operators",
           reason: "This Request needs a bounded reviewer team",
           requestedRights: {
             operatorCreation: {
-              networkHosts: ["example.net"],
-              maxChildren: MAX_BRANCH_TEAM,
-              mode: "autonomous",
+              networkHosts: [],
+              maxChildren: 1,
+              mode: "per-creation",
             },
           },
         } as ChatDecision);
@@ -55,7 +73,14 @@ export function branchTeamAgent() {
       const contribution = contributions.get(caseId);
       if (
         operator === PRIMARY_NAME && contribution &&
-        selectedInput?.text === contribution.inputText
+        (contribution.inputText !== undefined
+          ? selectedInput?.text === contribution.inputText
+          : context.hostObservations?.some((outcome) => {
+            const value = outcome.value as Record<string, unknown>;
+            return value.kind === "request-team-change-outcome" &&
+              value.inForce === true &&
+              value.memberName === contribution.member;
+          }))
       ) {
         const { member } = contribution;
         // The BO reaches its member through the inbox access its creation
@@ -118,15 +143,44 @@ export function branchTeamAgent() {
           },
         } as ChatDecision);
       }
+      const completion = context.hostObservations?.map((outcome) =>
+        outcome.value as {
+          format?: string;
+          status?: string;
+          reply?: { text: string };
+        }
+      ).find((value) =>
+        value.format === "operator-contribution-completion/v1" &&
+        value.status === "completed"
+      );
       return Promise.resolve({
         kind: "reply",
-        text: `Observed by ${operator}`,
+        text: operator === PRIMARY_NAME && completion?.reply
+          ? `Reviewer response: ${completion.reply.text}`
+          : `Observed by ${operator}`,
       });
     },
     review() {
       throw new Error("The branch team witness never reviews a candidate");
     },
   };
+  if (options.replyAfterCreationGrant) {
+    agent.decideBatch = async (context) => {
+      const decision = await agent.decide(context);
+      return {
+        calls: [
+          { id: "decision", decision },
+          ...(decision.kind === "propose_mandate_change" &&
+              "operatorCreation" in decision.requestedRights
+            ? [{
+              id: "final-reply",
+              decision: { kind: "reply" as const, text: CREATION_GRANT_REPLY },
+            }]
+            : []),
+        ],
+      };
+    };
+  }
   return {
     agent,
     seen,
@@ -148,7 +202,7 @@ export function branchTeamAgent() {
     armCreationGrant(caseId: string) {
       creationGrants.add(caseId);
     },
-    armContribution(caseId: string, member: string, inputText: string) {
+    armContribution(caseId: string, member: string, inputText?: string) {
       contributions.set(caseId, { member, inputText });
     },
   };
@@ -157,6 +211,7 @@ export function branchTeamAgent() {
 /** Main provider double: ordinary notifications observe; a grant belongs to its selected input. */
 export function observingMain() {
   let turns = 0;
+  let opening: { objective: string; openingId: string } | undefined;
   let order: { caseId: string; operatorId: string } | undefined;
   let grant:
     | { caseId: string; operatorId: string; inputText: string }
@@ -166,6 +221,17 @@ export function observingMain() {
     label: "Observing Main Operator",
     decide(context) {
       turns++;
+      if (opening) {
+        const request = opening;
+        opening = undefined;
+        assert.equal(context.requestOpening?.canOpen, true);
+        return Promise.resolve({
+          kind: "open_request",
+          text: "Open the Request",
+          ...request,
+          source: { kind: "current-main" },
+        } as ChatDecision);
+      }
       const selectedInput = context.messages.find((message) =>
         message.id === context.activeInputMessageId
       );
@@ -230,6 +296,9 @@ export function observingMain() {
   return {
     agent,
     turns: () => turns,
+    armOpening(request: { objective: string; openingId: string }) {
+      opening = request;
+    },
     armGrant(
       target: { caseId: string; operatorId: string; inputText: string },
     ) {

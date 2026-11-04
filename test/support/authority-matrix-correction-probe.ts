@@ -3,7 +3,7 @@ import type { ModelRevision } from "../../src/domain/model/records/revision.ts";
 import type { AuthorityMatrixArtifactPin } from "../../src/adapters/out/sysml-toolkit/projections/authority-matrix/worker-client.ts";
 import type { AuthorityMatrix } from "../../src/domain/governance/records/authority-matrix.ts";
 import type { ModelRevisionId } from "../../src/domain/shared-kernel/revision-id.ts";
-import type { validateSourceExecutables } from "../../src/adapters/model/sources/source-model.ts";
+import type { validateSourceExecutables } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 
 export type MatrixCorrectionVariant = "locale" | "unsupported-targets";
 export interface MatrixCorrectionArtifact {
@@ -107,7 +107,7 @@ if (import.meta.main) {
       "../../src/adapters/out/sysml-toolkit/runtime/loader.ts"
     );
     const { validateSourceExecutables } = await import(
-      "../../src/adapters/model/sources/source-model.ts"
+      "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts"
     );
     const { loadInitialSources } = await import(
       "../../src/adapters/out/filesystem/initial-model-sources.ts"

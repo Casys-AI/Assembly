@@ -21,6 +21,8 @@ export function usePerformance(props: {
   sessionReady: boolean;
   refreshGeneration?: number;
   sessionGeneration?: number;
+  /** A Request's closure sets its duration: the readout is read again. */
+  closedAt?: string;
 }): PerformanceState {
   const store = useMemo(
     () =>
@@ -38,6 +40,9 @@ export function usePerformance(props: {
   const key = selection
     ? performanceKey(selection, props.sessionReady, props.sessionGeneration)
     : undefined;
+  // Both terms only grow, so their sum changes whenever either does.
+  const refresh = (props.refreshGeneration ?? 0) +
+    (props.closedAt === undefined ? 0 : 1);
   useEffect(() => () => {
     if (props.store) void store.open(undefined);
     else store.dispose();
@@ -46,7 +51,7 @@ export function usePerformance(props: {
     void store.open(
       selection,
       props.sessionReady,
-      props.refreshGeneration,
+      refresh,
       props.sessionGeneration,
     );
   }, [
@@ -55,7 +60,7 @@ export function usePerformance(props: {
     version,
     props.caseId,
     props.sessionReady,
-    props.refreshGeneration,
+    refresh,
     props.sessionGeneration,
   ]);
   const held = store.state.value;

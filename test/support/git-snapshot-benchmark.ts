@@ -4,7 +4,7 @@ import { createColdBuildStore } from "./cold-build-store.ts";
  */
 import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import type { ModelSources as Sources } from "../../src/domain/model/value-objects/sources.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 import { ModelBuildService } from "../../src/application/model/builds/service.ts";
 import { BuildStoreError } from "../../src/application/model/builds/ports/out/build-store.port.ts";
 import {

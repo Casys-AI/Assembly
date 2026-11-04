@@ -42,6 +42,7 @@ export async function loadInitialSources(
   for (
     const name of [
       "authority",
+      "accountability",
       "context",
       "memory",
       "skills",

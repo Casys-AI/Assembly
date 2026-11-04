@@ -2,16 +2,14 @@ import assert from "node:assert/strict";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  sourceModelIdentity,
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { sourceModelIdentity } from "../../src/domain/model/records/source-identity.ts";
 
 import { compileSpaceControlPolicy } from "../../src/adapters/out/sysml-toolkit/compilation-policies/governance/authority/space-execution-policy.ts";
 import {
   sourceLiterals,
   sourceSnapshot,
-} from "../../src/adapters/model/projections/graph/source.ts";
+} from "../../src/domain/model/projections/source-facts.ts";
 
 Deno.test({
   name:

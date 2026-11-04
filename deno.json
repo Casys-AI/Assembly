@@ -13,14 +13,13 @@
   "imports": {
     "@hono/hono": "jsr:@hono/hono@4.13.14",
     "@logtape/logtape": "jsr:@logtape/logtape@2.4.2",
+    "@types/sparqljs": "npm:@types/sparqljs@3.1.12",
     "ajv": "npm:ajv@8.20.0",
     "ajv/dist/2020.js": "npm:ajv@8.20.0/dist/2020.js",
     "@kitsonk/kv-toolbox/blob": "jsr:@kitsonk/kv-toolbox@0.31.0/blob",
     "diff": "npm:diff@9.0.0",
     "ldkit": "npm:ldkit@2.10.1",
-    "rdf-validate-shacl": "npm:rdf-validate-shacl@0.6.0",
     "@rdfjs/parser-n3": "npm:@rdfjs/parser-n3@2.1.0",
-    "@rdfjs/dataset": "npm:@rdfjs/dataset@2.0.1",
     "ldkit/rdf": "npm:ldkit@2.10.1/rdf",
     "prisma": "npm:prisma@7.10.1",
     "prisma/config": "npm:prisma@7.10.1/config",
@@ -37,7 +36,8 @@
     "@langchain/core/tools": "npm:@langchain/core@1.2.17/tools",
     "@langchain/core/language_models/chat_models": "npm:@langchain/core@1.2.17/language_models/chat_models",
     "@langchain/core/outputs": "npm:@langchain/core@1.2.17/outputs",
-    "@langchain/anthropic": "npm:@langchain/anthropic@1.5.12"
+    "@langchain/anthropic": "npm:@langchain/anthropic@1.5.12",
+    "sparqljs": "npm:sparqljs@3.7.4"
   },
   "tasks": {
     "dev": "ASSEMBLY_ENV=development deno task ui:dev",

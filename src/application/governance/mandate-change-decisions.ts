@@ -2,9 +2,9 @@ import {
   assertRequestChange,
   requestChangeProposalDigest,
 } from "../../domain/governance/records/request-change.ts";
-import { nativePromotionDependencies } from "../work/runtime/model-advance.ts";
-import type { NativeExecutionPort } from "../work/runtime/execution.ts";
-import type { NativeExecutionContribution } from "../work/runtime/execution.ts";
+import { nativePromotionDependencies } from "../work/native-execution/model-advance.ts";
+import type { NativeExecutionPort } from "../work/native-execution/contract.ts";
+import type { NativeExecutionContribution } from "../work/native-execution/contract.ts";
 import {
   activeBatchCall,
   cancelQueuedAfterTeamPublication,
@@ -30,10 +30,11 @@ import {
   invocationKey,
   type OperatorWorkCompletion,
   type OperatorWorkMessageRange,
-  type OperatorWorkReceipt,
   recordedWorkCompletion,
   workReceipt,
 } from "../work/operators/journal.ts";
+import type { OperatorWorkReceipt } from "../../domain/work/execution/case-context.ts";
+import { isRequestTeamMember } from "../../domain/work/request-spaces.ts";
 import { OperatorConversationError } from "../work/operators/conversations.ts";
 import { CaseError } from "../../domain/work/errors/case.ts";
 import { canonical } from "../../domain/primitives/canonical-json.ts";
@@ -66,13 +67,14 @@ import type {
   SystemConfiguration,
 } from "../../domain/governance/records/system-configuration.ts";
 import type { MandateChangeModelPort } from "./ports/out/mandate-change-model.port.ts";
-import { creationScopeOf } from "../work/runtime/ports.ts";
+import { type ClockPort, creationScopeOf } from "../work/runtime/ports.ts";
 import type { CreationScope } from "../../domain/governance/policies/operator-creation-policy.ts";
-import { makeEvent, now, valueDigest } from "../work/runtime/values.ts";
+import { makeEvent, valueDigest } from "../work/runtime/values.ts";
 
 export interface MandateChangeHost {
   readonly state: SystemRuntimeState;
   readonly ports: {
+    clock: ClockPort;
     model: MandateChangeModelPort;
     execution?: Pick<NativeExecutionPort, "inspect">;
   };
@@ -182,11 +184,13 @@ async function findPublication(host: PublicationHost, changeId: string) {
 }
 
 function decisionCompletedEvent(
+  clock: ClockPort,
   change: PendingChange,
   adopted: boolean,
 ): Event {
   return {
     ...makeEvent(
+      clock,
       adopted
         ? change.kind === "mandate-change"
           ? "mandate-revised"
@@ -201,6 +205,7 @@ function decisionCompletedEvent(
 
 /** Record the approval atomically with its completion, when still completing. */
 function recordApprovalIfCompleting(
+  clock: ClockPort,
   state: SystemRuntimeState,
   changeId: string,
   adopted: boolean,
@@ -210,7 +215,7 @@ function recordApprovalIfCompleting(
   )!;
   if (entry.status === "pending" && entry.publishedCommit) {
     entry.status = "approved";
-    state.events.push(decisionCompletedEvent(entry, adopted));
+    state.events.push(decisionCompletedEvent(clock, entry, adopted));
   }
 }
 
@@ -301,7 +306,7 @@ async function completePublication(
     host.state.executionModel!.version.repositoryVersion ===
       pin.repositoryVersion;
   if (immediate) {
-    const event = decisionCompletedEvent(completed, adopt);
+    const event = decisionCompletedEvent(host.ports.clock, completed, adopt);
     if (adopt) {
       const teamPublication = receipt && change.kind === "operator-creation" &&
         change.operator && isTeamOperatorSpec(change.operator) &&
@@ -517,7 +522,7 @@ export async function proposeChange(
   const change = governance.propose(
     decision,
     crypto.randomUUID(),
-    now(),
+    this.ports.clock.now(),
     {
       requestedBy: this.state.executionModel!.identity.builderId,
       ...(caseId ? { caseId } : { designerScopeId: designerScopeId! }),
@@ -527,14 +532,21 @@ export async function proposeChange(
     const context = caseExecutionContext(this.state);
     const ownerId = context?.record?.owner ?? context?.budget?.ownerId;
     const team = this.state.executionModel!.operatorTeam;
+    const scope = this.ports.model.requestChangeScope;
     if (
       !context || context.caseId !== caseId || !ownerId ||
       team &&
-        (team.requestId !== context.caseId || team.requestOwnerId !== ownerId)
+        (team.requestOwnerId !== ownerId ||
+          (scope
+            ? !isRequestTeamMember(
+              this.state.executionModel!.identity.builderId,
+              scope,
+            )
+            : team.requestId !== context.caseId))
     ) {
       throw new CaseError(
         "CASE_SCOPE_MISSING",
-        "A team member requires an active originating Request",
+        "A team member requires an active Request",
       );
     }
     change.teamOrigin = { operatorId: ownerId, requestId: context.caseId };
@@ -572,6 +584,7 @@ export async function proposeChange(
     }
     s.events.push(
       makeEvent(
+        this.ports.clock,
         "configuration-change-proposed",
         `${change.kind} : ${change.reason}`,
       ),
@@ -678,7 +691,12 @@ async function continueChangeDecision(
     if (entry?.status === "pending" && entry.publishedCommit) {
       try {
         await host.update((state) =>
-          recordApprovalIfCompleting(state, change.id, !closedWithoutAdoption)
+          recordApprovalIfCompleting(
+            host.ports.clock,
+            state,
+            change.id,
+            !closedWithoutAdoption,
+          )
         );
       } catch { /* The recording fault must not mask the original cause. */ }
     }
@@ -729,13 +747,13 @@ async function continueChangeDecisionBody(
     const feedbackStart = host.state.messages.length;
     await host.feedback(
       change.status === "refused"
-        ? "Évolution refusée ; droits conservés."
+        ? "Change refused; rights kept."
         : closedWithoutAdoption
-        ? "Publication antérieure retrouvée et clôturée ; le modèle déjà adopté est conservé."
+        ? "An earlier publication was found and closed; the model already adopted is kept."
         : change.kind === "operator-creation"
         ? change.operator && isTeamOperatorSpec(change.operator)
-          ? "Team operator created and verified for the originating Request; use its admitted contribution behavior."
-          : "Opérateur créé et vérifié ; son premier Request est ouvert chez son propriétaire."
+          ? "Team operator created and verified for the current Request; use its admitted contribution behavior."
+          : "Operator created and verified; its first Request is open with its owner."
         : change.kind === "mandate-change"
         ? change.requestedRights &&
             "toolAdmission" in change.requestedRights
@@ -835,7 +853,12 @@ async function continueChangeDecisionBody(
         // defers to the next claimed retry, an already-dispatched one
         // completes bare — at most once, never a second provider invocation.
         await host.update((state) => {
-          recordApprovalIfCompleting(state, change.id, !closedWithoutAdoption);
+          recordApprovalIfCompleting(
+            host.ports.clock,
+            state,
+            change.id,
+            !closedWithoutAdoption,
+          );
           if (!origin && continuation === "feedback-sent") {
             (state.changeDecisionContinuations ??= {})[change.id] = "resumed";
           }
@@ -877,7 +900,12 @@ async function continueChangeDecisionBody(
               "The work completion source changed before its atomic approval",
             );
           }
-          recordApprovalIfCompleting(state, change.id, !closedWithoutAdoption);
+          recordApprovalIfCompleting(
+            host.ports.clock,
+            state,
+            change.id,
+            !closedWithoutAdoption,
+          );
           state.events.push(completion);
           (state.changeDecisionContinuations ??= {})[change.id] = "resumed";
           delete state.changeWorkContinuations![change.id].attempt;
@@ -892,13 +920,23 @@ async function continueChangeDecisionBody(
     } else if (origin) {
       // The publication is real, but no compatible dialogue returned.
       await host.update((state) =>
-        recordApprovalIfCompleting(state, change.id, !closedWithoutAdoption)
+        recordApprovalIfCompleting(
+          host.ports.clock,
+          state,
+          change.id,
+          !closedWithoutAdoption,
+        )
       );
       return;
     }
   }
   await host.update((state) => {
-    recordApprovalIfCompleting(state, change.id, !closedWithoutAdoption);
+    recordApprovalIfCompleting(
+      host.ports.clock,
+      state,
+      change.id,
+      !closedWithoutAdoption,
+    );
     (state.changeDecisionContinuations ??= {})[change.id] = "resumed";
   });
 }
@@ -932,6 +970,7 @@ export async function resumeChangeDecisions(
       // the attested approval bare, as the skipped resumption did before.
       await this.update((s) =>
         recordApprovalIfCompleting(
+          this.ports.clock,
           s,
           change.id,
           this.state.executionModel!.version.repositoryVersion ===
@@ -1066,7 +1105,7 @@ export async function decideChange(
             input.changeId,
             input.expectedRevision,
             input.verdict === "approve",
-            now(),
+            this.ports.clock.now(),
             delegated,
           );
       }
@@ -1143,6 +1182,7 @@ export async function decideChange(
         // the refusal exactly as for an already-applied decision.
         await this.update((s) =>
           recordApprovalIfCompleting(
+            this.ports.clock,
             s,
             recorded.id,
             this.state.executionModel!.version.repositoryVersion ===
@@ -1200,7 +1240,7 @@ export async function decideChange(
           input.changeId,
           input.expectedRevision,
           input.verdict === "approve",
-          now(),
+          this.ports.clock.now(),
           delegated,
         );
       } catch (error) {
@@ -1300,6 +1340,7 @@ export async function decideChange(
           s.configuration!.changes = governance.snapshot.changes;
           s.events.push({
             ...makeEvent(
+              this.ports.clock,
               "configuration-change-refused",
               delegated
                 ? `${change.kind} explicitly refused by the delegated designer`

@@ -73,6 +73,7 @@ async function fixture(ids: string[]) {
       return state;
     },
     ports: {
+      clock: { now: () => "2026-11-03T00:00:00.000Z" },
       model: {
         readExecutableModel: () => Promise.resolve(native()),
         findCandidate: undefined,

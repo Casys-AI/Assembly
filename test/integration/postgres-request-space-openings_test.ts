@@ -7,11 +7,11 @@ import { projectSpaceControlAuthority } from "../../src/domain/work/space-contro
 import {
   createPostgresAdmittedRequestRuntime,
   createPostgresNativeRuntime,
-} from "../../src/adapters/work/runtime/postgres.ts";
+} from "../../src/adapters/out/native-execution/postgres.ts";
 import { PostgresHostStorage } from "../../src/adapters/out/postgres/host-storage.ts";
 import { postgresClientConfiguration } from "../../src/adapters/out/postgres/config.ts";
 import { SystemRuntime } from "../../src/application/work/runtime/system.ts";
-import { requestSpaceSeed } from "../../src/adapters/work/request-space-runtime.ts";
+import { requestSpaceSeed } from "../../src/application/work/runtime/initialization.ts";
 import { AjvSchemaValidator } from "../../src/infrastructure/ajv-schema-validation.ts";
 import { WorkBudgetService } from "../../src/application/work/budget/service.ts";
 import { unexpectedModelAuthoring } from "../support/model-authoring.ts";

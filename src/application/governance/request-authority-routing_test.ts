@@ -274,6 +274,49 @@ Deno.test("Source team membership corroborates receipt and grants no inferred au
   equal(f.route().status, "needs-resolution");
 });
 
+Deno.test("Main refuses foreign Request membership along delegated and direct owner routes", () => {
+  for (
+    const member of ["leaf", "middle", "owner", "direct", "decider"] as const
+  ) {
+    const f = fixture();
+    f.grant(member === "decider" ? "middle" : "main");
+    const direct = member === "direct";
+    const requester = direct ? f.owner : f.leaf;
+    const foreign = direct
+      ? f.owner
+      : member === "decider"
+      ? f.middle
+      : f[member];
+    foreign.executionModel!.operatorTeam = {
+      parentOperatorId: member === "leaf"
+        ? "middle"
+        : member === "middle" || member === "decider"
+        ? "owner"
+        : "main",
+      requestOwnerId: f.root.owner,
+      requestId: "another-request",
+    };
+    const change = direct
+      ? {
+        ...f.change,
+        requestedBy: f.root.owner,
+        baseRevision: requester.configuration!.revision,
+        baseModelDigest: requester.executionModel!.version.digest,
+      }
+      : f.change;
+    const route = requestAuthorityRoute({
+      space: f.space,
+      requester,
+      change,
+      states: f.states,
+      root: { kind: "main-opener", mainOperatorId: "main" },
+    });
+    equal(route.code, "CHAIN_UNVERIFIED");
+    equal(route.status, "needs-resolution");
+    equal(route.designatedDecider, undefined);
+  }
+});
+
 Deno.test("Legacy direct caller receipt can reach its unique Request owner and verified Main opening", () => {
   const f = fixture();
   f.grant("main");

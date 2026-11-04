@@ -257,7 +257,10 @@ Deno.test("native history appends complete exchanges across inputs without repea
   deepStrictEqual(after[0].repairs, first.providerRepairs);
   equal(JSON.stringify(after).split("Observed exactly once").length - 1, 1);
   deepStrictEqual(after.map((entry) => entry.turn), [
-    first.providerTurn,
+    {
+      inputMessageId: "first-input",
+      brief: { input: "First" },
+    },
     second.providerTurn,
   ]);
   equal(first.calls[0].result!.details, JSON.stringify(observation));

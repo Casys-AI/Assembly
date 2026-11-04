@@ -15,7 +15,8 @@ import type {
 import type { CompiledFlow } from "./flow.ts";
 import type { OperatorEntry } from "../records/operator-entry.ts";
 import type { OwnerAuthority } from "../../governance/authority.ts";
-import type { ChatContext, ModelIdentity } from "../../work/dialogue.ts";
+import type { ChatContext } from "../../work/dialogue.ts";
+import type { ModelIdentity } from "../../shared-kernel/model-identity.ts";
 import type { NativeToolContract, Stage } from "../../work/candidates.ts";
 import type {
   SystemConfiguration,

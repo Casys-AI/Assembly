@@ -4,7 +4,7 @@ import type { EvolutionAuthorityExercise } from "../../../domain/model/evolution
 import type {
   NativeExecutionSnapshot,
   RuntimeRevisionReference,
-} from "../../work/runtime/execution.ts";
+} from "../../work/native-execution/contract.ts";
 import type {
   EvolutionAdoptionReceipt,
   EvolutionPublication,

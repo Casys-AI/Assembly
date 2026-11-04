@@ -11,7 +11,7 @@ import {
   type FlowProjection,
   type OperatorExecutionProfile,
 } from "../../../../../domain/model/execution/flow.ts";
-import type { NativeLiteral } from "./execution-model.ts";
+import type { NativeLiteral } from "../../../../../domain/model/records/native-literal.ts";
 
 const PROFILES: readonly OperatorExecutionProfile[] = [
   "operator-command-v1",

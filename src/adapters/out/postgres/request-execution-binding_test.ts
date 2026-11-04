@@ -20,7 +20,7 @@ import {
 } from "../../../../test/support/request-space-fixture.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { requestSpaceDigest } from "../../../domain/work/request-spaces.ts";
-import { requestSpaceSeed } from "../../work/request-space-runtime.ts";
+import { requestSpaceSeed } from "../../../application/work/runtime/initialization.ts";
 import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
 
 async function sourceContextFixture() {
@@ -297,11 +297,16 @@ Deno.test("member source snapshot refuses a mismatched requester identity", asyn
 
 async function fixture() {
   const f = await requestAdoptionFixture();
+  const base = await requestOpeningBase();
+  base.requestOwner.operatorId = f.target.operatorId;
+  base.manifest.registeredOperatorIds = [f.target.operatorId];
+  base.manifest.operators[0].operatorId = f.target.operatorId;
+  base.manifestDigest = await requestSpaceDigest(base.manifest);
   const opening = {
     id: f.target.openingId,
     scope: f.target.host,
     executionSpaceId: f.target.executionSpaceId,
-    base: { requestOwner: { operatorId: f.target.operatorId } },
+    base,
   } as OpeningRecord;
   const birth = {
     manifest: {

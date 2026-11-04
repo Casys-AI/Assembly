@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 import type {
   NativeExecutionHandlers,
   NativeExecutionRequest,
-} from "../../src/application/work/runtime/execution.ts";
-import { nativeExecutionIdentity } from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
+import { nativeExecutionIdentity } from "../../src/application/work/native-execution/contract.ts";
 import { immutableConsultationFixture } from "../support/immutable-consultation-fixture.ts";
 import { openPostgresExecutionFixtureHost } from "../support/postgres-runtime-fixture.ts";
 import { postgresTestEnabled } from "../support/postgres.ts";

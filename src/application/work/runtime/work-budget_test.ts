@@ -6,7 +6,7 @@ import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
 import type { WorkBudgetRecord } from "../../../domain/work/policies/budget.ts";
 import { SystemRuntime } from "../../../../test/support/system-runtime.ts";
 import { createTestNativeExecution } from "../../../../test/support/native-execution.ts";
-import { nativeExecutionIdentity } from "./execution.ts";
+import { nativeExecutionIdentity } from "../native-execution/contract.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { invocationKey } from "../operators/journal.ts";
 import { designerExecutionContext } from "../cases/runtime.ts";
@@ -20,7 +20,7 @@ import {
 import {
   type BudgetProposalCheckpoint,
   verifyScalarBudgetFamily,
-} from "../../../adapters/work/runtime/native-budget-proposal.ts";
+} from "../native-execution/native-budget-proposal.ts";
 
 function fixture(promotion = false, reviewer = false) {
   const model = artifactModel("builder");

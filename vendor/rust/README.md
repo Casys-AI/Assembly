@@ -1,6 +1,6 @@
 # Vendored Rust sources
 
-`rust-vendor.tar.gz` contains the full sources of the 117 registry crates locked
+`rust-vendor.tar.gz` contains the full sources of the 125 registry crates locked
 by `native/toolkit/Cargo.lock` and `native/semantic-index/Cargo.lock`. License
 documents, notices, sources and manifests present in every `.crate` archive are
 preserved. The tracked manifest authorizes the archive size and SHA-256 before

@@ -1,6 +1,6 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { invocationKey } from "../operators/journal.ts";
-import type { NativeExecutionSnapshot } from "../runtime/execution.ts";
+import type { NativeExecutionSnapshot } from "../native-execution/contract.ts";
 import type {
   OperatorDeliveryReceipt,
   OperatorExecutionDelivery,

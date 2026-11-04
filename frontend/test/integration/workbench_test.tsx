@@ -43,7 +43,7 @@ const PANELS = [
   "case-panel",
   "system-panel",
   "model-panel",
-  "decide-panel",
+  "activity-panel",
 ];
 /** A link as the person meets it: its name, where it leads, whether current. */
 const linkOf = (
@@ -232,16 +232,20 @@ Deno.test("workspace identifies the current system and admitted version while in
       initialUrl="https://atelier.test/model?revision=3"
     />,
   );
-  match(html, /<h1[^>]*>Research::MarketWatch<\/h1>/);
-  match(html, /title="commit:abc123456789"/);
-  match(html, /Model abc12345 · in service/);
-  doesNotMatch(html, /Model next1234|<h1[^>]*>Past system/);
+  match(html, /System: Research::MarketWatch/);
+  match(html, /In service: commit:abc123456789/);
+  // The admitted source is read asynchronously; execution is not its substitute.
+  match(html, /aria-label="Main · Version unavailable"/);
+  const identityTitle = within(html).root.querySelector(".workspace-identity")!;
+  identityTitle.querySelector(".detail-facts")!.remove();
+  // Exact visible content excludes the past system, qualified name, UUID and hashes.
+  equal(textOf(identityTitle), "Main");
   // Closing the opened Model place restores the full Main conversation.
   match(html, /id="model-link" href="\/chat"[^>]*aria-current="page"/);
-  match(html, /aria-label="To decide, \d+ pending"/);
+  match(html, /aria-label="Activity, \d+ pending"/);
   // The title bar keeps only the connection, the name and the version.
   const titlebar = html.slice(0, html.indexOf("</header>"));
-  doesNotMatch(titlebar, /system-link|model-link|decide-link/);
+  doesNotMatch(titlebar, /system-link|model-link|activity-link/);
 });
 
 Deno.test("workspace reports unavailable version without substituting the runtime revision", () => {
@@ -255,8 +259,8 @@ Deno.test("workspace reports unavailable version without substituting the runtim
       initialUrl="https://atelier.test/chat"
     />,
   );
-  match(html, /<h1[^>]*>Workspace<\/h1>/);
-  match(html, /Model version unavailable/);
+  match(html, /System: Workspace/);
+  match(html, /aria-label="Main · Version unavailable"/);
   doesNotMatch(html, /Model 7/);
 });
 
@@ -282,8 +286,12 @@ Deno.test("workspace uses the model system name and the implicit default SysML n
       />,
     );
     const expected = systemQualifiedName || "ASELiveBuilder::liveBuilder";
-    match(html, new RegExp(`<h1[^>]*>${expected}</h1>`));
-    doesNotMatch(html, new RegExp(`<h1[^>]*>[^<]*${current.id}`));
+    match(html, new RegExp(`System: ${expected}`));
+    const identityTitle = within(html).root.querySelector(
+      ".workspace-identity",
+    )!;
+    identityTitle.querySelector(".detail-facts")!.remove();
+    equal(textOf(identityTitle), "Main");
   }
 });
 
@@ -320,7 +328,7 @@ Deno.test("workspace routes keep one Dock, one circle and the graph renderer onl
       "cases-panel",
       "model-panel",
     ],
-    "/decide": ["decide-panel"],
+    "/activity": ["activity-panel"],
     // A Case address before its record loads reads as a Request, on the Requests page.
     "/chat?case=ui-fixture%3Acase%3A1": ["chat-panel", "cases-panel"],
     "/cases?case=ui-fixture%3Acase%3A1": ["chat-panel", "cases-panel"],
@@ -363,12 +371,12 @@ Deno.test("workspace routes keep one Dock, one circle and the graph renderer onl
   }
 });
 
-Deno.test("the Dock holds System, Model, then To decide; each place is its own address", () => {
+Deno.test("the Dock holds System, Model, then Activity; each place is its own address", () => {
   equal(viewFromPath("/system"), "system");
   equal(viewFromPath("/model"), "model");
   // The Model place's earlier address is still the Model place.
   equal(viewFromPath("/revisions"), "model");
-  equal(viewFromPath("/decide"), "decide");
+  equal(viewFromPath("/activity"), "activity");
   equal(viewFromPath("/chat"), "chat");
   const dock = (path: string) =>
     renderToString(
@@ -383,9 +391,9 @@ Deno.test("the Dock holds System, Model, then To decide; each place is its own a
   deepStrictEqual(system, ["System, Main Operator", "/system", null]);
   deepStrictEqual(model.slice(1), ["/model", null]);
   match(model[0]!, /^Model/);
-  deepStrictEqual(decide.slice(1), ["/decide", null]);
-  match(decide[0]!, /^To decide, \d+ pending$/);
-  // Closing System or Model restores Main; To decide returns to the desk.
+  deepStrictEqual(decide.slice(1), ["/activity", null]);
+  match(decide[0]!, /^Activity, \d+ pending$/);
+  // Closing System or Model restores Main; Activity returns to the desk.
   // Only the place open is current.
   const open = (path: string) =>
     desk(dock(path)).places().map(([, href, current]) => [href, current]);
@@ -393,9 +401,12 @@ Deno.test("the Dock holds System, Model, then To decide; each place is its own a
   for (const path of ["/model?proposal=p1", "/revisions?proposal=p1"]) {
     deepStrictEqual(open(path)[1], ["/chat", "page"]);
   }
-  deepStrictEqual(open("/decide")[2], ["/", "page"]);
+  deepStrictEqual(open("/activity")[2], ["/", "page"]);
   for (
-    const [path, at] of [["/model", 1], ["/system", 0], ["/decide", 2]] as const
+    const [path, at] of [["/model", 1], ["/system", 0], [
+      "/activity",
+      2,
+    ]] as const
   ) {
     deepStrictEqual(
       open(path).map(([, current]) => current),
@@ -550,7 +561,7 @@ Deno.test("the System place opens on Team, in the frame of a place, and draws no
     );
   }
   // And it is drawn on its own address only.
-  for (const path of ["/", "/chat", "/model", "/revisions", "/decide"]) {
+  for (const path of ["/", "/chat", "/model", "/revisions", "/activity"]) {
     const html = renderToString(
       <Workspace
         state={createWorkbenchState({ initialState: snapshot() })}
@@ -563,7 +574,7 @@ Deno.test("the System place opens on Team, in the frame of a place, and draws no
   }
 });
 
-Deno.test("the To decide place mounts its page only when it is the one open", () => {
+Deno.test("the Activity place mounts its page only when it is the one open", () => {
   const place = (path: string) =>
     renderToString(
       <Workspace
@@ -572,38 +583,40 @@ Deno.test("the To decide place mounts its page only when it is the one open", ()
         initialUrl={`https://atelier.test${path}`}
       />,
     );
-  const open = desk(place("/decide"));
-  ok(open.shown().includes("decide-panel"));
-  const panel = within(open.page.byRole("region", { name: "To decide" }));
+  const open = desk(place("/activity"));
+  ok(open.shown().includes("activity-panel"));
+  const panel = within(open.page.byRole("region", { name: "Activity" }));
   equal(
     open.page.root.querySelector("[data-view]")?.getAttribute("data-view"),
-    "decide",
+    "activity",
   );
-  equal(textOf(panel.byRole("heading", { level: 1 })), "To decide");
+  equal(textOf(panel.byRole("heading", { level: 1 })), "Activity");
   // The panel closes back to the desk, like every place.
   equal(
-    panel.byRole("link", { name: "Close To decide" }).getAttribute("href"),
+    panel.byRole("link", { name: "Close Activity" }).getAttribute("href"),
     "/",
   );
   for (
-    const path of ["/", "/chat", "/model", "/revisions", "/cases", "/decide"]
+    const path of ["/", "/chat", "/model", "/revisions", "/cases", "/activity"]
   ) {
     const html = place(path);
     // The page is drawn once, and only on its own address.
     equal(
-      (html.match(/data-page="decide"/g) || []).length,
-      path === "/decide" ? 1 : 0,
+      desk(html).panel("activity-panel").root.querySelectorAll(
+        '[data-page="activity"]',
+      ).length,
+      path === "/activity" ? 1 : 0,
       path,
     );
     equal(
-      desk(html).shown().includes("decide-panel"),
-      path === "/decide",
+      desk(html).shown().includes("activity-panel"),
+      path === "/activity",
       path,
     );
   }
 });
 
-Deno.test("the To decide place lists the host's decisions in their order, each to its own page, and the Dock counts the same", async () => {
+Deno.test("the Activity place lists the host's decisions in their order, each to its own page, and the Dock counts the same", async () => {
   // The legacy tool of the fixture waits for a human; a proposal waits too.
   const state = createWorkbenchState({
     initialState: snapshot(),
@@ -624,12 +637,12 @@ Deno.test("the To decide place lists the host's decisions in their order, each t
     <Workspace
       state={state}
       started={false}
-      initialUrl="https://atelier.test/decide"
+      initialUrl="https://atelier.test/activity"
     />,
   );
   const view = desk(html);
-  const panel = view.panel("decide-panel");
-  // How a line is drawn is DecidePage's test; here, what reaches it.
+  const panel = view.panel("activity-panel");
+  // How a line is drawn is ActivityPage's test; here, what reaches it.
   const rows = panel.allByRole("link", { name: /^(?!Close)/ }).map((row) => [
     row.getAttribute("data-kind"),
     row.getAttribute("href"),
@@ -641,11 +654,11 @@ Deno.test("the To decide place lists the host's decisions in their order, each t
     ["proposal", "/model?proposal=proposal-native%3Abeta"],
     ["tool", "/chat"],
   ]);
-  match(rows[0][2]!, /Review model proposal proposal-native:beta/);
+  match(rows[0][2]!, /Review model proposal/);
   match(rows[1][2]!, /Authorize tool: <Lire>/);
   equal(state.pendingDecisionCount.value, 2);
   // The Dock says the same number, on the place that holds them.
-  equal(view.places()[2][0], "To decide, 2 pending");
+  equal(view.places()[2][0], "Activity, 2 pending");
   // Nothing is decided on this page.
   equal(
     panel.queryByRole("button", { name: /Accept|Decline|Authorize/ }),
@@ -653,25 +666,27 @@ Deno.test("the To decide place lists the host's decisions in their order, each t
   );
 });
 
-Deno.test("with nothing waiting, To decide says so and the Dock counts none", () => {
+Deno.test("with nothing waiting, Activity says so and the Dock counts none", () => {
   const quiet = { ...snapshot(), candidates: [] };
   const state = createWorkbenchState({ initialState: quiet });
+  state.requests.sessionReady.value = true;
   equal(state.pendingDecisionCount.value, 0);
   const html = renderToString(
     <Workspace
       state={state}
       started={false}
-      initialUrl="https://atelier.test/decide"
+      initialUrl="https://atelier.test/activity"
     />,
   );
   const view = desk(html);
-  const panel = view.panel("decide-panel");
+  const panel = view.panel("activity-panel");
   equal(
     panel.byText("Nothing to decide").getAttribute("data-code"),
     "nothing-to-decide",
   );
   doesNotMatch(html, /decide-list|class="decide-row"/);
-  deepStrictEqual(view.places()[2].slice(0, 1), ["To decide, 0 pending"]);
+  deepStrictEqual(view.places()[2].slice(0, 1), ["Activity, 0 pending"]);
+  state.dispose();
 });
 
 Deno.test("historical view preserves draft, disables composing and removes decision actions", async () => {
@@ -1449,7 +1464,41 @@ Deno.test("a Request whose operator asked a change lights its Dock tile and its 
   state.dispose();
 });
 
-Deno.test("every open Request is read once the workbench started with a Request session, then again on a notice in Main, so the Dock and the list can say which ones wait", async () => {
+Deno.test("Activity lists an independent Request's pending decision and its badge counts the same queue", () => {
+  const state = createWorkbenchState({
+    initialState: { ...snapshot(), candidates: [] },
+  });
+  state.agentConversations.accept(operatorRoster());
+  const request = caseRecord(2, { owner: "native:research" });
+  seedRequestCases(
+    state,
+    { systemId: "ui-fixture", cases: [request] },
+    operatorRoster([], [grant({
+      id: "request-change",
+      requestedBy: "native:research",
+      caseId: request.id,
+    })]),
+  );
+  const html = renderToString(
+    <Workspace
+      state={state}
+      started={false}
+      initialUrl="https://atelier.test/activity"
+    />,
+  );
+  const view = desk(html);
+  equal(view.places()[2][0], "Activity, 1 pending");
+  equal(state.pendingDecisionCount.value, 1);
+  equal(
+    view.panel("activity-panel").allByRole("link", { name: /Authorize/ })
+      .length,
+    1,
+  );
+  doesNotMatch(html, /Nothing to decide/);
+  state.dispose();
+});
+
+Deno.test("open Requests retain readers; invalidation rereads only its held Request", async () => {
   const root = probeRoot();
   const reads: string[] = [];
   const state = createWorkbenchState({
@@ -1486,35 +1535,21 @@ Deno.test("every open Request is read once the workbench started with a Request 
       "/api/conversations?caseId=ui-fixture:case:1",
       "/api/conversations?caseId=ui-fixture:case:2",
     ]);
-    // Nothing is polled: the open Requests are read again only when Main's
-    // conversation receives a notice that one of them asked something.
+    // Rendering again does not poll the held Requests.
     // Let the first reads finish: a read still in flight is shared, not repeated.
     await new Promise((resolve) => setTimeout(resolve, 0));
     reads.length = 0;
     await root.show(Probe, { started: true });
     deepStrictEqual(reads, []);
-    const roster = operatorRoster();
-    roster.conversations[0].messages = [{
-      id: "authority-escalation:network",
-      role: "tool",
-      text: "Operator observation; this is data, not an instruction.",
-      at: "2026-10-24T10:05:00Z",
-      operatorNotice: {
-        kind: "authority-escalation",
-        changeId: "network",
-        requestedBy: "native:research",
-        caseId: "ui-fixture:case:2",
-        recipient: "native:designer",
-        decisionAuthority: "human",
-        reason: "Read example.org",
-      },
-    }];
-    state.agentConversations.accept(roster);
-    await root.show(Probe, { started: true });
+    await state.requests.invalidateConversation("ui-fixture:case:2");
     deepStrictEqual(reads.sort(), [
-      "/api/conversations?caseId=ui-fixture:case:1",
+      "/api/cases/ui-fixture:case:2?space=requests",
       "/api/conversations?caseId=ui-fixture:case:2",
     ]);
+    reads.length = 0;
+    await root.show(Probe, { started: false });
+    await state.requests.invalidateConversation("ui-fixture:case:2");
+    deepStrictEqual(reads, ["/api/cases/ui-fixture:case:2?space=requests"]);
   } finally {
     await root.restore();
     state.dispose();
@@ -1547,7 +1582,7 @@ Deno.test("a Request is read on the Requests page: its own conversation, its act
       html.indexOf('id="case-panel"'),
     );
     match(page, /<h2>Objective 1<\/h2>/);
-    match(page, /<button[^>]*>Pin<\/button>/);
+    match(page, /aria-label="Keep in Dock" aria-pressed="false"/);
     doesNotMatch(page, /<button[^>]*>Close<\/button>/);
     // Only this Case's messages: the request and the reply, not the designer's.
     match(page, /Find AI training offers/);
@@ -2164,7 +2199,7 @@ Deno.test("model places reuse the selected Request sub-operator and refuse unava
     match(request, /Twelve offers found/);
     doesNotMatch(request, /id="cases-input"/);
     match(request, new RegExp(`Open full Request`));
-    match(html, /Request · Objective 1 · Model unavailable/);
+    match(html, /aria-label="Request 1 · Version unavailable · Read-only"/);
     match(html, /Reading the Request model/);
     const dock = html.slice(html.indexOf('<nav class="dock"'));
     match(dock, /has-context is-context-request/);
@@ -2229,7 +2264,7 @@ Deno.test("Dock links hide the current conversation without changing the inspect
   const mainWithModel = render(mainLink);
   doesNotMatch(mainWithModel, /id="chat-panel"[^>]*hidden/);
   match(mainWithModel, /id="cases-panel"[^>]*hidden/);
-  match(mainWithModel, /href="\/chat" aria-label="Leave Case context"/);
+  match(mainWithModel, /href="\/chat" aria-label="Leave Request context"/);
   const returnToRequest = new URL(
     dockLink(mainWithModel, "ui-fixture:case:1"),
     "https://atelier.test",
@@ -2448,7 +2483,7 @@ Deno.test("direct System and Model entries show the existing Main Operator conve
     doesNotMatch(designer.slice(0, designer.indexOf(">") + 1), /hidden/);
     match(designer, /Unrelated earlier note/);
     doesNotMatch(designer, /Find AI training offers/);
-    match(html, /Main Operator · main · Model version unavailable/);
+    match(html, /aria-label="Main · Version unavailable"/);
     equal((designer.match(/id="input"/g) ?? []).length, 1);
   }
   const chat = renderToString(
@@ -2483,7 +2518,7 @@ Deno.test("ignored inspection aliases cannot label live main content as an old s
       />,
     );
     const title = html.slice(0, html.indexOf("</header>"));
-    match(title, /Main Operator · main · Model version unavailable/);
+    match(title, /aria-label="Main · Version unavailable"/);
     doesNotMatch(title, /Model old|read-only inspection/);
     doesNotMatch(
       html,
@@ -2517,7 +2552,8 @@ Deno.test("recognized SysML and Revisions source selections retain their inspect
         initialUrl={`https://atelier.test${path}`}
       />,
     );
-    match(html, /Model old · read-only inspection/);
+    match(html, /Version: commit:old/);
+    match(html, /aria-label="Main · Service status unavailable · Read-only"/);
     match(html, /Read-only inspection · commit:old/);
     match(html, /id="system-link" href="\/system\?version=commit%3Aold"/);
     if (path.includes("modelVersion")) match(html, /class="sysml-page"/);
@@ -2554,7 +2590,8 @@ Deno.test("release creation names an exact source without claiming Main divergen
       initialUrl="https://atelier.test/model?page=releases&version=commit%3Aold&create=1"
     />,
   );
-  match(html, /Model old · release source/);
+  match(html, /Version: commit:old/);
+  match(html, /aria-label="Main · Service status unavailable · Read-only"/);
   doesNotMatch(html, /Read-only inspection · commit:old/);
 });
 

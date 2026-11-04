@@ -1,18 +1,16 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 import { ExplicitTooling } from "../support/explicit-tooling.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import { MemorySourceRepository } from "../support/memory-source-repository.ts";
 import { applyApprovedSourceChange } from "../support/approved-source-change.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  SourceModel,
-  type SourceRepository,
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { type SourceRepository } from "../../src/application/model/source-repository.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
-import { sourceSnapshot } from "../../src/adapters/model/projections/graph/source.ts";
+import { sourceSnapshot } from "../../src/domain/model/projections/source-facts.ts";
 import type { Candidate } from "../../src/domain/work/candidates.ts";
-import type { ModelIdentity } from "../../src/domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import type {
   PendingChange,
 } from "../../src/domain/governance/records/pending-change.ts";
@@ -138,7 +136,7 @@ Deno.test({
     const repository = new ProposalRepository(
       new ToolkitCompiler({ packageDir: packageDir! }),
     );
-    const model = new SourceModel({
+    const model = createSourceModel({
       tooling: new SysmlToolkitAdapter({
         packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
       }),
@@ -296,7 +294,7 @@ Deno.test({
     const repository = new ProposalRepository(
       new ToolkitCompiler({ packageDir: packageDir! }),
     );
-    const model = new SourceModel({
+    const model = createSourceModel({
       tooling: new SysmlToolkitAdapter({
         packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
       }),
@@ -334,7 +332,7 @@ Deno.test({
     const repository = new ProposalRepository(
       new ToolkitCompiler({ packageDir: packageDir! }),
     );
-    const model = new SourceModel({
+    const model = createSourceModel({
       tooling: new SysmlToolkitAdapter({
         packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
       }),
@@ -471,7 +469,7 @@ Deno.test({
     const repository = new ProposalRepository(
       new ToolkitCompiler({ packageDir: packageDir! }),
     );
-    const model = new SourceModel({
+    const model = createSourceModel({
       repository,
       tooling: new SysmlToolkitAdapter({ packageDir: packageDir! }),
       projectId: `git:${crypto.randomUUID()}`,
@@ -525,7 +523,7 @@ Deno.test({
     const repository = new ProposalRepository(
       new ToolkitCompiler({ packageDir: packageDir! }),
     );
-    const model = new SourceModel({
+    const model = createSourceModel({
       tooling: new SysmlToolkitAdapter({
         packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
       }),
@@ -693,7 +691,7 @@ Deno.test({
     const repository = new ProposalRepository(
       new ToolkitCompiler({ packageDir: packageDir! }),
     );
-    const model = new SourceModel({
+    const model = createSourceModel({
       tooling: new SysmlToolkitAdapter({
         packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
       }),
@@ -746,7 +744,7 @@ Deno.test({
     const repository = new ProposalRepository(
       new ToolkitCompiler({ packageDir: packageDir! }),
     );
-    const model = new SourceModel({
+    const model = createSourceModel({
       tooling: new SysmlToolkitAdapter({
         packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
       }),
@@ -781,7 +779,7 @@ Deno.test({
     const repository = new ProposalRepository(
       new ToolkitCompiler({ packageDir: packageDir! }),
     );
-    const model = new SourceModel({
+    const model = createSourceModel({
       tooling: new SysmlToolkitAdapter({
         packageDir: Deno.env.get("SYSML_TOOLKIT_DIR")!,
       }),
@@ -842,7 +840,7 @@ Deno.test({
     const repository = new MemorySourceRepository(
       new ToolkitCompiler({ packageDir: packageDir! }),
     );
-    const model = new SourceModel({
+    const model = createSourceModel({
       repository,
       tooling: new SysmlToolkitAdapter({ packageDir: packageDir! }),
       initialSources: sources,
@@ -870,7 +868,7 @@ Deno.test({
         path !== "configuration.sysml"
       )
     ) assert(current.sources[path] === initial.sources[path]);
-    const reopened = new SourceModel({
+    const reopened = createSourceModel({
       tooling: new ExplicitTooling(),
       repository,
       initialSources: sources,
@@ -900,7 +898,7 @@ Deno.test({
       new ToolkitCompiler({ packageDir: packageDir! }),
     );
     const head = await repository.initialize(sources);
-    const model = new SourceModel({
+    const model = createSourceModel({
       tooling: new ExplicitTooling(),
       repository,
       initialSources: sources,

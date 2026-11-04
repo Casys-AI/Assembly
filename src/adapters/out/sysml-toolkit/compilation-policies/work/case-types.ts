@@ -10,9 +10,9 @@ import type {
   ElementRecord,
   ModelSnapshot,
 } from "../../../../../domain/model/records/snapshot.ts";
-import type { ModelIdentity } from "../../../../../domain/work/dialogue.ts";
-import { sourceValueReaders } from "../../../../model/sources/values/readers.ts";
-import type { SourceValueEntry } from "../../../../model/sources/values/expressions.ts";
+import type { ModelIdentity } from "../../../../../domain/shared-kernel/model-identity.ts";
+import { sourceValueReaders } from "../../../../../domain/model/value-objects/readers.ts";
+import type { SourceValueEntry } from "../../../../../domain/model/value-objects/expressions.ts";
 
 function requireValue(value: unknown, reason: string): asserts value {
   if (!value) throw new Error(`Invalid native case type: ${reason}`);

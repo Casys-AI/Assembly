@@ -9,12 +9,12 @@ import {
 } from "../../src/adapters/out/postgres/host-storage.ts";
 import { LangChainAgents } from "../../src/adapters/out/llm-providers/langchain-agents.ts";
 import { providerCallContext } from "../../src/adapters/out/llm-providers/provider-call-context.ts";
-import { createPostgresNativeRuntime } from "../../src/adapters/work/runtime/postgres.ts";
+import { createPostgresNativeRuntime } from "../../src/adapters/out/native-execution/postgres.ts";
 import { normalizeProviderCallObservation } from "../../src/application/telemetry/provider-call.ts";
 import { WorkBudgetService } from "../../src/application/work/budget/service.ts";
 import { SystemRuntime } from "../../src/application/work/runtime/system.ts";
 import type { ModelPort } from "../../src/application/work/runtime/ports.ts";
-import type { NativeExecutionPort } from "../../src/application/work/runtime/execution.ts";
+import type { NativeExecutionPort } from "../../src/application/work/native-execution/contract.ts";
 import type { OperatorExecutionDispatchPort } from "../../src/application/work/operators/execution.ts";
 import { budgetState } from "../../src/domain/work/policies/budget.ts";
 import { AjvSchemaValidator } from "../../src/infrastructure/ajv-schema-validation.ts";

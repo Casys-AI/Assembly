@@ -4,11 +4,11 @@ import type {
   ImmutableConsultationGroupPublication,
   ImmutableConsultationMemberOutcome,
   NativeExecutionRequest,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import {
   nativeExecutionIdentity,
   runtimeRevisionReference,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";
 import { nativeCaseFixtureModel } from "./native-execution.ts";

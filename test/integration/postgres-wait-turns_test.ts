@@ -2,12 +2,12 @@
  * turns. Recorded model reads are fixture outcomes, not provider qualification. */
 import assert from "node:assert/strict";
 import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
-import { checkpointConsumptions } from "../../src/adapters/work/runtime/checkpoint-wait-evidence.ts";
+import { checkpointConsumptions } from "../../src/adapters/out/native-execution/checkpoint-wait-evidence.ts";
 import type {
   NativeExecutionHandlers,
   NativeExecutionSnapshot,
-} from "../../src/application/work/runtime/execution.ts";
-import { runtimeRevisionReference } from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
+import { runtimeRevisionReference } from "../../src/application/work/native-execution/contract.ts";
 import type { OperatorExecutionDelivery } from "../../src/application/work/operators/execution.ts";
 import type { CompiledFlow } from "../../src/domain/model/execution/flow.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";

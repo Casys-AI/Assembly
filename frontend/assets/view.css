@@ -504,6 +504,33 @@
   margin-left: auto;
   color: var(--faint);
 }
+/* Activity keeps the existing row and inspector vocabulary. */
+.view-page .activity-waiting .view-empty {
+  padding: 16px 8px;
+  text-align: left;
+}
+.view-page .activity-history .decide-text {
+  flex: 1;
+}
+.view-page .activity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  padding: 0 8px 12px 28px;
+  color: var(--faint);
+  font-size: 12px;
+}
+.view-page .activity-description {
+  flex-basis: 100%;
+  color: var(--ink);
+}
+.view-page .activity-meta .change-inspector {
+  margin: 0;
+}
+.view-page .activity-meta .change-inspector[open] {
+  flex-basis: 100%;
+}
 .view-page .view-empty {
   margin: 0;
   padding: 40px 0;
@@ -998,11 +1025,31 @@
   line-height: 1.5;
 }
 .view-page .performance-metrics dd {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 4px 0 0;
   color: var(--ink);
   font-size: 24px;
   font-variant-numeric: tabular-nums;
   line-height: 1.3;
+}
+.view-page .performance-metrics dd .ic {
+  width: 20px;
+  height: 20px;
+}
+.view-page .performance-metrics dd.performance-sub {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+}
+/* N/A says less than a figure. */
+.view-page .performance-metrics > [data-state="na"] dd,
+.view-page :is(.stat, td)[data-state="na"] {
+  color: var(--muted);
+}
+.view-page .performance-page .stats {
+  margin: 0 0 8px;
 }
 .view-page .performance-metadata {
   margin: 0 0 12px;
@@ -1034,7 +1081,7 @@
 }
 .view-page .performance-components-scroll table {
   width: 100%;
-  min-width: 720px;
+  min-width: 520px;
   border-collapse: collapse;
 }
 .view-page .performance-components-scroll :is(th, td) {
@@ -1052,8 +1099,43 @@
   white-space: nowrap;
 }
 .view-page .performance-components-scroll th[scope="row"] {
-  min-width: 14rem;
-  max-width: 22rem;
+  min-width: 12rem;
+  font-weight: 500;
+}
+.view-page .performance-agent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.view-page .performance-agent a {
+  color: var(--ink);
+  text-underline-offset: 3px;
+}
+.view-page .performance-measurement-details {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.view-page .performance-measurement-details summary {
+  color: var(--muted);
+  cursor: pointer;
+}
+.view-page .performance-measurement-details > :is(p, dl) {
+  margin: 12px 0 0;
+}
+.view-page .performance-measurement-details dl > div {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  gap: 12px;
+  padding: 4px 0;
+}
+.view-page .performance-measurement-details dt {
+  color: var(--muted);
+}
+.view-page .performance-measurement-details dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
 }
 /* Narrow: the team first, the rail under it. */
 @container system-performance (width < 900px) {
@@ -1093,6 +1175,19 @@
   display: grid;
   gap: 28px;
 }
+/* The network with its "Resources" switch above it, at the right. */
+.view-page .tmap-pane {
+  display: grid;
+  gap: 6px;
+}
+.view-page .tmap-pane > .seg {
+  justify-self: end;
+}
+/* A lone switch shows it is on: filled, as the person's own node is. */
+.view-page .tmap-pane > .seg button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--card);
+}
 .view-page .tmap {
   position: relative;
   width: 100%;
@@ -1116,6 +1211,13 @@
 /* The global Main supervises a Case's Branch Operator from the main system. */
 .view-page .wire.supervises {
   stroke-dasharray: 4 4;
+}
+/* An agent may call another: the arrow points at the one it calls. */
+.view-page .wire.calls {
+  stroke: var(--muted);
+}
+.view-page .tmap .arrow {
+  fill: var(--muted);
 }
 .view-page .tnode,
 .view-page .tres {
@@ -1143,14 +1245,18 @@
   text-align: center;
   text-decoration: none;
 }
+/* A long name takes two lines (as the layout counts it), never more. */
 .view-page .tname {
+  display: -webkit-box;
   max-width: 100%;
   overflow: hidden;
   font: 600 13px/18px var(--font);
-  /* A wire that passes behind a name does not cut it. */
-  text-overflow: ellipsis;
-  text-shadow: 0 0 3px var(--card), 0 0 3px var(--card), 0 0 3px var(--card);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  /* A wire that passes behind a name, dashed or not, does not cut it. */
+  border-radius: 4px;
+  background: var(--card);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .view-page .tavatar {
   position: relative;
@@ -1609,7 +1715,8 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
-.view-page .detail-facts dd.is-code {
+.view-page .detail-facts dd.is-code,
+.version-pill .detail-facts dd.is-code {
   color: var(--muted);
   font: 11.5px var(--mono);
   word-break: break-all;
@@ -2915,8 +3022,7 @@
   justify-self: start;
 }
 @container files (max-width: 800px) {
-  .view-page .files-content-layout,
-  .view-page .saved-systems-layout {
+  .view-page .files-content-layout {
     grid-template-columns: minmax(0, 1fr);
   }
   .view-page .files-release-actions {
@@ -2927,6 +3033,12 @@
   .view-page .files-content-layout > .rev-empty {
     grid-column: 1;
     grid-row: 2;
+  }
+}
+/* The catalogue needs less room than the file tree and source side by side. */
+@container files (max-width: 600px) {
+  .view-page .saved-systems-layout {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -2962,6 +3074,31 @@
 }
 .view-page .saved-systems-readiness.is-ready {
   color: var(--muted);
+}
+/* A Release a Request can start from: a check before its name. */
+.view-page .saved-system-ready {
+  margin-right: 6px;
+  color: var(--add);
+}
+/* Its agents with their initials, then what it needs as chips. */
+.view-page .saved-system-agents,
+.view-page .saved-system-needs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.view-page .saved-system-needs {
+  gap: 6px;
+}
+.view-page .saved-system-agents li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12.5px;
 }
 .view-page .saved-systems > p,
 .view-page .saved-system-inspection > p,

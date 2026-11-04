@@ -7,12 +7,10 @@ import type { ModelDelegationRecord } from "../../src/domain/governance/policies
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { loadSysmlToolkit } from "../../src/adapters/out/sysml-toolkit/runtime/loader.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  type SourceRevision,
-  validateSourceExecutables,
-} from "../../src/adapters/model/sources/source-model.ts";
-import { delegationIdentity } from "../../src/adapters/governance/model-access/delegation/state.ts";
-import { renderModelDelegations } from "../../src/adapters/governance/model-access/delegation/ledger.ts";
+import { validateSourceExecutables } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
+import { type SourceRevision } from "../../src/domain/model/records/source-revision.ts";
+import { delegationIdentity } from "../../src/application/governance/model-access/delegation/state.ts";
+import { renderModelDelegations } from "../../src/domain/governance/policies/model-delegation-ledger.ts";
 
 export interface MatrixFixtureContext {
   packageDir: string;

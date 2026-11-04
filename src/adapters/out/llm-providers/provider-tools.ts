@@ -99,7 +99,7 @@ const TOOL_DESCRIPTIONS: Record<string, string> = {
     "Proposer un nouvel outil JavaScript autonome à tester puis admettre.",
   invoke_tool: "Invoquer un outil actif du catalogue pour lire une page.",
   invoke_behavior:
-    "Invoquer un comportement modélisé exposé dans modeledBehaviors.",
+    "Invoque un comportement exposé par la fiche du pin courant. Utilise exactement behaviors[].id, jamais son nom.",
   propose_mandate_change:
     "Proposer un changement de mandat parmi les droits supportés.",
   decide_operator_change:

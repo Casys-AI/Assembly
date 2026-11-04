@@ -7,7 +7,7 @@ import {
 import { SystemRuntime } from "../../src/application/work/runtime/system.ts";
 import { openOperatorWorkspace } from "../support/operator-workspace.ts";
 import { DenoToolRunner } from "../../src/adapters/out/sandbox/runner.ts";
-import { validateSourceExecutable } from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { SystemClock } from "../../src/infrastructure/clock.ts";
 import type { DecisionInformationPort } from "../../src/application/work/context/information-ports.ts";
 import { primaryInformationPort } from "../../src/composition/primary-information.ts";

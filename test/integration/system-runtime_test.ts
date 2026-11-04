@@ -35,7 +35,7 @@ import {
 import {
   hydrateRuntimeValues,
   nativeExecutionIdentity,
-} from "../../src/application/work/runtime/execution.ts";
+} from "../../src/application/work/native-execution/contract.ts";
 import {
   emptyNativeEvolutionAwait,
   evolutionCheckpoint,
@@ -63,9 +63,9 @@ import type {
 import type {
   ChatContext,
   ChatDecision,
-  ModelIdentity,
   SystemRuntimeState,
 } from "../../src/domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import type {
   NetworkScope,
   SystemConfiguration,

@@ -1,3 +1,4 @@
+import { createSourceModel } from "../../src/composition/source-model-services.ts";
 /** Real PG/Git/vault/Release/opening/shared-worker composition witness with the
  * unchanged normal bundled skill seed. Controlled provider decisions inspect
  * production retained instructions; this is not full MVP acceptance. */
@@ -16,7 +17,7 @@ import {
 } from "../../src/application/skills/behavior.ts";
 import { bundledSkillReader } from "../../src/adapters/out/filesystem/skill-bundles.ts";
 import { createArtifactSourceServices } from "../../src/composition/artifact-source-services.ts";
-import { PostgresModelWriteQueue } from "../../src/adapters/model/repository/writing/postgres-write-queue.ts";
+import { PostgresModelWriteQueue } from "../../src/adapters/out/postgres/model-write-queue.ts";
 import { DurableQueuedArtifactSourcePublisher } from "../../src/application/model/write-queue/queued-artifact-source-publisher.ts";
 import { ModelWriteWorker } from "../../src/application/model/publication/write-queue.ts";
 import { QueuedModelWriter } from "../../src/application/model/publication/queued-writer.ts";
@@ -25,7 +26,7 @@ import type { QueuedArtifactSourcePublication } from "../../src/domain/work/arti
 import { unusedPublication } from "../support/postgres-write-queue.ts";
 import { RequestRuntimeDependencies } from "../../src/composition/request-runtime-dependencies.ts";
 import { ModelContextReader } from "../../src/application/model/consultation/source-reader.ts";
-import { queryModelRevision } from "../../src/adapters/model/sources/editing/tooling.ts";
+import { queryModelRevision } from "../../src/application/model/editing/query-revision.ts";
 import { fileURLToPath } from "node:url";
 import { DenoRuntimeProvenanceCollector } from "../../src/infrastructure/runtime-provenance.ts";
 import { GovernedMemoryPromotionService } from "../../src/application/memory/governed-memory-promotion.ts";
@@ -38,6 +39,10 @@ import {
 import type { BehaviorModelVersion } from "../../src/domain/shared-kernel/behavior-model-version.ts";
 import type { DecisionInformationPort } from "../../src/application/work/context/information-ports.ts";
 import { createRequestSpacesComposition } from "../../src/composition/request-spaces.ts";
+import { createCaseModelEvents } from "../../src/composition/case-model-events.ts";
+import { SPACE_SESSION_COOKIE } from "../../src/adapters/in/http/work/space-session.ts";
+import { REQUEST_CONVERSATIONS_INVALIDATED } from "../../src/application/work/request-spaces/conversation-notifications.ts";
+import type { SseClient } from "../../src/infrastructure/http/sse.ts";
 import { createRequestOpeningSourcesComposition } from "../../src/composition/request-opening-sources.ts";
 import { createRequestSpaceControls } from "../../src/composition/space-controls.ts";
 import { createRequestReleasesComposition } from "../../src/composition/request-releases.ts";
@@ -52,22 +57,16 @@ import { KvModelBuildStore } from "../../src/adapters/out/deno-kv/kv-store.ts";
 import { ModelBuildService } from "../../src/application/model/builds/service.ts";
 import { DEFAULT_BACKEND_BUILD_MEMORY_BYTES } from "../../src/composition/model-backend.ts";
 import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";
-import { materialize } from "../../src/adapters/model/builds/materialization/artifact.ts";
+import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import {
-  SourceModel,
-  validateSourceExecutable,
-} from "../../src/adapters/model/sources/source-model.ts";
+import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { SystemRuntime } from "../../src/application/work/runtime/system.ts";
 import { WorkBudgetService } from "../../src/application/work/budget/service.ts";
 import { AjvSchemaValidator } from "../../src/infrastructure/ajv-schema-validation.ts";
 import { DenoToolRunner } from "../../src/adapters/out/sandbox/runner.ts";
-import {
-  NativeExecutionAdmissionRefused,
-  nativeExecutionIdentity,
-} from "../../src/application/work/runtime/execution.ts";
+import { nativeExecutionIdentity } from "../../src/application/work/native-execution/contract.ts";
 import type { OperatorExecutionDelivery } from "../../src/application/work/operators/execution.ts";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
 import type {
@@ -75,6 +74,7 @@ import type {
   OpeningCommand,
   OpeningRecord,
 } from "../../src/domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../src/domain/work/request-spaces.ts";
 import {
   postgresTestEnabled,
   withPostgresDatabase,
@@ -206,6 +206,9 @@ Deno.test({
         }
       });
       const calls = new Map<string, number>();
+      let blockedCase: string | undefined = undefined;
+      let providerEntered = false;
+      const providerRelease = Promise.withResolvers<void>();
       const queueErrors: unknown[] = [], workerErrors: unknown[] = [];
       const runner = new DenoToolRunner();
       const schemaValidator = new AjvSchemaValidator();
@@ -224,6 +227,8 @@ Deno.test({
         let constructed:
           | Awaited<ReturnType<typeof createRequestSpacesComposition>>
           | undefined;
+        let caseEvents: ReturnType<typeof createCaseModelEvents> | undefined;
+        const pendingEvents = new Set<Promise<void>>();
         try {
           await storage.registerSystem(scope);
           await storage.registerRepository(repositoryId, scope.systemId);
@@ -394,6 +399,10 @@ Deno.test({
                 opening.executionSpaceId,
                 (calls.get(opening.executionSpaceId) ?? 0) + 1,
               );
+              if (opening.caseId === blockedCase) {
+                providerEntered = true;
+                await providerRelease.promise;
+              }
               return { kind: "reply", text: `Scoped reply ${opening.caseId}` };
             },
             review() {
@@ -475,6 +484,17 @@ Deno.test({
             },
             sources: sourceComposition,
             controlComposition,
+            onConversationStateChanged(caseId) {
+              if (!caseEvents) return;
+              const pending = caseEvents.observeConversations(caseId);
+              pendingEvents.add(pending);
+              void pending.finally(() => pendingEvents.delete(pending));
+            },
+          });
+          caseEvents = createCaseModelEvents({
+            versions: () => Promise.resolve(null),
+            conversationOwner: stage.conversationOwner,
+            controls: stage.controls,
           });
           constructed = stage;
           return {
@@ -484,6 +504,8 @@ Deno.test({
             releaseComposition,
             sourceComposition,
             dependencies,
+            caseEvents,
+            pendingEvents,
             artifactSourcesForScope,
             bindMain(runtime: SystemRuntime) {
               mainRuntime = runtime;
@@ -492,13 +514,18 @@ Deno.test({
           };
         } catch (error) {
           await constructed?.nativeRuntime.stop();
+          constructed?.runtime.closeConversationObservers();
+          await caseEvents?.close();
           await sourceWriter?.close();
           await storage.close();
           throw error;
         }
       }
       database.registerCleanup(async () => {
+        providerRelease.resolve();
         if (active) {
+          active.stage.runtime.closeConversationObservers();
+          await active.caseEvents.close();
           await active.stage.nativeRuntime.stop();
           await active.stopSourceWriter();
           await active.storage.close();
@@ -527,7 +554,7 @@ Deno.test({
       async function connectMain(host: Awaited<ReturnType<typeof openHost>>) {
         mark("Main initialization started");
         const stores = await host.storage.operator(operatorId);
-        const model = new SourceModel({
+        const model = createSourceModel({
           repository,
           projectId: scope.projectId,
           tooling: new SysmlToolkitAdapter({ packageDir }),
@@ -1024,7 +1051,58 @@ Deno.test({
       );
       assert(mainCase);
       const mainInput = await mainInputId(active, mainCase);
-      await start(active, main);
+      await Promise.all(active.pendingEvents);
+      const frames: Array<{ event: string; data: unknown }> = [];
+      const client = {
+        enqueue(bytes: Uint8Array) {
+          const [event, data] = new TextDecoder().decode(bytes).split("\n");
+          frames.push({
+            event: event.slice("event: ".length),
+            data: JSON.parse(data.slice("data: ".length)),
+          });
+        },
+      } as unknown as SseClient;
+      const audience = active.caseEvents.eventAudience;
+      const member = await audience.identify(
+        new Request("http://127.0.0.1/api/events", {
+          headers: { cookie: `${SPACE_SESSION_COOKIE}=${session.secret}` },
+        }),
+      );
+      audience.audience.join(client, member);
+      blockedCase = a.caseId;
+      try {
+        await start(active, main);
+        await eventually(() => Promise.resolve(providerEntered || undefined));
+        await eventually(() =>
+          Promise.resolve(
+            frames.some((frame) =>
+              frame.event === REQUEST_CONVERSATIONS_INVALIDATED &&
+              isDeepStrictEqual(frame.data, {
+                schemaVersion: 1,
+                caseId: a.caseId,
+              })
+            ) || undefined,
+          )
+        );
+        const progress = await (await caseStores(active, a)).state.load();
+        assert(
+          progress!.messages.some((message) =>
+            message.id === a.initialContributionId
+          ),
+        );
+        const aView = await active.stage.nativeRuntime.forCaseSpace(
+          a.executionSpaceId,
+          a.caseId,
+        );
+        const inFlight = await aView.dispatch.inspectAccepted(
+          operatorId,
+          a.initialContributionId,
+        );
+        assert.notEqual(inFlight?.receipt.status, "completed");
+      } finally {
+        providerRelease.resolve();
+        audience.audience.leave(client);
+      }
       const [acceptedA, acceptedB] = await Promise.all([
         completed(active, a),
         completed(active, b),
@@ -1215,6 +1293,8 @@ Deno.test({
         main.stores.scope.operatorId,
       );
       await active.stage.nativeRuntime.stop();
+      active.stage.runtime.closeConversationObservers();
+      await active.caseEvents.close();
       await active.stopSourceWriter();
       await active.storage.close();
       active = await openHost();
@@ -1669,19 +1749,39 @@ Deno.test({
       assert.equal(originalReplay.status, "completed");
       assert.equal(originalReplay.jobId, acceptedA.receipt.jobId);
       assert.equal(calls.get(a.executionSpaceId), 1);
-      await requestView.dispatch.enqueue(denied);
-      await eventually(async () => {
-        const accepted = await requestView.dispatch.inspectAccepted(
-          operatorId,
+      const beforeDenied = await evidence(active, a, requestStores);
+      // Fresh work is refused at admission, before a queue job is created.
+      await assert.rejects(
+        requestView.dispatch.enqueue(denied),
+        (error: unknown) => {
+          assert(error instanceof RequestSpaceError);
+          assert.equal(error.code, "ADMISSION_REFUSED");
+          assert.equal(error.context?.check, "effect.capability.status");
+          return true;
+        },
+      );
+      assert.equal(
+        await requestView.dispatch.inspectAccepted(operatorId, deniedId),
+        null,
+      );
+      assert.equal(
+        await active.storage.client.executionRun.count({
+          where: { ...requestStores.scope, contributionId: deniedId },
+        }),
+        0,
+      );
+      assert.deepEqual(
+        await active.storage.client.$queryRawUnsafe(
+          `SELECT count(*)::int AS count FROM "${schemas.queueSchema}".job WHERE data->'delivery'->>'id' = $1`,
           deniedId,
-        );
-        return accepted?.receipt.status === "completed" ? accepted : undefined;
-      });
+        ),
+        [{ count: 0 }],
+      );
       active.stage.nativeRuntime.stopAccepting();
       await active.stage.nativeRuntime.drain();
-      assert.equal(workerErrors.length, 1);
-      assert(workerErrors[0] instanceof NativeExecutionAdmissionRefused);
+      assert.deepEqual(workerErrors, []);
       assert.equal(calls.get(a.executionSpaceId), 1);
+      assert.deepEqual(await evidence(active, a, requestStores), beforeDenied);
       assert.deepEqual(
         await active.storage.client.executionEffect.findMany({
           where: scope,
@@ -1717,7 +1817,7 @@ Deno.test({
         ).length,
         1,
       );
-      // Explicit closure fixture after the original native revocation proof.
+      // Explicit closure fixture after the native admission revocation proof.
       // This exercises the canonical lifecycle operation and PostgreSQL CAS;
       // it does not claim that a scoped close HTTP command is implemented.
       const sourceStores = await caseStores(active, a);

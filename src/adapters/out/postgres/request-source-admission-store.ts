@@ -1,3 +1,4 @@
+import { retainedMember } from "../../../domain/work/request-spaces.ts";
 import { requestExecutionPinFor } from "../../../application/model/evolution/request-execution-pin.ts";
 import {
   isSessionlessRequestAuthority,
@@ -18,7 +19,7 @@ import {
   type ScopedSoftwareAdoptionManifestV2,
 } from "../../../application/model/evolution/scoped-software-adoption.ts";
 import { sha256 } from "../../../domain/primitives/execution-digest.ts";
-import type { ModelIdentity } from "../../../domain/work/dialogue.ts";
+import type { ModelIdentity } from "../../../domain/shared-kernel/model-identity.ts";
 import {
   assertRequestReleaseAdmissionReference,
   type RequestReleaseAdmissionReference,
@@ -313,8 +314,20 @@ export class PostgresRequestSourceAdmissionStore {
         identity?: ModelIdentity;
         builderId: string;
         systemId: string;
+        baseline?: SavedOperatorManifest;
       }
     >();
+    for (const member of base.manifest.operators) {
+      if (!retainedMember(base, member.operatorId) || !member.nativeSystemId) {
+        continue;
+      }
+      memberPrior.set(member.operatorId, {
+        digest: member.modelDigest,
+        builderId: member.operatorId,
+        systemId: member.nativeSystemId,
+        baseline: member,
+      });
+    }
     const ids = new Set<string>();
     const softwareAdoptionIds = new Set<string>();
     for (const row of rows.slice(1)) {
@@ -408,10 +421,14 @@ export class PostgresRequestSourceAdmissionStore {
             }) ||
           canonical(manifest.intent.previous.pin) !==
             canonical(
-              requestExecutionPinFor(base.requestOwner.operatorId, {
-                pin: executionPin,
-                adoptions,
-              }, target.operatorId),
+              requestExecutionPinFor(
+                {
+                  pin: executionPin,
+                  adoptions,
+                },
+                target.operatorId,
+                base,
+              ),
             ) ||
           canonical(manifest.intent.candidate.source) !==
             canonical(head.source) ||
@@ -527,10 +544,11 @@ export class PostgresRequestSourceAdmissionStore {
         rawPayload,
       );
       const subject = requestWriteAuthorityPrior(payload.authority);
+      const memberSubjectPrior = memberPrior.get(subject.identity.builderId);
       const subjectPrior =
         subject.identity.builderId === base.requestOwner.operatorId
           ? priorModel
-          : memberPrior.get(subject.identity.builderId);
+          : memberSubjectPrior;
       if (!subjectPrior) throw unavailable();
       if (
         row.payload !== canonical(payload) ||
@@ -546,10 +564,12 @@ export class PostgresRequestSourceAdmissionStore {
             owner[0],
             priorModel.identity,
           )
-          : subjectPrior.identity
-          ? canonical(subject.identity) === canonical(subjectPrior.identity)
-          : subject.identity.systemId ===
-            memberPrior.get(subject.identity.builderId)?.systemId) ||
+          : memberSubjectPrior?.identity
+          ? canonical(subject.identity) ===
+            canonical(memberSubjectPrior.identity)
+          : memberSubjectPrior?.baseline
+          ? matchesPriorIdentity(subject.identity, memberSubjectPrior.baseline)
+          : subject.identity.systemId === memberSubjectPrior?.systemId) ||
         ids.has(payload.command.commandId)
       ) throw unavailable();
       ids.add(payload.command.commandId);
@@ -626,9 +646,9 @@ export class PostgresRequestSourceAdmissionStore {
     const subject = requestWriteAuthorityPrior(payload.authority);
     if (subject.identity.builderId !== opening.base!.requestOwner.operatorId) {
       const pin = requestExecutionPinFor(
-        opening.base!.requestOwner.operatorId,
         chain.execution,
         subject.identity.builderId,
+        opening.base!,
       );
       const previous = chain.receipts.findLast((entry) =>
         entry.payload.result.model.identity.builderId ===
@@ -646,8 +666,13 @@ export class PostgresRequestSourceAdmissionStore {
         subject.version.digest !== (previous?.digest ?? pin.modelDigest) ||
         (previous
           ? canonical(previous.identity) !== canonical(subject.identity)
-          : birth?.manifest.intent.team?.childSystemId !==
-            subject.identity.systemId)
+          : birth
+          ? birth.manifest.intent.team!.childSystemId !==
+            subject.identity.systemId
+          : !matchesPriorIdentity(
+            subject.identity,
+            retainedMember(opening.base!, subject.identity.builderId)!,
+          ))
       ) throw conflict();
     } else {
       const lastHuman = chain.receipts.findLast((entry) =>
@@ -955,9 +980,9 @@ export class PostgresRequestSourceAdmissionStore {
       canonical(manifest.intent.previous.pin) !==
         canonical(
           requestExecutionPinFor(
-            opening.base!.requestOwner.operatorId,
             chain.execution,
             manifest.intent.target.operatorId,
+            opening.base!,
           ),
         ) ||
       canonical(manifest.sourceHead) !==

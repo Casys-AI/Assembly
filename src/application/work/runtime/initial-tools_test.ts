@@ -9,7 +9,7 @@ import {
 import {
   type NativeExecutionRequest,
   runtimeRevisionReference,
-} from "./execution.ts";
+} from "../native-execution/contract.ts";
 import { selectCaseInvocation } from "../cases/runtime.ts";
 import { type Case, isOpenCase } from "../../../domain/work/entities/cases.ts";
 import { unexpectedModelAuthoring } from "../../../../test/support/model-authoring.ts";

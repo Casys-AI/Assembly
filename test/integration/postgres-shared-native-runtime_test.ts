@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { Client } from "pg";
 import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
-import { createPostgresAdmittedRequestRuntime } from "../../src/adapters/work/runtime/postgres.ts";
+import { createPostgresAdmittedRequestRuntime } from "../../src/adapters/out/native-execution/postgres.ts";
 import { createRequestInputAdmissionGuard } from "../../src/adapters/out/postgres/request-input-admission.ts";
 import { PostgresRequestExecutionBindingReader } from "../../src/adapters/out/postgres/request-execution-binding.ts";
 import { PostgresRequestSourceAdmissionStore } from "../../src/adapters/out/postgres/request-source-admission-store.ts";
@@ -15,7 +15,7 @@ import {
   PostgresSpaceCredentials,
 } from "../../src/adapters/out/postgres/request-space-control-store.ts";
 import { ModeledSpaceControlAuthority } from "../../src/application/work/request-spaces/space-control-authority.ts";
-import { requestSpaceSeed } from "../../src/adapters/work/request-space-runtime.ts";
+import { requestSpaceSeed } from "../../src/application/work/runtime/initialization.ts";
 import {
   type OperatorStorage,
   PostgresHostStorage,
@@ -27,7 +27,7 @@ import type {
   ModelPort,
   ToolRunnerPort,
 } from "../../src/application/work/runtime/ports.ts";
-import type { NativeExecutionPort } from "../../src/application/work/runtime/execution.ts";
+import type { NativeExecutionPort } from "../../src/application/work/native-execution/contract.ts";
 import type {
   OperatorExecutionDelivery,
   OperatorExecutionDispatchPort,

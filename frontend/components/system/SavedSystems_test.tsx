@@ -74,15 +74,19 @@ Deno.test("saved system component exposes save fields, catalogue and bounded exa
   match(overview, /Purpose/);
   match(overview, /This system/);
   match(overview, /main workspace/);
-  match(overview, /Operator 1/);
-  match(overview, /A declared skill is checked automatically/);
+  // An agent the roster cannot name, and what the Release needs, read as
+  // plain names; the exact identity and sentence wait in their tooltips.
+  match(overview, /title="a · 0 tools".*>\?<.*Name unavailable/);
+  match(
+    overview,
+    /title="A declared skill is checked automatically[^"]*">Skills</,
+  );
+  doesNotMatch(overview, /Operator 1|<h4>Requirements|<h4>Operators/);
   doesNotMatch(
     overview,
     /commit:exact|model-digest|settings-digest|SKILL_DEPENDENCY/,
   );
   match(inspection, /<summary class="chip">Details<\/summary>/);
-  match(overview, /<h4>Requirements<\/h4>/);
-  match(overview, /Operator 1 · 0 tools/);
   doesNotMatch(inspection, /<details[^>]* open/);
   match(inspection, /Incomplete/);
   match(inspection, /availability has not been verified/);
@@ -209,6 +213,15 @@ Deno.test("Request Release inspection keeps real origin and incomplete local-val
     /caseBranch=caseB|Retention completed|Start Request|Activate|Adopt/,
   );
   equal(record.status, "incomplete");
+  // Until the exact board is read, a qualified name is never a display name.
+  match(html, /class="tavatar is-mini"[^>]*>\?<.*Reading name…/);
+  const named = renderToString(
+    <SavedSystemInspection
+      record={record}
+      roster={[{ nativeId: "Assembly::Primary", name: "Remurin Talvrek" }]}
+    />,
+  );
+  match(named, /title="Assembly::Primary · 0 tools".*>RT<.*Remurin Talvrek/);
 });
 
 Deno.test("dedicated creation page names the displayed Request source and preserves its conversation links", () => {
@@ -263,7 +276,7 @@ Deno.test("Release recovery shows saved exact source without an automatic submit
     html,
     /title="Release creation may have been accepted[^"]*nothing is sent automatically/,
   );
-  match(html, /title="Request caseA · exact source [^"]*"><code>/);
+  match(html, /title="Request caseA · exact source [^"]*"><span class="chip"/);
   match(html, /<button[^>]*title="Reopen this exact source/);
   match(html, /Reopen release at original source/);
   match(html, /page=releases.*caseBranch=caseA/);
@@ -389,13 +402,25 @@ Deno.test("one title control keeps publication distinct from selected host readi
   doesNotMatch(unchecked, /class="panel"|saved-systems-publication/);
   match(unchecked, /Request availability not checked/);
   doesNotMatch(unchecked, /is-ready|Ready at last check/);
+  // Incomplete by contract (a declared skill) is no failed retention, whatever
+  // the host said of opening; a pending retention or a missing asset still
+  // offers the retry.
   equal(showReleaseRepair(ready), false);
-  equal(showReleaseRepair(listed), true);
+  equal(showReleaseRepair(listed), false);
   equal(
     showReleaseRepair({
       ...ready,
       openingIssues: ["SOURCE_OPENING_UNAVAILABLE"],
     }),
+    false,
+  );
+  equal(showReleaseRepair({ ...listed, status: "pending" }), true);
+  equal(
+    showReleaseRepair({ ...listed, issues: ["EXACT_ASSET_UNAVAILABLE"] }),
+    true,
+  );
+  equal(
+    showReleaseRepair({ ...listed, assetAvailability: "unavailable" }),
     true,
   );
   const checked = render(ready);
@@ -410,6 +435,17 @@ Deno.test("one title control keeps publication distinct from selected host readi
   );
   match(overview, /Ready at last check/);
   doesNotMatch(overview, /Incomplete|PREREQUISITES_REQUIRED|role="alert"/);
+  // Ready: a check before the name, what is checked at start in the tooltip,
+  // and the one step that follows.
+  match(overview, /<h3[^>]*>.*✓.*releaseA<\/h3>/);
+  match(
+    overview,
+    /title="[^"]*Checked at start: Skills\.[^"]*">[\s\S]*>Ready</,
+  );
+  match(
+    overview,
+    /href="\/cases\?from=releaseA">New Request from this Release</,
+  );
   match(readyDetail, /<dt>Retention status<\/dt><dd>Incomplete/);
   match(readyDetail, /PREREQUISITES_REQUIRED/);
   doesNotMatch(render({ ...ready, revision: ready.revision + 1 }), /is-ready/);
@@ -430,4 +466,5 @@ Deno.test("one title control keeps publication distinct from selected host readi
   match(details, /checked automatically against the local bundle/);
   match(details, /INITIAL_SKILL_BUNDLE_UNAVAILABLE/);
   doesNotMatch(details, /Skills need to be supplied again/);
+  doesNotMatch(details, /✓|New Request from this Release/);
 });

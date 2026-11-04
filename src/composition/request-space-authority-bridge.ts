@@ -1,6 +1,6 @@
 import { scopedOperator } from "../domain/governance/policies/delegation-scope.ts";
 import type { ScopedOperatorRef } from "../domain/governance/authority.ts";
-import type { RequestSpaceRuntimeOptions } from "../adapters/work/request-space-runtime.ts";
+import type { RequestSpaceRuntimeOptions } from "../application/work/request-spaces/runtime.ts";
 import {
   RequestSpaceAuthorityBridge,
 } from "../application/governance/request-space-authority-bridge.ts";
@@ -26,7 +26,7 @@ import {
 } from "../application/model/source-admission/request-delegated-authority.ts";
 import { OperatorAuthorityError } from "../domain/governance/operator-authority.ts";
 import { RequestSpaceError } from "../domain/work/request-spaces.ts";
-import { bindHostBackgroundTask } from "../adapters/work/runtime/host-background-task.ts";
+import { bindHostBackgroundTask } from "../infrastructure/host-background-task.ts";
 
 const log = technicalLogger("composition");
 

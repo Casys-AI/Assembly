@@ -1,4 +1,9 @@
-import type { CasesSnapshot } from "../../../domain/work/entities/cases.ts";
+import type {
+  CaseClosureEvidence,
+  CasesSnapshot,
+  CaseVerdict,
+} from "../../../domain/work/entities/cases.ts";
+import { type RequestKpis, requestKpis } from "../../telemetry/request-kpis.ts";
 import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
 import type {
   AgentMessageCommand,
@@ -49,6 +54,12 @@ export interface RequestCaseChangeDecisionPort {
 /** Existing Case/conversation transport contract, selected before Main lookup. */
 export interface RequestCaseConversationsPort {
   cases(secret: string, caseId?: string): Promise<CasesSnapshot>;
+  closeCase(
+    secret: string,
+    caseId: string,
+    outcome: "done" | "abandoned",
+    verdict?: CaseVerdict,
+  ): Promise<void>;
   conversations(secret: string, caseId: string): Promise<ConversationsSnapshot>;
   submitHuman(
     secret: string,
@@ -84,6 +95,7 @@ interface RequestCaseExecutionSnapshot {
   };
 }
 export interface RequestCaseExecutionReader {
+  requestKpis(secret: string, caseId: string): Promise<RequestKpis>;
   execution(
     secret: string,
     caseId: string,
@@ -102,8 +114,13 @@ export class RequestCaseConversations
       changeDecision?: RequestCaseChangeDecisionPort;
       runtime: {
         read(record: OpeningRecord): Promise<SystemRuntimeState>;
-        /** Verified branch-team states of this Case, when the runtime has them. */
+        /** Available team states verified against this Case's opening admission and exact current pins. */
         readTeam?(record: OpeningRecord): Promise<SystemRuntimeState[]>;
+        closeCase(
+          record: OpeningRecord,
+          outcome: "done" | "abandoned",
+          evidence: CaseClosureEvidence,
+        ): Promise<void>;
         initialExecutionOutcome?(
           record: OpeningRecord,
           state: SystemRuntimeState,
@@ -234,6 +251,34 @@ export class RequestCaseConversations
     await this.options.control.revalidate(controller);
     return result;
   }
+  async requestKpis(secret: string, caseId: string): Promise<RequestKpis> {
+    const controller = await this.options.control.authenticateSession(secret);
+    const record = await this.record(caseId, controller.ownerId);
+    const state = await this.options.runtime.read(record);
+    const owned = state.cases?.find((entry) => entry.id === caseId);
+    if (!owned) {
+      throw new RequestSpaceError("UNAVAILABLE", "The Request is unavailable");
+    }
+    const team = await this.options.runtime.readTeam?.(record) ?? [];
+    const result = requestKpis(owned, [state, ...team]);
+    await this.options.control.revalidate(controller);
+    return result;
+  }
+  async closeCase(
+    secret: string,
+    caseId: string,
+    outcome: "done" | "abandoned",
+    verdict?: CaseVerdict,
+  ): Promise<void> {
+    const controller = await this.options.control.authenticateSession(secret);
+    const record = await this.record(caseId, controller.ownerId);
+    await this.options.admissions.assertConversation(record, controller);
+    await this.options.control.revalidate(controller);
+    await this.options.runtime.closeCase(record, outcome, {
+      closedBy: controller.ownerId,
+      ...(verdict === undefined ? {} : { verdict }),
+    });
+  }
   async conversations(
     secret: string,
     caseId: string,
@@ -259,6 +304,7 @@ export class RequestCaseConversations
       state,
       model.identity.systemQualifiedName ?? model.identity.builderId,
       undefined,
+      model.operatorTeam,
     );
     // This exact owner is a Case-scoped instance; the inherited generic name
     // describes its source, not the global Main actor. Keep custom names.
@@ -275,27 +321,28 @@ export class RequestCaseConversations
       conversation.initialExecutionOutcome = initialExecutionOutcome;
       conversation.phase = "Initial execution refused";
     }
-    const team = (await this.options.runtime.readTeam?.(record) ?? [])
-      .flatMap((memberState) => {
-        const memberModel = memberState.executionModel;
-        if (
-          !memberModel?.operatorTeam ||
-          memberModel.operatorTeam.requestId !== record.caseId ||
-          memberModel.identity.builderId ===
-            record.base!.requestOwner.operatorId
-        ) return [];
-        const memberConversation = projectOperatorConversation(
-          memberState,
-          memberModel.identity.systemQualifiedName ??
-            memberModel.identity.builderId,
-          undefined,
+    const verifiedMembers = await this.options.runtime.readTeam?.(record) ?? [];
+    // readTeam has already verified membership against this Case and pin.
+    const team = verifiedMembers.flatMap((memberState) => {
+      const memberModel = memberState.executionModel;
+      if (
+        !memberModel?.operatorTeam ||
+        memberModel.identity.builderId ===
+          record.base!.requestOwner.operatorId
+      ) return [];
+      const memberConversation = projectOperatorConversation(
+        memberState,
+        memberModel.identity.systemQualifiedName ??
+          memberModel.identity.builderId,
+        undefined,
+        { ...memberModel.operatorTeam, requestId: record.caseId },
+      );
+      memberConversation.effectiveModelUpdates = memberConversation
+        .effectiveModelUpdates?.filter(
+          (update) => update.caseId === record.caseId,
         );
-        memberConversation.effectiveModelUpdates = memberConversation
-          .effectiveModelUpdates?.filter(
-            (update) => update.caseId === record.caseId,
-          );
-        return [memberConversation];
-      });
+      return [memberConversation];
+    });
     await this.options.control.revalidate(controller);
     const result = operatorConversationsSnapshot(
       state.id,

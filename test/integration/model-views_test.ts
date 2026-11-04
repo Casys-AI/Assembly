@@ -7,7 +7,7 @@ import type { ModelViewSummary } from "../../src/domain/model/records/diagram-vi
 import {
   ToolkitModelViewDiagramReader,
   ToolkitModelViewListReader,
-} from "../../src/adapters/model/projections/views/readers.ts";
+} from "../../src/adapters/out/sysml-toolkit/projections/views-readers.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
 import { loadSysmlToolkit } from "../../src/adapters/out/sysml-toolkit/runtime/loader.ts";
@@ -278,7 +278,7 @@ Deno.test("view projector sources never reconstruct guards with a regular expres
       import.meta.url,
     ),
     new URL(
-      "../../src/adapters/model/projections/views/readers.ts",
+      "../../src/adapters/out/sysml-toolkit/projections/views-readers.ts",
       import.meta.url,
     ),
   ];

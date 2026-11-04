@@ -1,8 +1,9 @@
+import { sourceExecutablesCompilation } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 /** Real Toolkit facts and source-version linting; no Git mutation or AI provider. */
 import assert from "node:assert/strict";
 import { ModelDiagnosticsService } from "../../src/application/model/diagnostics/service.ts";
 import type { ModelDiagnosticMask } from "../../src/application/model/diagnostics/commands/inputs.ts";
-import { SourceModelDiagnosticsReader } from "../../src/adapters/model/diagnostics/source.ts";
+import { SourceModelDiagnosticsReader } from "../../src/application/model/diagnostics/source-diagnostics-reader.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { createModelDiagnosticsHandler } from "../../src/adapters/in/http/diagnostics/diagnostics.ts";
@@ -44,38 +45,42 @@ Deno.test({
     };
     let current = first;
     let artifactReads = 0;
-    const reader = new SourceModelDiagnosticsReader({
-      current() {
-        throw new Error(
-          "Diagnostic headers must not hydrate the current model",
-        );
-      },
-      history: () =>
-        Promise.resolve({
-          headVersion: current.version,
-          commits: [],
-          truncated: false,
-        }),
-      header(version) {
-        const revision = version === "commit:before" ? first : second;
-        return Promise.resolve({
-          version,
-          sources: revision.sources,
-          sourceDigest: revision.sourceDigest,
-        });
-      },
-      at(version: string) {
-        artifactReads++;
-        assert(
-          ["commit:before", "commit:proposal", "commit:adopted"].includes(
+    const reader = new SourceModelDiagnosticsReader(
+      {
+        current() {
+          throw new Error(
+            "Diagnostic headers must not hydrate the current model",
+          );
+        },
+        history: () =>
+          Promise.resolve({
+            headVersion: current.version,
+            commits: [],
+            truncated: false,
+          }),
+        header(version) {
+          const revision = version === "commit:before" ? first : second;
+          return Promise.resolve({
             version,
-          ),
-        );
-        return Promise.resolve(
-          version === "commit:before" ? first : { ...second, version },
-        );
+            sources: revision.sources,
+            sourceDigest: revision.sourceDigest,
+          });
+        },
+        at(version: string) {
+          artifactReads++;
+          assert(
+            ["commit:before", "commit:proposal", "commit:adopted"].includes(
+              version,
+            ),
+          );
+          return Promise.resolve(
+            version === "commit:before" ? first : { ...second, version },
+          );
+        },
       },
-    }, "git:5a313952-a19e-56a6-9de3-bae38a428958");
+      "git:5a313952-a19e-56a6-9de3-bae38a428958",
+      sourceExecutablesCompilation,
+    );
     const masks: ModelDiagnosticMask[] = [];
     const service = new ModelDiagnosticsService(reader, {
       list: () => Promise.resolve(masks),
