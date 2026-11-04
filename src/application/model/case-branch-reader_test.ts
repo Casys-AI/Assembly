@@ -1,10 +1,8 @@
 import { deepStrictEqual, rejects } from "node:assert/strict";
 import { createCaseBranchReader } from "./case-branch-reader.ts";
-import { requestSpaceDigest } from "../../domain/work/request-spaces.ts";
-import type {
-  OpeningRecord,
-  SpaceController,
-} from "../../domain/work/request-spaces.ts";
+import { requestSpaceDigest } from "../../domain/work/request-spaces/scope.ts";
+import type { OpeningRecord } from "../../domain/work/request-spaces/opening.ts";
+import type { SpaceController } from "../../domain/work/request-spaces/space-control.ts";
 
 const baseVersion = `commit:${"a".repeat(40)}`;
 const historical = `commit:${"b".repeat(40)}`;

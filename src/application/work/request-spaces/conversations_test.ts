@@ -1,13 +1,11 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { RequestCaseConversations } from "./conversations.ts";
 import { projectOperatorConversation } from "../operators/conversations.ts";
-import type {
-  OpeningRecord,
-  SpaceController,
-} from "../../../domain/work/request-spaces.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
-import type { AgentMessageCommand } from "../../../domain/work/records/conversations.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import type { SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
+import type { AgentMessageCommand } from "../operators/conversation-types.ts";
 import { requestControlModel } from "../../../../test/support/request-space-fixture.ts";
 
 function fixture() {

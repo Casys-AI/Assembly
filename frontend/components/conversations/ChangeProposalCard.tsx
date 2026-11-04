@@ -1,7 +1,7 @@
 import type { ComponentChildren } from "preact";
 import { isCaseChangeDecision } from "../../lib/conversations/case-change.ts";
 import type { WorkbenchState } from "../../lib/workbench/state.ts";
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
 import type { PendingChange } from "../../../src/domain/governance/records/pending-change.ts";
 import {
   changeDifferences,

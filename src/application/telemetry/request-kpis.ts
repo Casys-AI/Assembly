@@ -1,5 +1,5 @@
 import type { Case } from "../../domain/work/entities/cases.ts";
-import type { SystemRuntimeState } from "../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../work/runtime/state.ts";
 
 /** Duration and human interventions in retained Request journals. */
 export interface RequestKpis {

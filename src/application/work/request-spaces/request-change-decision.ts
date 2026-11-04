@@ -14,10 +14,8 @@ import {
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { ScopedOperatorRef } from "../../../domain/governance/authority.ts";
 import type { PendingChange } from "../../../domain/governance/records/pending-change.ts";
-import {
-  type OpeningRecord,
-  RequestSpaceError,
-} from "../../../domain/work/request-spaces.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import type {
   RequestSourceOwnerAuthorityEnvelope,
   RequestSourceOwnerPhaseBinding,
@@ -36,7 +34,7 @@ import { parseModelWriteDossierV2 } from "../../model/publication/write-command-
 import { assertRequestChangeDossier } from "../../model/publication/request-change.ts";
 import type { RequestCaseChangeDecision } from "./conversations.ts";
 import type { SystemRuntime } from "../runtime/system.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type { ModelRevision } from "../../../domain/model/records/revision.ts";
 import type { RequestModelWriteDestination } from "../../../domain/model/editing/request-write-destination.ts";
 

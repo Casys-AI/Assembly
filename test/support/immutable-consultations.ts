@@ -13,7 +13,7 @@ import {
 } from "../../src/application/work/native-execution/immutable-consultation-checks.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 
 export function memoryImmutableConsultationState() {
   return {

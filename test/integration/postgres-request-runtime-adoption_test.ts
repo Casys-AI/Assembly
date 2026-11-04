@@ -26,7 +26,7 @@ import { RequestCaseConversations } from "../../src/application/work/request-spa
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import type { ModelWriteQueueEntry } from "../../src/application/model/publication/ports/out/model-write-queue.port.ts";
 import type { OperatorExecutionDelivery } from "../../src/application/work/operators/execution.ts";
-import { requestSourceCommandRef } from "../../src/domain/model/editing/request-source-publication.ts";
+import { requestSourceCommandRef } from "../../src/domain/model/editing/source-anchor-refs.ts";
 import {
   actualRequestWorkPending,
   completeActualAdoption,

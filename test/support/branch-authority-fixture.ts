@@ -6,11 +6,9 @@ import {
   requestSpaceScope,
   spaceControlAuthority,
 } from "./request-space-fixture.ts";
-import {
-  type OpeningRecord,
-  requestSpaceDigest,
-  type SpaceExecutionAdmission,
-} from "../../src/domain/work/request-spaces.ts";
+import { type OpeningRecord } from "../../src/domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
+import { type SpaceExecutionAdmission } from "../../src/domain/work/request-spaces/space-control.ts";
 import type { PendingChange } from "../../src/domain/governance/records/pending-change.ts";
 import type { Case } from "../../src/domain/work/entities/cases.ts";
 import type { RequestSpaceAuthorityBridgeSnapshot } from "../../src/application/governance/request-space-authority-bridge.ts";

@@ -17,7 +17,7 @@ import {
   skillIdentity,
   validateSkillPolicy,
 } from "../../domain/skills/context-skills.ts";
-import type { SystemRuntimeState } from "../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../work/runtime/state.ts";
 import { isOpenCase } from "../../domain/work/entities/cases.ts";
 import {
   assertQueuedArtifactSourcePublication,
@@ -28,7 +28,7 @@ import {
   sourceDigest,
   sourceIdentity,
 } from "../../domain/work/artifacts/source-reference.ts";
-import { exactSourceVersion } from "../../domain/work/request-spaces.ts";
+import { exactSourceVersion } from "../../domain/work/request-spaces/scope.ts";
 import {
   initialSkillInvocationId,
   matchesLocalSkillExposure,

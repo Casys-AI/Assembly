@@ -16,7 +16,7 @@ import type { ModelBoard } from "../../../src/domain/model/records/board.ts";
 import type {
   ConversationsSnapshot,
   OperatorToolsSnapshot,
-} from "../../../src/domain/work/records/conversations.ts";
+} from "../../../src/application/work/operators/conversation-types.ts";
 import {
   allocatedBoard,
   ANALYST,

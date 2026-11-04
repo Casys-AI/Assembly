@@ -4,7 +4,7 @@ import type {
   PreparedPublication,
   SourcePublication,
 } from "../../domain/model/publication/change.ts";
-import type { ModelProposalAuthorization } from "../../domain/governance/records/model-edit-authorization.ts";
+import type { ModelProposalAuthorization } from "../../domain/governance/model-access/model-edit-authorization.ts";
 import type { AuthorityExercise } from "../../domain/governance/authority.ts";
 /** Versioned model storage contract, independent of persistence implementation. */
 import type { ModelSources as Sources } from "../../domain/model/value-objects/sources.ts";

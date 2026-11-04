@@ -1,6 +1,6 @@
 import { VersionedReadService } from "./versioned-read.ts";
 import type { ModelBoardReader } from "./ports/out/model-board-reader.port.ts";
-import { parseModelEditGrants } from "../../../domain/governance/policies/model-edit-policy.ts";
+import { parseModelEditGrants } from "../../../domain/governance/model-access/model-edit-policy.ts";
 import type {
   BoardDiagnostic,
   BoardGrant,

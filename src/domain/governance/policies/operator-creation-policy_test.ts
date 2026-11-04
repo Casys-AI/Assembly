@@ -29,7 +29,7 @@ import { SystemGovernance } from "./governance.ts";
 import {
   branchTeam,
   conversationPermissions,
-} from "../../work/request-spaces.ts";
+} from "../../work/request-spaces/branch-team.ts";
 import { requestOpeningBase } from "../../../../test/support/request-space-fixture.ts";
 
 function fixture() {

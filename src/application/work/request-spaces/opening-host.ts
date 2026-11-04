@@ -7,12 +7,12 @@ import type {
   SavedSystemManifest,
   SavedSystemPrerequisite,
   SavedSystemScope,
-} from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/records/saved-systems.ts";
 import { caseTypesForModel } from "../../../domain/work/records/case-types.ts";
 import {
   exactSourceVersion,
   RequestSpaceError,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
 import { selectValidatedSourceExecutable } from "../../../domain/model/records/source-executables.ts";
 import { discoverConversationUnits } from "../../../domain/model/records/source-identity.ts";
 import type { ModelRepositoryPort } from "../../model/repository.ts";

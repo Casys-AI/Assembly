@@ -6,7 +6,7 @@ import { ChangePublicationError } from "../../../domain/model/publication/change
 import type {
   AgentMessageCommand,
   ConversationsSnapshot,
-} from "../../../domain/work/records/conversations.ts";
+} from "../../../application/work/operators/conversation-types.ts";
 import {
   type ConversationsApplication,
   createConversationsHandler,
@@ -18,7 +18,7 @@ import {
   SPACE_SESSION_COOKIE,
 } from "./work/space-session.ts";
 import { SseAudience } from "../../../infrastructure/http/sse.ts";
-import type { SpaceController } from "../../../domain/work/request-spaces.ts";
+import type { SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
 import {
   createHttpApp,
   createHttpServeHandler,

@@ -20,9 +20,9 @@ import type { NativeBehaviorContract } from "../domain/model/execution/native-co
 import type { BehaviorInvocationRequest } from "../domain/work/execution/modeled-behavior.ts";
 import type {
   Message,
-  ModelSourceRevision,
   SystemRuntimeState,
-} from "../domain/work/dialogue.ts";
+} from "../application/work/runtime/state.ts";
+import type { ModelSourceRevision } from "../application/work/conversation/chat-context.ts";
 import {
   runtimeProvenanceRecord,
   unknownRuntimeProvenance,

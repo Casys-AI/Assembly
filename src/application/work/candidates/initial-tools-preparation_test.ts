@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
-import type { NativeInitialToolSeed } from "../../../domain/work/initial-tool-catalog.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
+import type { NativeInitialToolSeed } from "../../../domain/work/records/initial-tool-catalog.ts";
 import type {
   InitialToolsPreparationIntent,
   SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "../runtime/state.ts";
 import { closeCaseById, openInitializationCase } from "../cases/runtime.ts";
 import { initialAdmissionTargetCaseDigest } from "../runtime/initial-admission-transfer.ts";
 import { draftDigest } from "../runtime/values.ts";

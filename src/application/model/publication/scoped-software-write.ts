@@ -3,11 +3,13 @@ import { EVOLUTION_CATEGORIES } from "../../../domain/model/evolution/policy.ts"
 import {
   assertOperationJournal,
   assertWholeFilesOperations,
-  ModelWriteCommandError,
+} from "../../../domain/model/editing/operation-journal.ts";
+import {
   type ModelWriteOperations,
   modelWriteOperationsDigest,
   parseModelWriteCommand,
 } from "../../../domain/model/editing/write-command.ts";
+import { ModelWriteCommandError } from "../../../domain/model/editing/write-command-error.ts";
 import {
   parseRequestModelWriteDestination,
   type RequestModelWriteDestination,

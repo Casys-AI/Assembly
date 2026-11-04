@@ -9,7 +9,7 @@ import {
 import { h, render } from "preact";
 import { act } from "preact/test-utils";
 import { renderToString } from "preact-render-to-string";
-import type { Message } from "../../../src/domain/work/dialogue.ts";
+import type { Message } from "../../../src/application/work/runtime/state.ts";
 import type { RequestAuthorityRoute } from "../../../src/domain/governance/operator-authority.ts";
 import { legacyOwnerAuthority } from "../../../src/domain/governance/authority.ts";
 import { createWorkbenchState } from "../../lib/workbench/state.ts";

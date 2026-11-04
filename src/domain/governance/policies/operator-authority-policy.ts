@@ -4,12 +4,12 @@ import type {
   NativePolicyIdentity,
 } from "../../model/execution/executable-model.ts";
 import type { AuthorityExercise } from "../authority.ts";
-import { exerciseOwnerAuthority } from "../authority.ts";
-import type { PendingChange } from "../records/pending-change.ts";
 import {
+  exerciseOwnerAuthority,
   MAIN_EXECUTION_SPACE_ID,
-  OperatorAuthorityError,
-} from "../operator-authority.ts";
+} from "../authority.ts";
+import type { PendingChange } from "../records/pending-change.ts";
+import { OperatorAuthorityError } from "../operator-authority-error.ts";
 import { type ExecutionSpaceRef } from "../authority.ts";
 import { validateNetworkScope } from "./network-policy.ts";
 import { canonical } from "../../primitives/canonical-json.ts";

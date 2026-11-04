@@ -4,13 +4,13 @@ import type {
   ConversationsSnapshot,
   OperatorTool,
   OperatorToolsSnapshot,
-} from "../../../../src/domain/work/records/conversations.ts";
+} from "../../../../src/application/work/operators/conversation-types.ts";
 import {
   createOperatorTools,
   type OperatorToolDecision,
   parseOperatorToolsSnapshot,
 } from "./decisions.ts";
-import { modelContextTools } from "../../../../src/domain/model/consultation/context.ts";
+import { modelContextTools } from "../../../../src/application/work/context/model-tools.ts";
 import { DEFAULT_NETWORK_IMPACT_LIMITS } from "../../../../src/domain/model/consultation/network-impact.ts";
 import { delegatedCandidate } from "../../../test/support/candidate-admission-fixture.ts";
 

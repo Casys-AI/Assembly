@@ -13,7 +13,7 @@ import { act } from "preact/test-utils";
 import type {
   AgentConversation,
   OperatorTool,
-} from "../../../../src/domain/work/records/conversations.ts";
+} from "../../../../src/application/work/operators/conversation-types.ts";
 import { createWorkbenchState } from "../../../lib/workbench/state.ts";
 import { toolProposalHref } from "../../../lib/model/tool-proposal-location.ts";
 import { snapshot as runtimeSnapshot } from "../../../test/support/workbench-fixture.ts";

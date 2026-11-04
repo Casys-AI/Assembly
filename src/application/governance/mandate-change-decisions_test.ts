@@ -10,8 +10,10 @@ import {
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import { executableFixture } from "../../../test/support/execution-fixture.ts";
 import { SystemGovernance } from "../../domain/governance/policies/governance.ts";
-import { legacyOwnerAuthority } from "../../domain/governance/authority.ts";
-import { mainExecutionSpace } from "../../domain/governance/operator-authority.ts";
+import {
+  legacyOwnerAuthority,
+  mainExecutionSpace,
+} from "../../domain/governance/authority.ts";
 import {
   assertChangeAuthorityReceipt,
   ChangeApprovabilityError,
@@ -22,7 +24,7 @@ import {
   changePublication,
   ChangePublicationError,
 } from "../../domain/model/publication/change.ts";
-import type { ChatDecision } from "../../domain/work/dialogue.ts";
+import type { ChatDecision } from "../work/conversation/chat-decision.ts";
 import {
   decideChange,
   type MandateChangeHost,

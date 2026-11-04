@@ -9,7 +9,7 @@ import {
 } from "node:assert/strict";
 import type { ModelPort } from "../../src/application/work/runtime/ports.ts";
 import { WorkBudgetService } from "../../src/application/work/budget/service.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import type { WorkBudgetRecord } from "../../src/domain/work/policies/budget.ts";
 import { compileNativeFixtureFlows } from "../support/execution-fixture.ts";
 import { SystemRuntime } from "../support/system-runtime.ts";

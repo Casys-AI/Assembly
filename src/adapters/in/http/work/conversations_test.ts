@@ -8,12 +8,12 @@ import { deepStrictEqual, equal, match } from "node:assert/strict";
 import { CaseError } from "../../../../domain/work/errors/case.ts";
 import { executableFixture } from "../../../../../test/support/execution-fixture.ts";
 import { createControlHandler } from "./control.ts";
+import { MAX_USER_MESSAGE_CHARS } from "../../../../domain/work/records/conversations.ts";
 import {
   type AgentMessageCommand,
   type ConversationsSnapshot,
-  MAX_USER_MESSAGE_CHARS,
   type OperatorToolsSnapshot,
-} from "../../../../domain/work/records/conversations.ts";
+} from "../../../../application/work/operators/conversation-types.ts";
 import { AuthorityInvariantError } from "../../../../domain/governance/authority.ts";
 import {
   type ConversationsApplication,

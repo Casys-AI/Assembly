@@ -14,7 +14,7 @@ import type {
   Candidate,
   Stage,
   ToolDraft,
-} from "../../../domain/work/candidates.ts";
+} from "../../../domain/work/records/candidates.ts";
 
 /** Publication proves exact admitted bytes; it carries no target authority. */
 export interface PublishedToolArtifact {

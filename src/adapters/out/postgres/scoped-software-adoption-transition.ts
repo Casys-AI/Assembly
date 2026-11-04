@@ -60,7 +60,8 @@ export class PostgresScopedSoftwareAdoptionTransition
         token: object,
       ): Promise<void>;
       restore(
-        opening: import("../../../domain/work/request-spaces.ts").OpeningRecord,
+        opening:
+          import("../../../domain/work/request-spaces/opening.ts").OpeningRecord,
       ): Promise<void>;
       failed(error: unknown): void;
       now(): string;

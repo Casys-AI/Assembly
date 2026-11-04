@@ -1,6 +1,6 @@
 import { deepStrictEqual, equal } from "node:assert/strict";
 import type { RequestCaseConversationsPort } from "../../../../application/work/request-spaces/conversations.ts";
-import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces/scope.ts";
 import { type CasesApplication, createCasesHandler } from "./cases.ts";
 import {
   type ConversationsApplication,

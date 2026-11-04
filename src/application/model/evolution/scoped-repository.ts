@@ -18,7 +18,7 @@ import {
 } from "./scoped-software-proposal.ts";
 import type { ScopedSoftwareEvolutionDossierV2 } from "./scoped-software-dossier.ts";
 import type { ProposalRecord } from "../../../domain/model/records/revision.ts";
-import type { ModelEditOperation } from "../../../domain/governance/policies/model-edit-policy.ts";
+import type { ModelEditOperation } from "../../../domain/governance/model-access/model-edit-policy.ts";
 import { ModelPublicationError } from "../publication/service.ts";
 import type { ModelWriteQueueEntry } from "../publication/ports/out/model-write-queue.port.ts";
 import type { EvolutionCategory } from "../../../domain/model/evolution/policy.ts";
@@ -240,7 +240,7 @@ import type { NativeEvolutionRepository } from "./repository.ts";
 import type { ScopedEvolutionSourcePort } from "./scoped-source.ts";
 import type { QueuedModelWriter } from "../publication/queued-writer.ts";
 import type { ScopedSoftwareAdmissionReaderPort } from "../source-admission/scoped-software-admission-reader.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 
 /** Resolve historical reads from the dossier, never from the current factory's
  * newer source head. The returned surface must not stage new Git effects. */

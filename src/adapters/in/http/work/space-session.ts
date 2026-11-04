@@ -1,5 +1,5 @@
 import type { SpaceControls } from "../../../../application/work/request-spaces/control.ts";
-import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces/scope.ts";
 import {
   LocalHttpFailure,
   localServedOrigin,

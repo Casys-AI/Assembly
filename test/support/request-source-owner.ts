@@ -7,7 +7,7 @@ import {
   type RequestSourcePriorModel,
 } from "../../src/application/model/source-admission/request-source-owner.ts";
 import type { RequestModelWriteDestination } from "../../src/domain/model/editing/request-write-destination.ts";
-import type { SpaceController } from "../../src/domain/work/request-spaces.ts";
+import type { SpaceController } from "../../src/domain/work/request-spaces/space-control.ts";
 export { normal as normalSourceOwnerMetadata };
 /** Metadata captured from the owned normal-source witness, never a credential. */
 export function normalOwnerInput() {

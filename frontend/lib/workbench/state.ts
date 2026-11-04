@@ -15,8 +15,8 @@ import {
 } from "../../../src/application/work/request-spaces/conversation-notifications.ts";
 import { isRecord } from "../transport/is-record.ts";
 import { batch, computed, signal } from "@preact/signals";
-import type { SystemRuntimeState } from "../../../src/domain/work/dialogue.ts";
-import type { ProjectionSnapshot } from "../../../src/domain/work/history.ts";
+import type { SystemRuntimeState } from "../../../src/application/work/runtime/state.ts";
+import type { ProjectionSnapshot } from "../../../src/application/work/runtime/ports/out/state-history.port.ts";
 import { createWorkbenchApi } from "./api.ts";
 import { createAgentConversations } from "../conversations/state.ts";
 import { createDecisionLock } from "../model/sources/command.ts";
@@ -45,7 +45,7 @@ import {
   createChatProposals,
   operatorsIdle,
 } from "../conversations/proposals.ts";
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
 import type {
   CaseChangeStatus,
   DecisionCommand,

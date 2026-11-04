@@ -1,7 +1,7 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { Ajv } from "ajv";
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
-import { modelContextTools } from "../../../domain/model/consultation/context.ts";
+import type { ChatContext } from "../../../application/work/conversation/chat-context.ts";
+import { modelContextTools } from "../../../application/work/context/model-tools.ts";
 import {
   StructuredAgents,
   type StructuredPromptParts,

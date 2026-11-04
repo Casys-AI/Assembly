@@ -11,12 +11,14 @@ import { canonical } from "../../primitives/canonical-json.ts";
 import { sha256Bytes } from "../../primitives/sha256-bytes.ts";
 import { validateNetworkScope } from "./network-policy.ts";
 import type { AuthorityExercise, ExecutionSpaceRef } from "../authority.ts";
-import { exerciseOwnerAuthority } from "../authority.ts";
+import {
+  exerciseOwnerAuthority,
+  MAIN_EXECUTION_SPACE_ID,
+} from "../authority.ts";
 import type { PendingChange } from "../records/pending-change.ts";
+import { OperatorAuthorityError } from "../operator-authority-error.ts";
 import {
   isTeamOperatorSpec,
-  MAIN_EXECUTION_SPACE_ID,
-  OperatorAuthorityError,
   type OperatorCreationGrant,
   type OperatorCreationMode,
   type OperatorCreationSpec,

@@ -8,7 +8,7 @@ import type { PostgresHostStorage } from "../adapters/out/postgres/host-storage.
 import type { PostgresRequestSpaceStore } from "../adapters/out/postgres/request-space-store.ts";
 import type { RequestExecutionBindingPort } from "../application/model/evolution/request-adoption-ports.ts";
 import type { SystemRuntime } from "../application/work/runtime/system.ts";
-import type { SystemRuntimeState } from "../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../application/work/runtime/state.ts";
 import { designerScopeId } from "../application/work/cases/runtime.ts";
 import { canonical } from "../domain/primitives/canonical-json.ts";
 import {
@@ -24,8 +24,8 @@ import {
   parseRequestCreationGrantAuthority,
   parseRequestDelegatedAuthority,
 } from "../application/model/source-admission/request-delegated-authority.ts";
-import { OperatorAuthorityError } from "../domain/governance/operator-authority.ts";
-import { RequestSpaceError } from "../domain/work/request-spaces.ts";
+import { OperatorAuthorityError } from "../domain/governance/operator-authority-error.ts";
+import { RequestSpaceError } from "../domain/work/request-spaces/scope.ts";
 import { bindHostBackgroundTask } from "../infrastructure/host-background-task.ts";
 
 const log = technicalLogger("composition");

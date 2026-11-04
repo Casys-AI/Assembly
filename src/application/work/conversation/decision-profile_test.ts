@@ -7,11 +7,9 @@ import type {
   CompiledFlow,
   CompiledFlowNode,
 } from "../../../domain/model/execution/flow.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "./chat-context.ts";
+import type { ChatDecision } from "./chat-decision.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { selectDesignerInvocation } from "../cases/runtime.ts";
 import { chooseMove, executeOperatorCommand } from "./decision.ts";
 import { handleConversationNode } from "./flow-handlers.ts";
@@ -669,7 +667,7 @@ Deno.test("budget-resumed explicit choose consults again before a fresh provider
 
 Deno.test("legacy delegated commands refuse before effects while the admitted explicit profile records success and refusal", async () => {
   const { OperatorAuthorityError } = await import(
-    "../../../domain/governance/operator-authority.ts"
+    "../../../domain/governance/operator-authority-error.ts"
   );
   for (const refused of [false, true]) {
     const f = fixture();
@@ -871,7 +869,7 @@ for (
     f.host.decideOperatorChange = async () => {
       if (mismatch === "host-refusal") {
         const { OperatorAuthorityError } = await import(
-          "../../../domain/governance/operator-authority.ts"
+          "../../../domain/governance/operator-authority-error.ts"
         );
         throw new OperatorAuthorityError(
           "AUTHORITY_REQUEST_STALE",

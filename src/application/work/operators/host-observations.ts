@@ -1,4 +1,4 @@
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../conversation/chat-context.ts";
 
 export const REQUEST_OUTCOME_MESSAGE_PREFIX = "request-network-outcome:";
 export const CONTRIBUTION_OBSERVATION_MESSAGE_PREFIX =

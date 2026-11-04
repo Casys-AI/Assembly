@@ -8,11 +8,9 @@ import type {
   WorkTaskDraft,
   WorkTaskRecord,
 } from "../../../domain/work/entities/plans.ts";
-import type {
-  ArtifactEvidence,
-  ChatCallResult,
-  Message,
-} from "../../../domain/work/dialogue.ts";
+import type { ArtifactEvidence } from "../conversation/chat-context.ts";
+import type { ChatCallResult } from "../conversation/chat-decision.ts";
+import type { Message } from "../runtime/state.ts";
 import { sha256 } from "../../../domain/primitives/execution-digest.ts";
 
 export const WORK_PLAN_RESULT_FORMAT = "assembly-work-plan-result/v1";

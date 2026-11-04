@@ -1,5 +1,5 @@
 import { useEffect } from "preact/hooks";
-import { MAIN_EXECUTION_SPACE_ID } from "../../../src/domain/governance/operator-authority.ts";
+import { MAIN_EXECUTION_SPACE_ID } from "../../../src/domain/governance/authority.ts";
 import type { WorkbenchState } from "../../lib/workbench/state.ts";
 import { caseHref, caseStatusLabel, caseTitle } from "../../lib/cases/cases.ts";
 import { branchOperatorName } from "../../lib/cases/operator-names.ts";

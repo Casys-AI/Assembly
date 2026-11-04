@@ -8,8 +8,8 @@ import {
 import {
   exactSourceVersion,
   RequestSpaceError,
-  type SpaceController,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
 import {
   parseRequestSourceOwnerAuthority,
   parseRequestSourceOwnerPhaseBinding,

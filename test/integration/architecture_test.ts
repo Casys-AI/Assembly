@@ -148,18 +148,17 @@ const INFRASTRUCTURE_ADAPTERS_WARNLIST: Array<
 // These four reviewed ceilings are frozen again; this exception authorizes no
 // automatic future growth. All equality/direction/new-pair checks remain strict.
 const DOMAIN_CROSS_CONTEXT_WARNLIST: Record<string, number> = {
-  "governance->model": 17,
-  "governance->work": 9,
+  "governance->model": 15,
+  "governance->work": 7,
   "model->governance": 16,
-  "model->work": 10,
+  "model->work": 9,
   "skills->work": 1,
   // 2026-11-02, 4.8e Q7: a Main order's caller carries the scoped operator
   // identity in the delegated work context (case-context.ts), the identity
   // type defined beside ExecutionSpaceRef for exactly this use.
-  "work->governance": 20,
-  "work->memory": 1,
-  "work->model": 29,
-  "work->skills": 5,
+  "work->governance": 8,
+  "work->model": 12,
+  "work->skills": 1,
 };
 
 const SHARED_KERNELS = new Set(["primitives", "shared-kernel"]);

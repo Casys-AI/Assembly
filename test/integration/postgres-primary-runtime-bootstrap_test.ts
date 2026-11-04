@@ -18,7 +18,7 @@ import type {
   StorePort,
 } from "../../src/application/work/runtime/ports.ts";
 import { AjvSchemaValidator } from "../../src/infrastructure/ajv-schema-validation.ts";
-import { requestSpaceDigest } from "../../src/domain/work/request-spaces.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
 import {
   type PostgresTestDatabase,
   postgresTestEnabled,

@@ -9,8 +9,8 @@ import {
   type CaseModelVersionRead,
   isCaseModelVersion,
 } from "../application/work/request-spaces/case-model-notifications.ts";
-import type { SpaceController } from "../domain/work/request-spaces.ts";
-import { RequestSpaceError } from "../domain/work/request-spaces.ts";
+import type { SpaceController } from "../domain/work/request-spaces/space-control.ts";
+import { RequestSpaceError } from "../domain/work/request-spaces/scope.ts";
 import type { SseClient } from "../infrastructure/http/sse.ts";
 import { REQUEST_CONVERSATIONS_INVALIDATED } from "../application/work/request-spaces/conversation-notifications.ts";
 

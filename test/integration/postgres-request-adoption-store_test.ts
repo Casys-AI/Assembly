@@ -20,11 +20,9 @@ import {
 } from "../../src/application/model/evolution/scoped-software-proposal.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { sha256 } from "../../src/domain/primitives/execution-digest.ts";
-import { savedManifest } from "../../src/domain/work/saved-systems.ts";
-import {
-  type OpeningRecord,
-  requestSpaceDigest,
-} from "../../src/domain/work/request-spaces.ts";
+import { savedManifest } from "../../src/domain/work/records/saved-systems.ts";
+import { type OpeningRecord } from "../../src/domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
 import { requestAdoptionFixture } from "../support/request-adoption-fixture.ts";
 import {
   postgresTestEnabled,

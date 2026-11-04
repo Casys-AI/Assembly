@@ -5,7 +5,7 @@ import {
   captureRequestSourceOwnerPhase,
   requestSourceOwnerAuthorityDigest,
 } from "../source-admission/request-source-owner.ts";
-import type { SpaceController } from "../../../domain/work/request-spaces.ts";
+import type { SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
 import assert from "node:assert/strict";
 import * as v2Api from "./write-command-v2.ts";
 import type { AuthorityExercise } from "../../../domain/governance/authority.ts";
@@ -19,13 +19,13 @@ import { parseModelRevisionRef } from "../../../domain/model/value-objects/eleme
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import {
   assertModelWriteDossier,
-  buildOperationJournal,
   modelWriteCommandDigest,
   type ModelWriteDossier,
   modelWriteDossierDigest,
   modelWriteIntentDigest,
   parseModelWriteCommand,
 } from "../../../domain/model/editing/write-command.ts";
+import { buildOperationJournal } from "../../../domain/model/editing/operation-journal.ts";
 import {
   assertModelWriteDestinationMatches,
   assertModelWriteReplayMatches,

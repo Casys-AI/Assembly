@@ -2,7 +2,7 @@ import { deepStrictEqual, equal, match } from "node:assert/strict";
 import type {
   AgentConversation,
   OperatorTool,
-} from "../../../src/domain/work/records/conversations.ts";
+} from "../../../src/application/work/operators/conversation-types.ts";
 import { snapshot } from "../../test/support/workbench-fixture.ts";
 import { modelPageOf } from "../workbench/desk.ts";
 import {

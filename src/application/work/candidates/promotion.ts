@@ -3,17 +3,15 @@ import { budgetCeilingModelEquivalent } from "../runtime/budget-transition.ts";
 import type {
   ExecutableModel,
 } from "../../../domain/model/execution/executable-model.ts";
-import type { NativeToolContract } from "../../../domain/work/candidates.ts";
+import type { NativeToolContract } from "../../../domain/work/records/candidates.ts";
 import { SystemGovernance } from "../../../domain/governance/policies/governance.ts";
 import type {
   AdmissionRecord,
   Candidate,
   Stage,
-} from "../../../domain/work/candidates.ts";
-import type {
-  ArtifactEvidence,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "../../../domain/work/records/candidates.ts";
+import type { ArtifactEvidence } from "../conversation/chat-context.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { artifactEvidence as describeArtifactEvidence } from "./artifact-evidence.ts";
 import type { CandidateModelPort } from "./ports/out/candidate-model.port.ts";
 import { draftDigest, makeEvent, valueDigest } from "../runtime/values.ts";

@@ -14,6 +14,28 @@ export interface ScopedOperatorRef extends ExecutionSpaceRef {
   operatorId: string;
 }
 
+export const MAIN_EXECUTION_SPACE_ID = "main";
+
+/** A Branch Operator shares its Main Operator's native ID: only the space tells them apart. */
+export function sameScopedOperator(
+  a: ScopedOperatorRef,
+  b: ScopedOperatorRef,
+): boolean {
+  return a.projectId === b.projectId && a.systemId === b.systemId &&
+    a.executionSpaceId === b.executionSpaceId && a.operatorId === b.operatorId;
+}
+
+/** The main space where a model of this identity is admitted. */
+export function mainExecutionSpace(
+  identity: Pick<ExecutionSpaceRef, "projectId" | "systemId">,
+): ExecutionSpaceRef {
+  return {
+    projectId: identity.projectId,
+    systemId: identity.systemId,
+    executionSpaceId: MAIN_EXECUTION_SPACE_ID,
+  };
+}
+
 /** Provenance of the local owner's authority in one admitted system. */
 export interface OwnerAuthority {
   ownerSource: "modeled" | "implicit-legacy";
@@ -89,8 +111,8 @@ export interface AuthorityExercise extends OwnerAuthority {
     candidateDigest: string;
     caseId: string;
     toolKind: import("../shared-kernel/tool-kind.ts").ToolKind;
-    tests: import("../work/candidates.ts").TestReport;
-    contract: import("../work/candidates.ts").NativeToolContract;
+    tests: import("../work/records/candidates.ts").TestReport;
+    contract: import("../work/records/candidates.ts").NativeToolContract;
   };
   delegation?: {
     actorId: string;

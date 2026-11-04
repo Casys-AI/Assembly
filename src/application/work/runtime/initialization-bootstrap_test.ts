@@ -3,7 +3,7 @@ import {
   initialize,
   type RuntimeInitializationHost,
 } from "./initialization.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import { requestControlModel } from "../../../../test/support/request-space-fixture.ts";
 
 /** Crash after the real initialization helper's first durable CAS. No ordinary

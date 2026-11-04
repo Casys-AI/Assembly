@@ -9,7 +9,7 @@ import {
 import { renderToString } from "preact-render-to-string";
 import { act } from "preact/test-utils";
 import type { ModelBoard } from "../../../src/domain/model/records/board.ts";
-import type { OperatorTool } from "../../../src/domain/work/records/conversations.ts";
+import type { OperatorTool } from "../../../src/application/work/operators/conversation-types.ts";
 import type { CandidateRead } from "../../lib/system/tools/candidates.ts";
 import {
   ANALYST,

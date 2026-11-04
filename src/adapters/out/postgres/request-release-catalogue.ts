@@ -3,8 +3,8 @@ import type {
   ScopedSavedSystemRecord,
 } from "../../../application/work/saved-systems/request-release-ports.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import type { RequestSpaceScope } from "../../../domain/work/request-spaces.ts";
-import { SavedSystemError } from "../../../domain/work/saved-systems.ts";
+import type { RequestSpaceScope } from "../../../domain/work/request-spaces/scope.ts";
+import { SavedSystemError } from "../../../domain/work/records/saved-systems.ts";
 import { postgresQualifiedTable, Prisma, type PrismaClient } from "./client.ts";
 import {
   decodeSavedSystemRow,

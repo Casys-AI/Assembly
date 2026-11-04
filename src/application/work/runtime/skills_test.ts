@@ -2,10 +2,8 @@ import { unexpectedModelAuthoring } from "../../../../test/support/model-authori
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import { artifactModel } from "../../../../test/support/tool-artifact-fixture.ts";
 import type { SkillRecord } from "../../../domain/skills/entities/skill.ts";
-import type {
-  ChatContext,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../conversation/chat-context.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import { SystemRuntime } from "../../../../test/support/system-runtime.ts";
 import type { DecisionInformationPort } from "../context/information-ports.ts";
 import type { ModelPort, StorePort } from "./ports.ts";

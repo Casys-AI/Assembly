@@ -1,5 +1,5 @@
 import { deepStrictEqual, equal } from "node:assert/strict";
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../conversation/chat-context.ts";
 import { pendingHostObservations } from "./host-observations.ts";
 
 Deno.test("pending host observations select decisions and completions once without sharing journal values", () => {

@@ -1,10 +1,12 @@
 import { deepStrictEqual, equal } from "node:assert/strict";
 import { executableFixture } from "../../../test/support/execution-fixture.ts";
-import { legacyOwnerAuthority } from "../../domain/governance/authority.ts";
-import type { Candidate } from "../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../domain/work/dialogue.ts";
+import {
+  legacyOwnerAuthority,
+  mainExecutionSpace,
+} from "../../domain/governance/authority.ts";
+import type { Candidate } from "../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../work/runtime/state.ts";
 import { toolAdmissionPreparation } from "../../domain/governance/policies/tool-admission-policy.ts";
-import { mainExecutionSpace } from "../../domain/governance/operator-authority.ts";
 import { toolAdmissionDecisionContext } from "./operator-tool-admission-context.ts";
 
 function fixture() {

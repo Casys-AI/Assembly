@@ -1,5 +1,5 @@
 import type { ArtifactSourceBindingReference } from "../artifacts/source-reference.ts";
-import type { ToolDraft } from "../candidates.ts";
+import type { ToolDraft } from "./candidates.ts";
 
 /** Exact retained bytes, with no admission, activation or loading command. */
 export interface InspectedArtifactSource {

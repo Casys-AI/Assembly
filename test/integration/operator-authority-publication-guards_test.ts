@@ -13,7 +13,7 @@ import {
   assertChangeAuthorityReceipt,
 } from "../../src/domain/governance/policies/change-approvability.ts";
 import { mainCreationScope } from "../../src/domain/governance/policies/operator-creation-policy.ts";
-import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority-error.ts";
 import {
   changePublication,
   ChangePublicationError,

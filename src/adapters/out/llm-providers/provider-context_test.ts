@@ -1,5 +1,5 @@
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../../../application/work/conversation/chat-context.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
 import { projectDecisionContext } from "../../../application/work/context/separation.ts";
 import {

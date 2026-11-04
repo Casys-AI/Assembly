@@ -1,8 +1,8 @@
 import { canonical } from "../../primitives/canonical-json.ts";
 import { canonicalDigest } from "../../primitives/execution-digest.ts";
+import { OperatorAuthorityError } from "../operator-authority-error.ts";
 import {
   isTeamOperatorSpec,
-  OperatorAuthorityError,
   type TeamOperatorSpec,
   validateOperatorCreationSpec,
 } from "../operator-authority.ts";

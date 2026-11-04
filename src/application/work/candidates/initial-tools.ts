@@ -4,11 +4,11 @@ import type {
   Candidate,
   Stage,
   ToolDraft,
-} from "../../../domain/work/candidates.ts";
+} from "../../../domain/work/records/candidates.ts";
 import type {
   InitialToolsPreparationReference,
   SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "../runtime/state.ts";
 import type { ClockPort } from "../runtime/ports.ts";
 import type { CandidateModelReaderPort } from "./ports/out/candidate-model.port.ts";
 import type { CaseNumberPort } from "../cases/ports/out/case-number.port.ts";

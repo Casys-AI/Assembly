@@ -21,7 +21,6 @@ import { requestedCreationPolicyId } from "../../../domain/governance/policies/o
 import { spellSysmlQualifiedName } from "../../../domain/model/value-objects/sysml-qualified-name.ts";
 import { MAX_BRANCH_TEAM } from "../../../domain/work/records/conversations.ts";
 import { scopedOperator } from "../../../domain/governance/policies/delegation-scope.ts";
-import { sameScopedOperator } from "../../../domain/governance/operator-authority.ts";
 
 import type { PendingChange } from "../../../domain/governance/records/pending-change.ts";
 import {
@@ -29,13 +28,14 @@ import {
   OWNER_AUTHORITY_IDENTITY_FIELDS,
   type OwnerAuthority,
   sameOwnerAuthorityIdentity,
+  sameScopedOperator,
 } from "../../../domain/governance/authority.ts";
 import {
   effectiveSpaceControlAuthority,
   sameSpaceControlPrincipal,
   spaceControlOwnerIdentity,
-} from "../../../domain/work/request-space-authority.ts";
-import { exactSourceVersion } from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/policies/request-space-authority.ts";
+import { exactSourceVersion } from "../../../domain/work/request-spaces/scope.ts";
 import { parseRequestModelWriteLocator } from "../../../domain/model/editing/request-write-destination.ts";
 import { parseModelRevisionRef } from "../../../domain/model/value-objects/element-ref.ts";
 import {

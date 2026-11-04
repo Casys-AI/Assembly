@@ -3,7 +3,7 @@ import type {
   RequestOperatorObservedSource,
 } from "../../../../src/application/work/request-spaces/operator-details-view.ts";
 import { parseModelRevisionId } from "../../../../src/domain/shared-kernel/revision-id.ts";
-import { requestSpaceIdentity } from "../../../../src/domain/work/request-spaces.ts";
+import { requestSpaceIdentity } from "../../../../src/domain/work/request-spaces/scope.ts";
 import {
   type ArtifactSourceBindingReference,
   sourceDigest,

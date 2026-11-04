@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { PostgresHostStorage } from "../../src/adapters/out/postgres/host-storage.ts";
 import { postgresClientConfiguration } from "../../src/adapters/out/postgres/config.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import {
   postgresTestEnabled,
   withPostgresDatabase,

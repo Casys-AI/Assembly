@@ -9,8 +9,8 @@ import type { SchemaValidationPort } from "../../work/behaviors/schema-validatio
 import { draftDigest } from "../../work/runtime/values.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { NativeBehaviorContract } from "../../../domain/model/execution/native-contracts.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../../work/runtime/state.ts";
 import {
   MATRIX_VERSION,
   matrixFixture,

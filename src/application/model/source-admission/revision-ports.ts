@@ -1,4 +1,4 @@
-import type { SpaceController } from "../../../domain/work/request-spaces.ts";
+import type { SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
 import type { RequestModelWriteDestination } from "../../../domain/model/editing/request-write-destination.ts";
 import type { RequestSourceOwnerPhaseBinding } from "./request-source-owner.ts";
 import type { ProposalRecord } from "../../../domain/model/records/revision.ts";

@@ -1,21 +1,23 @@
 import type { ResolvedOperatorScope } from "../native-execution/contract.ts";
 import type { OperatorExecutionDelivery } from "../operators/execution.ts";
-import type { ToolDraft } from "../../../domain/work/candidates.ts";
+import type { ToolDraft } from "../../../domain/work/records/candidates.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type {
   HostSpaceController,
-  OpeningBase,
-  OpeningCommand,
-  OpeningPhase,
-  OpeningRecord,
-  OpeningSourceChoice,
-  RequestSpaceScope,
   SpaceControlAdoptedState,
   SpaceControlAuthority,
   SpaceController,
   SpaceControlPrincipal,
   SpaceExecutionAdmission,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/space-control.ts";
+import type {
+  OpeningBase,
+  OpeningCommand,
+  OpeningPhase,
+  OpeningRecord,
+  OpeningSourceChoice,
+} from "../../../domain/work/request-spaces/opening.ts";
+import type { RequestSpaceScope } from "../../../domain/work/request-spaces/scope.ts";
 import type { ScopedOperatorRef } from "../../../domain/governance/authority.ts";
 
 export interface SpaceControlPort {
@@ -158,7 +160,8 @@ export interface RequestSpaceRuntimePort {
       operatorId?: string;
     },
     admission: SpaceExecutionAdmission,
-    opener?: import("../../../domain/work/request-spaces.ts").MainOpener,
+    opener?:
+      import("../../../domain/work/request-spaces/space-control.ts").MainOpener,
   ): Promise<void>;
 }
 export interface SpaceAdmissionPort {

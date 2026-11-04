@@ -22,8 +22,8 @@ import {
   Prisma,
 } from "../../src/adapters/out/postgres/client.ts";
 import { openCase } from "../../src/domain/work/entities/cases.ts";
-import { requestSpaceDigest } from "../../src/domain/work/request-spaces.ts";
-import type { OpeningRecord } from "../../src/domain/work/request-spaces.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
+import type { OpeningRecord } from "../../src/domain/work/request-spaces/opening.ts";
 import {
   type PostgresTestDatabase,
   postgresTestEnabled,

@@ -15,8 +15,8 @@ import type {
   ModelDiagnostic,
   ModelDiagnosticFacts,
 } from "../../../domain/model/policies/diagnostics.ts";
+import { buildElementIri } from "../oxigraph/iri.ts";
 import {
-  buildElementIri,
   type BuildRef,
   parseBuildRef,
   parseProjectionRef,

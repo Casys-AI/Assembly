@@ -5,7 +5,7 @@ import {
 } from "../../../../test/support/tool-artifact-fixture.ts";
 import { WorkBudgetService } from "../budget/service.ts";
 import type { WorkBudgetRecord } from "../../../domain/work/policies/budget.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
 import {
   nativeExecutionIdentity,
@@ -552,8 +552,9 @@ Deno.test("budget ceiling excludes only exactly completed historical input waits
 Deno.test("budget selection replay follows only its own exact admitted catalog publication", async () => {
   const f = await fixture();
   const artifact = await publishedArtifact();
-  const candidate: import("../../../domain/work/candidates.ts").Candidate =
-    structuredClone(artifact.candidate);
+  const candidate:
+    import("../../../domain/work/records/candidates.ts").Candidate =
+      structuredClone(artifact.candidate);
   const admission = structuredClone(candidate.admission);
   const binding = structuredClone(candidate.binding);
   candidate.stage = "awaiting-admission";

@@ -3,7 +3,10 @@ import {
   DenoToolRunner,
   ToolInvocationError,
 } from "../../src/adapters/out/sandbox/runner.ts";
-import type { Candidate, ToolDraft } from "../../src/domain/work/candidates.ts";
+import type {
+  Candidate,
+  ToolDraft,
+} from "../../src/domain/work/records/candidates.ts";
 
 function assert(value: unknown, message = "Assertion failed") {
   if (!value) throw new Error(message);

@@ -1,4 +1,4 @@
-import { SavedSystemError } from "../../../domain/work/saved-systems.ts";
+import { SavedSystemError } from "../../../domain/work/records/saved-systems.ts";
 
 export const TAG_MUTATION_TRANSACTION = { timeout: 15_000, maxWait: 5_000 };
 const nativeTimeoutMs = 2_000;

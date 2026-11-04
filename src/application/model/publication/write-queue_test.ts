@@ -10,8 +10,8 @@ import type {
 import { modelSourceDigest } from "../../../domain/model/value-objects/sources.ts";
 import type { PendingChange } from "../../../domain/governance/records/pending-change.ts";
 import { parseModelRevisionRef } from "../../../domain/model/value-objects/element-ref.ts";
+import { buildOperationJournal } from "../../../domain/model/editing/operation-journal.ts";
 import {
-  buildOperationJournal,
   modelWriteCommandDigest,
   modelWriteDecisionDigest,
   type ModelWriteDossier,

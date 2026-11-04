@@ -1,5 +1,5 @@
 import type { ScopedSoftwareAdmissionReaderPort } from "../../../application/model/source-admission/scoped-software-admission-reader.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import type { PrismaClient } from "./client.ts";
 import type { PostgresRequestSourceAdmissionStore } from "./request-source-admission-store.ts";
 

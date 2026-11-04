@@ -6,7 +6,7 @@ import {
   assertReleaseTagSelection,
   type ReleaseTagBinding,
   type ReleaseTagSelection,
-} from "../../../src/domain/work/release-tags.ts";
+} from "../../../src/domain/work/records/release-tags.ts";
 import {
   type ReleaseSaveCommand,
   sameReleaseSource,
@@ -17,7 +17,7 @@ import { type ComponentChildren, Fragment, type RefObject } from "preact";
 import type {
   SavedSystemPrerequisite,
   SavedSystemSourceSelection,
-} from "../../../src/domain/work/saved-systems.ts";
+} from "../../../src/domain/work/records/saved-systems.ts";
 import { filesHref } from "../../lib/model/sources/files.ts";
 import { CreateTag } from "../model/CreateTag.tsx";
 import { newRequestHref, since } from "../../lib/cases/cases.ts";

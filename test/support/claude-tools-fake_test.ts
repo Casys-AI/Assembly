@@ -3,9 +3,9 @@ import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import { ClaudeAgents } from "../../src/adapters/out/llm-providers/agents.ts";
 import type { CompletionSink } from "../../src/adapters/out/llm-providers/completion-observer.ts";
 import { normalizeProviderCallObservation } from "../../src/application/telemetry/provider-call.ts";
-import type { Candidate } from "../../src/domain/work/candidates.ts";
-import type { ChatContext } from "../../src/domain/work/dialogue.ts";
-import { modelContextTools } from "../../src/domain/model/consultation/context.ts";
+import type { Candidate } from "../../src/domain/work/records/candidates.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import { modelContextTools } from "../../src/application/work/context/model-tools.ts";
 import {
   type ClaudeFakeHandler,
   createClaudeToolsFake,

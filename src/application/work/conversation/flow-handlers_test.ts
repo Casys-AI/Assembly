@@ -1,12 +1,12 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
 import { legacyOwnerAuthority } from "../../../domain/governance/authority.ts";
-import { OperatorAuthorityError } from "../../../domain/governance/operator-authority.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import { DuplicateOperatorCreationError } from "../../../domain/governance/policies/governance.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { CompiledFlowNode } from "../../../domain/model/execution/flow.ts";
-import type { ChatDecision } from "../../../domain/work/dialogue.ts";
+import type { ChatDecision } from "./chat-decision.ts";
 import { handleConversationNode } from "./flow-handlers.ts";
 import type {
   ConversationTurnHost,

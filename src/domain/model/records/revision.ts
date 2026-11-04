@@ -1,5 +1,5 @@
 import type { EvolutionAuthorityExercise } from "../evolution/policy.ts";
-import type { ModelProposalAuthorization } from "../../governance/records/model-edit-authorization.ts";
+import type { ModelProposalAuthorization } from "../../governance/model-access/model-edit-authorization.ts";
 /** Stored model revisions, their history, and proposals for source admission. */
 import type { CompiledModel } from "./compiled-model.ts";
 import type { AuthorityExercise } from "../../governance/authority.ts";

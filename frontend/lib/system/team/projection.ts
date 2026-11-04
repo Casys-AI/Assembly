@@ -1,4 +1,4 @@
-import type { AgentConversation } from "../../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../../src/application/work/operators/conversation-types.ts";
 import { canonicalProductName } from "../../../../src/domain/model/sysml-product-names.ts";
 import type {
   BoardContextFamily,

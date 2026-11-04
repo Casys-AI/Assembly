@@ -5,19 +5,19 @@ import type { SavedSystemOpeningReadinessPort } from "../../../../application/wo
 import {
   RequestSpaceError,
   requestSpaceIdentity,
-} from "../../../../domain/work/request-spaces.ts";
+} from "../../../../domain/work/request-spaces/scope.ts";
 import { spaceHttpError, spaceSessionSecret } from "./space-session.ts";
 import type { SavedSystemsService } from "../../../../application/work/saved-systems/service.ts";
 import {
   assertSavedSourceSelection,
   SavedSystemError,
   type SavedSystemSourceSelection,
-  type SavedSystemView,
-} from "../../../../domain/work/saved-systems.ts";
+} from "../../../../domain/work/records/saved-systems.ts";
+import { type SavedSystemView } from "../../../../application/work/saved-systems/release-view.ts";
 import {
   assertReleaseTagSelection,
   type ReleaseTagSelection,
-} from "../../../../domain/work/release-tags.ts";
+} from "../../../../domain/work/records/release-tags.ts";
 import {
   LocalHttpFailure,
   requireLocalJsonCommand,

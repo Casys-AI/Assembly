@@ -3,7 +3,7 @@ import type {
   ConversationsSnapshot,
   OperatorTool,
   OperatorToolsSnapshot,
-} from "../../../../src/domain/work/records/conversations.ts";
+} from "../../../../src/application/work/operators/conversation-types.ts";
 
 export interface OperatorToolDecision {
   agentId: string;

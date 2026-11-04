@@ -1,9 +1,9 @@
 import type { RequestBranchPort } from "../../../application/work/request-spaces/ports.ts";
 import {
   exactSourceVersion,
-  type OpeningRecord,
   RequestSpaceError,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import type { GitModelRepositoryReader } from "./repository.ts";
 import type { RepositoryWriterLock } from "./writer-lock.ts";
 

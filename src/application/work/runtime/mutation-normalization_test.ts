@@ -1,7 +1,7 @@
 import { deepStrictEqual, equal } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
-import { modelContextTools } from "../../../domain/model/consultation/context.ts";
+import type { SystemRuntimeState } from "./state.ts";
+import { modelContextTools } from "../context/model-tools.ts";
 import { normalizeRuntimeMutation } from "./mutation-normalization.ts";
 
 for (

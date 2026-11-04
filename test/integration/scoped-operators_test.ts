@@ -11,7 +11,7 @@ import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilatio
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { discoverConversationUnits } from "../../src/domain/model/records/source-identity.ts";
-import type { Candidate } from "../../src/domain/work/candidates.ts";
+import type { Candidate } from "../../src/domain/work/records/candidates.ts";
 import { toolDraftDigest } from "../../src/application/work/artifacts/catalog.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");

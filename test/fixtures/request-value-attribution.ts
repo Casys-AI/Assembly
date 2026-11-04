@@ -1,5 +1,8 @@
-import type { Event, Message } from "../../src/domain/work/dialogue.ts";
-import type { PageResult } from "../../src/domain/work/candidates.ts";
+import type {
+  Event,
+  Message,
+} from "../../src/application/work/runtime/state.ts";
+import type { PageResult } from "../../src/application/work/runtime/ports.ts";
 import {
   WORK_PLAN_RESULT_FORMAT,
   type WorkPlanResultView,

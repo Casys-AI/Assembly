@@ -1,8 +1,8 @@
 import { deepEqual, equal, throws } from "node:assert/strict";
 import { branchAuthorityFixture } from "../../../../test/support/branch-authority-fixture.ts";
-import { mainExecutionSpace } from "../../../domain/governance/operator-authority.ts";
+import { mainExecutionSpace } from "../../../domain/governance/authority.ts";
 import type { PendingChange } from "../../../domain/governance/records/pending-change.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { requestAuthorityRoute } from "../../governance/request-authority-routing.ts";
 import {
   buildRequestDelegatedAuthority,

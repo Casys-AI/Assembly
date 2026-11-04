@@ -9,7 +9,7 @@ import {
 } from "../fixtures/native-evolution.ts";
 import { nativeId } from "../fixtures/model-edit-mandate.ts";
 import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
-import type { ChatDecision } from "../../src/domain/work/dialogue.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import type {
   MemoryContent,
   MemoryRecord,

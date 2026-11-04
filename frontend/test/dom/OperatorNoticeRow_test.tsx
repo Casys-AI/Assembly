@@ -19,8 +19,8 @@ import {
 } from "node:assert/strict";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import type { Message } from "../../../src/domain/work/dialogue.ts";
-import type { ConversationsSnapshot } from "../../../src/domain/work/records/conversations.ts";
+import type { Message } from "../../../src/application/work/runtime/state.ts";
+import type { ConversationsSnapshot } from "../../../src/application/work/operators/conversation-types.ts";
 import { OperatorNoticeRow } from "../../components/conversations/OperatorNoticeRow.tsx";
 import { branchOperatorName } from "../../lib/cases/operator-names.ts";
 import { createWorkbenchState } from "../../lib/workbench/state.ts";

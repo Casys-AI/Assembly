@@ -1,4 +1,4 @@
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../../../application/work/conversation/chat-context.ts";
 
 /** Host constitution, independent of the conversation's changing observations. */
 export const PROVIDER_CONSTITUTION =

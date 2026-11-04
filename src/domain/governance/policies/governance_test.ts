@@ -5,8 +5,8 @@ import {
 import { deepStrictEqual, equal, throws } from "node:assert/strict";
 import { SystemGovernance } from "./governance.ts";
 import { networkScopeFor } from "./network-policy.ts";
-import type { Candidate } from "../../work/candidates.ts";
-import type { ChatDecision } from "../../work/dialogue.ts";
+import type { Candidate } from "../../work/records/candidates.ts";
+import type { ChatDecision } from "../../../application/work/conversation/chat-decision.ts";
 import { AuthorityInvariantError, legacyOwnerAuthority } from "../authority.ts";
 
 const origin = { requestedBy: "builder", designerScopeId: "scope" };

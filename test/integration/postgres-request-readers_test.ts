@@ -7,7 +7,7 @@ import { runtimeRevisionReference } from "../../src/application/work/native-exec
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";
 import type { NativeExecutionSnapshot } from "../../src/application/work/native-execution/contract.ts";
 import type { OperatorExecutionDelivery } from "../../src/application/work/operators/execution.ts";
-import type { OpeningRecord } from "../../src/domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../src/domain/work/request-spaces/opening.ts";
 /** Actual Prisma/PG readers and persisted codecs; no Toolkit, native engine or provider. */
 import assert from "node:assert/strict";
 import {
@@ -27,8 +27,8 @@ import {
 } from "../../src/adapters/out/postgres/runtime-snapshot-codec.ts";
 import { ModeledSpaceControlAuthority } from "../../src/application/work/request-spaces/space-control-authority.ts";
 import { closeCase, openCase } from "../../src/domain/work/entities/cases.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
-import { RequestSpaceError } from "../../src/domain/work/request-spaces.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
+import { RequestSpaceError } from "../../src/domain/work/request-spaces/scope.ts";
 import type { PostgresSystemScope } from "../../src/adapters/out/postgres/scope.ts";
 import {
   type PostgresTestDatabase,

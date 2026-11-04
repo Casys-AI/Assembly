@@ -6,13 +6,11 @@ import {
 } from "../../../../test/support/execution-fixture.ts";
 import { legacyOwnerAuthority } from "../../../domain/governance/authority.ts";
 import { createTestNativeExecution } from "../../../../test/support/native-execution.ts";
-import { OperatorAuthorityError } from "../../../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
 import { ChangePublicationError } from "../../../domain/model/publication/change.ts";
-import type {
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ChatDecision } from "../conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type { ModelPort } from "./ports.ts";
 import {
   nativeExecutionIdentity,

@@ -9,7 +9,7 @@ import {
   nativeExecutionIdentity,
   runtimeRevisionReference,
 } from "../../src/application/work/native-execution/contract.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";
 import { nativeCaseFixtureModel } from "./native-execution.ts";
 

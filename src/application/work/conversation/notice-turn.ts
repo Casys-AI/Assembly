@@ -1,8 +1,5 @@
-import type {
-  ChatCallResult,
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ChatCallResult, ChatDecision } from "./chat-decision.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 
 /** A notice is a turn input only through its persisted wake and exact selection.
  * Its content remains an observation, never evidence that a decision succeeded. */

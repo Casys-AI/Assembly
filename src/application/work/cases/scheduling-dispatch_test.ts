@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import {
   executeScheduledCase,
   materializeScheduledCases,

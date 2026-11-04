@@ -23,18 +23,18 @@ import {
 import {
   type Candidate,
   TOOL_CONTRACTS,
-} from "../../src/domain/work/candidates.ts";
-import { type ChatContext } from "../../src/domain/work/dialogue.ts";
+} from "../../src/domain/work/records/candidates.ts";
+import { type ChatContext } from "../../src/application/work/conversation/chat-context.ts";
 import { TOOL_KINDS } from "../../src/domain/shared-kernel/tool-kind.ts";
 import { executableFixture } from "../support/execution-fixture.ts";
 import { createClaudeToolsFake } from "../support/claude-tools-fake.ts";
 import { validateDecision } from "../../src/adapters/out/llm-providers/output-validation.ts";
 import { changeDecisionMetadata } from "../../src/domain/governance/operator-authority.ts";
 import type { ClaudeFakeAction } from "../support/claude-tools-fake.ts";
-import type { ChatDecision } from "../../src/domain/work/dialogue.ts";
-import type { ReviewDecision } from "../../src/domain/work/candidates.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
+import type { ReviewDecision } from "../../src/domain/work/records/candidates.ts";
 import type { OperatorAuthorityPolicy } from "../../src/domain/governance/policies/operator-authority-policy.ts";
-import { modelContextTools } from "../../src/domain/model/consultation/context.ts";
+import { modelContextTools } from "../../src/application/work/context/model-tools.ts";
 const proposalModel = executableFixture({
   projectId: "p",
   editingContextId: "e",

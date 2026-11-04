@@ -8,13 +8,13 @@ import { assertRequestSpaceBirth } from "../runtime/initialization.ts";
 import type { QueuedArtifactSourcePublication } from "../../../domain/work/artifacts/source-publication.ts";
 import { isOpenCase } from "../../../domain/work/entities/cases.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
+import { assertBaseForChoice } from "../../../domain/work/request-spaces/opening.ts";
 import {
-  assertBaseForChoice,
   requestSpaceDigest,
   RequestSpaceError,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
 import type { ResolvedOperatorScope } from "../native-execution/contract.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { RequestSpaceModel } from "./request-space-model.ts";
 import { SkillsBehavior } from "../../skills/behavior.ts";
 import {

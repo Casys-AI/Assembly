@@ -1,12 +1,12 @@
 /** APE 4.1 Operator Identity & Mandate: project only effective source-admitted rights. */
 import type { ExecutableModel } from "../../../../domain/model/execution/executable-model.ts";
 import { executionDigest } from "../../../../domain/primitives/execution-digest.ts";
-import { resolveModelDelegations } from "../../../../domain/governance/policies/model-delegation.ts";
+import { resolveModelDelegations } from "../../../../domain/governance/model-access/model-delegation.ts";
 import type {
   ModelDelegationIdentity,
   ModelRootAuthority,
-} from "../../../../domain/governance/policies/model-delegation.ts";
-import { readModelDelegations } from "../../../../domain/governance/policies/model-delegation-ledger.ts";
+} from "../../../../domain/governance/model-access/model-delegation.ts";
+import { readModelDelegations } from "../../../../domain/governance/model-access/model-delegation-ledger.ts";
 import type { SourceRevision } from "../../../../domain/model/records/source-revision.ts";
 import { sourceSnapshot } from "../../../../domain/model/projections/source-facts.ts";
 import { isNamespacePartOccurrence } from "../../../../domain/model/policies/model-occurrence.ts";

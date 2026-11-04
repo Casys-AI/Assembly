@@ -2,7 +2,7 @@ import type { OwnerAuthority } from "../../../src/domain/governance/authority.ts
 import {
   type Candidate,
   TOOL_CONTRACTS,
-} from "../../../src/domain/work/candidates.ts";
+} from "../../../src/domain/work/records/candidates.ts";
 import { snapshot } from "./workbench-fixture.ts";
 
 export function delegatedCandidate(): Candidate {

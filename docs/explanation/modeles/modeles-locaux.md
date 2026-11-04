@@ -21,10 +21,11 @@ repository and the Assembly TypeScript runtime. Human-readable sources remain
 Sources have their own `domain/model/value-objects/sources.ts` module: valid
 relative paths, no collisions and size limits.
 `domain/model/value-objects/revision-id.ts` distinguishes an immutable commit
-from a branch name. `domain/model/entities/project.ts`,
-`domain/model/records/revision.ts` and `domain/model/records/graph-diff.ts` make
-these concepts visible in the source tree. Adapters do not own their domain
-definitions.
+from a branch name. `domain/model/records/revision.ts` and
+`domain/model/records/graph-diff.ts` make these concepts visible in the source
+tree. Adapters do not own their domain definitions; the one exception is the
+local project manifest in `adapters/out/filesystem/model-project.ts`, which owns
+its `model-project.json` shape because nothing outside that adapter reads it.
 
 `application/work/runtime/system.ts` drives a session of the modeled system:
 conversation, admission and execution, with its participating operators,

@@ -3,12 +3,12 @@ import {
   assertReleaseTagBinding,
   assertReleaseTagName,
   type ReleaseTagBinding,
-} from "../../../src/domain/work/release-tags.ts";
+} from "../../../src/domain/work/records/release-tags.ts";
 import {
   assertRequestReleaseAdmissionReference,
   assertSavedSourceSelection,
   type SavedSystemSourceSelection,
-} from "../../../src/domain/work/saved-systems.ts";
+} from "../../../src/domain/work/records/saved-systems.ts";
 import { sameReleaseSource } from "../../lib/system/release-save-intent.ts";
 
 /** Create a lightweight tag on exactly the displayed source; never publish a Release. */

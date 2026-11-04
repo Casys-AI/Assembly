@@ -4,25 +4,25 @@ import type {
   ChangePublication,
 } from "../../../domain/model/publication/change.ts";
 import type {
-  AdmissionContext,
   Candidate,
   ModelBinding,
-  PageResult,
-  ReviewContext,
   ReviewDecision,
   TestReport,
+  ToolContract,
   ToolDraft,
-} from "../../../domain/work/candidates.ts";
+} from "../../../domain/work/records/candidates.ts";
 import type {
   ChatContext,
-  ChatDecision,
-  ChatDecisionBatch,
   ModelRevisionProposal,
   ModelRevisionRequest,
   ModelSourceProposalStatus,
   ModelSourceRevision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "../conversation/chat-context.ts";
+import type {
+  ChatDecision,
+  ChatDecisionBatch,
+} from "../conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type { ModelIdentity } from "../../../domain/shared-kernel/model-identity.ts";
 import type {
   NetworkScope,
@@ -33,13 +33,39 @@ import type {
 } from "../../../domain/governance/records/pending-change.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { ModelEditRequest } from "../../../domain/model/editing/tooling.ts";
-import type { ModelDelegationRequest } from "../../../domain/governance/records/model-delegation-request.ts";
+import type { ModelDelegationRequest } from "../../../domain/governance/model-access/model-delegation-request.ts";
 import type { ModelDiagnostic } from "../../../domain/model/policies/diagnostics.ts";
 import {
   type CreationScope,
   mainCreationScope,
   requestCreationScope,
 } from "../../../domain/governance/policies/operator-creation-policy.ts";
+
+export interface ReviewContext {
+  contract?: ToolContract;
+  modelVersion?: { digest: string; repositoryVersion?: string };
+  reviewerId: string;
+  mandate: {
+    mayReviewExactCandidate: true;
+    mayAdmitReviewedCandidates: true;
+    mayActivate: false;
+  };
+}
+
+export interface AdmissionContext {
+  contract?: ToolContract;
+  modelVersion?: { digest: string; repositoryVersion?: string };
+  builderId: string;
+  mandateRevision: number;
+  configurationRevision: number;
+  mayAdmitOwnCandidates: true;
+}
+
+export interface PageResult {
+  url: string;
+  title: string;
+  text: string;
+}
 
 /** Instance-aware lint observations; they never grant or deny execution authority. */
 export interface ModelDiagnosticsPort {
@@ -210,7 +236,7 @@ export interface TaskSourceInputPort {
     context:
       import("../../../domain/work/execution/modeled-behavior.ts").CaseExecutionContext;
     inputs:
-      import("../../../domain/work/task-source-input.ts").TaskSourceInput[];
+      import("../../../domain/work/records/task-source-input.ts").TaskSourceInput[];
   }): Promise<boolean>;
 }
 
@@ -219,11 +245,11 @@ export interface OperatorEvolutionCommandPort {
   context(model: ExecutableModel): Promise<ChatContext["operatorEvolution"]>;
   execute(
     command:
-      import("../../../domain/work/dialogue.ts").OperatorEvolutionCommand,
+      import("../conversation/chat-decision.ts").OperatorEvolutionCommand,
     model: ExecutableModel,
     source: Pick<ChatContext, "modelContext" | "modelSources">,
     native?: { effectKey: string; inputMessageId: string },
   ): Promise<
-    import("../../../domain/work/dialogue.ts").OperatorEvolutionSummary
+    import("../conversation/chat-decision.ts").OperatorEvolutionSummary
   >;
 }

@@ -6,7 +6,8 @@ import {
   rejects,
 } from "node:assert/strict";
 import type { DecisionContextPolicy } from "../../../domain/work/policies/context-separation.ts";
-import type { ChatContext, Message } from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../conversation/chat-context.ts";
+import type { Message } from "../runtime/state.ts";
 import {
   ContextRepresentationLimitError,
   projectDecisionContext,

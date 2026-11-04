@@ -8,12 +8,12 @@ import { PostgresRequestSpaceStore } from "../../src/adapters/out/postgres/reque
 import {
   requestSourceAdmissionRef,
   requestSourceCommandRef,
-} from "../../src/domain/model/editing/request-source-publication.ts";
+} from "../../src/domain/model/editing/source-anchor-refs.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import {
   type SavedOperatorManifest,
   savedSystemDigest,
-} from "../../src/domain/work/saved-systems.ts";
+} from "../../src/domain/work/records/saved-systems.ts";
 import {
   postgresTestEnabled,
   withPostgresDatabase,

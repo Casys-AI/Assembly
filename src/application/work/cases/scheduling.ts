@@ -1,15 +1,15 @@
 import {
   type Case,
-  type CaseContinuation,
   isOpenCase,
   openCase,
 } from "../../../domain/work/entities/cases.ts";
+import { type CaseContinuation } from "../runtime/state.ts";
 import { CaseError } from "../../../domain/work/errors/case.ts";
 import {
   formatCaseSchedule,
   nextCaseOccurrence,
 } from "../../../domain/work/value-objects/case-schedule.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { ClockPort } from "../runtime/ports.ts";
 import { caseBudgetPolicy, selectCaseInvocation } from "./runtime.ts";
@@ -346,7 +346,7 @@ export interface ScheduledExecutionHost {
   runTurn(
     onReply: (
       reply: Extract<
-        import("../../../domain/work/dialogue.ts").ChatDecision,
+        import("../conversation/chat-decision.ts").ChatDecision,
         { kind: "reply" }
       >,
     ) => void,
@@ -405,7 +405,7 @@ export async function executeScheduledCase(
   });
   let reply:
     | Extract<
-      import("../../../domain/work/dialogue.ts").ChatDecision,
+      import("../conversation/chat-decision.ts").ChatDecision,
       { kind: "reply" }
     >
     | undefined;

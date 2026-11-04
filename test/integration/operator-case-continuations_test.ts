@@ -7,11 +7,9 @@ import {
   nativeCaseFixtureModel,
 } from "../support/native-execution.ts";
 import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import {
   budgetState,
   type WorkBudgetRecord,

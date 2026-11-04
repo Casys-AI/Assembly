@@ -4,11 +4,8 @@ import {
   type DeclaredModelConsultationHost,
 } from "./declared-model-consultation.ts";
 import { artifactModel } from "../../../../test/support/tool-artifact-fixture.ts";
-import type { MessageObservation } from "../../../domain/work/policies/context-separation.ts";
-import type {
-  Message,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { MessageObservation } from "../context/evidence.ts";
+import type { Message, SystemRuntimeState } from "../runtime/state.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 
 function fixture() {

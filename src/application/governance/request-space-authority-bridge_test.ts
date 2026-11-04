@@ -5,7 +5,9 @@ import {
 } from "../model/source-admission/request-delegated-authority.ts";
 import { deepStrictEqual, equal, rejects, throws } from "node:assert/strict";
 import {
+  awaitingPersonView,
   createWorkspaceBranchReads,
+  MAX_AWAITING_PERSON,
   type RequestDelegatedDecisionInput,
   RequestSpaceAuthorityBridge,
   type RequestSpaceAuthorityBridgePort,
@@ -18,7 +20,7 @@ import type { Case } from "../../domain/work/entities/cases.ts";
 import type { OperatorNotice } from "../../domain/governance/operator-authority.ts";
 import { invocationKey } from "../work/operators/journal.ts";
 import { SystemRuntime } from "../work/runtime/system.ts";
-import type { SystemRuntimeState } from "../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../work/runtime/state.ts";
 
 const view_requests = async (
   f: { bridge: RequestSpaceAuthorityBridge },
@@ -1388,4 +1390,35 @@ Deno.test("workspace Main context evicts a rejected branch walk", async () => {
   await rejects(reads.branchView(primary), /temporarily unavailable/);
   await reads.branchView(primary);
   equal(walks, 2);
+});
+
+Deno.test("4.8d D2: requests awaiting the person are newest first, bounded and flagged when truncated", () => {
+  const entry = (id: string, requestedAt: string) => ({
+    id,
+    caseId: `case-${id}`,
+    requestedAt,
+  });
+  const many = Array.from(
+    { length: MAX_AWAITING_PERSON + 2 },
+    (_, index) =>
+      entry(`r${index}`, `2026-10-31T00:00:${String(index).padStart(2, "0")}Z`),
+  );
+  const view = awaitingPersonView(many);
+  deepStrictEqual(view.awaitingPersonTruncated, true);
+  deepStrictEqual(view.awaitingPerson.length, MAX_AWAITING_PERSON);
+  deepStrictEqual(view.awaitingPerson[0], {
+    id: `r${MAX_AWAITING_PERSON + 1}`,
+    caseId: `case-r${MAX_AWAITING_PERSON + 1}`,
+  });
+  // Same instant: the identity breaks the tie, so the order is deterministic.
+  deepStrictEqual(
+    awaitingPersonView([entry("b", "t"), entry("a", "t")]),
+    {
+      awaitingPerson: [
+        { id: "a", caseId: "case-a" },
+        { id: "b", caseId: "case-b" },
+      ],
+      awaitingPersonTruncated: false,
+    },
+  );
 });

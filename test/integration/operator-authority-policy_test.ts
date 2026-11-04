@@ -13,10 +13,8 @@ import {
   BehaviorInvocationRegistry,
 } from "../../src/application/work/behaviors/invocation.ts";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import type {
   PendingChange,
@@ -27,7 +25,7 @@ import {
   sourceLiterals,
   sourceSnapshot,
 } from "../../src/domain/model/projections/source-facts.ts";
-import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority-error.ts";
 import { AuthorityInvariantError } from "../../src/domain/governance/authority.ts";
 import { WorkBudgetService } from "../../src/application/work/budget/service.ts";
 import {

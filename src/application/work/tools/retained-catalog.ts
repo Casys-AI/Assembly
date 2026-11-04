@@ -1,5 +1,5 @@
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type { SavedOperatorManifest } from "../../../domain/work/saved-systems.ts";
+import type { SavedOperatorManifest } from "../../../domain/work/records/saved-systems.ts";
 import { validateSourceBindingReference } from "../../../domain/work/artifacts/source-reference.ts";
 import { TOOL_KINDS } from "../../../domain/shared-kernel/tool-kind.ts";
 import { toolDraftDigest } from "../artifacts/catalog.ts";

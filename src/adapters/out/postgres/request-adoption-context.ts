@@ -21,7 +21,7 @@ import {
   decidedByTeamAuthority,
   requestChangeEffect,
 } from "../../../domain/governance/records/request-change.ts";
-import { branchTeam } from "../../../domain/work/request-spaces.ts";
+import { branchTeam } from "../../../domain/work/request-spaces/branch-team.ts";
 import {
   type RequestTeamCreationModelReader,
   requestTeamCreationReceiptVerifies,
@@ -31,10 +31,8 @@ import {
   RequestAdoptionError,
   type RequestAdoptionSession,
 } from "../../../application/model/evolution/request-adoption-ports.ts";
-import type {
-  OpeningRecord,
-  SpaceController,
-} from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import type { SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
 import type {
   OpeningStorePort,
   SpaceControlPort,

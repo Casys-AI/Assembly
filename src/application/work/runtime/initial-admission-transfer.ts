@@ -12,8 +12,8 @@ import {
 import type {
   Candidate,
   InitialToolAdmissionTransfer,
-} from "../../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+} from "../../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
 import { exerciseOwnerAuthority } from "../../../domain/governance/authority.ts";

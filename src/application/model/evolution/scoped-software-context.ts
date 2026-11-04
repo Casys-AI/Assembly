@@ -10,7 +10,7 @@ import {
   canonical,
   compareCodeUnits,
 } from "../../../domain/primitives/canonical-json.ts";
-import { requestSpaceIdentity } from "../../../domain/work/request-spaces.ts";
+import { requestSpaceIdentity } from "../../../domain/work/request-spaces/scope.ts";
 import { MAX_OPERATOR_UNITS } from "../../../domain/work/records/conversations.ts";
 import type { RequestExecutionPin } from "./request-adoption-ports.ts";
 import { EvolutionError } from "./ports.ts";

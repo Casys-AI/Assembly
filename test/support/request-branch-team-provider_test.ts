@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import type { ChatContext } from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
 import { MAX_BRANCH_TEAM } from "../../src/domain/work/records/conversations.ts";
 import {
   branchTeamAgent,

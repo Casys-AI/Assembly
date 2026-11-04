@@ -2,7 +2,7 @@ import {
   type CurrentProviderResources,
   ProviderResourceAccessError,
 } from "../../../../application/telemetry/current-provider-resources.ts";
-import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces/scope.ts";
 import { spaceJson, spaceSessionSecret } from "../work/space-session.ts";
 
 /** GET authorizes the current selection; a Request includes its historical pins. */

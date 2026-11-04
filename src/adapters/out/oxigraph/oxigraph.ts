@@ -32,8 +32,8 @@ import {
   stagePrivatePayload,
 } from "../../../infrastructure/native/private-payload.ts";
 
+import { buildGraphIri } from "./iri.ts";
 import {
-  buildGraphIri,
   type BuildRef,
   buildRefKey,
   parseBuildRef,

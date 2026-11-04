@@ -1,4 +1,4 @@
-import type { SystemRuntimeState } from "../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../work/runtime/state.ts";
 import type { MemoryProvenancePort } from "./ports/provenance.ts";
 
 /** Resolve memory evidence against the owning operator's current local history. */

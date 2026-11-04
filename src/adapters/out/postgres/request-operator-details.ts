@@ -1,6 +1,6 @@
 import type { RequestOperatorDetailsObservationPort } from "../../../application/work/request-spaces/operator-details.ts";
 import type { RequestExecutionBindingPort } from "../../../application/model/evolution/request-adoption-ports.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import type { PrismaClient } from "./client.ts";
 import { PostgresContextSkillsStore } from "./skill-store.ts";
 

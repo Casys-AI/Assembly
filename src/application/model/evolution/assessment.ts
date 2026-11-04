@@ -12,7 +12,7 @@ import {
 import { evolutionProposalDigest } from "../../../domain/model/evolution/proposal-digest.ts";
 import { requireEvolution } from "../../../domain/model/evolution/policy.ts";
 import { assertModelEditScope } from "../../../domain/model/editing/scope.ts";
-import { MODEL_DELEGATIONS_FILE } from "../../../domain/governance/policies/model-delegation-ledger.ts";
+import { MODEL_DELEGATIONS_FILE } from "../../../domain/governance/model-access/model-delegation-ledger.ts";
 import { createOperatorEditAuthorization } from "../../governance/model-access/operator-edit-authorization.ts";
 import {
   createEvolutionAuthorityExercise,

@@ -1,6 +1,6 @@
 import { deepStrictEqual, equal } from "node:assert/strict";
 import type { BoardItem } from "../../../../src/domain/model/records/board.ts";
-import type { OperatorTool } from "../../../../src/domain/work/records/conversations.ts";
+import type { OperatorTool } from "../../../../src/application/work/operators/conversation-types.ts";
 import {
   ANALYST,
   board,

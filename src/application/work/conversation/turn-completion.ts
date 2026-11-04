@@ -2,8 +2,8 @@ import type {
   ChatCallResult,
   ChatDecision,
   RequestOpeningOutcome,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "./chat-decision.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { invocationInput, invocationKey } from "../operators/journal.ts";
 import { activeBatchCall } from "./batches.ts";
 

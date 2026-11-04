@@ -2,13 +2,11 @@
  * read. One rule for operator authority and tool admission policies: a policy
  * is relative to its reading space, and a policy read in a branch never names
  * an instance outside that branch. */
-import {
-  MAIN_EXECUTION_SPACE_ID,
-  OperatorAuthorityError,
-  sameScopedOperator,
-} from "../operator-authority.ts";
+import { OperatorAuthorityError } from "../operator-authority-error.ts";
 import {
   type ExecutionSpaceRef,
+  MAIN_EXECUTION_SPACE_ID,
+  sameScopedOperator,
   type ScopedOperatorRef,
 } from "../authority.ts";
 import { characterCount } from "../../primitives/character-count.ts";

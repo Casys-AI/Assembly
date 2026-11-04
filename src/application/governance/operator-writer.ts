@@ -15,7 +15,7 @@ import type { HostEditRequest } from "../../domain/model/editing/host-edit.ts";
 import {
   parseModelEditGrants,
   parseModelEditOperations,
-} from "../../domain/governance/policies/model-edit-policy.ts";
+} from "../../domain/governance/model-access/model-edit-policy.ts";
 import { validateNetworkScope } from "../../domain/governance/policies/network-policy.ts";
 import {
   parseSysmlQualifiedName,
@@ -32,10 +32,10 @@ import {
   sourceLiterals,
   sourceSnapshot,
 } from "../../domain/model/projections/source-facts.ts";
+import { modelEditingAuthorityRoots } from "./model-access/model-editing-authority-roots.ts";
 import {
   assertGrantModelEditingScope,
   isTeamOperatorSpec,
-  modelEditingAuthorityRoots,
   validateGrantModelEditing,
   validateOperatorCreationSpec,
 } from "../../domain/governance/operator-authority.ts";

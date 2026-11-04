@@ -1,8 +1,8 @@
 import { deepStrictEqual, equal, throws } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
-import { legacyOwnerAuthority } from "../authority.ts";
+import { legacyOwnerAuthority, mainExecutionSpace } from "../authority.ts";
 import { SystemGovernance } from "./governance.ts";
-import type { Candidate } from "../../work/candidates.ts";
+import type { Candidate } from "../../work/records/candidates.ts";
 import {
   assertCandidateDelegationReceipt,
   assertToolAdmissionPolicyRequest,
@@ -11,10 +11,7 @@ import {
   toolAdmissionPreparation,
   validateToolAdmissionPolicyRequest,
 } from "./tool-admission-policy.ts";
-import {
-  mainExecutionSpace,
-  OperatorAuthorityError,
-} from "../operator-authority.ts";
+import { OperatorAuthorityError } from "../operator-authority-error.ts";
 import type { ExecutableModel } from "../../model/execution/executable-model.ts";
 function request(): ToolAdmissionPolicyRequest {
   return {

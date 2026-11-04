@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import { artifactModel } from "../../../../test/support/tool-artifact-fixture.ts";
-import type {
-  ModelSourceRevision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ModelSourceRevision } from "../conversation/chat-context.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { postgresScopeValidation } from "../../../adapters/out/postgres/scope.ts";
 import { RequestInformationScope } from "./request-information-scope.ts";
 

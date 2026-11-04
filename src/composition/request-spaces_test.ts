@@ -7,7 +7,7 @@ import {
   requestControlBinding,
   requestSpaceScope as host,
 } from "../../test/support/request-space-fixture.ts";
-import { RequestSpaceError } from "../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../domain/work/request-spaces/scope.ts";
 
 Deno.test("Request composition reuses the configured PRIMARY client and missing modeled policy denies issuance", async () => {
   const client = {} as PrismaClient;

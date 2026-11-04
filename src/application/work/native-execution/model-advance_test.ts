@@ -19,7 +19,7 @@ import { exerciseOwnerAuthority } from "../../../domain/governance/authority.ts"
 import type { PendingChange } from "../../../domain/governance/records/pending-change.ts";
 import type { NativeSpaceControlPolicy } from "../../../domain/governance/policies/space-execution-policy.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import {
   type NativeExecutionScope,
   runtimeRevisionReference,

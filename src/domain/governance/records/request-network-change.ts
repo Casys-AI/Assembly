@@ -5,7 +5,7 @@ import {
   MAX_NETWORK_HOST_ADDITIONS,
   validateNetworkScope,
 } from "../policies/network-policy.ts";
-import { OperatorAuthorityError } from "../operator-authority.ts";
+import { OperatorAuthorityError } from "../operator-authority-error.ts";
 import type { PendingChange } from "./pending-change.ts";
 
 type RequestNetworkChange = PendingChange & {

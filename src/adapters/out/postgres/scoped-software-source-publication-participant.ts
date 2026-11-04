@@ -11,7 +11,7 @@ import {
 } from "../../../application/model/evolution/scoped-software-dossier.ts";
 import type { ScopedSoftwareSourcePublicationContext } from "../../../application/model/publication/ports/out/scoped-software-source-publication.port.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import { postgresQualifiedTable, Prisma, type PrismaClient } from "./client.ts";
 import {
   decodePostgresOpening,

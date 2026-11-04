@@ -81,7 +81,7 @@ admission flow. It does not authorize activation.
 Prepare a `lecteur.ts` file that satisfies the `read_web_page` contract: a
 self-contained module exporting `default({url, html}) => {title, text}`. The
 exact criteria are defined in
-[`TOOL_CONTRACTS`](../../../src/domain/work/candidates.ts). To build the
+[`TOOL_CONTRACTS`](../../../src/domain/work/records/candidates.ts). To build the
 manifest from this file without copying its code into a JSON string:
 
 ```sh

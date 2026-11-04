@@ -5,8 +5,8 @@ import { sameCaseIdentity } from "../../../domain/work/execution/case-context.ts
 import {
   taskSourceUrls,
   validTaskSourceInputs,
-} from "../../../domain/work/task-source-input.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+} from "../../../domain/work/records/task-source-input.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type { TaskSourceInputPort } from "../runtime/ports.ts";
 import { caseExecutionContext } from "./runtime.ts";
 

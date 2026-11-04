@@ -8,7 +8,7 @@ import {
 } from "../../src/adapters/out/llm-providers/agents.ts";
 import { validateDecision } from "../../src/adapters/out/llm-providers/output-validation.ts";
 import { createClaudeToolsFake } from "../support/claude-tools-fake.ts";
-import type { ChatContext } from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
 import type { NativeBehaviorContract } from "../../src/domain/model/execution/native-contracts.ts";
 
 const behavior: NativeBehaviorContract = {

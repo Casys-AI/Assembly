@@ -1,6 +1,6 @@
 import { deepStrictEqual, equal } from "node:assert/strict";
 import { createRequestSupervisionHandler } from "./request-supervision.ts";
-import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces/scope.ts";
 import type {
   RequestSupervisionQuery,
   RequestSupervisionSnapshot,

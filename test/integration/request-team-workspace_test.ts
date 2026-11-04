@@ -15,11 +15,11 @@ import type { PostgresCaseNumberAllocator } from "../../src/adapters/out/postgre
 import { DenoToolRunner } from "../../src/adapters/out/sandbox/runner.ts";
 import { createConversationsHandler } from "../../src/adapters/in/http/work/conversations.ts";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
 import type {
-  ChatContext,
   ChatDecision,
   ChatDecisionBatch,
-} from "../../src/domain/work/dialogue.ts";
+} from "../../src/application/work/conversation/chat-decision.ts";
 import type {
   PendingChange,
 } from "../../src/domain/governance/records/pending-change.ts";

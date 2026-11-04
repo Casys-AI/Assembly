@@ -10,7 +10,7 @@ import {
 } from "../../skills/context-skills.ts";
 import type { BehaviorInvocationRequest } from "../execution/modeled-behavior.ts";
 import { TOOL_KINDS } from "../../shared-kernel/tool-kind.ts";
-import type { ToolDraft } from "../candidates.ts";
+import type { ToolDraft } from "../records/candidates.ts";
 import {
   type ArtifactSourceReference,
   requireSource,

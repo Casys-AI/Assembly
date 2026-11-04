@@ -8,15 +8,13 @@ import type {
   ModelContextQueryResult,
   ModelGraphQueryResult,
 } from "../../../domain/model/consultation/context.ts";
+import { modelContextTools } from "../../work/context/model-tools.ts";
 import {
   modelConsultationRefusalEvidence,
   ModelContextAccessError,
-  modelContextTools,
 } from "../../../domain/model/consultation/context.ts";
-import type {
-  ModelSourceRevision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ModelSourceRevision } from "../../work/conversation/chat-context.ts";
+import type { SystemRuntimeState } from "../../work/runtime/state.ts";
 import {
   ModelContextInformation,
   type ModelContextInformationOptions,

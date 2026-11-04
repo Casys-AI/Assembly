@@ -1,15 +1,13 @@
 import assert from "node:assert/strict";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
-import {
-  modelContextTools,
-  ModelNavigationError,
-} from "../../../domain/model/consultation/context.ts";
+import { modelContextTools } from "../context/model-tools.ts";
+import { ModelNavigationError } from "../../../domain/model/consultation/context.ts";
+import type { ChatDecision } from "./chat-decision.ts";
 import type {
-  ChatDecision,
   ConversationBatchExecution,
   SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "../runtime/state.ts";
 import { selectDesignerInvocation } from "../cases/runtime.ts";
 import { invocationKey } from "../operators/journal.ts";
 import {

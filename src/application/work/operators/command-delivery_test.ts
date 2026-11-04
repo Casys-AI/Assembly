@@ -11,12 +11,9 @@ import {
   sameAcceptedCommandIntent,
   throwCommandRefusal,
 } from "./command-delivery.ts";
-import { OperatorAuthorityError } from "../../../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
-import type {
-  Event,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { Event, SystemRuntimeState } from "../runtime/state.ts";
 import type { OperatorExecutionDelivery } from "./execution.ts";
 
 function accepted(): AcceptedOperatorCommand {

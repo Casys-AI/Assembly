@@ -1,6 +1,6 @@
 import { equal, ok } from "node:assert/strict";
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
-import { modelContextTools } from "../../../domain/model/consultation/context.ts";
+import type { ChatContext } from "../../../application/work/conversation/chat-context.ts";
+import { modelContextTools } from "../../../application/work/context/model-tools.ts";
 import {
   decisionInstructions,
   PROVIDER_CONSTITUTION,

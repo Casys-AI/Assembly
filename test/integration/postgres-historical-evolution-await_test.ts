@@ -31,10 +31,8 @@ import type {
   ModelPort,
   StorePort,
 } from "../../src/application/work/runtime/ports.ts";
-import type {
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import type { ApprovedChangePublication } from "../../src/domain/model/publication/change.ts";
 import type { OperatorExecutionDelivery } from "../../src/application/work/operators/execution.ts";
 import {

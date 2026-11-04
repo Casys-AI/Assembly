@@ -9,7 +9,7 @@ import type {
 import {
   type NativeInitialToolSeed,
   validateInitialToolManifest,
-} from "../../../../../domain/work/initial-tool-catalog.ts";
+} from "../../../../../domain/work/records/initial-tool-catalog.ts";
 import type { ModelIdentity } from "../../../../../domain/shared-kernel/model-identity.ts";
 import type { NativeLiteral } from "../../../../../domain/model/records/native-literal.ts";
 import type { ModelSources as Sources } from "../../../../../domain/model/value-objects/sources.ts";

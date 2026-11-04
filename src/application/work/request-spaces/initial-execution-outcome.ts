@@ -1,8 +1,8 @@
 import { invocationKey } from "../operators/journal.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { isOpenCase } from "../../../domain/work/entities/cases.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type { NativeExecutionPort } from "../native-execution/contract.ts";
 import type { OperatorExecutionDispatchPort } from "../operators/execution.ts";
 

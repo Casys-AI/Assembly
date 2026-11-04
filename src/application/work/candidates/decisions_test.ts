@@ -1,11 +1,14 @@
 import { deepStrictEqual, equal, ok } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
 import { legacyOwnerAuthority } from "../../../domain/governance/authority.ts";
-import { OperatorAuthorityError } from "../../../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type { Candidate, ToolDraft } from "../../../domain/work/candidates.ts";
+import type {
+  Candidate,
+  ToolDraft,
+} from "../../../domain/work/records/candidates.ts";
 import type { Case } from "../../../domain/work/entities/cases.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type { CandidateDelegatedActor } from "../../../domain/governance/policies/tool-admission-policy.ts";
 import {
   type CandidateDecisionsHost,

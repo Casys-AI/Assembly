@@ -1,14 +1,14 @@
 import type {
   ReleasePublicationEvent,
   ReleasePublicationOutcome,
-} from "../../../domain/work/release-publication.ts";
-import type { ReleaseRetentionAuthorization } from "../../../domain/work/release-retention.ts";
+} from "../../../domain/work/records/release-publication.ts";
+import type { ReleaseRetentionAuthorization } from "../../../domain/work/records/release-retention.ts";
 import type {
   ReleaseTagBinding,
   ReleaseTagRejection,
   ReleaseTagSelection,
   SavedSystemTag,
-} from "../../../domain/work/release-tags.ts";
+} from "../../../domain/work/records/release-tags.ts";
 import type {
   SavedOperatorManifest,
   SavedOperatorSelection,
@@ -20,8 +20,8 @@ import type {
   SavedSystemSourceEvidence,
   SavedSystemSourceSelection,
   SavedSystemStatus,
-  SavedSystemView,
-} from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/records/saved-systems.ts";
+import type { SavedSystemView } from "./release-view.ts";
 /** Current selected host compatibility only; no allocation, preparation or grant. */
 export interface SavedSystemOpeningReadiness {
   openingAvailability: "ready" | "unavailable";
@@ -151,7 +151,7 @@ export interface SavedSystemAssetsPort {
     manifest: SavedSystemManifest,
     operatorId: string,
     candidateId: string,
-  ): Promise<import("../../../domain/work/candidates.ts").ToolDraft>;
+  ): Promise<import("../../../domain/work/records/candidates.ts").ToolDraft>;
   /** Cold exact read, no rebuild, no HEAD fallback, no invocation. */
   inspect(manifest: SavedSystemManifest): Promise<void>;
 }

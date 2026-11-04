@@ -1,5 +1,5 @@
 import { deepStrictEqual, equal } from "node:assert/strict";
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
 import { caseActivity, createCaseSeen } from "./seen.ts";
 
 const conversation = (

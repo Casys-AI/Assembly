@@ -9,8 +9,8 @@ import {
   requestControlAdoptedState,
   spaceControlAuthority,
 } from "../../../../test/support/request-space-fixture.ts";
-import { type ReleaseRetentionIntent } from "../../../domain/work/release-retention.ts";
-import { effectiveSpaceControlAuthority } from "../../../domain/work/request-space-authority.ts";
+import { type ReleaseRetentionIntent } from "../../../domain/work/records/release-retention.ts";
+import { effectiveSpaceControlAuthority } from "../../../domain/work/policies/request-space-authority.ts";
 import { spaceControlActs } from "../../../domain/governance/policies/space-execution-policy.ts";
 
 function fixture() {

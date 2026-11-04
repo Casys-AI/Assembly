@@ -1,6 +1,9 @@
 import { deepStrictEqual, equal } from "node:assert/strict";
 import { executableFixture } from "../../../test/support/execution-fixture.ts";
-import { legacyOwnerAuthority } from "../../domain/governance/authority.ts";
+import {
+  legacyOwnerAuthority,
+  mainExecutionSpace,
+} from "../../domain/governance/authority.ts";
 import type { Case } from "../../domain/work/entities/cases.ts";
 import type {
   CaseInvocation,
@@ -9,16 +12,13 @@ import type {
 import type {
   PendingChange,
 } from "../../domain/governance/records/pending-change.ts";
-import type { SystemRuntimeState } from "../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../work/runtime/state.ts";
 import { invocationKey } from "../work/operators/journal.ts";
 import {
   deliverRequestAuthorityRoute,
   requestAuthorityRoute,
 } from "./request-authority-routing.ts";
-import {
-  mainExecutionSpace,
-  type OperatorNotice,
-} from "../../domain/governance/operator-authority.ts";
+import { type OperatorNotice } from "../../domain/governance/operator-authority.ts";
 import { type ExecutionSpaceRef } from "../../domain/governance/authority.ts";
 import { SystemRuntime } from "../../../test/support/system-runtime.ts";
 import type { ModelPort } from "../work/runtime/ports.ts";

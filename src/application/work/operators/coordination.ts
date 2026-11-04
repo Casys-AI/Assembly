@@ -35,16 +35,14 @@ import { MAX_USER_MESSAGE_CHARS } from "../../../domain/work/records/conversatio
 import { validDesignerContext } from "../../../domain/work/execution/case-context.ts";
 import type { CaseNumberPort } from "../cases/ports/out/case-number.port.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type {
-  ArtifactEvidence,
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ArtifactEvidence } from "../conversation/chat-context.ts";
+import type { ChatDecision } from "../conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type {
   ArtifactReuseOrigin,
   Candidate,
   ToolDraft,
-} from "../../../domain/work/candidates.ts";
+} from "../../../domain/work/records/candidates.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
 import type { ClockPort, ModelPort } from "../runtime/ports.ts";
 import type { OperatorWorkContribution } from "./conversations.ts";

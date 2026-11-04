@@ -1,9 +1,29 @@
 /** Admitted system configuration and its network/envelope records. */
-import type { PendingChange } from "./pending-change.ts";
+import type { ToolKind } from "../../shared-kernel/tool-kind.ts";
+import type {
+  PendingChange,
+  SupportedMandateChange,
+} from "./pending-change.ts";
 
 /** Exact DNS hosts; this scope never implies subdomain or wildcard access. */
 export interface NetworkScope {
   allowedHosts: string[];
+}
+
+/** The admitted execution mandate an operator acts under. */
+export interface ExecutionMandate {
+  id: string;
+  /** The `open-request` act: open a branch Request without asking the
+   * person (decision 10). Absent: not granted. */
+  mayOpenRequests?: true;
+  mayPropose: readonly ToolKind[];
+  mayInvoke: false | "active-catalog-only";
+  mayReview: boolean;
+  mayActivate: boolean;
+  mayAdmitOwnCandidates?: boolean;
+  mayChangeOwnMandate?: false;
+  network: NetworkScope;
+  supportedChanges: readonly SupportedMandateChange[];
 }
 
 type ProcessEnvelope =

@@ -22,7 +22,7 @@ import {
   toolAdmissionPreparation,
 } from "../../../domain/governance/policies/tool-admission-policy.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import { mainExecutionSpace } from "../../../domain/governance/operator-authority.ts";
+import { mainExecutionSpace } from "../../../domain/governance/authority.ts";
 import { CaseError } from "../../../domain/work/errors/case.ts";
 import { activeBatchCall } from "../conversation/batches.ts";
 import {
@@ -33,7 +33,7 @@ import type {
   ExecutableModel,
   ModelExecutionReference,
 } from "../../../domain/model/execution/executable-model.ts";
-import type { NativeToolContract } from "../../../domain/work/candidates.ts";
+import type { NativeToolContract } from "../../../domain/work/records/candidates.ts";
 import {
   type CompiledFlowNode,
   type FlowActionResult,
@@ -46,8 +46,8 @@ import type {
   Candidate,
   Stage,
   ToolDraft,
-} from "../../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+} from "../../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type { AgentPort, ClockPort, ToolRunnerPort } from "../runtime/ports.ts";
 import type { ExactCandidateReview } from "./promotion.ts";
 import {

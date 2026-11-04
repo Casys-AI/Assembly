@@ -1,7 +1,7 @@
 import { ok } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
-import { modelContextTools } from "../../../domain/model/consultation/context.ts";
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
+import { modelContextTools } from "../../../application/work/context/model-tools.ts";
+import type { ChatContext } from "../../../application/work/conversation/chat-context.ts";
 import { ClaudeAgents } from "./agents.ts";
 
 /** Synthetic BO: real compiled fixture contracts/flow plus one loaded skill.

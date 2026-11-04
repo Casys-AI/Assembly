@@ -18,7 +18,7 @@ import {
 import type {
   SpaceController,
   SpaceControlSourceBinding,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/space-control.ts";
 
 /** Human local channel only. Its adapter must use current real session/parent
  * capability/PRIMARY checks; no token, secret hash or software cast is returned. */

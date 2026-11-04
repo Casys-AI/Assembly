@@ -21,7 +21,7 @@ import {
   postgresTestEnabled,
 } from "../support/postgres.ts";
 import type { DecisionInformationPort } from "../../src/application/work/context/information-ports.ts";
-import type { ChatDecision } from "../../src/domain/work/dialogue.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import type { SkillMetadata } from "../../src/domain/skills/entities/skill.ts";
 import type { SkillLoadReceipt } from "../../src/domain/skills/context-skills.ts";
 import type { BehaviorInvocationResult } from "../../src/domain/work/execution/modeled-behavior.ts";

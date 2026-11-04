@@ -7,10 +7,8 @@ import {
   ProviderResourceAggregation,
   type ProviderResourceQuery,
 } from "./provider-resource-readout.ts";
-import {
-  RequestSpaceError,
-  type SpaceController,
-} from "../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../../domain/work/request-spaces/space-control.ts";
 import {
   type ProviderCallObservation,
   UNKNOWN_PROVIDER_CALL_CORRELATION,

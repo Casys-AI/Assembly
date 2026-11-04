@@ -243,8 +243,9 @@ try {
   const activeDigests = new Set<string>();
   sourceEvidenceCollection = "partial";
   for (const [index, peer] of runtime.peers.entries()) {
-    const state: import("../src/domain/work/dialogue.ts").SystemRuntimeState =
-      runtime.workspace.runtimeFor(peer.agentId)!.runtime.snapshot;
+    const state:
+      import("../src/application/work/runtime/state.ts").SystemRuntimeState =
+        runtime.workspace.runtimeFor(peer.agentId)!.runtime.snapshot;
     assert.equal(state.error, undefined, "Contributor failed");
     assert(
       !state.configuration?.changes.some((change) =>

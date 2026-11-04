@@ -7,17 +7,18 @@ import type { PendingChange } from "../../governance/records/pending-change.ts";
 import { parseModelRevisionRef } from "../value-objects/element-ref.ts";
 import {
   assertModelWriteDossier,
-  buildOperationJournal,
-  type ElementIncarnationRef,
   type ModelWriteCommand,
   modelWriteDecisionDigest,
   type ModelWriteDossier,
   modelWriteIntentDigest,
   modelWriteOperationsDigest,
   parseModelWriteCommand,
-  planJournalReplay,
-  planWholeFilesReplay,
 } from "./write-command.ts";
+import { planJournalReplay, planWholeFilesReplay } from "./journal-replay.ts";
+import {
+  buildOperationJournal,
+  type ElementIncarnationRef,
+} from "./operation-journal.ts";
 
 const digestA = "a".repeat(64);
 const digestB = "b".repeat(64);

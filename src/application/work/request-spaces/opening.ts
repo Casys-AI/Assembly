@@ -1,26 +1,29 @@
 import {
   assertBaseForChoice,
-  type MainOpener,
   mainOpeningKey,
   type OpeningCommand,
   openingCommand,
   type OpeningRecord,
-  type OpeningView,
-  openingView,
   type RecordedOpeningCommand,
+} from "../../../domain/work/request-spaces/opening.ts";
+import {
+  type MainOpener,
+  type SpaceControlPrincipal,
+} from "../../../domain/work/request-spaces/space-control.ts";
+import {
   requestSpaceDigest,
   RequestSpaceError,
-  type SpaceControlPrincipal,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
+import { type OpeningView, openingView } from "./opening-view.ts";
 import type {
   MainOpenerAuthorityPort,
   RequestSpaceHostOptions,
 } from "./ports.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import {
   mainExecutionSpace,
   sameScopedOperator,
-} from "../../../domain/governance/operator-authority.ts";
+} from "../../../domain/governance/authority.ts";
 import { scopedOperator } from "../../../domain/governance/policies/delegation-scope.ts";
 
 /** The registered Main's own authority to open (settled Q1): the

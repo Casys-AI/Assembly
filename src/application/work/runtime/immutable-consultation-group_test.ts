@@ -3,7 +3,7 @@ import { executableFixture } from "../../../../test/support/execution-fixture.ts
 import type {
   ConversationBatchExecution,
   SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "./state.ts";
 import { closeCaseById, createRequestCase } from "../cases/runtime.ts";
 import { evolutionCheckpoint } from "./evolution.ts";
 import {

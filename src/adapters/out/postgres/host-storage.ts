@@ -18,7 +18,7 @@ import { PostgresWorkBudgetStore } from "./budget-store.ts";
 import { PostgresCaseNumberAllocator } from "./case-number-allocator.ts";
 import { decodePostgresRuntimeState } from "./runtime-state-snapshot.ts";
 import { readCaseRuntimeState } from "./case-runtime-state.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
 
 import { publicPostgresFailure, safeStoragePort } from "./errors.ts";
 export { publicPostgresFailure, safeStoragePort } from "./errors.ts";

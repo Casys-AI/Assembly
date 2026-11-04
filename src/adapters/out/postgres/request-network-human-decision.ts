@@ -14,7 +14,7 @@ import {
 import type { PostgresSystemStateStore } from "./system-state-store.ts";
 import { assertRequestSourceOwnerPhaseMatches } from "../../../application/model/source-admission/request-source-owner.ts";
 import { PostgresRequestSourceAdmissionStore } from "./request-source-admission-store.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import type { SystemRuntime } from "../../../application/work/runtime/system.ts";
 import type { RequestSpaceRuntime } from "../../../application/work/request-spaces/runtime.ts";
@@ -25,7 +25,7 @@ import {
   postgresExecutionTransaction,
   withPostgresExecutionTransaction,
 } from "./execution-transaction.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import { postgresQualifiedTable, Prisma } from "./client.ts";
 
 type DecisionInput = Parameters<
@@ -169,7 +169,7 @@ export class PostgresRequestNetworkHumanDecision {
               ) throw new Error("Request source owner unavailable");
               const readStates = async () => {
                 const states:
-                  import("../../../domain/work/dialogue.ts").SystemRuntimeState[] =
+                  import("../../../application/work/runtime/state.ts").SystemRuntimeState[] =
                     [];
 
                 // The opening lock serializes team changes; lock every actor

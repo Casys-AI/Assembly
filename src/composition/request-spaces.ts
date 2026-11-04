@@ -35,7 +35,7 @@ import type { GitModelRepositoryReader } from "../adapters/out/git/repository.ts
 import { createCaseBranchReader } from "../application/model/case-branch-reader.ts";
 import { RequestCaseConversations } from "../application/work/request-spaces/conversations.ts";
 import { createRequestConversationOwnerReader } from "../application/work/request-spaces/conversation-notifications.ts";
-import { RequestSpaceError } from "../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../domain/work/request-spaces/scope.ts";
 import { createRequestSpaceControls } from "./space-controls.ts";
 export { createRequestSpaceControls } from "./space-controls.ts";
 import {

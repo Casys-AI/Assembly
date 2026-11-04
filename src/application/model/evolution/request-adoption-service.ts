@@ -5,11 +5,11 @@ import {
   exerciseOwnerAuthority,
   sameOwnerAuthorityIdentity,
 } from "../../../domain/governance/authority.ts";
-import { spaceControlOwnerIdentity } from "../../../domain/work/request-space-authority.ts";
+import { spaceControlOwnerIdentity } from "../../../domain/work/policies/request-space-authority.ts";
 import {
   exactSourceVersion,
   requestSpaceIdentity,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
 import {
   assertSameRequestAdoptionCompletion,
   parseRequestAdoptionDecision,
@@ -31,7 +31,7 @@ import {
   type RequestOwnerAdoptionStorePort,
   type RequestRuntimeAdoptionPort,
 } from "./request-adoption-ports.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import {
   parseRequestCreationGrantAuthority,
   parseRequestDelegatedAuthority,
@@ -117,14 +117,14 @@ export class RequestRuntimeAdoptionService
       networkContinuation?: {
         ensure(
           opening:
-            import("../../../domain/work/request-spaces.ts").OpeningRecord,
+            import("../../../domain/work/request-spaces/opening.ts").OpeningRecord,
           dossier: RequestOwnerAdoptionDossier,
         ): Promise<void>;
       };
       teamContinuation?: {
         ensure(
           opening:
-            import("../../../domain/work/request-spaces.ts").OpeningRecord,
+            import("../../../domain/work/request-spaces/opening.ts").OpeningRecord,
           dossier: RequestOwnerAdoptionDossier,
         ): Promise<void>;
       };
@@ -132,7 +132,8 @@ export class RequestRuntimeAdoptionService
     },
   ) {}
   private async finish(
-    opening: import("../../../domain/work/request-spaces.ts").OpeningRecord,
+    opening:
+      import("../../../domain/work/request-spaces/opening.ts").OpeningRecord,
     dossier: RequestOwnerAdoptionDossier,
   ): Promise<RequestAdoptionStatus> {
     if (

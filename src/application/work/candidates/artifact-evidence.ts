@@ -1,5 +1,5 @@
-import type { ArtifactEvidence } from "../../../domain/work/dialogue.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
+import type { ArtifactEvidence } from "../conversation/chat-context.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
 
 /** Project recorded facts while keeping executable code and local continuations private. */
 export function artifactEvidence(

@@ -1,4 +1,4 @@
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import { ModelWriteQueueError } from "./write-queue.ts";
 import {
   isRequestSourceSettlementUnavailable,
@@ -23,7 +23,7 @@ import type {
   SettleOutcome,
   WriteLease,
 } from "./ports/out/model-write-queue.port.ts";
-import { buildOperationJournal } from "../../../domain/model/editing/write-command.ts";
+import { buildOperationJournal } from "../../../domain/model/editing/operation-journal.ts";
 import {
   buildModelWriteDossierV2,
   modelWriteCommandDigestV2,

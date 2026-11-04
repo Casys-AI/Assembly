@@ -7,12 +7,12 @@ import {
 } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
 import type { DecisionContextPolicy } from "../../../domain/work/policies/context-separation.ts";
+import type { ChatCallResult } from "./chat-decision.ts";
+import type { ChatContext } from "./chat-context.ts";
 import type {
-  ChatCallResult,
-  ChatContext,
   ConversationBatchExecution,
   SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "../runtime/state.ts";
 import {
   batchHistory,
   cancelQueuedAfterTeamPublication,

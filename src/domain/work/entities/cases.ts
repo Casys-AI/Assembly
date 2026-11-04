@@ -1,4 +1,4 @@
-import { validTaskSourceInputs } from "../task-source-input.ts";
+import { validTaskSourceInputs } from "../records/task-source-input.ts";
 import { CaseError } from "../errors/case.ts";
 import {
   type CaseSchedule,
@@ -39,29 +39,10 @@ export interface WatchDetails {
   nextWakeAt?: string;
   wakes: { at: string; changed: boolean; summary?: string }[];
 }
-export type CaseContinuation = Pick<
-  import("../dialogue.ts").SystemRuntimeState,
-  | "caseInvocation"
-  | "activeInputMessageId"
-  | "conversationCursor"
-  | "conversationContext"
-  | "conversationFlow"
-  | "budgetSuspension"
-  | "budgetPromotionCandidateId"
-  | "workBudget"
-  | "workBudgetBinding"
-  | "caseBudgetPending"
-  | "lastToolFailure"
->;
-export interface ScheduledExecution {
-  caseId: string;
-  id: string;
-  startedAt: string;
-  previous: CaseContinuation;
-}
 export interface Case {
   /** Exact host-captured URL inputs for this root Request, never execution rights. */
-  taskSourceInputs?: import("../task-source-input.ts").TaskSourceInput[];
+  taskSourceInputs?:
+    import("../records/task-source-input.ts").TaskSourceInput[];
   id: string;
   number: number;
   type: CaseKind;

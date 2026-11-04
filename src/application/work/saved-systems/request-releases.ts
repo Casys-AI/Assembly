@@ -5,16 +5,18 @@ import type {
 import {
   requestSpaceIdentity,
   type RequestSpaceScope,
+} from "../../../domain/work/request-spaces/scope.ts";
+import {
   type SpaceController,
   type SpaceControlPrincipal,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/space-control.ts";
 import {
   SavedSystemError,
   type SavedSystemMetadata,
   type SavedSystemScope,
   type SavedSystemSourceSelection,
-  type SavedSystemView,
-} from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/records/saved-systems.ts";
+import { type SavedSystemView } from "./release-view.ts";
 import type { RequestReleaseCataloguePort } from "./request-release-ports.ts";
 import type { ArtifactSourceInspection } from "../../../domain/work/records/artifact-source-inspection.ts";
 import type {
@@ -22,7 +24,7 @@ import type {
   ModelTagCreationCommand,
   ReleaseTagBinding,
   ReleaseTagSelection,
-} from "../../../domain/work/release-tags.ts";
+} from "../../../domain/work/records/release-tags.ts";
 
 type ReleaseSaveCommand = SavedSystemMetadata & {
   saveKey: string;

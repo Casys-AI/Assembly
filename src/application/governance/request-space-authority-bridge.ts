@@ -1,30 +1,30 @@
 import type { SystemRuntime } from "../work/runtime/system.ts";
 import { type Case, isOpenCase } from "../../domain/work/entities/cases.ts";
-import type { SystemRuntimeState } from "../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../work/runtime/state.ts";
 import type { PendingChange } from "../../domain/governance/records/pending-change.ts";
+import { OperatorAuthorityError } from "../../domain/governance/operator-authority-error.ts";
 import {
-  type AuthorityRouteCode,
-  awaitingPersonView,
   MAIN_EXECUTION_SPACE_ID,
   mainExecutionSpace,
-  OperatorAuthorityError,
+  sameScopedOperator,
+} from "../../domain/governance/authority.ts";
+import {
+  type AuthorityRouteCode,
   type OperatorNotice,
   type RequestAuthorityRoute,
-  sameScopedOperator,
 } from "../../domain/governance/operator-authority.ts";
 import type {
   ExecutionSpaceRef,
   ScopedOperatorRef,
 } from "../../domain/governance/authority.ts";
-import type { ChatContext, ChatDecision } from "../../domain/work/dialogue.ts";
+import type { ChatContext } from "../work/conversation/chat-context.ts";
+import type { ChatDecision } from "../work/conversation/chat-decision.ts";
 import type { OperatorCommandOrigin } from "../work/operators/command-delivery.ts";
 import { scopedOperator } from "../../domain/governance/policies/delegation-scope.ts";
 import { canonical } from "../../domain/primitives/canonical-json.ts";
-import {
-  type OpeningRecord,
-  requestSpaceDigest,
-  type SpaceExecutionAdmission,
-} from "../../domain/work/request-spaces.ts";
+import { type OpeningRecord } from "../../domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../../domain/work/request-spaces/scope.ts";
+import { type SpaceExecutionAdmission } from "../../domain/work/request-spaces/space-control.ts";
 import { designerScopeId } from "../work/cases/runtime.ts";
 import { requestAuthorityRoute } from "./request-authority-routing.ts";
 import {
@@ -145,6 +145,36 @@ const MAX_LISTED_REQUESTS = 20;
 export type RequestAwaitingPersonEntry =
   & NonNullable<ChatContext["operatorAuthority"]>["awaitingPerson"][number]
   & { requestedAt: string };
+
+/** At most this many requests awaiting the person reach an operator's context. */
+export const MAX_AWAITING_PERSON = 20;
+
+/** Requests awaiting the person, newest first then by identity, bounded.
+ * `requestedAt` only orders them; it is dropped from the view. */
+export function awaitingPersonView<
+  T extends { id: string; caseId: string; requestedAt: string },
+>(entries: readonly T[]): {
+  awaitingPerson: Omit<T, "requestedAt">[];
+  awaitingPersonTruncated: boolean;
+} {
+  const ordered = [...entries].sort((a, b) =>
+    a.requestedAt === b.requestedAt
+      ? a.caseId === b.caseId
+        ? a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+        : a.caseId < b.caseId
+        ? -1
+        : 1
+      : a.requestedAt < b.requestedAt
+      ? 1
+      : -1
+  );
+  return {
+    awaitingPerson: ordered.slice(0, MAX_AWAITING_PERSON).map((
+      { requestedAt: _requestedAt, ...entry },
+    ) => entry),
+    awaitingPersonTruncated: ordered.length > MAX_AWAITING_PERSON,
+  };
+}
 
 type ChangeDecisionCommand = Extract<
   ChatDecision,

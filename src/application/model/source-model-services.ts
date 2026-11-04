@@ -2,12 +2,12 @@ import type { ModelSourceFilesPort } from "./source-files.ts";
 import type { SourceCompilationPort } from "./source-compilation.ts";
 import type { SourceRevision } from "../../domain/model/records/source-revision.ts";
 import type { ExecutableModel } from "../../domain/model/execution/executable-model.ts";
-import type { ModelEditOperation } from "../../domain/governance/policies/model-edit-policy.ts";
-import type { ModelDelegationChange } from "../../domain/governance/records/model-delegation-request.ts";
+import type { ModelEditOperation } from "../../domain/governance/model-access/model-edit-policy.ts";
+import type { ModelDelegationChange } from "../../domain/governance/model-access/model-delegation-request.ts";
 import type {
   ModelAdministrationAuthorization,
   ModelProposalAuthorization,
-} from "../../domain/governance/records/model-edit-authorization.ts";
+} from "../../domain/governance/model-access/model-edit-authorization.ts";
 import type { OperatorAuthorityRequest } from "../governance/operator-authority-request.ts";
 import type { HostEditRequest } from "../../domain/model/editing/host-edit.ts";
 

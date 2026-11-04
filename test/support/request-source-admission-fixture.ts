@@ -15,7 +15,7 @@ import {
 import {
   requestSourceAdmissionRef,
   requestSourceCommandRef,
-} from "../../src/domain/model/editing/request-source-publication.ts";
+} from "../../src/domain/model/editing/source-anchor-refs.ts";
 import {
   buildDescriptor,
   buildKey,
@@ -23,7 +23,7 @@ import {
 } from "../../src/domain/model/value-objects/build.ts";
 import { parseModelRevisionRef } from "../../src/domain/model/value-objects/element-ref.ts";
 import { parseRequestSourceAdmission } from "../../src/application/model/source-admission/request-source-admission.ts";
-import type { OpeningRecord } from "../../src/domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../src/domain/work/request-spaces/opening.ts";
 import type { AdmittedSourceHead } from "../../src/adapters/out/postgres/request-source-admission-store.ts";
 import {
   requestControlModel,

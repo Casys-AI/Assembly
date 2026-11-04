@@ -8,19 +8,21 @@ import type {
 } from "../saved-systems/ports.ts";
 import {
   assertOpeningBase,
-  exactSourceVersion,
   type OpeningBase,
   type OpeningSourceChoice,
+} from "../../../domain/work/request-spaces/opening.ts";
+import {
+  exactSourceVersion,
   requestSpaceDigest,
   RequestSpaceError,
-  type SpaceControlPrincipal,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
+import { type SpaceControlPrincipal } from "../../../domain/work/request-spaces/space-control.ts";
 import {
   savedManifest,
   type SavedSystemManifest,
   type SavedSystemScope,
-  type SavedSystemView,
-} from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/records/saved-systems.ts";
+import { type SavedSystemView } from "../saved-systems/release-view.ts";
 import { caseTypesForModel } from "../../../domain/work/records/case-types.ts";
 import type { RequestOpeningSourceReaderPort } from "./opening-source-reader.ts";
 import { selectValidatedSourceExecutable } from "../../../domain/model/records/source-executables.ts";

@@ -3,9 +3,9 @@ import type { SourceRevision } from "../../domain/model/records/source-revision.
 import type {
   ModelSourceProposalStatus,
   PublishedModelRevision,
-} from "../../domain/work/dialogue.ts";
+} from "../work/conversation/chat-context.ts";
 import type { SourcePublication } from "../../domain/model/publication/change.ts";
-import type { ModelProposalAuthorization } from "../../domain/governance/records/model-edit-authorization.ts";
+import type { ModelProposalAuthorization } from "../../domain/governance/model-access/model-edit-authorization.ts";
 import type { SystemSourcesUpdateOptions } from "./repository.ts";
 
 export interface SourceRepository {

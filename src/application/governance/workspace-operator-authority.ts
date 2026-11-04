@@ -5,12 +5,10 @@ import {
   exactDelegatedCommandDecision,
 } from "../governance/operator-command-origin.ts";
 import { requestOpeningHost } from "../work/cases/opening.ts";
-import {
-  type MainOpener,
-  type OpeningCommand,
-  type OpeningView,
-  RequestSpaceError,
-} from "../../domain/work/request-spaces.ts";
+import { type MainOpener } from "../../domain/work/request-spaces/space-control.ts";
+import { type OpeningCommand } from "../../domain/work/request-spaces/opening.ts";
+import { RequestSpaceError } from "../../domain/work/request-spaces/scope.ts";
+import { type OpeningView } from "../work/request-spaces/opening-view.ts";
 import {
   caseExecutionContext,
   delegatedCaseContext,
@@ -28,12 +26,12 @@ import type {
 import { isOpenCase } from "../../domain/work/entities/cases.ts";
 import { sameCaseIdentity } from "../../domain/work/execution/case-context.ts";
 import { requestOperatorSystemName } from "../governance/operator-authority-values.ts";
+import { OperatorAuthorityError } from "../../domain/governance/operator-authority-error.ts";
 import {
-  isTeamOperatorSpec,
   MAIN_EXECUTION_SPACE_ID,
   mainExecutionSpace,
-  OperatorAuthorityError,
-} from "../../domain/governance/operator-authority.ts";
+} from "../../domain/governance/authority.ts";
+import { isTeamOperatorSpec } from "../../domain/governance/operator-authority.ts";
 import { scopedOperator } from "../../domain/governance/policies/delegation-scope.ts";
 import type { RequestSpaceAuthorityBridge } from "../governance/request-space-authority-bridge.ts";
 import { canonical } from "../../domain/primitives/canonical-json.ts";
@@ -42,13 +40,15 @@ import {
   requestAuthorityRoute,
 } from "../governance/request-authority-routing.ts";
 import { toolAdmissionDecisionContext } from "../governance/operator-tool-admission-context.ts";
+import type { ChatContext } from "../work/conversation/chat-context.ts";
 import type {
-  ChatContext,
   ChatDecision,
   RequestOpeningOutcome,
+} from "../work/conversation/chat-decision.ts";
+import type {
   RequestResumeOutcome,
   SystemRuntimeState,
-} from "../../domain/work/dialogue.ts";
+} from "../work/runtime/state.ts";
 import type { PendingChange } from "../../domain/governance/records/pending-change.ts";
 import type { Case } from "../../domain/work/entities/cases.ts";
 import type { ClockPort } from "../work/runtime/ports.ts";
@@ -59,7 +59,7 @@ import {
 } from "../work/operators/conversations.ts";
 import type { ExecutableModel } from "../../domain/model/execution/executable-model.ts";
 import type { StorePort } from "../work/runtime/ports.ts";
-import type { StateHistoryPort } from "../../domain/work/history.ts";
+import type { StateHistoryPort } from "../work/runtime/ports/out/state-history.port.ts";
 import { SkillsBehavior } from "../skills/behavior.ts";
 import type { WorkspaceRuntime } from "../work/operators/workspace-registry.ts";
 import { createWorkspaceBranchReads } from "./request-space-authority-bridge.ts";

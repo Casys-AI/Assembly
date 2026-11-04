@@ -17,7 +17,7 @@ import {
   type RequestSourceWriteResolver,
 } from "./ports/out/request-source-publication.port.ts";
 import { RequestSourceOwnerError } from "../source-admission/request-source-owner.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import {
   versionedWriteCommandDigest,
   versionedWriteDossierDigest,
@@ -46,22 +46,24 @@ import { parseModelRevisionRef } from "../../../domain/model/value-objects/eleme
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import { sha256 } from "../../../domain/primitives/execution-digest.ts";
 import type { ProposalRecord } from "../../../domain/model/records/revision.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
 import type { PendingChange } from "../../../domain/governance/records/pending-change.ts";
 import {
   artifactSourcePublicationFromDossier,
   assertModelWriteDossier,
-  type ModelOperationJournal,
   type ModelWriteCommand,
-  ModelWriteCommandError,
   type ModelWriteDecision,
   modelWriteDecisionDigest,
   type ModelWriteDossier,
   modelWriteIntentDigest,
   type ModelWriteOperations,
   modelWriteOperationsDigest,
-  type WholeFilesOperations,
 } from "../../../domain/model/editing/write-command.ts";
+import {
+  type ModelOperationJournal,
+  type WholeFilesOperations,
+} from "../../../domain/model/editing/operation-journal.ts";
+import { ModelWriteCommandError } from "../../../domain/model/editing/write-command-error.ts";
 import { ModelRepositoryError } from "../repository.ts";
 import type { ArtifactSourceWritePort } from "./ports/out/artifact-source-write.port.ts";
 import type {

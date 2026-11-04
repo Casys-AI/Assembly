@@ -4,7 +4,7 @@ import { RequestNetworkChangePublisher } from "./request-network-change-publishe
 import { branchAuthorityFixture } from "../../../../test/support/branch-authority-fixture.ts";
 import { parseModelRevisionRef } from "../../../domain/model/value-objects/element-ref.ts";
 import { exerciseOwnerAuthority } from "../../../domain/governance/authority.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 
 Deno.test("member publication binds its native requester and branch before reading source; human publication stays BO-only", async () => {
   const f = await branchAuthorityFixture();

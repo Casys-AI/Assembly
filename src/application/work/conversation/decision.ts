@@ -1,21 +1,18 @@
 import { mayConsultModel } from "../../../domain/model/consultation/model-read-policy.ts";
 import { budgetCeilingModelEquivalent } from "../runtime/budget-transition.ts";
-import { OperatorAuthorityError } from "../../../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
+import { modelContextTools } from "../context/model-tools.ts";
 import {
   modelConsultationRefusalEvidence,
   ModelContextAccessError,
-  modelContextTools,
 } from "../../../domain/model/consultation/context.ts";
 import type {
   FlowActionResult,
   FlowValues,
 } from "../../../domain/model/execution/flow.ts";
-import type {
-  ChatCallResult,
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ChatCallResult, ChatDecision } from "./chat-decision.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { characterCount } from "../../../domain/primitives/character-count.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
 import { buildDecisionContext } from "./decision-context.ts";
@@ -328,7 +325,7 @@ export async function executeOperatorCommand(
   this: ConversationDecisionHost,
   turn: ConversationTurnState,
   current: ExecutableModel,
-  _decisionContext?: import("../../../domain/work/dialogue.ts").ChatContext,
+  _decisionContext?: import("./chat-context.ts").ChatContext,
   complete = true,
 ): Promise<ChatCallResult> {
   if (!turn.chosen || !isOperatorCommand(turn.chosen)) {

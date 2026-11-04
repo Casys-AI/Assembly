@@ -6,7 +6,7 @@ import type {
 import type {
   AgentConversation,
   OperatorTool,
-} from "../../../../src/domain/work/records/conversations.ts";
+} from "../../../../src/application/work/operators/conversation-types.ts";
 import { type BoardElement, indexBoard } from "../board/lookup.ts";
 import { listing } from "../board/words.ts";
 import { grouped } from "./grouped.ts";

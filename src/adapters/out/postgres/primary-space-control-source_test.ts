@@ -4,7 +4,7 @@ import {
   requestControlState,
   spaceControlAuthority,
 } from "../../../../test/support/request-space-fixture.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
 import type { Prisma, PrismaClient } from "./client.ts";
 import { registerPostgresClientSchema } from "./client-schema.ts";
 import { PostgresPrimarySpaceControlSource } from "./primary-space-control-source.ts";

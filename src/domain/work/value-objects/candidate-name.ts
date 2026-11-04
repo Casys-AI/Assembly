@@ -1,6 +1,6 @@
 import { sha256Bytes } from "../../primitives/sha256-bytes.ts";
 import { assert } from "../../primitives/assert.ts";
-import type { Candidate } from "../candidates.ts";
+import type { Candidate } from "../records/candidates.ts";
 
 export async function candidateName(candidate: Candidate): Promise<string> {
   assert(

@@ -3,7 +3,7 @@ import type { NativePolicyIdentity } from "./executable-model.ts";
 import type {
   ModelEditGrant,
   ModelEditOperation,
-} from "../../governance/policies/model-edit-policy.ts";
+} from "../../governance/model-access/model-edit-policy.ts";
 import type { DecisionContextPolicy } from "../../work/policies/context-separation.ts";
 import type { WorkBudgetPolicy } from "../../work/policies/budget.ts";
 

@@ -21,10 +21,8 @@ import type { PendingChange } from "../../../domain/governance/records/pending-c
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { ModelRevision } from "../../../domain/model/records/revision.ts";
 import type { RequestModelWriteDestination } from "../../../domain/model/editing/request-write-destination.ts";
-import {
-  type OpeningRecord,
-  RequestSpaceError,
-} from "../../../domain/work/request-spaces.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 
 /** Exact approved-change producer over the existing Request writer, with no Main HEAD/write surface. */

@@ -25,7 +25,7 @@ import type { ExecutableModel } from "../../../domain/model/execution/executable
 import type { PendingChange } from "../../../domain/governance/records/pending-change.ts";
 import { ownerAuthorityFor } from "../../../domain/governance/authority.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { isTeamOperatorSpec } from "../../../domain/governance/operator-authority.ts";
 import { invocationInput, invocationKey } from "../operators/journal.ts";
 import { valueDigest } from "../runtime/values.ts";

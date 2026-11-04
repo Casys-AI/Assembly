@@ -118,7 +118,7 @@ import {
   verifyOfficialFork,
   verifyOfficialWaitCheckpoint,
 } from "./checkpoint-wait-evidence.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import { providerCallContext } from "../llm-providers/provider-call-context.ts";
 import {
   postgresClientSchema,
@@ -159,7 +159,7 @@ import {
   requestChangeProposalDigest,
 } from "../../../domain/governance/records/request-change.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
 import { isOpenCase } from "../../../domain/work/entities/cases.ts";
 import { verifyScalarBudgetCandidate } from "../../../application/work/runtime/budget-transition.ts";
 import {
@@ -171,7 +171,7 @@ import { parseRequestOwnerAdoptionDossier } from "../../../application/model/evo
 import type {
   BudgetCeilingManifest,
   BudgetCeilingMember,
-} from "../../../domain/work/records/budget-ceiling-transition.ts";
+} from "../../../application/work/runtime/budget-ceiling-transition.ts";
 import { invocationKey } from "../../../application/work/operators/journal.ts";
 import { assertEvolutionDossier } from "../../../application/model/evolution/invariants.ts";
 import type { EvolutionDossier } from "../../../application/model/evolution/ports.ts";

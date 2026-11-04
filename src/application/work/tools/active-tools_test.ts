@@ -1,10 +1,10 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { publishedArtifact } from "../../../../test/support/tool-artifact-fixture.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import {
   type RetainedToolDependencyDescriptor,
   retainedToolResourceId,
-} from "../../../domain/work/retained-tool-dependencies.ts";
+} from "../../../domain/work/records/retained-tool-dependencies.ts";
 import {
   activeTools,
   resolveActiveTool,

@@ -9,7 +9,7 @@ import { savedSystemReadFixture } from "./saved-system-read-fixture.ts";
 import {
   savedSystemDigest,
   type SavedSystemScope,
-} from "../../src/domain/work/saved-systems.ts";
+} from "../../src/domain/work/records/saved-systems.ts";
 
 const [
   schema,

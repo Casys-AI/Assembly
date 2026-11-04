@@ -4,7 +4,7 @@ import {
   budgetState,
   type WorkBudgetRecord,
 } from "../../../domain/work/policies/budget.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type { WorkBudgetPort } from "../budget/ports.ts";
 import {
   nativeExecutionIdentity,

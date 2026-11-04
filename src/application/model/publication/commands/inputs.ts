@@ -1,14 +1,12 @@
-import type {
-  ModelOperationJournal,
-  ModelWriteDossier,
-} from "../../../../domain/model/editing/write-command.ts";
+import type { ModelOperationJournal } from "../../../../domain/model/editing/operation-journal.ts";
+import type { ModelWriteDossier } from "../../../../domain/model/editing/write-command.ts";
 import type {
   PreparedPublication,
   SourcePublication,
 } from "../../../../domain/model/publication/change.ts";
 import type { ModelSources as Sources } from "../../../../domain/model/value-objects/sources.ts";
 import type { BuildDescriptor } from "../../../../domain/model/value-objects/build.ts";
-import type { Candidate } from "../../../../domain/work/candidates.ts";
+import type { Candidate } from "../../../../domain/work/records/candidates.ts";
 import type {
   PendingChange,
 } from "../../../../domain/governance/records/pending-change.ts";

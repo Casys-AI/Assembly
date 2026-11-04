@@ -1,5 +1,5 @@
 import { TOOL_KINDS } from "../../../domain/shared-kernel/tool-kind.ts";
-import type { ToolDraft } from "../../../domain/work/candidates.ts";
+import type { ToolDraft } from "../../../domain/work/records/candidates.ts";
 import {
   requireSkillContent,
   skillContentDigest,

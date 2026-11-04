@@ -1,7 +1,7 @@
 import {
   operatorTeamInRequest,
   type VerifiedRequestTeam,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/branch-team.ts";
 import { persistedOrder } from "../../../domain/primitives/persisted-order.ts";
 /**
  * Supports APE 4.1 Operator Identity & Mandate and 4.2 Centralized Supervision
@@ -9,17 +9,19 @@ import { persistedOrder } from "../../../domain/primitives/persisted-order.ts";
  * 4.4 Acknowledged Handoff.
  */
 import {
+  MAX_OPERATOR_UNITS,
+  MAX_USER_MESSAGE_CHARS,
+} from "../../../domain/work/records/conversations.ts";
+import {
   type AgentConversation,
   type AgentMessageCommand,
   type ConversationsSnapshot,
-  MAX_OPERATOR_UNITS,
-  MAX_USER_MESSAGE_CHARS,
   type OperatorToolsSnapshot,
-} from "../../../domain/work/records/conversations.ts";
+} from "./conversation-types.ts";
 import type {
   ExecutableModel,
 } from "../../../domain/model/execution/executable-model.ts";
-import type { NativeToolContract } from "../../../domain/work/candidates.ts";
+import type { NativeToolContract } from "../../../domain/work/records/candidates.ts";
 import type { AuthorityExercise } from "../../../domain/governance/authority.ts";
 import type { CandidateDelegatedActor } from "../../../domain/governance/policies/tool-admission-policy.ts";
 import {
@@ -32,13 +34,10 @@ import type {
 } from "../../../domain/work/execution/modeled-behavior.ts";
 import type { BehaviorModelVersion } from "../../../domain/shared-kernel/behavior-model-version.ts";
 import { sameCaseIdentity } from "../../../domain/work/execution/case-context.ts";
-import type {
-  ArtifactEvidence,
-  ChatDecision,
-  Message,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
+import type { ArtifactEvidence } from "../conversation/chat-context.ts";
+import type { ChatDecision } from "../conversation/chat-decision.ts";
+import type { Message, SystemRuntimeState } from "../runtime/state.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { effectiveModelUpdates } from "../../../domain/work/records/effective-model-update.ts";
 import { networkScopeFor } from "../../../domain/governance/policies/network-policy.ts";
@@ -61,7 +60,7 @@ import {
 } from "../cases/runtime.ts";
 import { CaseError } from "../../../domain/work/errors/case.ts";
 import { isOpenCase } from "../../../domain/work/entities/cases.ts";
-import { OperatorAuthorityError } from "../../../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
 import type { DelegatedActor } from "../../../domain/governance/policies/operator-authority-policy.ts";
 import type { SkillStorePort } from "../../skills/ports.ts";
 import {

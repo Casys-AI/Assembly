@@ -2,7 +2,7 @@ import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import {
   exactSourceVersion,
   RequestSpaceError,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
 import type { PostgresExecutionLedgerOptions } from "../native-execution/postgres-ledger.ts";
 import type { PostgresRequestExecutionBindingReader } from "./request-execution-binding.ts";
 import type { PostgresSpaceAdmissions } from "./request-space-control-store.ts";

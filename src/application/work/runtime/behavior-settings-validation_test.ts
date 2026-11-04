@@ -11,7 +11,7 @@ import {
 import type { ScopedExecutableModel } from "../../../domain/model/evolution/semantic-effects.ts";
 import type { EvolutionCategory } from "../../../domain/model/evolution/policy.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../conversation/chat-context.ts";
 import type { MemoryRecord } from "../../../domain/memory/entities/memory-record.ts";
 import { WorkBudgetService } from "../budget/service.ts";
 import type { WorkBudgetRecord } from "../../../domain/work/policies/budget.ts";

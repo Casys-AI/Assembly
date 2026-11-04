@@ -6,8 +6,8 @@ import {
   type ArtifactSourceBindingReference,
   ArtifactSourceError,
 } from "../../../../domain/work/artifacts/source-reference.ts";
-import type { AgentConversation } from "../../../../domain/work/records/conversations.ts";
-import type { ToolDraft } from "../../../../domain/work/candidates.ts";
+import type { AgentConversation } from "../../../../application/work/operators/conversation-types.ts";
+import type { ToolDraft } from "../../../../domain/work/records/candidates.ts";
 import { createArtifactSourcesHandler } from "./artifact-sources.ts";
 
 const draft: ToolDraft = {

@@ -57,13 +57,13 @@ import {
 import type { DecisionInformationPort } from "../../src/application/work/context/information-ports.ts";
 import { RequestRuntimeDependencies } from "../../src/composition/request-runtime-dependencies.ts";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
-import type { ToolDraft } from "../../src/domain/work/candidates.ts";
+import type { ToolDraft } from "../../src/domain/work/records/candidates.ts";
 import type { PostgresTestDatabase } from "./postgres.ts";
 import { SystemRuntime } from "../../src/application/work/runtime/system.ts";
 import { WorkBudgetService } from "../../src/application/work/budget/service.ts";
 import { createModelProject } from "../../src/adapters/out/filesystem/model-project.ts";
 import { toolDraftDigest } from "../../src/application/work/artifacts/catalog.ts";
-import type { Candidate } from "../../src/domain/work/candidates.ts";
+import type { Candidate } from "../../src/domain/work/records/candidates.ts";
 import {
   retainedToolDraft,
   savedSystemRetentionSources,

@@ -610,7 +610,8 @@ for (
         },
         activateCandidate(
           _identity: typeof model.identity,
-          candidate: import("../../src/domain/work/candidates.ts").Candidate,
+          candidate:
+            import("../../src/domain/work/records/candidates.ts").Candidate,
           admittedDigest: string,
         ) {
           assert.equal(admittedDigest, candidate.activationModelDigest);
@@ -643,7 +644,8 @@ for (
         },
         findCandidate(
           _identity: typeof model.identity,
-          candidate: import("../../src/domain/work/candidates.ts").Candidate,
+          candidate:
+            import("../../src/domain/work/records/candidates.ts").Candidate,
         ) {
           const entry = available.catalog.find((item) =>
             item.candidateId === candidate.id
@@ -1640,7 +1642,8 @@ Deno.test({
       },
       activateCandidate: (
         _identity: typeof original.identity,
-        candidate: import("../../src/domain/work/candidates.ts").Candidate,
+        candidate:
+          import("../../src/domain/work/records/candidates.ts").Candidate,
         admittedDigest: string,
       ) => {
         assert.equal(admittedDigest, candidate.activationModelDigest);
@@ -1671,7 +1674,8 @@ Deno.test({
       },
       findCandidate: (
         _identity: typeof original.identity,
-        candidate: import("../../src/domain/work/candidates.ts").Candidate,
+        candidate:
+          import("../../src/domain/work/records/candidates.ts").Candidate,
       ) => {
         const found = available.catalog.find((item) =>
           item.candidateId === candidate.id

@@ -1,7 +1,7 @@
 import { deepStrictEqual } from "node:assert/strict";
 import { createCaseBranchHandler } from "./case-branch.ts";
 import type { createCaseBranchReader } from "../../../../application/model/case-branch-reader.ts";
-import type { SpaceController } from "../../../../domain/work/request-spaces.ts";
+import type { SpaceController } from "../../../../domain/work/request-spaces/space-control.ts";
 const version = `commit:${"a".repeat(40)}`;
 Deno.test("Case facade resolves before delegation and never delegates writes or unrelated routes", async () => {
   let resolved = 0, delegated = 0;

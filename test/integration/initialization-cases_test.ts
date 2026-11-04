@@ -16,7 +16,7 @@ import type {
   StorePort,
 } from "../../src/application/work/runtime/ports.ts";
 import { SystemGovernance } from "../../src/domain/governance/policies/governance.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import {
   budgetState,
   type WorkBudgetRecord,

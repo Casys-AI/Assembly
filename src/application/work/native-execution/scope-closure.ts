@@ -1,4 +1,4 @@
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type {
   NativeExecutionSnapshot,
   NativeScopeClosure,

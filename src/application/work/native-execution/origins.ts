@@ -1,6 +1,6 @@
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type {
   NativeExecutionActionResult,
   NativeExecutionIdentity,

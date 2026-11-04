@@ -15,10 +15,8 @@ import {
   ToolkitCompiler,
 } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { deepStrictEqual, equal, ok } from "node:assert/strict";
-import {
-  type ChangePublication,
-  publicationFailure,
-} from "../../src/domain/model/publication/change.ts";
+import { publicationFailure } from "../../src/application/model/publication/publication-failure.ts";
+import { type ChangePublication } from "../../src/domain/model/publication/change.ts";
 import { isHostEdit } from "../../src/domain/model/publication/compatibility.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { modelSourceDigest } from "../../src/domain/model/value-objects/sources.ts";

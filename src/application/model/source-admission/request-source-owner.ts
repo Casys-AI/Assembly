@@ -10,16 +10,16 @@ import {
   type OwnerAuthority,
   sameOwnerAuthorityIdentity,
 } from "../../../domain/governance/authority.ts";
+import { exactSourceVersion } from "../../../domain/work/request-spaces/scope.ts";
 import {
-  exactSourceVersion,
   type SpaceController,
   type SpaceControlSourceBinding,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/space-control.ts";
 import {
   effectiveSpaceControlAuthority,
   spaceControlAuthorityMatchesBinding,
   spaceControlOwnerIdentity,
-} from "../../../domain/work/request-space-authority.ts";
+} from "../../../domain/work/policies/request-space-authority.ts";
 import type { ModelIdentity } from "../../../domain/shared-kernel/model-identity.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import {

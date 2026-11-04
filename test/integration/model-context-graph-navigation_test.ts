@@ -31,10 +31,8 @@ import { BoundModelReader } from "../../src/adapters/out/oxigraph/ldkit-reader.t
 import { DeterministicRdfModelProjector } from "../../src/adapters/out/oxigraph/rdf.ts";
 import { ModelSemanticIndexService } from "../../src/application/model/semantic/index-service.ts";
 import type { BuildRef } from "../../src/domain/model/value-objects/element-ref.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import type {
   ModelContextQueryResult,
   ModelGraphQueryResult,

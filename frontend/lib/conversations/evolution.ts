@@ -1,6 +1,6 @@
-import type { Message } from "../../../src/domain/work/dialogue.ts";
+import type { Message } from "../../../src/application/work/runtime/state.ts";
 import type { EvolutionConversationRecord } from "../../../src/domain/work/records/operator-evolution.ts";
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
 import { isRecord } from "../transport/is-record.ts";
 import { sameSourceVersion, type SourceDiff } from "../model/revisions/api.ts";
 

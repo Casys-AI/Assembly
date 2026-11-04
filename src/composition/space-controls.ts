@@ -11,7 +11,7 @@ import {
 } from "../adapters/out/postgres/request-space-control-store.ts";
 import { ModeledSpaceControlAuthority } from "../application/work/request-spaces/space-control-authority.ts";
 import { CryptographicSpaceSecrets } from "../infrastructure/space-control-secrets.ts";
-import { RequestSpaceError } from "../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../domain/work/request-spaces/scope.ts";
 
 /** Uses the configured PRIMARY handle, never a second locator or policy default.
  * Constructing internal control handles issues no credential. */

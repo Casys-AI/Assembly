@@ -4,7 +4,7 @@ import type {
   Event,
   Message,
   SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "../../work/runtime/state.ts";
 import type { SourceGraph } from "../../../domain/model/records/source-graph.ts";
 
 interface ObservedSequence extends SequenceData {

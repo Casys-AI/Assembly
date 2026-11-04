@@ -9,7 +9,7 @@ import { caseMessages } from "../cases/runtime.ts";
 import type { GovernedMemoryPromotionService } from "../../memory/governed-memory-promotion.ts";
 import type { DecisionInformationPort } from "./information-ports.ts";
 import { requireToolReuseAdmission } from "../artifacts/catalog.ts";
-import type { ContextEvidenceReference } from "../../../domain/work/policies/context-separation.ts";
+import type { ContextEvidenceReference } from "./evidence.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { MemoryContent } from "../../../domain/memory/entities/memory-record.ts";
 import {
@@ -31,7 +31,7 @@ import type {
 } from "../../../domain/model/execution/native-contracts.ts";
 import type { BehaviorModelVersion } from "../../../domain/shared-kernel/behavior-model-version.ts";
 import type { OperatorEntry } from "../../../domain/model/records/operator-entry.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 
 type InformationKind = Extract<
   OperatorEntry["kind"],

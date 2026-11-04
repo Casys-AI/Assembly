@@ -6,15 +6,17 @@ import type {
 import type {
   PendingChange,
 } from "../../domain/governance/records/pending-change.ts";
-import type { SystemRuntimeState } from "../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../work/runtime/state.ts";
+import { OperatorAuthorityError } from "../../domain/governance/operator-authority-error.ts";
 import {
   type AuthorityRouteCode,
-  MAIN_EXECUTION_SPACE_ID,
-  OperatorAuthorityError,
   type OperatorNotice,
   type RequestAuthorityRoute,
 } from "../../domain/governance/operator-authority.ts";
-import { type ExecutionSpaceRef } from "../../domain/governance/authority.ts";
+import {
+  type ExecutionSpaceRef,
+  MAIN_EXECUTION_SPACE_ID,
+} from "../../domain/governance/authority.ts";
 import { delegatedAuthorityExercise } from "../../domain/governance/policies/operator-authority-policy.ts";
 import { scopedOperator } from "../../domain/governance/policies/delegation-scope.ts";
 import { canonical } from "../../domain/primitives/canonical-json.ts";

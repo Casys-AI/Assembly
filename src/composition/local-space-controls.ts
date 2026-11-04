@@ -2,7 +2,7 @@ import { createPostgresClient } from "../adapters/out/postgres/client.ts";
 import type { PostgresClientConfiguration } from "../adapters/out/postgres/config.ts";
 import type { PostgresSystemScope } from "../adapters/out/postgres/scope.ts";
 import { existingPrimaryControl } from "../adapters/out/postgres/existing-primary-control.ts";
-import { RequestSpaceError } from "../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../domain/work/request-spaces/scope.ts";
 import { createRequestSpaceControls } from "./space-controls.ts";
 
 /** Explicit local CLI only. Reuses canonical services without opening a host,

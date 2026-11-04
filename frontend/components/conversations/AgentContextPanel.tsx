@@ -1,5 +1,5 @@
 import type { WorkbenchState } from "../../lib/workbench/state.ts";
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
 import {
   AgentMandate,
   AgentTools,

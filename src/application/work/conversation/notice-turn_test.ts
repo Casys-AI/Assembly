@@ -1,5 +1,5 @@
 import { deepStrictEqual, equal } from "node:assert/strict";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { authorityNoticeInput, noticeDecisionRecorded } from "./notice-turn.ts";
 
 Deno.test("a local Request notice is selected only for its exact woken invocation and decision", () => {

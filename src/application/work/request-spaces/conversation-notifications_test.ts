@@ -5,7 +5,7 @@ import {
   isRequestConversationsInvalidation,
   RequestConversationEvents,
 } from "./conversation-notifications.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import {
   requestOpeningBase,
   requestSpaceScope,

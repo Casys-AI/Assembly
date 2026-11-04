@@ -6,11 +6,12 @@ import {
   throws,
 } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
-import { type AuthorityExercise, legacyOwnerAuthority } from "../authority.ts";
 import {
+  type AuthorityExercise,
+  legacyOwnerAuthority,
   mainExecutionSpace,
-  OperatorAuthorityError,
-} from "../operator-authority.ts";
+} from "../authority.ts";
+import { OperatorAuthorityError } from "../operator-authority-error.ts";
 import {
   assertDelegatedAuthorityReceipt,
   assertOperatorPolicyRequest,

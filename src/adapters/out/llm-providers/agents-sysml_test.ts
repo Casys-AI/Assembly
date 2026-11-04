@@ -1,13 +1,11 @@
 // Second tour : faux Claude partagé (nouveau fil `tools`, bloc `tool_use`).
 import { equal, ok, rejects } from "node:assert/strict";
 import { ClaudeAgents } from "./agents.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../../domain/work/dialogue.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
+import type { ChatContext } from "../../../application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../../application/work/conversation/chat-decision.ts";
 import { createClaudeToolsFake } from "../../../../test/support/claude-tools-fake.ts";
-import { modelContextTools } from "../../../domain/model/consultation/context.ts";
+import { modelContextTools } from "../../../application/work/context/model-tools.ts";
 
 const context: ChatContext = {
   modelEditing: {

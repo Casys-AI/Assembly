@@ -1,4 +1,4 @@
-import type { ConversationsSnapshot } from "../../../src/domain/work/records/conversations.ts";
+import type { ConversationsSnapshot } from "../../../src/application/work/operators/conversation-types.ts";
 import { messageCaseId, parseCasesSnapshot } from "../../lib/cases/cases.ts";
 import type { WorkbenchState } from "../../lib/workbench/state.ts";
 

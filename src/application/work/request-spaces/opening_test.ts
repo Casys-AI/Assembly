@@ -3,14 +3,18 @@ import { mainOpenerAuthority, RequestSpaceOpenings } from "./opening.ts";
 import type { OpeningStorePort, RequestSpaceHostOptions } from "./ports.ts";
 import {
   type MainOpener,
+  type SpaceExecutionAdmission,
+} from "../../../domain/work/request-spaces/space-control.ts";
+import {
   mainOpeningKey,
   OPENING_PHASES,
   type OpeningCommand,
   type OpeningRecord,
+} from "../../../domain/work/request-spaces/opening.ts";
+import {
   requestSpaceDigest,
   RequestSpaceError,
-  type SpaceExecutionAdmission,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
 import {
   requestControlState,
   requestOpeningBase,

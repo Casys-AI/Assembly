@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import { MAX_BRANCH_TEAM } from "../../src/domain/work/records/conversations.ts";
 
 export const PRIMARY_NAME = "Main Operator";

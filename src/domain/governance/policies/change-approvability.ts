@@ -3,12 +3,10 @@ import {
   assertDelegatedAuthorityReceipt,
   assertOperatorPolicyRequest,
 } from "./operator-authority-policy.ts";
+import { OperatorAuthorityError } from "../operator-authority-error.ts";
 import {
   assertGrantModelEditingScope,
   isTeamOperatorSpec,
-  MAIN_EXECUTION_SPACE_ID,
-  mainExecutionSpace,
-  OperatorAuthorityError,
   validateGrantModelEditing,
   validateOperatorCreationSpec,
 } from "../operator-authority.ts";
@@ -22,11 +20,15 @@ import { characterCount } from "../../primitives/character-count.ts";
 import {
   type ExecutableModel,
 } from "../../model/execution/executable-model.ts";
-import type { ChatDecision } from "../../work/dialogue.ts";
-import type { PendingChange } from "../records/pending-change.ts";
+import type {
+  ChangeProposal,
+  PendingChange,
+} from "../records/pending-change.ts";
 import {
   type AuthorityExercise,
   AuthorityInvariantError,
+  MAIN_EXECUTION_SPACE_ID,
+  mainExecutionSpace,
   ownerAuthorityFor,
 } from "../authority.ts";
 import { canonical } from "../../primitives/canonical-json.ts";
@@ -34,10 +36,6 @@ import {
   MAX_NETWORK_HOST_ADDITIONS,
   validateNetworkScope,
 } from "./network-policy.ts";
-
-type ChangeProposal = Extract<ChatDecision, {
-  kind: "propose_mandate_change" | "propose_agent_creation";
-}>;
 
 type ApprovalModel =
   & Pick<ExecutableModel, "policy">

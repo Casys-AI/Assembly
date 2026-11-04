@@ -1,6 +1,6 @@
 import { deepStrictEqual, equal, match } from "node:assert/strict";
 import { createRequestSpaceOpeningHandler } from "./request-space-openings.ts";
-import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces/scope.ts";
 import {
   createSpaceSessionHandler,
   SPACE_SESSION_COOKIE,

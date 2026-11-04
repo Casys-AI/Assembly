@@ -30,10 +30,8 @@ import type {
   ModelEditRequest,
   ResolvedModelEdit,
 } from "../../src/domain/model/editing/tooling.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import type { BehaviorInvocationPort } from "../../src/application/work/behaviors/invocation.ts";
 import type { DecisionInformationPort } from "../../src/application/work/context/information-ports.ts";
 import { postgresTestEnabled } from "../support/postgres.ts";

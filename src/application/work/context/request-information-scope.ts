@@ -9,14 +9,12 @@ import type { MemoryContent } from "../../../domain/memory/entities/memory-recor
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import type { BehaviorModelVersion } from "../../../domain/shared-kernel/behavior-model-version.ts";
-import type {
-  ModelSourceRevision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ModelSourceRevision } from "../conversation/chat-context.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import {
   exactSourceVersion,
   RequestSpaceError,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
 
 /** Local information readers share one exact scoped identity. This adapter
  * resolves evidence only; neither a store handle nor a live snapshot grants

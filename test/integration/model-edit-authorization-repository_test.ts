@@ -7,7 +7,7 @@ import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { ModelRepositoryError } from "../../src/application/model/repository.ts";
 import type { ModelSourceAuthorizationPort } from "../../src/application/governance/ports/out/model-source-authorization.port.ts";
 import type { ModelSources as Sources } from "../../src/domain/model/value-objects/sources.ts";
-import type { ModelProposalAuthorization } from "../../src/domain/governance/records/model-edit-authorization.ts";
+import type { ModelProposalAuthorization } from "../../src/domain/governance/model-access/model-edit-authorization.ts";
 const compiler = {
   compile: (sources: Sources) => materialize([], sources, "fixture-engine"),
   recipe: () => {

@@ -15,10 +15,7 @@ import type {
   EvolutionTarget,
 } from "../../model/evolution/ports.ts";
 import { EvolutionError } from "../../model/evolution/ports.ts";
-import type {
-  InvocationContinuation,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { InvocationContinuation, SystemRuntimeState } from "./state.ts";
 import {
   hasHostRequestChangeCase,
   invocationInput,

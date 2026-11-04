@@ -3,14 +3,13 @@ import {
   delegatedAuthorityExercise,
   validateOperatorAuthorityPolicyRequest,
 } from "./operator-authority-policy.ts";
+import { OperatorAuthorityError } from "../operator-authority-error.ts";
 import {
   isTeamOperatorSpec,
-  mainExecutionSpace,
-  OperatorAuthorityError,
   validateGrantModelEditing,
   validateOperatorCreationSpec,
 } from "../operator-authority.ts";
-import { type ExecutionSpaceRef } from "../authority.ts";
+import { type ExecutionSpaceRef, mainExecutionSpace } from "../authority.ts";
 import {
   creationAuthorityExercise,
   type CreationScope,
@@ -21,14 +20,20 @@ import {
  * Admission rules used by APE 2.1 Proposal–Admission–Execution Separation
  * and 2.2 Fail-Closed Admission. These rules do not themselves execute effects.
  */
-import type { AdmissionRecord, Candidate } from "../../work/candidates.ts";
 import type {
+  AdmissionRecord,
+  Candidate,
+} from "../../work/records/candidates.ts";
+import type {
+  ChangeProposal,
   ChangeRequestOrigin,
   MandateRequestedRights,
   PendingChange,
 } from "../records/pending-change.ts";
-import type { ChatContext, ChatDecision } from "../../work/dialogue.ts";
-import type { SystemConfiguration } from "../records/system-configuration.ts";
+import type {
+  ExecutionMandate,
+  SystemConfiguration,
+} from "../records/system-configuration.ts";
 import {
   assertApprovable,
   ChangeApprovabilityError,
@@ -255,7 +260,7 @@ export class SystemGovernance {
     return structuredClone(this.value);
   }
 
-  get builderMandate(): NonNullable<ChatContext["mandate"]> {
+  get builderMandate(): ExecutionMandate {
     if (this.model) return structuredClone(this.model.mandate);
     const builder = this.value.builder;
     return {
@@ -287,9 +292,7 @@ export class SystemGovernance {
   }
 
   propose(
-    decision: Extract<ChatDecision, {
-      kind: "propose_mandate_change" | "propose_agent_creation";
-    }>,
+    decision: ChangeProposal,
     id: string,
     at: string,
     origin?: ChangeRequestOrigin,
@@ -349,7 +352,10 @@ export class SystemGovernance {
       : "reviewer-creation";
     if (kind === "mandate-change") {
       const rights = validateRequestedRights(
-        (decision as Extract<ChatDecision, { kind: "propose_mandate_change" }>)
+        (decision as Extract<
+          ChangeProposal,
+          { kind: "propose_mandate_change" }
+        >)
           .requestedRights,
       );
       if (!this.model) this.validateAvailableRights(rights);
@@ -366,7 +372,7 @@ export class SystemGovernance {
       validateOperatorCreationSpec(decision.operator);
     } else {
       const request = decision as Extract<
-        ChatDecision,
+        ChangeProposal,
         { kind: "propose_agent_creation"; role: "reviewer" }
       >;
       if (

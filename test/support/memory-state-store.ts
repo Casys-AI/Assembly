@@ -1,5 +1,5 @@
 import type { StorePort } from "../../src/application/work/runtime/ports.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 
 /** Cloned CAS port for explicitly memory-tier scenarios. It has no durable
  * history, recovery, or database qualification semantics. */

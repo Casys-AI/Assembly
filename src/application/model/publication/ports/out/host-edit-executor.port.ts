@@ -1,5 +1,5 @@
 import type { HostEdit } from "../../../../../domain/model/editing/host-edit.ts";
-import type { IncarnationInventory } from "../../../../../domain/model/editing/write-command.ts";
+import type { IncarnationInventory } from "../../../../../domain/model/editing/journal-replay.ts";
 import type { ModelSources as Sources } from "../../../../../domain/model/value-objects/sources.ts";
 import type { ModelRevision } from "../../../../../domain/model/records/revision.ts";
 

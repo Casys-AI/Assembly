@@ -1,12 +1,12 @@
 /** Exact unfinished-work continuation for a local-owner ceiling increase.
  * No generic evolution boundary or model-digest equivalence is weakened here. */
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type {
   BudgetCeilingManifest,
   BudgetCeilingMember,
   BudgetCeilingTransition,
-} from "../../../domain/work/records/budget-ceiling-transition.ts";
+} from "./budget-ceiling-transition.ts";
 import {
   budgetState,
   type WorkBudgetRecord,
@@ -39,7 +39,7 @@ import { emptyEvolutionAwait, emptyNativeEvolutionAwait } from "./evolution.ts";
 import { hasActivationIntent } from "../../../domain/work/policies/candidate-activation.ts";
 import { activeBatchCall } from "../conversation/batches.ts";
 import { candidateIsPending } from "../candidates/case-candidates.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
 import { draftDigest } from "./values.ts";
 
 function refuse(message: string): never {

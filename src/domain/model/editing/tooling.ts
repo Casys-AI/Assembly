@@ -131,31 +131,3 @@ export type ResolvedModelEdit =
     site: ReferenceSiteFingerprint;
   }
   | { kind: "set-type"; target: ModelToolingTarget; type: string };
-
-export interface ModelToolingDiagnostic {
-  severity: string;
-  message: string;
-  stage?: string;
-  unit?: string;
-  line?: number;
-  col?: number;
-}
-
-export interface ModelToolingDescription {
-  id: string;
-  qualifiedName: string;
-  metaclass: string;
-  owner?: { id: string; qualifiedName?: string; metaclass?: string };
-  types: Array<{ id: string; qualifiedName?: string; metaclass?: string }>;
-  source: { path: string; startByte: number; endByte: number; text: string };
-}
-
-export interface ModelToolingEditResult {
-  /** Descriptions in request order, measured in the unedited source snapshot. */
-  targets: ModelToolingDescription[];
-  sources: Record<string, string>;
-  splices: Array<{ unit: string; start: number; end: number; text: string }>;
-  idMap: Array<[string, string]>;
-  diagnostics: ModelToolingDiagnostic[];
-  provider: { name: string; version: string };
-}

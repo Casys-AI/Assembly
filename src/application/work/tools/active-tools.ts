@@ -1,11 +1,14 @@
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type { Candidate, ToolDraft } from "../../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type {
+  Candidate,
+  ToolDraft,
+} from "../../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import {
   type RetainedToolDependencyDescriptor,
   type RetainedToolInvocationTarget,
   retainedToolResourceId,
-} from "../../../domain/work/retained-tool-dependencies.ts";
+} from "../../../domain/work/records/retained-tool-dependencies.ts";
 import type { ArtifactSourceServicePort } from "../artifacts/publication.ts";
 import { resolveCandidateSource } from "../artifacts/candidate-source.ts";
 import { toolDraftDigest } from "../artifacts/catalog.ts";

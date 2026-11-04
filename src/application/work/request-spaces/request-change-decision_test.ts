@@ -5,19 +5,18 @@ import {
   requestOpeningBase,
   requestSpaceScope,
 } from "../../../../test/support/request-space-fixture.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import {
-  type OpeningRecord,
   requestSpaceDigest,
   RequestSpaceError,
-  type SpaceController,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
 import type { PendingChange } from "../../../domain/governance/records/pending-change.ts";
 import { requestNetworkProposalDigest } from "../../../domain/governance/records/request-network-change.ts";
 import type { SystemRuntime } from "../runtime/system.ts";
 
 import { branchAuthorityFixture } from "../../../../test/support/branch-authority-fixture.ts";
 import { requestAuthorityRoute } from "../../governance/request-authority-routing.ts";
-import { mainExecutionSpace } from "../../../domain/governance/operator-authority.ts";
 import {
   assertRequestCreationGrantAuthorityCurrent,
   assertRequestDelegatedAuthorityCurrent,
@@ -27,7 +26,10 @@ import {
   requestDelegatedAuthorityDigest,
 } from "../../model/source-admission/request-delegated-authority.ts";
 import { requestChangeProposalDigest } from "../../../domain/governance/records/request-change.ts";
-import { exerciseOwnerAuthority } from "../../../domain/governance/authority.ts";
+import {
+  exerciseOwnerAuthority,
+  mainExecutionSpace,
+} from "../../../domain/governance/authority.ts";
 import type { OperatorCommandOrigin } from "../operators/command-delivery.ts";
 import { invocationKey } from "../operators/journal.ts";
 

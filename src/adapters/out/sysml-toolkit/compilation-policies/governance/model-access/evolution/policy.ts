@@ -14,7 +14,7 @@ import type { NativeLiteral } from "../../../../../../../domain/model/records/na
 import { compileNativeAuthority } from "../../../work/execution-model.ts";
 import {
   validateModelEditPolicyIdentity,
-} from "../../../../../../../domain/governance/policies/model-edit-policy.ts";
+} from "../../../../../../../domain/governance/model-access/model-edit-policy.ts";
 import { isNamespacePartOccurrence } from "../../../../../../../domain/model/policies/model-occurrence.ts";
 import { compileModelPolicyRoot } from "../../authority/model-policy-root.ts";
 

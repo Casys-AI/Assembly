@@ -19,13 +19,11 @@ import { type SourceModel } from "../../src/application/model/source-model.ts";
 import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { openOperatorWorkspace } from "../support/operator-workspace.ts";
 import { DenoToolRunner } from "../../src/adapters/out/sandbox/runner.ts";
-import type { ContextEvidenceReference } from "../../src/domain/work/policies/context-separation.ts";
+import type { ContextEvidenceReference } from "../../src/application/work/context/evidence.ts";
 import type { MemoryGuidance } from "../../src/domain/memory/governed-memory-promotion.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-  Message,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
+import type { Message } from "../../src/application/work/runtime/state.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");
 const behaviors = [

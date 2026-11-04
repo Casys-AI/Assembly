@@ -17,7 +17,7 @@ import type {
   NativeBehaviorContract,
 } from "../../../domain/model/execution/native-contracts.ts";
 import type { OperatorEntry } from "../../../domain/model/records/operator-entry.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { artifactModel } from "../../../../test/support/tool-artifact-fixture.ts";
 import { InformationBehavior } from "./information-behavior.ts";
 import {

@@ -1,17 +1,16 @@
-import { sameProductName } from "../model/sysml-product-names.ts";
 import { characterCount } from "../primitives/character-count.ts";
 import { MAX_OPERATOR_UNITS } from "../work/records/conversations.ts";
 import type { PendingChange } from "./records/pending-change.ts";
-import type { ExecutionSpaceRef, ScopedOperatorRef } from "./authority.ts";
-import type { ElementRecord } from "../model/records/snapshot.ts";
+import type { ScopedOperatorRef } from "./authority.ts";
 import { parseSysmlQualifiedName } from "../model/value-objects/sysml-qualified-name.ts";
 
-import type { ModelEditOperation } from "./policies/model-edit-policy.ts";
+import type { ModelEditOperation } from "./model-access/model-edit-policy.ts";
 import {
   parseModelEditGrants,
   parseModelEditOperations,
-} from "./policies/model-edit-policy.ts";
+} from "./model-access/model-edit-policy.ts";
 import { validateNetworkScope } from "./policies/network-policy.ts";
+import { OperatorAuthorityError } from "./operator-authority-error.ts";
 import { TOOL_KINDS, type ToolKind } from "../shared-kernel/tool-kind.ts";
 
 export interface ModelEditingGrant {
@@ -127,36 +126,6 @@ export interface PreparedChangeDiff {
   deletions: number;
 }
 
-/** At most this many requests awaiting the person reach an operator's context. */
-export const MAX_AWAITING_PERSON = 20;
-
-/** Requests awaiting the person, newest first then by identity, bounded.
- * `requestedAt` only orders them; it is dropped from the view. */
-export function awaitingPersonView<
-  T extends { id: string; caseId: string; requestedAt: string },
->(entries: readonly T[]): {
-  awaitingPerson: Omit<T, "requestedAt">[];
-  awaitingPersonTruncated: boolean;
-} {
-  const ordered = [...entries].sort((a, b) =>
-    a.requestedAt === b.requestedAt
-      ? a.caseId === b.caseId
-        ? a.id < b.id ? -1 : a.id > b.id ? 1 : 0
-        : a.caseId < b.caseId
-        ? -1
-        : 1
-      : a.requestedAt < b.requestedAt
-      ? 1
-      : -1
-  );
-  return {
-    awaitingPerson: ordered.slice(0, MAX_AWAITING_PERSON).map((
-      { requestedAt: _requestedAt, ...entry },
-    ) => entry),
-    awaitingPersonTruncated: ordered.length > MAX_AWAITING_PERSON,
-  };
-}
-
 /** Agent decisions need the proposal index, not publication bytes or instructions. */
 export function changeDecisionMetadata(change: PendingChange) {
   return {
@@ -179,40 +148,6 @@ export function changeDecisionMetadata(change: PendingChange) {
       }
       : {}),
   };
-}
-
-/** Include derived mandate types and their occurrences, regardless of local names. */
-export function modelEditingAuthorityRoots(
-  elements: readonly ElementRecord[],
-): string[] {
-  const protectedIds = new Set(
-    elements.filter((element) =>
-      [
-        "AssemblyAuthority::OperatorAuthorityPolicy",
-        "AssemblyAuthority::OperatorCreationPolicy",
-        "AssemblyAuthority::ToolAdmissionPolicy",
-        "AssemblyAuthority::Mandate",
-        "AssemblyAuthority::RootAuthority",
-        "AssemblyAuthority::RootGrant",
-        "AssemblyCore::ConfiguredMandate",
-      ].some((name) => sameProductName(element.qualifiedName, name))
-    ).map((element) => element.id),
-  );
-  let size: number;
-  do {
-    size = protectedIds.size;
-    for (const element of elements) {
-      if (
-        [...element.typeIds, ...element.generalIds].some((id) =>
-          protectedIds.has(id)
-        )
-      ) {
-        protectedIds.add(element.id);
-      }
-    }
-  } while (size !== protectedIds.size);
-  return elements.filter((element) => protectedIds.has(element.id))
-    .map((element) => element.qualifiedName).filter(Boolean).sort();
 }
 
 export function assertGrantModelEditingScope(
@@ -248,30 +183,6 @@ export function assertGrantModelEditingScope(
         excludedRoots: [...authorities],
       },
     );
-  }
-}
-
-export class OperatorAuthorityError extends Error {
-  readonly recovery = { action: "refuse-and-repropose" } as const;
-  constructor(
-    readonly code:
-      | "INVALID_AUTHORITY_POLICY"
-      | "AUTHORITY_POLICY_FORBIDDEN"
-      | "AUTHORITY_POLICY_STALE"
-      | "AUTHORITY_REQUEST_STALE"
-      | "AUTHORITY_OUT_OF_BOUNDS"
-      | "AUTHORITY_RECEIPT_MISMATCH"
-      | "AUTHORITY_PROVENANCE_MISMATCH"
-      | "INVALID_MODEL_EDIT_GRANT"
-      | "INVALID_OPERATOR_REQUEST"
-      | "CHANGE_PREVIEW_MISMATCH"
-      | "OPERATOR_OPEN_FAILED"
-      | "OPERATOR_CAPACITY_EXCEEDED",
-    message: string,
-    readonly context: Record<string, string | string[]> = {},
-  ) {
-    super(message);
-    this.name = "OperatorAuthorityError";
   }
 }
 
@@ -367,28 +278,6 @@ export function validateRequestOperatorSpec(
       error instanceof Error ? error.message : String(error),
     );
   }
-}
-
-export const MAIN_EXECUTION_SPACE_ID = "main";
-
-/** A Branch Operator shares its Main Operator's native ID: only the space tells them apart. */
-export function sameScopedOperator(
-  a: ScopedOperatorRef,
-  b: ScopedOperatorRef,
-): boolean {
-  return a.projectId === b.projectId && a.systemId === b.systemId &&
-    a.executionSpaceId === b.executionSpaceId && a.operatorId === b.operatorId;
-}
-
-/** The main space where a model of this identity is admitted. */
-export function mainExecutionSpace(
-  identity: Pick<ExecutionSpaceRef, "projectId" | "systemId">,
-): ExecutionSpaceRef {
-  return {
-    projectId: identity.projectId,
-    systemId: identity.systemId,
-    executionSpaceId: MAIN_EXECUTION_SPACE_ID,
-  };
 }
 
 /** Closed reason of a route that cannot designate a decider. */

@@ -11,7 +11,10 @@ import {
   buildActivationCommand,
 } from "../../src/application/model/publication/write-queue.ts";
 import { ModelPublicationError } from "../../src/application/model/publication/service.ts";
-import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
+import {
+  exerciseOwnerAuthority,
+  mainExecutionSpace,
+} from "../../src/domain/governance/authority.ts";
 import { changePublication } from "../../src/domain/model/publication/change.ts";
 import { sha256 } from "../../src/domain/model/value-objects/artifact.ts";
 import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";
@@ -24,9 +27,8 @@ import {
   delegatedCandidateAuthorityExercise,
   toolAdmissionPreparation,
 } from "../../src/domain/governance/policies/tool-admission-policy.ts";
-import { mainExecutionSpace } from "../../src/domain/governance/operator-authority.ts";
-import type { Candidate } from "../../src/domain/work/candidates.ts";
-import type { ChatDecision } from "../../src/domain/work/dialogue.ts";
+import type { Candidate } from "../../src/domain/work/records/candidates.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import type {
   PendingChange,
 } from "../../src/domain/governance/records/pending-change.ts";

@@ -251,9 +251,9 @@ async function fixture() {
 import { RequestInitialSkillAuthority } from "../application/work/request-spaces/request-initial-skill-authority.ts";
 import { createRequestInitialSkillRuntimeReader } from "../adapters/out/postgres/request-initial-skill-runtime-reader.ts";
 import type { PostgresHostStorage } from "../adapters/out/postgres/host-storage.ts";
-import type { OpeningRecord } from "../domain/work/request-spaces.ts";
-import { requestSpaceDigest } from "../domain/work/request-spaces.ts";
-import { savedManifest } from "../domain/work/saved-systems.ts";
+import type { OpeningRecord } from "../domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../domain/work/request-spaces/scope.ts";
+import { savedManifest } from "../domain/work/records/saved-systems.ts";
 import { encodeRuntimeSnapshotPayload } from "../adapters/out/postgres/runtime-snapshot-codec.ts";
 
 async function durableFixture() {

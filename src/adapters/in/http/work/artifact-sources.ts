@@ -10,7 +10,7 @@ import {
 import type {
   AgentConversation,
   ConversationsSnapshot,
-} from "../../../../domain/work/records/conversations.ts";
+} from "../../../../application/work/operators/conversation-types.ts";
 import type {
   ArtifactSourceInspection,
   InspectedArtifactSource,

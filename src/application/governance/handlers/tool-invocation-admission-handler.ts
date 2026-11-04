@@ -1,5 +1,5 @@
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type { ChatDecision } from "../../../domain/work/dialogue.ts";
+import type { ChatDecision } from "../../work/conversation/chat-decision.ts";
 import {
   invocationAdmission,
   type ToolInvocationAdmissionHost,

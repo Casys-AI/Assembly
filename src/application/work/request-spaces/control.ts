@@ -5,26 +5,30 @@ import type {
 import {
   effectiveSpaceControlAuthority,
   sameEffectiveSpaceControlAuthority,
-} from "../../../domain/work/request-space-authority.ts";
+} from "../../../domain/work/policies/request-space-authority.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import {
   retainedToolAdmissionId,
   retainedToolDescriptors,
   retainedToolResourceId,
-} from "../../../domain/work/retained-tool-dependencies.ts";
+} from "../../../domain/work/records/retained-tool-dependencies.ts";
 import {
   branchTeam,
   type BranchTeamMember,
   conversationPermissions,
+} from "../../../domain/work/request-spaces/branch-team.ts";
+import {
   type HostSpaceController,
-  type OpeningRecord,
-  requestSpaceDigest,
-  RequestSpaceError,
   type SpaceControlAuthority,
   type SpaceController,
   type SpaceControlPrincipal,
   type SpaceExecutionAdmission,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/space-control.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import {
+  requestSpaceDigest,
+  RequestSpaceError,
+} from "../../../domain/work/request-spaces/scope.ts";
 import {
   type RequestTeamCreationModelReader,
   requestTeamCreationReceiptVerifies,
@@ -262,7 +266,7 @@ type RequestTeamStateReader = (
 ) => Promise<
   ReadonlyMap<
     string,
-    import("../../../domain/work/dialogue.ts").SystemRuntimeState
+    import("../runtime/state.ts").SystemRuntimeState
   >
 >;
 
@@ -315,7 +319,7 @@ export class SpaceAdmissions implements SpaceAdmissionPort {
       ? await this.#teamStates(record, memberIds)
       : new Map<
         string,
-        import("../../../domain/work/dialogue.ts").SystemRuntimeState
+        import("../runtime/state.ts").SystemRuntimeState
       >();
     const key = canonical([
       record.id,

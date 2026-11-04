@@ -5,7 +5,7 @@ import type { ClockPort } from "../work/runtime/ports.ts";
 import {
   RequestSpaceError,
   requestSpaceIdentity,
-} from "../../domain/work/request-spaces.ts";
+} from "../../domain/work/request-spaces/scope.ts";
 import type { ProviderCallHostScope } from "./provider-call.ts";
 import type { RequestKpis } from "./request-kpis.ts";
 import {

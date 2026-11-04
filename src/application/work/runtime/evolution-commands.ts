@@ -10,10 +10,8 @@ import type {
   EvolutionAct,
   EvolutionAuthorityExercise,
 } from "../../../domain/model/evolution/policy.ts";
-import type {
-  OperatorEvolutionSummary,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { OperatorEvolutionSummary } from "../conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import {
   caseExecutionContext,
   designerExecutionContext,
@@ -167,9 +165,9 @@ export function operatorEvolutionCommands<D extends SoftwareEvolutionDossier>(
     owns?(dossier: D): boolean;
     preparationIdentity?(input: {
       command:
-        import("../../../domain/work/dialogue.ts").OperatorEvolutionCommand;
+        import("../conversation/chat-decision.ts").OperatorEvolutionCommand;
       source: Pick<
-        import("../../../domain/work/dialogue.ts").ChatContext,
+        import("../conversation/chat-context.ts").ChatContext,
         "modelContext" | "modelSources"
       >;
       native?: { effectKey: string; inputMessageId: string };

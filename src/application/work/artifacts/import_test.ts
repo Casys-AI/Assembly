@@ -12,8 +12,8 @@ import {
   verifiedToolReuseReceipt,
 } from "./import.ts";
 import { draftDigest } from "../runtime/values.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 
 const AT = "2026-10-28T00:00:00.000Z";
 

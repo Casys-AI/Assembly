@@ -40,10 +40,8 @@ import {
 import { caseNetworkWitnessAgent } from "../support/request-case-network-witness.ts";
 import { eventually } from "../support/eventually.ts";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import type { PendingChange } from "../../src/domain/governance/records/pending-change.ts";
 
 type Ref = {

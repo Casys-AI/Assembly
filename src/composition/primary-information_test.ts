@@ -5,7 +5,7 @@ import {
   type DeclaredModelConsultationHost,
 } from "../application/work/conversation/declared-model-consultation.ts";
 import type { DecisionInformationPort } from "../application/work/context/information-ports.ts";
-import type { MessageObservation } from "../domain/work/policies/context-separation.ts";
+import type { MessageObservation } from "../application/work/context/evidence.ts";
 import { selectDesignerInvocation } from "../application/work/cases/runtime.ts";
 import { requestControlState } from "../../test/support/request-space-fixture.ts";
 

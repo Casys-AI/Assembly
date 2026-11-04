@@ -3,11 +3,11 @@ import type {
   SpaceControlAdoptedState,
   SpaceControlAuthority,
   SpaceControlSourceBinding,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/space-control.ts";
 import {
   projectSpaceControlAuthority,
   type SpaceControlSource,
-} from "../../../domain/work/space-control-source.ts";
+} from "../../../domain/work/policies/space-control-source.ts";
 
 /** Required admitted control source. Missing policy confers no authority. */
 export interface CurrentSpaceControlSourcePort {

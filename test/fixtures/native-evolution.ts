@@ -24,10 +24,8 @@ import type {
 import { memoryContentDigest } from "../../src/domain/memory/governed-memory-promotion.ts";
 import type { DecisionInformationPort } from "../../src/application/work/context/information-ports.ts";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import type { EvolutionGrant } from "../../src/domain/model/evolution/policy.ts";
 import { EVOLUTION_FLOW_MECHANISMS } from "../../src/domain/model/evolution/policy.ts";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";

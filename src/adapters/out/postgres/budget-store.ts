@@ -11,7 +11,7 @@ import {
 } from "../../../application/work/runtime/evolution-budget-projection.ts";
 import { caseBudgetPolicy } from "../../../application/work/cases/runtime.ts";
 import type { BehaviorSettingsBudgetScope } from "../../../application/work/runtime/behavior-settings-validation.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import { postgresBigInt, postgresSafeInteger } from "./numbers.ts";
 import {

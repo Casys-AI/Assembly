@@ -26,7 +26,7 @@ import { propPredicate } from "../../src/adapters/out/oxigraph/rdf.ts";
 import {
   buildElementIri,
   buildGraphIri,
-} from "../../src/domain/model/value-objects/element-ref.ts";
+} from "../../src/adapters/out/oxigraph/iri.ts";
 import {
   nativeFixtureFailure,
   nativeProjectionMeasurements,

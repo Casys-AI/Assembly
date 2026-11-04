@@ -9,8 +9,8 @@ import { MAX_TOOL_NAME_LENGTH } from "../../../domain/work/value-objects/tool-na
 import type {
   ChatDecision,
   ChatDecisionBatch,
-} from "../../../domain/work/dialogue.ts";
-import type { ReviewDecision } from "../../../domain/work/candidates.ts";
+} from "../../../application/work/conversation/chat-decision.ts";
+import type { ReviewDecision } from "../../../domain/work/records/candidates.ts";
 
 export const REQUESTED_BUILDER_RIGHTS = Object.freeze(
   {

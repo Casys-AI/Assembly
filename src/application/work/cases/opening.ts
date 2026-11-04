@@ -2,20 +2,18 @@ import { sha256 } from "../../../domain/primitives/execution-digest.ts";
 import {
   type TaskSourceInputCapture,
   taskSourceUrls,
-} from "../../../domain/work/task-source-input.ts";
+} from "../../../domain/work/records/task-source-input.ts";
 import { caseMessages } from "./runtime.ts";
-import { OperatorAuthorityError } from "../../../domain/governance/operator-authority.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
+import type { ChatContext } from "../conversation/chat-context.ts";
+import type { ChatDecision } from "../conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 
 interface OpeningRuntime {
   readonly snapshot: SystemRuntimeState;
   resumeRequest(
     input: import("./commands/inputs.ts").IndependentRequestResume,
-  ): Promise<import("../../../domain/work/dialogue.ts").RequestResumeOutcome>;
+  ): Promise<import("../runtime/state.ts").RequestResumeOutcome>;
 }
 
 /** Main's resumption of the main Requests it opened. Opening a Request is a

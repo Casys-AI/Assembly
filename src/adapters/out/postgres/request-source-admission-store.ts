@@ -1,4 +1,4 @@
-import { retainedMember } from "../../../domain/work/request-spaces.ts";
+import { retainedMember } from "../../../domain/work/request-spaces/branch-team.ts";
 import { requestExecutionPinFor } from "../../../application/model/evolution/request-execution-pin.ts";
 import {
   isSessionlessRequestAuthority,
@@ -24,8 +24,8 @@ import {
   assertRequestReleaseAdmissionReference,
   type RequestReleaseAdmissionReference,
   type SavedOperatorManifest,
-} from "../../../domain/work/saved-systems.ts";
-import type { VerifiedRequestReleaseSource } from "../../../domain/work/request-release-origin.ts";
+} from "../../../domain/work/records/saved-systems.ts";
+import type { VerifiedRequestReleaseSource } from "../../../domain/work/records/request-release-origin.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { parseModelRevisionRef } from "../../../domain/model/value-objects/element-ref.ts";
 import {
@@ -33,9 +33,11 @@ import {
   assertOpeningBase,
   type OpeningRecord,
   recordedOpeningCommand,
+} from "../../../domain/work/request-spaces/opening.ts";
+import {
   requestSpaceDigest,
   RequestSpaceError,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
 import {
   parseRequestSourceAdmission,
   type RequestSourceAdmission,

@@ -12,7 +12,7 @@ import type {
   RequestAdoptionSession,
   RequestOwnerAdoptionDossier,
 } from "./request-adoption-ports.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 
 /** Spec 4.8c: the host adopts the approved host delta of the MO's recorded
  * delegated decision with no session; the person's API stays the only one

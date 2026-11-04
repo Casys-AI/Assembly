@@ -12,7 +12,7 @@ import type {
   CaseInvocation,
   OperatorWorkReceipt,
 } from "../../../domain/work/execution/case-context.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { branchAuthorityFixture } from "../../../../test/support/branch-authority-fixture.ts";
 import type { OperatorExecutionDelivery } from "./execution.ts";
 import { recordRequestNetworkOutcome } from "./request-network-outcome.ts";

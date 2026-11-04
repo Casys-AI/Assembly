@@ -1,4 +1,4 @@
-import type { SystemRuntimeState } from "../../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../src/application/work/runtime/state.ts";
 
 export const authorities = {
   human: "You decide whether each tool is admitted.",

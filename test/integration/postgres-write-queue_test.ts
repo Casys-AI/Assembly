@@ -27,7 +27,7 @@ import { changePublication } from "../../src/domain/model/publication/change.ts"
 import type { HostEdit } from "../../src/domain/model/editing/host-edit.ts";
 import type { PendingChange } from "../../src/domain/governance/records/pending-change.ts";
 import { parseModelRevisionRef } from "../../src/domain/model/value-objects/element-ref.ts";
-import { buildOperationJournal } from "../../src/domain/model/editing/write-command.ts";
+import { buildOperationJournal } from "../../src/domain/model/editing/operation-journal.ts";
 import {
   postgresQualifiedTable,
   Prisma,

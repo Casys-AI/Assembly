@@ -448,7 +448,29 @@ export async function createEvolutionCompilationEvidence(
   const sourceFacts: Record<string, unknown> = {};
   // An unresolved source ID is evidence too: disappearance cannot pass silently.
   for (const id of [...ids].sort()) {
-    sourceFacts[id] = raw.get(id) ?? { missingNativeFact: id };
+    const fact = raw.get(id) ?? { missingNativeFact: id };
+    if (
+      !categories[id] && fact && typeof fact === "object" &&
+      !Array.isArray(fact)
+    ) {
+      // The native normalizer records whole-container source extents for
+      // editing/readback. A child's admitted scalar edit changes these text
+      // copies on its PartUsage and Package ancestors, including a shared
+      // package used by an unaffected operator. Typed facts and separately
+      // derived flags remain protected. Transition source text is deliberately
+      // excluded: the native normalizer uses it to establish branch semantics.
+      if (
+        ["PartUsage", "Package"].includes(
+          String((fact as Record<string, unknown>)["@type"]),
+        )
+      ) {
+        const normalized = { ...(fact as Record<string, unknown>) };
+        delete normalized["sysx:sourceText"];
+        sourceFacts[id] = normalized;
+        continue;
+      }
+    }
+    sourceFacts[id] = fact;
   }
   return {
     digestInputs: structuredClone(digestInputs),

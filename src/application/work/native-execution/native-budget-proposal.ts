@@ -1,12 +1,10 @@
-import type {
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ChatDecision } from "../conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type { WorkBudgetRecord } from "../../../domain/work/policies/budget.ts";
 import type {
   BudgetCeilingManifest,
   BudgetCeilingMember,
-} from "../../../domain/work/records/budget-ceiling-transition.ts";
+} from "../runtime/budget-ceiling-transition.ts";
 import type {
   NativeExecutionRequest,
   NativeExecutionSnapshot,

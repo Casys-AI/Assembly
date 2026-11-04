@@ -8,7 +8,7 @@ import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import {
   requestSourceAdmissionRef,
   requestSourceCommandRef,
-} from "../../src/domain/model/editing/request-source-publication.ts";
+} from "../../src/domain/model/editing/source-anchor-refs.ts";
 import type { OperatorExecutionDelivery } from "../../src/application/work/operators/execution.ts";
 import {
   postgresTestEnabled,

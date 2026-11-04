@@ -1,10 +1,8 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { RequestCaseConversations } from "./conversations.ts";
-import {
-  type OpeningRecord,
-  RequestSpaceError,
-  type SpaceController,
-} from "../../../domain/work/request-spaces.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
 
 Deno.test("Request decision requires the authenticated owner, exact Case and admitted operator", async () => {
   const host = { projectId: "project", systemId: "system" };

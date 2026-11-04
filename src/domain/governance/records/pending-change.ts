@@ -22,32 +22,6 @@ export type MandateRequestedRights =
   | { addNetworkHosts: string[] }
   | { setUrlSelectionMode: "authorized-host" | "user-provided" };
 
-/** What an operator may request: the stored rights, except that a delegated
- * policy names its recipient Case, never a space (4.8d D4). The host derives
- * `recipientExecutionSpaceId` from the Case before the proposal and does not
- * store the Case. */
-export type MandateRightsRequest =
-  | Exclude<
-    MandateRequestedRights,
-    { operatorAuthority: unknown } | { toolAdmission: unknown }
-  >
-  | {
-    operatorAuthority:
-      & Omit<
-        import("../policies/operator-authority-policy.ts").OperatorAuthorityPolicyRequest,
-        "recipientExecutionSpaceId"
-      >
-      & { recipientCaseId?: string };
-  }
-  | {
-    toolAdmission:
-      & Omit<
-        import("../policies/tool-admission-policy.ts").ToolAdmissionPolicyRequest,
-        "recipientExecutionSpaceId"
-      >
-      & { recipientCaseId?: string };
-  };
-
 export interface SupportedMandateChange {
   kind: "propose_mandate_change";
   requestedRights:
@@ -60,6 +34,37 @@ export interface SupportedMandateChange {
     | "setUrlSelectionMode";
   description: string;
 }
+
+/** A change proposal as the domain judges it: stored-form rights, any
+ * recipient Case already resolved to its space by the host. `text` is the
+ * operator's message, kept so the conversational decision carries the same
+ * variants; no domain rule reads it. */
+export type ChangeProposal =
+  | {
+    kind: "propose_mandate_change";
+    text: string;
+    reason: string;
+    requestedRights: MandateRequestedRights;
+  }
+  | {
+    kind: "propose_agent_creation";
+    text: string;
+    name: string;
+    reason: string;
+    role: "reviewer";
+    mandate: {
+      mayReviewExactCandidate: true;
+      mayAdmitReviewedCandidates: true;
+    };
+  }
+  | {
+    kind: "propose_agent_creation";
+    text: string;
+    name: string;
+    reason: string;
+    role: "operator";
+    operator: import("../operator-authority.ts").OperatorCreationSpec;
+  };
 
 /** Immutable request origin; an active Case and designer scope are exclusive. */
 export type ChangeRequestOrigin =

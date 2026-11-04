@@ -20,7 +20,7 @@ import {
   ownerAuthorityFor,
 } from "../../../domain/governance/authority.ts";
 import { assertModelEditScope } from "../../../domain/model/editing/scope.ts";
-import { MODEL_DELEGATIONS_FILE } from "../../../domain/governance/policies/model-delegation-ledger.ts";
+import { MODEL_DELEGATIONS_FILE } from "../../../domain/governance/model-access/model-delegation-ledger.ts";
 import { validateModelAdministration } from "./administration/operations.ts";
 import { validateEvolutionSourceAuthorization } from "./evolution/source-authorization.ts";
 import { discoverConversationUnits } from "../../../domain/model/records/source-identity.ts";

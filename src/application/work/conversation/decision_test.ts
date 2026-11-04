@@ -1,8 +1,8 @@
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
 import { ModelContextAccessError } from "../../../domain/model/consultation/context.ts";
-import { OperatorAuthorityError } from "../../../domain/governance/operator-authority.ts";
-import type { ChatDecision } from "../../../domain/work/dialogue.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
+import type { ChatDecision } from "./chat-decision.ts";
 import {
   chooseMove,
   executeOperatorCommand,

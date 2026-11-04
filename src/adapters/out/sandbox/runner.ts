@@ -1,16 +1,18 @@
 import type { RequestOpeningRunnerPort } from "../../../application/work/request-spaces/opening-host-ports.ts";
 import type { RunnableTool } from "../../../application/work/tools/active-tools.ts";
 import { TOOL_KINDS } from "../../../domain/shared-kernel/tool-kind.ts";
-import type { ToolRunnerPort } from "../../../application/work/runtime/ports.ts";
 import type {
   PageResult,
+  ToolRunnerPort,
+} from "../../../application/work/runtime/ports.ts";
+import type {
   TestReport,
   ToolDraft,
-} from "../../../domain/work/candidates.ts";
+} from "../../../domain/work/records/candidates.ts";
 import type {
   NetworkScope,
 } from "../../../domain/governance/records/system-configuration.ts";
-import type { ToolFailure } from "../../../domain/work/dialogue.ts";
+import type { ToolFailure } from "../../../application/work/tools/tool-invocation.ts";
 
 import {
   networkScopeFor,
@@ -18,8 +20,8 @@ import {
   validateNetworkScope,
 } from "../../../domain/governance/policies/network-policy.ts";
 
-import { ToolInvocationError } from "../../../domain/work/errors/tool-invocation.ts";
-export { ToolInvocationError } from "../../../domain/work/errors/tool-invocation.ts";
+import { ToolInvocationError } from "../../../application/work/tools/tool-invocation.ts";
+export { ToolInvocationError } from "../../../application/work/tools/tool-invocation.ts";
 
 interface InvocationPolicy {
   toolId: string;

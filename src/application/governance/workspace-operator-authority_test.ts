@@ -6,7 +6,7 @@ import type { SystemRuntime } from "../work/runtime/system.ts";
 import type { WorkspaceRuntime } from "../work/operators/workspace-registry.ts";
 import type { OperatorCommandOrigin } from "../work/operators/command-delivery.ts";
 import type { QueuedArtifactSourcePublication } from "../../domain/work/artifacts/source-publication.ts";
-import type { ChatDecision } from "../../domain/work/dialogue.ts";
+import type { ChatDecision } from "../work/conversation/chat-decision.ts";
 
 type BranchAuthority = NonNullable<
   Parameters<typeof createWorkspaceOperatorAuthority>[0]["branchAuthority"]

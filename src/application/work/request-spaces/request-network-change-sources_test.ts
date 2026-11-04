@@ -5,10 +5,8 @@ import {
   requestSpaceScope,
 } from "../../../../test/support/request-space-fixture.ts";
 import { modelSourceDigest } from "../../../domain/model/value-objects/sources.ts";
-import {
-  type OpeningRecord,
-  requestSpaceDigest,
-} from "../../../domain/work/request-spaces.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../../../domain/work/request-spaces/scope.ts";
 import type { ModelRevision } from "../../../domain/model/records/revision.ts";
 import type { PendingChange } from "../../../domain/governance/records/pending-change.ts";
 import { RequestNetworkChangeSources } from "./request-network-change-sources.ts";

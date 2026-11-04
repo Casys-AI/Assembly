@@ -6,7 +6,7 @@ import {
   parseEvolutionGrants,
   requireEvolution,
 } from "../../../src/domain/model/evolution/policy.ts";
-import { validateModelEditPolicyIdentity } from "../../../src/domain/governance/policies/model-edit-policy.ts";
+import { validateModelEditPolicyIdentity } from "../../../src/domain/governance/model-access/model-edit-policy.ts";
 import { sameProductName } from "../../../src/domain/model/sysml-product-names.ts";
 import {
   sourceLiterals,

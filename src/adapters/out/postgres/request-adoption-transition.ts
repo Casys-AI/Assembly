@@ -1,8 +1,8 @@
 import { assertRequestCancellationNativePins } from "../../../application/model/evolution/request-adoption-cancellation.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import { type OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import { sameOwnerAuthorityIdentity } from "../../../domain/governance/authority.ts";
-import { sameSpaceControlPrincipal } from "../../../domain/work/request-space-authority.ts";
+import { sameSpaceControlPrincipal } from "../../../domain/work/policies/request-space-authority.ts";
 import { isOpenCase } from "../../../domain/work/entities/cases.ts";
 import { requestExecutionPinFor } from "../../../application/model/evolution/request-execution-pin.ts";
 import {
@@ -48,7 +48,7 @@ import {
 } from "../../../domain/primitives/execution-digest.ts";
 import type { OperatorStorage } from "./host-storage.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
 import type { PostgresEvolutionStore } from "./evolution-store.ts";
 import type { PostgresRequestExecutionBindingReader } from "./request-execution-binding.ts";
 import type { PostgresRequestSourceAdmissionStore } from "./request-source-admission-store.ts";

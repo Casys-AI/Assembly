@@ -6,7 +6,7 @@ import {
 } from "node:assert/strict";
 import { renderToString } from "preact-render-to-string";
 import type { EffectiveModelUpdate } from "../../../src/domain/work/records/effective-model-update.ts";
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
 import { createWorkbenchState } from "../../lib/workbench/state.ts";
 import { snapshot } from "../../test/support/workbench-fixture.ts";
 import { ModelUpdateDivider } from "./ModelUpdateDivider.tsx";

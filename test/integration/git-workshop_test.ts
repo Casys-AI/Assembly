@@ -15,7 +15,7 @@ import {
   sourceEvolutionCompilation,
   validateSourceExecutable,
 } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");
 Deno.test({

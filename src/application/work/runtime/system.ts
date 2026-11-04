@@ -48,7 +48,7 @@ import {
   initialAdmissionDecisionKey,
   InitialAdmissionTransferRefused,
 } from "./initial-admission-transfer.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
 import { ModelRepositoryError } from "../../model/repository.ts";
 import {
   artifactSourceProofModel,
@@ -94,8 +94,8 @@ import {
   executionDigest,
   sha256,
 } from "../../../domain/primitives/execution-digest.ts";
-import type { OperatorCommandOutcome } from "../../../domain/work/records/operator-command-outcome.ts";
-import { validTaskSourceInputs } from "../../../domain/work/task-source-input.ts";
+import type { OperatorCommandOutcome } from "./operator-command-outcome.ts";
+import { validTaskSourceInputs } from "../../../domain/work/records/task-source-input.ts";
 import type {
   EvolutionDossier,
   EvolutionPublication,
@@ -131,9 +131,9 @@ import {
 } from "../conversation/decision-context.ts";
 import type { BehaviorSettingsValidationTarget } from "./behavior-settings-validation.ts";
 import { activeBatchCall, pendingBatch } from "../conversation/batches.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
 import {
   boundedOperatorNoticeText,
-  OperatorAuthorityError,
   type OperatorNotice,
 } from "../../../domain/governance/operator-authority.ts";
 import type { DelegatedActor } from "../../../domain/governance/policies/operator-authority-policy.ts";
@@ -191,8 +191,8 @@ import type {
   ExecutableModel,
   ModelExecutionReference,
 } from "../../../domain/model/execution/executable-model.ts";
-import type { ConversationsSnapshot } from "../../../domain/work/records/conversations.ts";
-import { modelContextTools } from "../../../domain/model/consultation/context.ts";
+import type { ConversationsSnapshot } from "../operators/conversation-types.ts";
+import { modelContextTools } from "../context/model-tools.ts";
 import type { BehaviorInvocationPort } from "../behaviors/invocation.ts";
 import {
   OperatorConversationError,
@@ -226,11 +226,11 @@ import type {
   ToolReuseImport,
   ToolReuseReceipt,
 } from "../artifacts/catalog.ts";
+import type { ChatDecision } from "../conversation/chat-decision.ts";
 import type {
-  ChatDecision,
   InitialToolsPreparationReference,
   SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "./state.ts";
 import type { SchemaValidationPort } from "../behaviors/schema-validation.ts";
 import { errorText, makeEvent } from "./values.ts";
 import {
@@ -902,7 +902,7 @@ export class SystemRuntime {
   /** Host-captured continuation of an existing independently opened Request. */
   async resumeRequest(
     input: import("../cases/commands/inputs.ts").IndependentRequestResume,
-  ): Promise<import("../../../domain/work/dialogue.ts").RequestResumeOutcome> {
+  ): Promise<import("./state.ts").RequestResumeOutcome> {
     if (
       !/^[^\s]{1,128}$/.test(input.resumeId) || !input.instruction?.trim() ||
       characterCount(input.instruction) > 2000 ||
@@ -3589,8 +3589,7 @@ export class SystemRuntime {
   }
   private async feedback(
     text: string,
-    observation?:
-      import("../../../domain/work/policies/context-separation.ts").MessageObservation,
+    observation?: import("../context/evidence.ts").MessageObservation,
   ): Promise<void> {
     await this.update((s) =>
       s.messages.push({

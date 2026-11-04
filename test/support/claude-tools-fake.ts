@@ -47,8 +47,8 @@
  *   couvrent les catégories terminales. `usage`, `id` et `model` de la
  *   réponse sont surchargeables par action.
  */
-import type { ChatDecision } from "../../src/domain/work/dialogue.ts";
-import type { ReviewDecision } from "../../src/domain/work/candidates.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
+import type { ReviewDecision } from "../../src/domain/work/records/candidates.ts";
 
 /** Nom de l'outil unique de revue, miroir de `CLAUDE_REVIEW_TOOL`. */
 export const CLAUDE_FAKE_REVIEW_TOOL = "review_decision";

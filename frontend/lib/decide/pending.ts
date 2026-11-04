@@ -3,8 +3,8 @@ import type {
   AgentConversation,
   ConversationsSnapshot,
   OperatorToolsSnapshot,
-} from "../../../src/domain/work/records/conversations.ts";
-import type { SystemRuntimeState } from "../../../src/domain/work/dialogue.ts";
+} from "../../../src/application/work/operators/conversation-types.ts";
+import type { SystemRuntimeState } from "../../../src/application/work/runtime/state.ts";
 import { proposalOwner } from "../conversations/proposals.ts";
 import {
   caseAgentHref,

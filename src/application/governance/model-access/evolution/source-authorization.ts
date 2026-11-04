@@ -6,7 +6,7 @@ import { requireEvolution } from "../../../../domain/model/evolution/policy.ts";
 import { compileEvolutionAssessment } from "../../../model/evolution/assessment.ts";
 import { createOperatorEditAuthorization } from "../operator-edit-authorization.ts";
 import { assertModelEditScope } from "../../../../domain/model/editing/scope.ts";
-import { MODEL_DELEGATIONS_FILE } from "../../../../domain/governance/policies/model-delegation-ledger.ts";
+import { MODEL_DELEGATIONS_FILE } from "../../../../domain/governance/model-access/model-delegation-ledger.ts";
 import {
   requireEvolutionEffectBounds,
   revalidateEvolutionAuthorityExercise,

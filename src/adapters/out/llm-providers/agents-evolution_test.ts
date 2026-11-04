@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import { createClaudeToolsFake } from "../../../../test/support/claude-tools-fake.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../../../application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../../application/work/conversation/chat-decision.ts";
 import { ClaudeAgents } from "./agents.ts";
 import { validateDecision } from "./output-validation.ts";
 

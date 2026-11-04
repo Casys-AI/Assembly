@@ -1,9 +1,7 @@
 import type { OperatorCommandOrigin } from "../../../operators/command-delivery.ts";
 import type { Case } from "../../../../../domain/work/entities/cases.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../../../conversation/chat-context.ts";
+import type { ChatDecision } from "../../../conversation/chat-decision.ts";
 import type {
   PendingChange,
 } from "../../../../../domain/governance/records/pending-change.ts";
@@ -15,17 +13,17 @@ export interface OperatorAuthorityLifecycle {
   openRequest?(
     command: Extract<ChatDecision, { kind: "open_request" }>,
   ): Promise<
-    import("../../../../../domain/work/dialogue.ts").RequestOpeningOutcome
+    import("../../../conversation/chat-decision.ts").RequestOpeningOutcome
   >;
   resumeRequest?(
     command: Extract<ChatDecision, { kind: "resume_request" }>,
   ): Promise<
-    import("../../../../../domain/work/dialogue.ts").RequestResumeOutcome
+    import("../../state.ts").RequestResumeOutcome
   >;
   clearCandidateInspection?(): void;
   /** These methods are bound to admitted operator runtimes; policies select actual holders. */
   candidateDecisionContext?(): NonNullable<
-    import("../../../../../domain/work/dialogue.ts").ChatContext[
+    import("../../../conversation/chat-context.ts").ChatContext[
       "operatorToolAdmission"
     ]
   >;
@@ -43,7 +41,7 @@ export interface OperatorAuthorityLifecycle {
   ): Promise<void>;
   /** May read the open Request spaces (covered Branch Operator requests). */
   decisionContext?(): Promise<
-    import("../../../../../domain/work/dialogue.ts").ChatContext[
+    import("../../../conversation/chat-context.ts").ChatContext[
       "operatorAuthority"
     ]
   >;

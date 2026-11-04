@@ -5,11 +5,9 @@ import { requestOpeningInitialSkillIssues } from "./opening-host.ts";
 import { inspectRequestInitialSkills } from "../../skills/request-initial-skills.ts";
 import { BundledSkillReadError } from "../../skills/ports.ts";
 import { skillContentDigest } from "../../../domain/skills/context-skills.ts";
-import { requestSpaceDigest } from "../../../domain/work/request-spaces.ts";
-import type {
-  SavedSystemManifest,
-  SavedSystemView,
-} from "../../../domain/work/saved-systems.ts";
+import { requestSpaceDigest } from "../../../domain/work/request-spaces/scope.ts";
+import type { SavedSystemManifest } from "../../../domain/work/records/saved-systems.ts";
+import type { SavedSystemView } from "../saved-systems/release-view.ts";
 import {
   requestControlModel,
   requestOpeningBase,

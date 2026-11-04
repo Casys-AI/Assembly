@@ -21,8 +21,8 @@ import type {
 import type { ModelDiagnosticsReader } from "../../../application/model/diagnostics/ports/out/diagnostics-reader.port.ts";
 import { compareDiagnostics } from "../../../application/model/diagnostics/shapes.ts";
 import { lintModelDiagnostics } from "../../../domain/model/policies/diagnostics.ts";
+import { buildElementIri } from "./iri.ts";
 import {
-  buildElementIri,
   type BuildElementRef,
   type BuildRef,
   buildRefFromDescriptor,

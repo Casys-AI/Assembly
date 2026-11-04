@@ -25,11 +25,9 @@ import type { PostgresSystemStateStore } from "../../src/adapters/out/postgres/s
 import { DenoToolRunner } from "../../src/adapters/out/sandbox/runner.ts";
 import { SourceModelDiagnosticsReader } from "../../src/application/model/diagnostics/source-diagnostics-reader.ts";
 import { ModelDiagnosticsService } from "../../src/application/model/diagnostics/service.ts";
-import type {
-  ChatContext,
-  SystemRuntimeState,
-} from "../../src/domain/work/dialogue.ts";
-import type { AgentConversation } from "../../src/domain/work/records/conversations.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
+import type { AgentConversation } from "../../src/application/work/operators/conversation-types.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { recordedOperatorWork } from "../../src/application/work/operators/journal.ts";
 import type {

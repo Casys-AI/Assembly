@@ -1,6 +1,9 @@
 import { hasActivationIntent } from "../../../domain/work/policies/candidate-activation.ts";
-import type { Candidate, Stage } from "../../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type {
+  Candidate,
+  Stage,
+} from "../../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 
 /** Work that still needs its Case. An admitted activation does not: its intent
  * is retried or settled independently, so a closed Case never blocks a restart. */

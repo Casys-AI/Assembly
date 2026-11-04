@@ -1,8 +1,8 @@
 import { mayConsultModel } from "../../../domain/model/consultation/model-read-policy.ts";
 import { ReadCurrentCase } from "../cases/handlers/case-lifecycle-handler.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type { ModelExecutionReference } from "../../../domain/model/execution/executable-model.ts";
-import { modelContextTools } from "../../../domain/model/consultation/context.ts";
+import { modelContextTools } from "../context/model-tools.ts";
 import {
   caseExecutionContext,
   designerExecutionContext,

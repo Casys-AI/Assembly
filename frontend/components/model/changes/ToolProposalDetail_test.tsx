@@ -7,7 +7,7 @@ import {
 import type {
   AgentConversation,
   OperatorTool,
-} from "../../../../src/domain/work/records/conversations.ts";
+} from "../../../../src/application/work/operators/conversation-types.ts";
 import { createWorkbenchState } from "../../../lib/workbench/state.ts";
 import { snapshot } from "../../../test/support/workbench-fixture.ts";
 import type { VNode } from "preact";

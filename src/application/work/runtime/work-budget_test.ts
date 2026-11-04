@@ -2,7 +2,7 @@ import { unexpectedModelAuthoring } from "../../../../test/support/model-authori
 import { compileNativeFixtureFlows } from "../../../../test/support/execution-fixture.ts";
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import { artifactModel } from "../../../../test/support/tool-artifact-fixture.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type { WorkBudgetRecord } from "../../../domain/work/policies/budget.ts";
 import { SystemRuntime } from "../../../../test/support/system-runtime.ts";
 import { createTestNativeExecution } from "../../../../test/support/native-execution.ts";

@@ -4,17 +4,15 @@ import {
   type ScopedReleaseService,
 } from "./request-releases.ts";
 import { requestReleaseFixture } from "../../../../test/support/request-release-fixture.ts";
-import {
-  RequestSpaceError,
-  type SpaceController,
-} from "../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
 import {
   type SavedSystemCapture,
   savedSystemDigest,
   SavedSystemError,
   type SavedSystemRecord,
-  savedSystemView,
-} from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/records/saved-systems.ts";
+import { savedSystemView } from "./release-view.ts";
 import { spaceControlAuthority } from "../../../../test/support/request-space-fixture.ts";
 
 async function fixture() {

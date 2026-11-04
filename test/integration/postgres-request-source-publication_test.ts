@@ -1,5 +1,5 @@
 import type { RequestSourceOwnerAuthorityEnvelope } from "../../src/application/model/source-admission/request-source-owner.ts";
-import { RequestSpaceError } from "../../src/domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../src/domain/work/request-spaces/scope.ts";
 import { ModelWriteQueueError } from "../../src/application/model/publication/write-queue.ts";
 import { isRequestSourceSettlementUnavailable } from "../../src/application/model/publication/request-source-context.ts";
 import { buildModelWriteDossierV2 } from "../../src/application/model/publication/write-command-v2.ts";

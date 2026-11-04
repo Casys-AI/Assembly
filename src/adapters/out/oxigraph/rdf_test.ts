@@ -9,10 +9,8 @@ import { deepStrictEqual, equal, notEqual, throws } from "node:assert/strict";
 import type { JsonObject } from "../../../domain/model/records/compiled-model.ts";
 import { contextualProjectorVersion } from "../../../application/model/semantic/index-service.ts";
 import { sha256 } from "../../../domain/primitives/execution-digest.ts";
-import {
-  type BuildRef,
-  parseElementIri,
-} from "../../../domain/model/value-objects/element-ref.ts";
+import { parseElementIri } from "./iri.ts";
+import { type BuildRef } from "../../../domain/model/value-objects/element-ref.ts";
 import {
   ASE_PROPERTY_VOCAB,
   ASE_VOCAB,

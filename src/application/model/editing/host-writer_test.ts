@@ -29,10 +29,10 @@ import { sourceLiterals } from "../../../domain/model/projections/source-facts.t
 import { toolkitIntegrationEnabled } from "../../../../test/support/toolkit-integration.ts";
 import { MemorySourceRepository } from "../../../../test/support/memory-source-repository.ts";
 import type { ModelToolingPort } from "../tooling.ts";
+import { publicationFailure } from "../publication/publication-failure.ts";
 import {
   type ChangePublication,
   MAX_APPROVAL_RECEIPT_BYTES,
-  publicationFailure,
 } from "../../../domain/model/publication/change.ts";
 import { exerciseOwnerAuthority } from "../../../domain/governance/authority.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";

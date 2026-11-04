@@ -1,12 +1,10 @@
 import { unexpectedModelAuthoring } from "../../../../test/support/model-authoring.ts";
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import { artifactModel } from "../../../../test/support/tool-artifact-fixture.ts";
-import type { ModelDelegationRequest } from "../../../domain/governance/records/model-delegation-request.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ModelDelegationRequest } from "../../../domain/governance/model-access/model-delegation-request.ts";
+import type { ChatContext } from "../conversation/chat-context.ts";
+import type { ChatDecision } from "../conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type { ModelPort } from "./ports.ts";
 import { SystemRuntime } from "../../../../test/support/system-runtime.ts";
 

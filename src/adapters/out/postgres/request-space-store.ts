@@ -5,10 +5,12 @@ import {
   assertOpeningBase,
   OPENING_PHASES,
   type OpeningRecord,
+} from "../../../domain/work/request-spaces/opening.ts";
+import {
   requestSpaceDigest,
   RequestSpaceError,
   type RequestSpaceScope,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { postgresQualifiedTable, Prisma, type PrismaClient } from "./client.ts";
 import { postgresSafeInteger } from "./numbers.ts";

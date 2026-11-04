@@ -1,7 +1,7 @@
 import { deepStrictEqual, equal } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
 import { legacyOwnerAuthority } from "../../../domain/governance/authority.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type {
   ConversationDecisionHost,
   ConversationTurnState,

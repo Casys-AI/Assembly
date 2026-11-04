@@ -73,8 +73,8 @@ import type {
   OpeningBase,
   OpeningCommand,
   OpeningRecord,
-} from "../../src/domain/work/request-spaces.ts";
-import { RequestSpaceError } from "../../src/domain/work/request-spaces.ts";
+} from "../../src/domain/work/request-spaces/opening.ts";
+import { RequestSpaceError } from "../../src/domain/work/request-spaces/scope.ts";
 import {
   postgresTestEnabled,
   withPostgresDatabase,

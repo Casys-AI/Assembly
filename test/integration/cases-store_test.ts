@@ -1,7 +1,7 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { PostgresSystemStateStore } from "../../src/adapters/out/postgres/system-state-store.ts";
 import { closeCase, openCase } from "../../src/domain/work/entities/cases.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import { selectCaseInvocation } from "../../src/application/work/cases/runtime.ts";
 import {
   postgresTestEnabled,

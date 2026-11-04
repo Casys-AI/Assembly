@@ -1,7 +1,7 @@
 import { isPlainRecord as record } from "../../primitives/is-plain-record.ts";
 /** Closed, source-admitted authority for exact behavior revisions. */
 import type { NativePolicyIdentity } from "../execution/executable-model.ts";
-import type { ModelEditOperation } from "../../governance/policies/model-edit-policy.ts";
+import type { ModelEditOperation } from "../../governance/model-access/model-edit-policy.ts";
 import { IMPLEMENTATION } from "../execution/flow.ts";
 
 export const EVOLUTION_FLOW_MECHANISMS: readonly string[] = [

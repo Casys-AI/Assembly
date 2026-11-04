@@ -1,6 +1,6 @@
 import type { ChangeProposalReceipt } from "../../governance/mandate-change-decisions.ts";
 import type { RetainedToolsPort } from "../tools/active-tools.ts";
-import type { RetainedToolInvocationTarget } from "../../../domain/work/retained-tool-dependencies.ts";
+import type { RetainedToolInvocationTarget } from "../../../domain/work/records/retained-tool-dependencies.ts";
 import type { ArtifactSourceServicePort } from "../artifacts/publication.ts";
 import type { OperatorCommandOrigin } from "../operators/command-delivery.ts";
 import type { OperatorDeliveryReceipt } from "../operators/execution.ts";
@@ -8,7 +8,7 @@ import type {
   NativeExecutionPort,
   RuntimeStateHistoryPort,
 } from "../native-execution/contract.ts";
-import type { MessageObservation } from "../../../domain/work/policies/context-separation.ts";
+import type { MessageObservation } from "../context/evidence.ts";
 import type {
   ExecutableModel,
   ModelExecutionReference,
@@ -19,18 +19,15 @@ import type {
 } from "../../../domain/model/execution/flow.ts";
 import type { ModelDiagnosticAddress } from "../../../domain/model/value-objects/diagnostic-address.ts";
 import type { BehaviorInvocationRequest } from "../../../domain/work/execution/modeled-behavior.ts";
-import type {
-  ArtifactEvidence,
-  ChatContext,
-  ChatDecision,
-  SystemRuntimeState,
-  ToolFailure,
-} from "../../../domain/work/dialogue.ts";
+import type { ArtifactEvidence, ChatContext } from "./chat-context.ts";
+import type { ChatDecision } from "./chat-decision.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
+import type { ToolFailure } from "../tools/tool-invocation.ts";
 import type {
   Candidate,
   Stage,
   ToolDraft,
-} from "../../../domain/work/candidates.ts";
+} from "../../../domain/work/records/candidates.ts";
 import type {
   WorkBudgetOperation,
   WorkBudgetView,
@@ -105,10 +102,10 @@ export interface ConversationDecisionHost extends ConversationCaseHost {
   requestOpeningContext?(): Promise<ChatContext["requestOpening"]>;
   openRequest?(
     command: Extract<ChatDecision, { kind: "open_request" }>,
-  ): Promise<import("../../../domain/work/dialogue.ts").RequestOpeningOutcome>;
+  ): Promise<import("./chat-decision.ts").RequestOpeningOutcome>;
   resumeRequest?(
     command: Extract<ChatDecision, { kind: "resume_request" }>,
-  ): Promise<import("../../../domain/work/dialogue.ts").RequestResumeOutcome>;
+  ): Promise<import("../runtime/state.ts").RequestResumeOutcome>;
   invalidateOperatorCandidateInspection?(): void;
   operatorToolAdmissionContext(): ChatContext["operatorToolAdmission"];
   inspectOperatorCandidate(
@@ -118,7 +115,7 @@ export interface ConversationDecisionHost extends ConversationCaseHost {
     command: Extract<ChatDecision, { kind: "decide_operator_candidate" }>,
   ): Promise<void>;
   operatorAuthorityContext(): Promise<
-    import("../../../domain/work/dialogue.ts").ChatContext[
+    import("./chat-context.ts").ChatContext[
       "operatorAuthority"
     ]
   >;
@@ -156,12 +153,11 @@ export interface ConversationDecisionHost extends ConversationCaseHost {
 
 export interface ConversationProposalHost extends ConversationCaseHost {
   executeOperatorEvolution?(
-    command:
-      import("../../../domain/work/dialogue.ts").OperatorEvolutionCommand,
+    command: import("./chat-decision.ts").OperatorEvolutionCommand,
     model: ExecutableModel,
     source: Pick<ChatContext, "modelContext" | "modelSources">,
   ): Promise<
-    import("../../../domain/work/dialogue.ts").OperatorEvolutionSummary
+    import("./chat-decision.ts").OperatorEvolutionSummary
   >;
   readonly ports: { clock: ClockPort; model: ConversationModelPort };
   /** The registered Main only (4.8d D4): a recipient Case's space. */

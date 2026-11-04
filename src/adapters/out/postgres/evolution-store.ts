@@ -26,8 +26,8 @@ import { decodePostgresRuntimeState } from "./runtime-state-snapshot.ts";
 import {
   assertOpeningBase,
   type OpeningRecord,
-  requestSpaceDigest,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../../../domain/work/request-spaces/scope.ts";
 import {
   assertRequestOwnerAdoptionTransition,
   parseRequestAdoptionTarget,

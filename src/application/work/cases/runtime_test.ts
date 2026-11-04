@@ -3,7 +3,7 @@ import { deepStrictEqual, equal, ok, throws } from "node:assert/strict";
 import { MAX_CASE_OBJECTIVE_CHARS } from "../../../domain/work/entities/cases.ts";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
 import { SystemRuntime } from "../../../../test/support/system-runtime.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { caseTypesForModel } from "../../../domain/work/records/case-types.ts";
 import type { ModelPort, StorePort } from "../runtime/ports.ts";
 import {

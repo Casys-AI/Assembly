@@ -2,21 +2,22 @@ import { invocationAdmission } from "../../governance/tool-invocation-admission.
 import {
   type RetainedToolDependencyDescriptor,
   retainedToolResourceId,
-} from "../../../domain/work/retained-tool-dependencies.ts";
+} from "../../../domain/work/records/retained-tool-dependencies.ts";
 import type { RetainedToolsPort } from "../tools/active-tools.ts";
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
 import { listBehavior } from "../../../../test/support/tool-artifact-fixture.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type {
-  ChatDecision,
-  SystemRuntimeState,
-  ToolFailure,
-} from "../../../domain/work/dialogue.ts";
-import { ToolInvocationError } from "../../../domain/work/errors/tool-invocation.ts";
+import type { ChatDecision } from "./chat-decision.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
+import type { ToolFailure } from "../tools/tool-invocation.ts";
+import { ToolInvocationError } from "../tools/tool-invocation.ts";
 import type { BehaviorAdmission } from "../../governance/behavior-call-admission.ts";
 import { toolDraftDigest } from "../artifacts/catalog.ts";
-import type { Candidate, ToolDraft } from "../../../domain/work/candidates.ts";
+import type {
+  Candidate,
+  ToolDraft,
+} from "../../../domain/work/records/candidates.ts";
 import { checkInvocation, invokeTool, reportRefusal } from "./invocation.ts";
 import type {
   ConversationInvocationHost,

@@ -1,9 +1,9 @@
 import type { RequestSpaceOpenings } from "../../../../application/work/request-spaces/opening.ts";
+import { openingCommand } from "../../../../domain/work/request-spaces/opening.ts";
 import {
-  openingCommand,
   RequestSpaceError,
   type RequestSpaceScope,
-} from "../../../../domain/work/request-spaces.ts";
+} from "../../../../domain/work/request-spaces/scope.ts";
 import { requireLocalJsonCommand } from "../../../../infrastructure/http/local-security.ts";
 import {
   boundedSpaceCommand,

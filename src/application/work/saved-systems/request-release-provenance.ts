@@ -1,18 +1,20 @@
 import {
   requestReleaseOriginMatches,
   type VerifiedRequestReleaseSource,
-} from "../../../domain/work/request-release-origin.ts";
+} from "../../../domain/work/records/request-release-origin.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import {
   assertBaseForChoice,
   assertOpeningBase,
-  exactSourceVersion,
   type OpeningRecord,
+} from "../../../domain/work/request-spaces/opening.ts";
+import {
+  exactSourceVersion,
   requestSpaceDigest,
   type RequestSpaceScope,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
 import {
   assertSavedCapture,
   assertSavedSourceSelection,
@@ -23,7 +25,7 @@ import {
   type SavedSystemScope,
   type SavedSystemSourceEvidence,
   type SavedSystemSourceSelection,
-} from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/records/saved-systems.ts";
 import type { OpeningStorePort } from "../request-spaces/ports.ts";
 import type { RequestReleaseProvenancePort } from "./request-release-ports.ts";
 import { assertRequestSpaceBirthIdentity } from "../runtime/initialization.ts";

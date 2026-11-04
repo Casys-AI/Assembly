@@ -7,7 +7,7 @@ import {
   exactCandidateInspection,
   exactDelegatedCommandDecision,
 } from "./operator-command-origin.ts";
-import type { Message } from "../../domain/work/dialogue.ts";
+import type { Message } from "../work/runtime/state.ts";
 
 const reference = (candidateId: string, expectedRevision = 7) => ({
   operatorId: "recipient",

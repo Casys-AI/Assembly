@@ -1,6 +1,6 @@
-import type { OperatorToolsSnapshot } from "../../../../src/domain/work/records/conversations.ts";
-import type { Candidate } from "../../../../src/domain/work/candidates.ts";
-import type { ModelContextTool } from "../../../../src/domain/model/consultation/context.ts";
+import type { OperatorToolsSnapshot } from "../../../../src/application/work/operators/conversation-types.ts";
+import type { Candidate } from "../../../../src/domain/work/records/candidates.ts";
+import { type ModelContextTool } from "../../../../src/application/work/context/model-tools.ts";
 
 /** One tool under its server: a short name, and its stage while not active. */
 export interface ServerTool {

@@ -15,18 +15,18 @@ import {
   PostgresRequestSourceAdmissionStore,
   requestReleaseSourceEvidence,
 } from "./request-source-admission-store.ts";
+import { assertOpeningBase } from "../../../domain/work/request-spaces/opening.ts";
 import {
-  assertOpeningBase,
   requestSpaceDigest,
   RequestSpaceError,
-} from "../../../domain/work/request-spaces.ts";
-import { SavedSystemError } from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
+import { SavedSystemError } from "../../../domain/work/records/saved-systems.ts";
 import {
   assertReleaseRetentionIntent,
   type ReleaseRetentionAuthorization,
   releaseRetentionIntentDigest,
   type ReleaseRetentionProof,
-} from "../../../domain/work/release-retention.ts";
+} from "../../../domain/work/records/release-retention.ts";
 
 export type ReleaseCreationPhase = "accepted" | "fresh";
 /** Atomic current-control fence for an exact accepted intention, no execution grant. */

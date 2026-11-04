@@ -3,10 +3,8 @@ import {
   lintModelDiagnostics,
   type ModelDiagnosticFacts,
 } from "../../../domain/model/policies/diagnostics.ts";
-import {
-  buildElementIri,
-  type BuildRef,
-} from "../../../domain/model/value-objects/element-ref.ts";
+import { buildElementIri } from "../oxigraph/iri.ts";
+import { type BuildRef } from "../../../domain/model/value-objects/element-ref.ts";
 import {
   compareDiagnostics,
   ModelShapesError,

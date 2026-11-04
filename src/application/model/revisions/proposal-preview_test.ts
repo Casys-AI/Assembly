@@ -3,11 +3,11 @@ import type {
   ModelRevision,
   ProposalRecord,
 } from "../../../domain/model/records/revision.ts";
-import type { ModelDelegationRecord } from "../../../domain/governance/policies/model-delegation.ts";
+import type { ModelDelegationRecord } from "../../../domain/governance/model-access/model-delegation.ts";
 import {
   MODEL_DELEGATIONS_FILE,
   renderModelDelegations,
-} from "../../../domain/governance/policies/model-delegation-ledger.ts";
+} from "../../../domain/governance/model-access/model-delegation-ledger.ts";
 import { modelProposalPreview } from "./proposal-preview.ts";
 
 const path = "system.sysml";

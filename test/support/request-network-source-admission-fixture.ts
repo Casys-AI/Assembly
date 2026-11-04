@@ -5,7 +5,7 @@ import { requestReleaseFixture } from "./request-release-fixture.ts";
 import { admissionFixture } from "./request-source-admission-fixture.ts";
 import type { PendingChange } from "../../src/domain/governance/records/pending-change.ts";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
-import { buildOperationJournal } from "../../src/domain/model/editing/write-command.ts";
+import { buildOperationJournal } from "../../src/domain/model/editing/operation-journal.ts";
 import { buildApprovedChangeCommand } from "../../src/application/model/publication/write-queue.ts";
 import {
   buildModelWriteDossierV2,

@@ -1,7 +1,7 @@
 import { openCase } from "../../../domain/work/entities/cases.ts";
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type { IndependentRequestResume } from "./commands/inputs.ts";
 import { requestOpeningHost } from "./opening.ts";
 

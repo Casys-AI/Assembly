@@ -1,7 +1,7 @@
 import { elementByteRange } from "../../../domain/model/editing/source-byte-range.ts";
 import { normalizeMember } from "../../../domain/model/editing/source-text.ts";
 import { sha256Bytes as sha256 } from "../../../domain/primitives/sha256-bytes.ts";
-import type { ModelToolingPort } from "../tooling.ts";
+import type { ModelToolingEditResult, ModelToolingPort } from "../tooling.ts";
 import {
   type EditTarget,
   type HostEdit,
@@ -12,10 +12,7 @@ import {
   spelling,
   type StoredSourceText,
 } from "../../../domain/model/editing/host-edit.ts";
-import type {
-  ModelToolingEditResult,
-  ResolvedModelEdit,
-} from "../../../domain/model/editing/tooling.ts";
+import type { ResolvedModelEdit } from "../../../domain/model/editing/tooling.ts";
 type ResolvedHostEdit = Exclude<
   ResolvedModelEdit,
   { kind: "retarget-reference" }
@@ -41,10 +38,8 @@ import { MAX_APPROVAL_RECEIPT_BYTES } from "../../../domain/model/publication/ch
 import type { SourceRevision } from "../../../domain/model/records/source-revision.ts";
 import type { ModelSources as Sources } from "../../../domain/model/value-objects/sources.ts";
 import type { ModelRevision } from "../../../domain/model/records/revision.ts";
-import type {
-  ElementIncarnationRef,
-  IncarnationInventory,
-} from "../../../domain/model/editing/write-command.ts";
+import type { ElementIncarnationRef } from "../../../domain/model/editing/operation-journal.ts";
+import type { IncarnationInventory } from "../../../domain/model/editing/journal-replay.ts";
 import type { HostEditExecutorPort } from "../publication/ports/out/host-edit-executor.port.ts";
 
 function failure(

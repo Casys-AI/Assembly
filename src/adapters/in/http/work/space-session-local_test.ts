@@ -6,7 +6,7 @@ import {
   spaceHttpError,
   spaceSessionSecret,
 } from "./space-session.ts";
-import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces/scope.ts";
 
 const servedOrigin = "http://127.0.0.1:4399";
 const policy = { servedOrigin, environment: "development" as const };

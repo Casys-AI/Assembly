@@ -1,6 +1,6 @@
 import { deepStrictEqual, equal, ok } from "node:assert/strict";
-import type { SystemRuntimeState } from "../../../src/domain/work/dialogue.ts";
-import type { ConversationsSnapshot } from "../../../src/domain/work/records/conversations.ts";
+import type { SystemRuntimeState } from "../../../src/application/work/runtime/state.ts";
+import type { ConversationsSnapshot } from "../../../src/application/work/operators/conversation-types.ts";
 import type { Fetcher } from "./api.ts";
 import { modelLive } from "../model/live.ts";
 import { createWorkbenchState } from "./state.ts";

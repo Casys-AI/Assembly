@@ -19,7 +19,7 @@ import {
   validateSourceBindingReference,
   validateSourceReference,
 } from "../../../domain/work/artifacts/source-reference.ts";
-import type { ToolDraft } from "../../../domain/work/candidates.ts";
+import type { ToolDraft } from "../../../domain/work/records/candidates.ts";
 import { toolDraftDigest } from "./catalog.ts";
 import { skillContentDigest } from "../../../domain/skills/context-skills.ts";
 import type {

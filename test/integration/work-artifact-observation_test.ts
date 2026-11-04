@@ -11,7 +11,7 @@ import {
   compareWorkResult,
   type WorkResultObservation,
 } from "../../src/domain/work/policies/verified-effect-closure.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import { publishedArtifact } from "../support/tool-artifact-fixture.ts";
 import { verifiedWorkSources } from "../support/verified-work-fixture.ts";
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");

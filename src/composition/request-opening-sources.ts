@@ -6,9 +6,9 @@ import { RequestOpeningHost } from "../application/work/request-spaces/opening-h
 import { GitModelRepository } from "../adapters/out/git/repository.ts";
 import { GitRequestBranches } from "../adapters/out/git/request-branches.ts";
 import type { RepositoryWriterLock } from "../adapters/out/git/writer-lock.ts";
-import type { SavedSystemScope } from "../domain/work/saved-systems.ts";
+import type { SavedSystemScope } from "../domain/work/records/saved-systems.ts";
 import { RequestRuntimeDependencies } from "./request-runtime-dependencies.ts";
-import { RequestSpaceError } from "../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../domain/work/request-spaces/scope.ts";
 import type { createSavedSystemsComposition } from "./saved-systems.ts";
 
 export interface RequestOpeningSourcesCompositionOptions {

@@ -3,8 +3,8 @@
  * Toolkit work runs in a bounded native child process (see
  * native-process-client.ts); the node Worker transport remains only as the
  * integration-fixture seam. */
+import type { ModelToolingDiagnostic } from "../../../application/model/tooling.ts";
 import type {
-  ModelToolingDiagnostic,
   ModelToolingTarget,
   ResolvedModelEdit,
 } from "../../../domain/model/editing/tooling.ts";

@@ -3,10 +3,10 @@ import type {
   StorePort,
 } from "../application/work/runtime/ports.ts";
 import type { ExecutableModel } from "../domain/model/execution/executable-model.ts";
-import type { SystemRuntimeState } from "../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../application/work/runtime/state.ts";
 import type { ModelIdentity } from "../domain/shared-kernel/model-identity.ts";
-import { exactSourceVersion } from "../domain/work/request-spaces.ts";
-import { spaceControlSourceFromModel } from "../domain/work/space-control-source.ts";
+import { exactSourceVersion } from "../domain/work/request-spaces/scope.ts";
+import { spaceControlSourceFromModel } from "../domain/work/policies/space-control-source.ts";
 import { canonical } from "../domain/primitives/canonical-json.ts";
 import type { PostgresSystemScope } from "../adapters/out/postgres/scope.ts";
 import { resolveHostPrimaryOperator } from "../infrastructure/system-identity.ts";

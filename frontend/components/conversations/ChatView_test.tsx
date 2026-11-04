@@ -6,10 +6,8 @@ import { press } from "../../test/support/press.ts";
 import { recordingState } from "../../test/support/recording-state.ts";
 import { createWorkbenchState } from "../../lib/workbench/state.ts";
 import { snapshot } from "../../test/support/workbench-fixture.ts";
-import {
-  type ConversationsSnapshot,
-  MAX_USER_MESSAGE_CHARS,
-} from "../../../src/domain/work/records/conversations.ts";
+import { MAX_USER_MESSAGE_CHARS } from "../../../src/domain/work/records/conversations.ts";
+import { type ConversationsSnapshot } from "../../../src/application/work/operators/conversation-types.ts";
 import { operatorRoster } from "../../test/support/operator-fixture.ts";
 Deno.test("conversation renders untrusted content as text and tool output as collapsed details", () => {
   const state = createWorkbenchState({ initialState: snapshot() });

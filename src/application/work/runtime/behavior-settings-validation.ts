@@ -14,10 +14,8 @@ import type { ExecutableModel } from "../../../domain/model/execution/executable
 import type { MemoryRecord } from "../../../domain/memory/entities/memory-record.ts";
 import { memoryView } from "../../../domain/memory/governed-memory-promotion.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import type {
-  ChatContext,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../conversation/chat-context.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type { WorkBudgetPort } from "../budget/ports.ts";
 import {
   assertBudgetPolicy,

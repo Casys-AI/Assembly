@@ -4,7 +4,7 @@ import type {
 } from "../../../domain/model/execution/executable-model.ts";
 import { ownerAuthorityFor } from "../../../domain/governance/authority.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import { effectiveModelUpdate } from "../../../domain/work/records/effective-model-update.ts";
 import { assertEvolutionReceipt } from "../../model/evolution/invariants.ts";
 import {

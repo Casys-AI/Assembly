@@ -1,11 +1,12 @@
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { MemoryGuidance } from "../../../domain/memory/governed-memory-promotion.ts";
-import type { ChatContext, Message } from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../conversation/chat-context.ts";
+import type { Message } from "../runtime/state.ts";
+import { type ModelContextTool } from "./model-tools.ts";
 import type {
   ModelContextOverview,
   ModelContextQuery,
   ModelContextQueryResult,
-  ModelContextTool,
   ModelGraphQueryResult,
 } from "../../../domain/model/consultation/context.ts";
 

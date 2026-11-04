@@ -17,7 +17,7 @@ import {
   buildOperationJournal,
   type ElementIncarnationRef,
   type ModelOperationJournal,
-} from "../../../domain/model/editing/write-command.ts";
+} from "../../../domain/model/editing/operation-journal.ts";
 import { recipeDigest } from "../../../domain/model/value-objects/build.ts";
 import type { HostEditExecutorPort } from "./ports/out/host-edit-executor.port.ts";
 import type { PublicationRepositoryPort } from "./ports/out/publication-repository.port.ts";

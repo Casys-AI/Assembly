@@ -4,11 +4,9 @@ import assert from "node:assert/strict";
 import { executableFixture } from "../support/execution-fixture.ts";
 import { SystemRuntime } from "../support/system-runtime.ts";
 import type { NativeCaseType } from "../../src/domain/work/records/case-types.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import type { WorkBudgetRecord } from "../../src/domain/work/policies/budget.ts";
 import type { ModelPort } from "../../src/application/work/runtime/ports.ts";
 import { WorkBudgetService } from "../../src/application/work/budget/service.ts";

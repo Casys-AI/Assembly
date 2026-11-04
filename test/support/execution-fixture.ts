@@ -1,12 +1,10 @@
 /** Test-only compiled native action projections; no source model or service is contacted. */
 import { compileModelFlow } from "../../src/domain/model/execution/flow.ts";
-import type {
-  ExecutableCatalogEntry,
-  ExecutableModel,
-} from "../../src/domain/model/execution/executable-model.ts";
+import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";
+import type { ExecutableCatalogEntry } from "../../src/domain/work/records/candidates.ts";
 import { SystemGovernance } from "../../src/domain/governance/policies/governance.ts";
 import { type ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
-import { TOOL_CONTRACTS } from "../../src/domain/work/candidates.ts";
+import { TOOL_CONTRACTS } from "../../src/domain/work/records/candidates.ts";
 import { TOOL_KINDS } from "../../src/domain/shared-kernel/tool-kind.ts";
 import { CONVERSATION, PROMOTION } from "../fixtures/native-flows.ts";
 

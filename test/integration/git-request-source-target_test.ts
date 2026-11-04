@@ -13,7 +13,7 @@ import { modelWriteCommandDigestV2 } from "../../src/application/model/publicati
 import {
   requestSourceAdmissionRef,
   requestSourceCommandRef,
-} from "../../src/domain/model/editing/request-source-publication.ts";
+} from "../../src/domain/model/editing/source-anchor-refs.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { sha256 } from "../../src/domain/primitives/execution-digest.ts";
 import { parseModelRevisionRef } from "../../src/domain/model/value-objects/element-ref.ts";

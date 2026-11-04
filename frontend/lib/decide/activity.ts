@@ -1,11 +1,11 @@
 import type { PendingChange } from "../../../src/domain/governance/records/pending-change.ts";
-import { MAIN_EXECUTION_SPACE_ID } from "../../../src/domain/governance/operator-authority.ts";
+import { MAIN_EXECUTION_SPACE_ID } from "../../../src/domain/governance/authority.ts";
 import type {
   AgentConversation,
   ConversationsSnapshot,
   OperatorTool,
-} from "../../../src/domain/work/records/conversations.ts";
-import type { Message } from "../../../src/domain/work/dialogue.ts";
+} from "../../../src/application/work/operators/conversation-types.ts";
+import type { Message } from "../../../src/application/work/runtime/state.ts";
 import {
   caseAgentHref,
   caseHref,

@@ -1,4 +1,4 @@
-import type { Candidate } from "../../../domain/work/candidates.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
 import {
   requireSource,
   validateSourceBindingReference,

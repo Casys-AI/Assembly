@@ -14,7 +14,7 @@ import {
 } from "node:assert/strict";
 import type { VNode } from "preact";
 import { renderToString } from "preact-render-to-string";
-import type { ConversationsSnapshot } from "../../../src/domain/work/records/conversations.ts";
+import type { ConversationsSnapshot } from "../../../src/application/work/operators/conversation-types.ts";
 import type { PendingDecision } from "../../lib/decide/pending.ts";
 import { createWorkbenchState } from "../../lib/workbench/state.ts";
 import {

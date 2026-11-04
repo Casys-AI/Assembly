@@ -1,4 +1,4 @@
-import type { Message } from "../../../src/domain/work/dialogue.ts";
+import type { Message } from "../../../src/application/work/runtime/state.ts";
 import type {
   AuthorityRouteCode,
   RequestAuthorityRoute,

@@ -39,7 +39,7 @@ import {
   type ModelDelegationIdentity,
   type ModelRootAuthority,
   resolveModelDelegations,
-} from "../../../../../domain/governance/policies/model-delegation.ts";
+} from "../../../../../domain/governance/model-access/model-delegation.ts";
 import { executionDigest } from "../../../../../domain/primitives/execution-digest.ts";
 import { compareCodeUnits } from "../../../../../domain/primitives/canonical-json.ts";
 import type { validateSourceExecutables } from "../../compilation/source-executables.ts";
@@ -50,7 +50,7 @@ import {
 } from "../../compilation-policies/work/execution-model.ts";
 import { type NativeLiteral } from "../../../../../domain/model/records/native-literal.ts";
 import { compileBehaviorCatalog } from "../../compilation-policies/work/behavior-catalog.ts";
-import { readModelDelegations } from "../../../../../domain/governance/policies/model-delegation-ledger.ts";
+import { readModelDelegations } from "../../../../../domain/governance/model-access/model-delegation-ledger.ts";
 import { delegationIdentity } from "../../../../../application/governance/model-access/delegation/state.ts";
 import {
   sourceLiterals,

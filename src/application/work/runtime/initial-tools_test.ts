@@ -22,13 +22,13 @@ import type {
   OperatorExecutionDelivery,
   OperatorExecutionDispatchPort,
 } from "../operators/execution.ts";
-import type { NativeInitialToolSeed } from "../../../domain/work/initial-tool-catalog.ts";
+import type { NativeInitialToolSeed } from "../../../domain/work/records/initial-tool-catalog.ts";
 import type {
   ModelBinding,
   Stage,
   ToolDraft,
-} from "../../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+} from "../../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import {
   draftDigest,
   SystemRuntime,

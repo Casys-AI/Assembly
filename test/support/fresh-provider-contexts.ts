@@ -21,11 +21,9 @@ import {
 } from "../../src/application/work/cases/runtime.ts";
 import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";
 import type { ModelRevision } from "../../src/domain/model/records/revision.ts";
-import type {
-  ChatContext,
-  SystemRuntimeState,
-} from "../../src/domain/work/dialogue.ts";
-import { modelContextTools } from "../../src/domain/model/consultation/context.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
+import { modelContextTools } from "../../src/application/work/context/model-tools.ts";
 import { DEFAULT_NETWORK_IMPACT_LIMITS } from "../../src/domain/model/consultation/network-impact.ts";
 import { skillDisplay } from "../../src/domain/skills/context-skills.ts";
 

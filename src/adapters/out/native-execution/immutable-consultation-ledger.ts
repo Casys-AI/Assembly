@@ -17,7 +17,7 @@ import type {
   RuntimeRevisionReference,
 } from "../../../application/work/native-execution/contract.ts";
 import type { CompiledFlowNode } from "../../../domain/model/execution/flow.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
 import type { ExecutionSql } from "../postgres/execution-transaction.ts";

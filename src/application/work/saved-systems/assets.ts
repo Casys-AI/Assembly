@@ -13,7 +13,7 @@ import {
   type SavedSystemScope,
   type SavedSystemSourceEvidence,
   type SavedSystemSourceSelection,
-} from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/records/saved-systems.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { toolDraftDigest } from "../artifacts/catalog.ts";
 import type { SourceExecutablesCompilationPort } from "../../model/source-compilation.ts";
@@ -23,7 +23,7 @@ import type { ModelBuildStore } from "../../model/builds/ports/out/build-store.p
 import { selectValidatedSourceExecutable } from "../../../domain/model/records/source-executables.ts";
 import { discoverConversationUnits } from "../../../domain/model/records/source-identity.ts";
 import { type SourceRevision } from "../../../domain/model/records/source-revision.ts";
-import type { SavedOperatorManifest } from "../../../domain/work/saved-systems.ts";
+import type { SavedOperatorManifest } from "../../../domain/work/records/saved-systems.ts";
 import { MAX_OPERATOR_UNITS } from "../../../domain/work/records/conversations.ts";
 
 export interface SavedSystemSourceReader {

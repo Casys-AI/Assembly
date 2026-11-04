@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import type { SystemSourcesUpdateOptions } from "../../src/application/model/repository.ts";
 import type { ModelRevision } from "../../src/domain/model/records/revision.ts";
 import type { ModelCompiler } from "../../src/application/model/builds/ports/out/model-compiler.port.ts";
+import { publicationFailure } from "../../src/application/model/publication/publication-failure.ts";
 import {
   assertPublicationSize,
-  publicationFailure,
   publicationSystemId,
   type SourcePublication,
 } from "../../src/domain/model/publication/change.ts";

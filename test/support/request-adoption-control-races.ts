@@ -12,7 +12,7 @@ import { CryptographicSpaceSecrets } from "../../src/infrastructure/space-contro
 import { createRequestSpaceControls } from "../../src/composition/space-controls.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { sha256 } from "../../src/domain/primitives/execution-digest.ts";
-import { requestSpaceDigest } from "../../src/domain/work/request-spaces.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
 import type { PostgresTestDatabase } from "./postgres.ts";
 import {
   actualRequestWorkPending,

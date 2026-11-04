@@ -1,4 +1,4 @@
-import type { SpaceController } from "../../../../domain/work/request-spaces.ts";
+import type { SpaceController } from "../../../../domain/work/request-spaces/space-control.ts";
 import type { createCaseBranchReader } from "../../../../application/model/case-branch-reader.ts";
 
 type Handler = (request: Request) => Promise<Response | null>;

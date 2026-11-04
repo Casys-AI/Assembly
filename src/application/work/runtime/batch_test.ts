@@ -10,20 +10,20 @@ import type {
 import type {
   NativeBehaviorContract,
 } from "../../../domain/model/execution/native-contracts.ts";
+import type { ChatContext } from "../conversation/chat-context.ts";
 import type {
-  ChatContext,
   ChatDecision,
   ChatDecisionBatch,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
-import type { ToolDraft } from "../../../domain/work/candidates.ts";
+} from "../conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "./state.ts";
+import type { ToolDraft } from "../../../domain/work/records/candidates.ts";
 import type { AgentPort, ModelPort, StorePort } from "./ports.ts";
 import { ClaudeAgents } from "../../../adapters/out/llm-providers/agents.ts";
 import { caseTypesForModel } from "../../../domain/work/records/case-types.ts";
 import { WorkBudgetService } from "../budget/service.ts";
 import type { WorkBudgetPort } from "../budget/ports.ts";
 import type { WorkBudgetRecord } from "../../../domain/work/policies/budget.ts";
-import { OperatorAuthorityError } from "../../../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
 import { immutableModelConsultation } from "../../../domain/model/consultation/context.ts";
 import type { BehaviorAdmission } from "../../governance/behavior-call-admission.ts";
 import type { OperatorWorkReceipt } from "../../../domain/work/execution/case-context.ts";

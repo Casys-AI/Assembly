@@ -17,7 +17,7 @@ import {
   BehaviorInvocationRegistry,
 } from "../../src/application/work/behaviors/invocation.ts";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
-import type { ChatDecision } from "../../src/domain/work/dialogue.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 
 /** Setup decisions are explicit owner-authorized grants, not delegated input.
  * The supplied provider takes over only after both grants are published/adopted. */

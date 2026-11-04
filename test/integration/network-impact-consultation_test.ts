@@ -33,7 +33,7 @@ import {
 } from "../../src/application/model/impact/consultation.ts";
 import { DEFAULT_NETWORK_IMPACT_LIMITS } from "../../src/domain/model/consultation/network-impact.ts";
 import { sha256 } from "../../src/domain/model/value-objects/artifact.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import type { NetworkImpactEvidenceMatch } from "../../src/domain/model/consultation/network-impact.ts";
 import { SystemRuntime } from "../../src/application/work/runtime/system.ts";
 import { openOperatorWorkspace } from "../support/operator-workspace.ts";

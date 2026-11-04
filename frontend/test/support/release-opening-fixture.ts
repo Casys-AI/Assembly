@@ -1,4 +1,4 @@
-import type { SavedSystemView } from "../../../src/domain/work/saved-systems.ts";
+import type { SavedSystemView } from "../../../src/application/work/saved-systems/release-view.ts";
 
 export const RELEASE_HOST = {
   projectId: "git:45a0a316-1773-4c47-80a5-b1688a28ab6c",

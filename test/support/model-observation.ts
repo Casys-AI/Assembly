@@ -1,5 +1,5 @@
 import { equal, ok } from "node:assert/strict";
-import type { ChatContext } from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
 
 /** Mandatory source reads may follow a requested consultation. Scripted provider
  * fixtures select its exact observation instead of assuming it is the last one. */

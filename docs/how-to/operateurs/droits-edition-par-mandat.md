@@ -107,7 +107,7 @@ permissions.
 
 ## Read the code and verify
 
-- [Domain policy](../../../src/domain/governance/policies/model-edit-policy.ts)
+- [Domain policy](../../../src/domain/governance/model-access/model-edit-policy.ts)
   and
   [native compilation](../../../src/adapters/out/sysml-toolkit/compilation-policies/governance/model-access/editing/policy.ts).
 - [Before/after confinement](../../../src/domain/model/editing/scope.ts).

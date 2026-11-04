@@ -14,12 +14,14 @@ import type { JsonObject } from "../../../domain/model/records/compiled-model.ts
 import { sha256Bytes } from "../../../domain/primitives/sha256-bytes.ts";
 import {
   buildGraphIri,
-  type BuildRef,
   encodeIriSegment,
   libraryElementIri,
+  userElementIri,
+} from "./iri.ts";
+import {
+  type BuildRef,
   parseBuildRef,
   parseProjectionRef,
-  userElementIri,
 } from "../../../domain/model/value-objects/element-ref.ts";
 import { contextualProjectorVersion } from "../../../application/model/semantic/index-service.ts";
 import type { ModelRdfProjector } from "../../../application/model/semantic/ports/out/rdf-projector.port.ts";

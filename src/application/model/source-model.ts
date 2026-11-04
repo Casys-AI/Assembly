@@ -42,17 +42,14 @@ import { DYNAMIC_MANDATE_SOURCE } from "../../domain/governance/mandates.ts";
 import { assertCandidateDelegationReceipt } from "../../domain/governance/policies/tool-admission-policy.ts";
 import { verifyPublicationReadback } from "../../domain/model/publication/compatibility.ts";
 import { canonical } from "../../domain/primitives/canonical-json.ts";
-import { buildOperationJournal } from "../../domain/model/editing/write-command.ts";
+import { buildOperationJournal } from "../../domain/model/editing/operation-journal.ts";
 import { parseModelRevisionRef } from "../../domain/model/value-objects/element-ref.ts";
 import {
   buildActivationCommand,
   buildApprovedChangeCommand,
 } from "./publication/write-queue.ts";
 import type { ModelWriteSubmissionPort } from "./publication/submission.ts";
-import {
-  isTeamOperatorSpec,
-  mainExecutionSpace,
-} from "../../domain/governance/operator-authority.ts";
+import { isTeamOperatorSpec } from "../../domain/governance/operator-authority.ts";
 import {
   assertCreationWithinPolicy,
   assertOperatorCreationCapacity,
@@ -63,10 +60,8 @@ import {
   requestedCreationPolicyId,
 } from "../../domain/governance/policies/operator-creation-policy.ts";
 import { compareModelSources } from "./revisions/source-diff.ts";
-import {
-  OperatorAuthorityError,
-  type PreparedChangeDiff,
-} from "../../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../domain/governance/operator-authority-error.ts";
+import { type PreparedChangeDiff } from "../../domain/governance/operator-authority.ts";
 import {
   HostEditError,
   type HostEditRequest,
@@ -77,6 +72,7 @@ import {
   CandidateActivationError,
   requireActivation,
 } from "../../domain/work/policies/candidate-activation.ts";
+import { publicationFailure } from "./publication/publication-failure.ts";
 import {
   APPROVAL_RECEIPT_RESERVE_BYTES,
   type ApprovedChangePublication,
@@ -86,7 +82,6 @@ import {
   type ChangePublication,
   changePublication,
   ChangePublicationError,
-  publicationFailure,
   publicationSourceVersion,
   type SourcePublication,
 } from "../../domain/model/publication/change.ts";
@@ -100,25 +95,29 @@ import {
   type AuthorityExercise,
   AuthorityInvariantError,
   exerciseOwnerAuthority,
+  mainExecutionSpace,
 } from "../../domain/governance/authority.ts";
 import type { ModelPort } from "../work/runtime/ports.ts";
 import type { ModelToolingPort } from "./tooling.ts";
 import type { ModelEditRequest } from "../../domain/model/editing/tooling.ts";
-import type { ModelEditOperation } from "../../domain/governance/policies/model-edit-policy.ts";
-import type { ModelDelegationRequest } from "../../domain/governance/records/model-delegation-request.ts";
+import type { ModelEditOperation } from "../../domain/governance/model-access/model-edit-policy.ts";
+import type { ModelDelegationRequest } from "../../domain/governance/model-access/model-delegation-request.ts";
 
 import { modelSourceDigest } from "../../domain/model/value-objects/sources.ts";
 import {
   modelToolingTarget,
   resolveModelEdits,
 } from "../../domain/model/editing/source-index.ts";
-import type { Candidate, ModelBinding } from "../../domain/work/candidates.ts";
+import type {
+  Candidate,
+  ModelBinding,
+} from "../../domain/work/records/candidates.ts";
 import type {
   ModelRevisionProposal,
   ModelRevisionRequest,
   ModelSourceProposalStatus,
   ModelSourceRevision,
-} from "../../domain/work/dialogue.ts";
+} from "../work/conversation/chat-context.ts";
 import type { ModelIdentity } from "../../domain/shared-kernel/model-identity.ts";
 import type { PendingChange } from "../../domain/governance/records/pending-change.ts";
 import type { SystemConfiguration } from "../../domain/governance/records/system-configuration.ts";

@@ -1,15 +1,17 @@
 import type { RequestExecutionBindingPort } from "./evolution/request-adoption-ports.ts";
 import {
   assertOpeningBase,
-  exactSourceVersion,
   OPENING_PHASES,
   type OpeningRecord,
+} from "../../domain/work/request-spaces/opening.ts";
+import {
+  exactSourceVersion,
   requestSpaceDigest,
   RequestSpaceError,
   requestSpaceIdentity,
   type RequestSpaceScope,
-  type SpaceController,
-} from "../../domain/work/request-spaces.ts";
+} from "../../domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../../domain/work/request-spaces/space-control.ts";
 import type { CaseModelVersionRead } from "../work/request-spaces/case-model-notifications.ts";
 import type {
   OpeningSourcePort,

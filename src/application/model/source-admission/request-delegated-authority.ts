@@ -9,15 +9,13 @@ import {
   isSha256Hex,
 } from "../../../domain/primitives/execution-digest.ts";
 import type { AuthorityExercise } from "../../../domain/governance/authority.ts";
-import {
-  MAIN_EXECUTION_SPACE_ID,
-  mainExecutionSpace,
-  OperatorAuthorityError,
-  type RequestAuthorityRoute,
-  sameScopedOperator,
-} from "../../../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
+import { type RequestAuthorityRoute } from "../../../domain/governance/operator-authority.ts";
 import {
   type ExecutionSpaceRef,
+  MAIN_EXECUTION_SPACE_ID,
+  mainExecutionSpace,
+  sameScopedOperator,
   type ScopedOperatorRef,
 } from "../../../domain/governance/authority.ts";
 import { delegatedAuthorityExercise } from "../../../domain/governance/policies/operator-authority-policy.ts";
@@ -28,7 +26,7 @@ import {
 } from "../../../domain/governance/policies/operator-creation-policy.ts";
 import { MAX_BRANCH_TEAM } from "../../../domain/work/records/conversations.ts";
 import { scopedOperator } from "../../../domain/governance/policies/delegation-scope.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../work/runtime/state.ts";
 import type { ModelIdentity } from "../../../domain/shared-kernel/model-identity.ts";
 import type { PendingChange } from "../../../domain/governance/records/pending-change.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
@@ -38,10 +36,8 @@ import {
 } from "../../../domain/model/editing/request-write-destination.ts";
 import type { OperatorCommandOrigin } from "../../work/operators/command-delivery.ts";
 import { requestAuthorityRoute } from "../../governance/request-authority-routing.ts";
-import type {
-  OpeningRecord,
-  SpaceExecutionAdmission,
-} from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import type { SpaceExecutionAdmission } from "../../../domain/work/request-spaces/space-control.ts";
 import {
   parseRequestSourceOwnerAuthority,
   requestSourceOwnerAuthorityDigest,

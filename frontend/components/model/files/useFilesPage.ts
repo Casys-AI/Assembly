@@ -1,7 +1,7 @@
 import type { RequestSourceEditor } from "../../../lib/model/sources/request-edit.ts";
 import type { VersionInfo } from "../../../lib/workbench/version-label.ts";
 import type { RequestNames } from "../../system/useReleaseAgents.ts";
-import type { SavedSystemSourceSelection } from "../../../../src/domain/work/saved-systems.ts";
+import type { SavedSystemSourceSelection } from "../../../../src/domain/work/records/saved-systems.ts";
 import type { SavedSystemsApi } from "../../../lib/system/saved-systems.ts";
 import type { AuthorRoster } from "../../../lib/model/revisions/authors.ts";
 import { useEffect, useMemo } from "preact/hooks";

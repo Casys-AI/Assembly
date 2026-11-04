@@ -9,7 +9,7 @@ import type { ModelIdentity } from "../../../../../../domain/shared-kernel/model
 import type { NativeLiteral } from "../../../../../../domain/model/records/native-literal.ts";
 import { compileNativeAuthority } from "../../work/execution-model.ts";
 import { compileModelPolicyRoot } from "./model-policy-root.ts";
-import { OperatorAuthorityError } from "../../../../../../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../../../../../domain/governance/operator-authority-error.ts";
 import {
   type ToolAdmissionPolicy,
   validateToolAdmissionPolicyRequest,

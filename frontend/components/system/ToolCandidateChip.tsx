@@ -1,5 +1,5 @@
 import { ModelContextLink } from "../view/ModelContextLink.tsx";
-import type { OperatorTool } from "../../../src/domain/work/records/conversations.ts";
+import type { OperatorTool } from "../../../src/application/work/operators/conversation-types.ts";
 import {
   candidatePresentation,
   type CandidateRead,

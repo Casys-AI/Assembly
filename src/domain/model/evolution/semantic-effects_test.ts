@@ -150,14 +150,15 @@ Deno.test("a derived flow step ceiling requires budget authority, not flow autho
   );
 });
 
-Deno.test("native container source-text copies do not change an unaffected consumer", () => {
+// Container facts arrive already normalized by the trusted collector
+// (whole-container source-text copies removed there; see evidence_test).
+Deno.test("normalized container facts do not change an unaffected consumer", () => {
   const main = scope("main"), peer = scope("peer");
   for (const entry of [main, peer]) {
     entry.evidence.sourceFacts.package = {
       "@id": "package",
       "@type": "Package",
       qualifiedName: "Test",
-      "sysx:sourceText": "package Test { old instruction }",
       unknownSemanticFlag: false,
     };
   }
@@ -165,7 +166,6 @@ Deno.test("native container source-text copies do not change an unaffected consu
     "@id": "main-system",
     "@type": "PartUsage",
     qualifiedName: "Test::Main",
-    "sysx:sourceText": "part main { old instruction }",
     "sysx:declaredReference": false,
   };
   const nextMain = structuredClone(main), nextPeer = structuredClone(peer);
@@ -173,14 +173,6 @@ Deno.test("native container source-text copies do not change an unaffected consu
   (nextMain.evidence.digestInputs[0].operator as Record<string, unknown>)
     .instruction = "new instruction";
   nextMain.evidence.sourceFacts.instruction = { value: "new instruction" };
-  for (const entry of [nextMain, nextPeer]) {
-    (entry.evidence.sourceFacts.package as Record<string, unknown>)[
-      "sysx:sourceText"
-    ] = "package Test { new instruction }";
-  }
-  (nextMain.evidence.sourceFacts.system as Record<string, unknown>)[
-    "sysx:sourceText"
-  ] = "part main { new instruction }";
   assertEquals(
     classifyEvolutionEffects([main, peer], [nextMain, nextPeer]).map((
       effect,

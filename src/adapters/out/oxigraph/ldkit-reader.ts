@@ -15,12 +15,14 @@ import {
 } from "ldkit";
 import {
   buildElementIri,
-  type BuildElementRef,
   buildElementRefFromIri,
-  type BuildRef,
   decodeIriSegment,
-  type ElementIriScope,
   encodeIriSegment,
+} from "./iri.ts";
+import {
+  type BuildElementRef,
+  type BuildRef,
+  type ElementIriScope,
   parseBuildRef,
   sameBuildRef,
 } from "../../../domain/model/value-objects/element-ref.ts";

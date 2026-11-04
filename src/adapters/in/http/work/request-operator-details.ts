@@ -4,7 +4,7 @@ import type {
   RequestOperatorSourceCommand,
 } from "../../../../application/work/request-spaces/operator-details-view.ts";
 import type { ArtifactSourceInspection } from "../../../../domain/work/records/artifact-source-inspection.ts";
-import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces/scope.ts";
 import { requireLocalJsonCommand } from "../../../../infrastructure/http/local-security.ts";
 import {
   boundedSpaceCommand,

@@ -1,6 +1,8 @@
 import { scopedOperator } from "../../../domain/governance/policies/delegation-scope.ts";
-import { sameScopedOperator } from "../../../domain/governance/operator-authority.ts";
-import { type ScopedOperatorRef } from "../../../domain/governance/authority.ts";
+import {
+  sameScopedOperator,
+  type ScopedOperatorRef,
+} from "../../../domain/governance/authority.ts";
 import { requestExecutionPinFor } from "../../../application/model/evolution/request-execution-pin.ts";
 import { requestSpaceSeed } from "../../../application/work/runtime/initialization.ts";
 import {
@@ -23,7 +25,7 @@ import {
   retainedToolAdmissionId,
   retainedToolDescriptors,
   retainedToolResourceId,
-} from "../../../domain/work/retained-tool-dependencies.ts";
+} from "../../../domain/work/records/retained-tool-dependencies.ts";
 import {
   assertRequestSpaceBirth,
   assertRequestSpaceBirthIdentity,
@@ -33,10 +35,8 @@ import type {
   RequestExecutionBindingPort,
 } from "../../../application/model/evolution/request-adoption-ports.ts";
 import { RequestAdoptionError } from "../../../application/model/evolution/request-adoption-ports.ts";
-import {
-  type OpeningRecord,
-  requestSpaceDigest,
-} from "../../../domain/work/request-spaces.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../../../domain/work/request-spaces/scope.ts";
 import type { PostgresSystemScope } from "./scope.ts";
 import {
   assertPostgresRuntimeScope,
@@ -51,7 +51,7 @@ import {
   type AdmittedSourceChain,
   PostgresRequestSourceAdmissionStore,
 } from "./request-source-admission-store.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
 import { parseScopedSoftwareDossier } from "../../../application/model/evolution/scoped-software-dossier.ts";
 import { readScopedSoftwareSourceAdmissionProof } from "./scoped-software-source-publication-participant.ts";
 

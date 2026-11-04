@@ -7,7 +7,7 @@ import {
 import { decodePostgresRuntimeState } from "./runtime-state-snapshot.ts";
 import { sameVerifiedRuntimeSnapshot } from "./runtime-snapshot-codec.ts";
 import { decodeHistorical } from "./system-state-store.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
 
 /** Retained Case state is read in one read-only snapshot, with no store opening. */
 export async function readCaseRuntimeState(

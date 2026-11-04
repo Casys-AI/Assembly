@@ -4,7 +4,7 @@ import {
   type RequestSpaceSeed,
   type RuntimeInitializationHost,
 } from "./initialization.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
 import {
   runtimeProvenanceRecord,

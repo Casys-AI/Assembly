@@ -936,7 +936,7 @@ Deno.test("memory dispatch reports only terminal exact accepted jobs", async () 
   native.bind({
     snapshot: {
       executionModel: model,
-    } as import("../../src/domain/work/dialogue.ts").SystemRuntimeState,
+    } as import("../../src/application/work/runtime/state.ts").SystemRuntimeState,
     async processAcceptedContribution() {
       entered();
       await gate;
@@ -1001,7 +1001,7 @@ Deno.test("two owner adoptions retire a terminal input without a phantom run and
   const versions = new Map([["source:0", structuredClone(initial)]]);
   let current = structuredClone(initial);
   let saved:
-    | import("../../src/domain/work/dialogue.ts").SystemRuntimeState
+    | import("../../src/application/work/runtime/state.ts").SystemRuntimeState
     | null = null;
   const native = createTestNativeExecution({
     load: () => Promise.resolve(structuredClone(saved)),

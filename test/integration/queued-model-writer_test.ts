@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
 import { parseModelRevisionRef } from "../../src/domain/model/value-objects/element-ref.ts";
-import { buildOperationJournal } from "../../src/domain/model/editing/write-command.ts";
+import { buildOperationJournal } from "../../src/domain/model/editing/operation-journal.ts";
 import type { PendingChange } from "../../src/domain/governance/records/pending-change.ts";
 import type { ModelCompiler } from "../../src/application/model/builds/ports/out/model-compiler.port.ts";
 import type { ModelRevision } from "../../src/domain/model/records/revision.ts";

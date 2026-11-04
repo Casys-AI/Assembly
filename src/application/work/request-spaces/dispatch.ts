@@ -2,7 +2,7 @@ import type { OperatorExecutionDelivery } from "../operators/execution.ts";
 import type { ExecutionSpaceRef } from "../../../domain/governance/authority.ts";
 import type { ResolvedOperatorScope } from "../native-execution/contract.ts";
 import type { RequestSpaceDispatchPort } from "./ports.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 
 /** The resolved space wins before any operator lookup. A Case refusal never
  * retries through Main, even when both spaces use the same operator identity. */

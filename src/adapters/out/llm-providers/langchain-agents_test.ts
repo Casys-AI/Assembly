@@ -1,6 +1,6 @@
 import { deepStrictEqual, equal, match, ok, rejects } from "node:assert/strict";
 import { createClaudeToolsFake } from "../../../../test/support/claude-tools-fake.ts";
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../../../application/work/conversation/chat-context.ts";
 import {
   normalizeProviderCallObservation,
   type ProviderCallObservation,
@@ -169,7 +169,7 @@ Deno.test("a repaired native decision retains its exact repair transcript on the
         decisionBatchSchema(decisionSchema),
         parts,
       ) as Promise<
-        import("../../../domain/work/dialogue.ts").ChatDecisionBatch
+        import("../../../application/work/conversation/chat-decision.ts").ChatDecisionBatch
       >;
     }
   }

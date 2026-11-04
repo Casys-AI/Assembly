@@ -1,7 +1,7 @@
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { type ActivationResumeHost, settleActivation } from "./activation.ts";
 import type {
   NativeExecutionPort,

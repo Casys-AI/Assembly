@@ -23,7 +23,6 @@ import {
 import {
   assertModelWriteDossier,
   type ModelWriteCommand,
-  ModelWriteCommandError,
   type ModelWriteDecision,
   modelWriteDecisionDigest,
   type ModelWriteDossier,
@@ -32,6 +31,7 @@ import {
   modelWriteOperationsDigest,
   parseModelWriteCommand,
 } from "../../../domain/model/editing/write-command.ts";
+import { ModelWriteCommandError } from "../../../domain/model/editing/write-command-error.ts";
 import {
   parseScopedSoftwareWriteCommand,
   parseScopedSoftwareWriteDossier,

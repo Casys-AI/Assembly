@@ -2,7 +2,7 @@
 import type { OperatorStorage } from "../adapters/out/postgres/host-storage.ts";
 import assert from "node:assert/strict";
 import { requestAdoptionFixture } from "../../test/support/request-adoption-fixture.ts";
-import type { OpeningRecord } from "../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../domain/work/request-spaces/opening.ts";
 import type { ScopedSoftwareRuntimeTarget } from "../application/model/evolution/ports.ts";
 import { captureScopedSoftwarePreparationScope } from "./scoped-software-evolution.ts";
 

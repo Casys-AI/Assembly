@@ -19,20 +19,18 @@ import { buildEvolutionPolicyEdits } from "../support/evolution-policy/writer.ts
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
 import { parseScopedSoftwareDossier } from "../../src/application/model/evolution/scoped-software-dossier.ts";
 import type { EvolutionGrant } from "../../src/domain/model/evolution/policy.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import {
   scopedSoftwareSourceAdmissionRef,
   scopedSoftwareSourceCommandRef,
-} from "../../src/domain/model/editing/request-source-publication.ts";
+} from "../../src/domain/model/editing/source-anchor-refs.ts";
 import { RequestCaseConversations } from "../../src/application/work/request-spaces/conversations.ts";
 import { PostgresRequestSpaceStore } from "../../src/adapters/out/postgres/request-space-store.ts";
 import { ScopedSoftwareCurrentAuthority } from "../../src/adapters/out/postgres/scoped-software-current-authority.ts";
 import { PostgresRequestSourceAdmissionStore } from "../../src/adapters/out/postgres/request-source-admission-store.ts";
-import { RequestSpaceError } from "../../src/domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../src/domain/work/request-spaces/scope.ts";
 import { modelToolingTarget } from "../../src/domain/model/editing/source-index.ts";
 import { PostgresScopedSoftwareSourcePublicationParticipant } from "../../src/adapters/out/postgres/scoped-software-source-publication-participant.ts";
 import { PostgresScopedSoftwareAdoptionTransition } from "../../src/adapters/out/postgres/scoped-software-adoption-transition.ts";

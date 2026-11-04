@@ -1,7 +1,7 @@
 import { decodeRuntimeSnapshotPayload } from "./runtime-snapshot-codec.ts";
 import { postgresSafeInteger } from "./numbers.ts";
 import { assertCasesState } from "../../../domain/work/entities/cases.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
 
 /** Domain envelope validation, independent of any database driver. */
 export function assertRuntimeState(

@@ -1,6 +1,6 @@
 import { ChangePublicationError } from "../../model/publication/change.ts";
 import { HostEditError } from "../../model/editing/host-edit.ts";
-import type { Candidate } from "../candidates.ts";
+import type { Candidate } from "../records/candidates.ts";
 
 /** Coded refusals of an admitted activation. Each one is terminal: the same
  * admission can never succeed later, so the candidate must be re-proposed. */

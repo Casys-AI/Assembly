@@ -3,8 +3,8 @@
 import assert from "node:assert/strict";
 import { DenoToolRunner } from "../../src/adapters/out/sandbox/runner.ts";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
-import type { ToolDraft } from "../../src/domain/work/candidates.ts";
-import type { OpeningRecord } from "../../src/domain/work/request-spaces.ts";
+import type { ToolDraft } from "../../src/domain/work/records/candidates.ts";
+import type { OpeningRecord } from "../../src/domain/work/request-spaces/opening.ts";
 import type { openNormalAdmissionWitnessHost } from "./request-source-admission-normal-host.ts";
 
 export const retainedWitnessUrl = "https://example.org/retained-witness";

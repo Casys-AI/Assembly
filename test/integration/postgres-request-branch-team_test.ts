@@ -41,7 +41,7 @@ import { observeMemberRightTransactions } from "../support/request-member-transa
 import { decodePostgresRuntimeState } from "../../src/adapters/out/postgres/runtime-state-snapshot.ts";
 import { parseRequestOwnerAdoptionDossier } from "../../src/application/model/evolution/request-adoption-invariants.ts";
 import { RequestAdoptionError } from "../../src/application/model/evolution/request-adoption-ports.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import { MAX_BRANCH_TEAM } from "../../src/domain/work/records/conversations.ts";
 import {
   recordedWorkCompletion,

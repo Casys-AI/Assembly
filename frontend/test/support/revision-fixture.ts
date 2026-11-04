@@ -1,4 +1,4 @@
-import type { ModelProposalAuthorization } from "../../../src/domain/governance/records/model-edit-authorization.ts";
+import type { ModelProposalAuthorization } from "../../../src/domain/governance/model-access/model-edit-authorization.ts";
 import { parseModelRevisionId } from "../../../src/domain/shared-kernel/revision-id.ts";
 import type {
   ModelChangedFile,

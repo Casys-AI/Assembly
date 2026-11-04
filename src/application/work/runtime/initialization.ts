@@ -1,4 +1,4 @@
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import {
   assertContinuationCases,
   caseBudgetPolicy,
@@ -22,8 +22,8 @@ import {
   runtimeProvenanceRecord,
   unknownRuntimeProvenance,
 } from "../../../domain/work/value-objects/runtime-provenance.ts";
-import type { Stage } from "../../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { Stage } from "../../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import {
   budgetState,
   type WorkBudgetView,

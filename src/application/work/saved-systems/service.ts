@@ -1,6 +1,6 @@
-import type { ReleasePublicationEvent } from "../../../domain/work/release-publication.ts";
-import type { SpaceController } from "../../../domain/work/request-spaces.ts";
-import type { ReleaseRetentionAuthorization } from "../../../domain/work/release-retention.ts";
+import type { ReleasePublicationEvent } from "../../../domain/work/records/release-publication.ts";
+import type { SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
+import type { ReleaseRetentionAuthorization } from "../../../domain/work/records/release-retention.ts";
 import type { ReleaseCreationAuthorizationPort } from "./creation-authorization.ts";
 import {
   assertReleaseTagBinding,
@@ -11,7 +11,7 @@ import {
   type ReleaseTagBinding,
   type ReleaseTagSelection,
   type SavedSystemTag,
-} from "../../../domain/work/release-tags.ts";
+} from "../../../domain/work/records/release-tags.ts";
 import {
   assertSavedCapture,
   assertSavedSourceSelection,
@@ -24,9 +24,8 @@ import {
   type SavedSystemRecord,
   type SavedSystemScope,
   type SavedSystemSourceSelection,
-  type SavedSystemView,
-  savedSystemView,
-} from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/records/saved-systems.ts";
+import { type SavedSystemView, savedSystemView } from "./release-view.ts";
 import type {
   ModelTagMutationPort,
   ReleaseTagsPort,

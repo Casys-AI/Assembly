@@ -3,8 +3,8 @@ import { spaceUuid } from "./request-space-fixture.ts";
 import {
   type OpeningBase,
   type OpeningRecord,
-  requestSpaceDigest,
-} from "../../src/domain/work/request-spaces.ts";
+} from "../../src/domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
 
 /** Immutable flat manifests linked through exact durable opening records.
  * Test-only: no runtime, database, repository or source assets are constructed. */

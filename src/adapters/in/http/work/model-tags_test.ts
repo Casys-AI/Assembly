@@ -1,6 +1,6 @@
 import { deepStrictEqual, equal } from "node:assert/strict";
 import { createModelTagsHandler } from "./model-tags.ts";
-import { SavedSystemError } from "../../../../domain/work/saved-systems.ts";
+import { SavedSystemError } from "../../../../domain/work/records/saved-systems.ts";
 
 const origin = "http://127.0.0.1:4311";
 const source = {

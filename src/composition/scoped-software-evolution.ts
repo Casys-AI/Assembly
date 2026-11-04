@@ -72,7 +72,7 @@ export async function captureScopedSoftwarePreparationScope(input: {
       OperatorStorage
     >;
   readAdmittedSource(
-    opening: import("../domain/work/request-spaces.ts").OpeningRecord,
+    opening: import("../domain/work/request-spaces/opening.ts").OpeningRecord,
   ): Promise<Pick<AdmittedSourceChain, "head">>;
 }) {
   const opening = structuredClone(input.actor.opening),
@@ -124,7 +124,7 @@ export function createScopedSoftwareEvolutionComposition(options: {
   queue: PostgresModelWriteQueue;
   leaseMs: number;
   restore(
-    opening: import("../domain/work/request-spaces.ts").OpeningRecord,
+    opening: import("../domain/work/request-spaces/opening.ts").OpeningRecord,
   ): Promise<void>;
   failed(error: unknown): void;
 }) {

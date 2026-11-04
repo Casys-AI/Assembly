@@ -3,7 +3,7 @@ import {
   RequestAdoptionError,
   type RequestAdoptionSession,
 } from "../../../application/model/evolution/request-adoption-ports.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import { PostgresPrimarySpaceControlSource } from "./primary-space-control-source.ts";
 import { type Prisma, type PrismaClient } from "./client.ts";
 import { RequestAdoptionContexts } from "./request-adoption-context.ts";

@@ -1,5 +1,5 @@
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import {
   budgetState,
   WorkBudgetError,

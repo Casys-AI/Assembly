@@ -1,5 +1,5 @@
 import { isSha256Hex } from "../../primitives/execution-digest.ts";
-import { ModelWriteCommandError } from "./write-command.ts";
+import { ModelWriteCommandError } from "./write-command-error.ts";
 import {
   type ModelRevisionRef,
   parseModelRevisionRef,

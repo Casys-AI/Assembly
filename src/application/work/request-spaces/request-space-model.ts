@@ -4,11 +4,13 @@ import type { SystemConfiguration } from "../../../domain/governance/records/sys
 import type { ModelIdentity } from "../../../domain/shared-kernel/model-identity.ts";
 import {
   exactSourceVersion,
+  RequestSpaceError,
+} from "../../../domain/work/request-spaces/scope.ts";
+import {
   type OpeningBase,
   type OpeningRecord,
-  RequestSpaceError,
-  type VerifiedRequestTeam,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/opening.ts";
+import { type VerifiedRequestTeam } from "../../../domain/work/request-spaces/branch-team.ts";
 import { creationReceiptVerifies } from "../../../domain/governance/policies/operator-creation-policy.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { assertRequestChange } from "../../../domain/governance/records/request-change.ts";

@@ -17,11 +17,9 @@ import {
   BehaviorInvocationRegistry,
 } from "../../src/application/work/behaviors/invocation.ts";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
-import type { Candidate } from "../../src/domain/work/candidates.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../src/domain/work/dialogue.ts";
+import type { Candidate } from "../../src/domain/work/records/candidates.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import type {
   PendingChange,
 } from "../../src/domain/governance/records/pending-change.ts";
@@ -30,7 +28,7 @@ import {
   assertCandidateDelegationReceipt,
   delegatedCandidateAuthorityExercise,
 } from "../../src/domain/governance/policies/tool-admission-policy.ts";
-import { mainExecutionSpace } from "../../src/domain/governance/operator-authority.ts";
+import { mainExecutionSpace } from "../../src/domain/governance/authority.ts";
 import { CandidateActivationError } from "../../src/domain/work/policies/candidate-activation.ts";
 import { WorkBudgetService } from "../../src/application/work/budget/service.ts";
 import {

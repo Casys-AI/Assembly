@@ -2,8 +2,8 @@
 
 These contracts expose the operator sessions declared by the admitted model.
 Reading them does not start an agent. Types are defined in
-[`conversations.ts`](../../../src/domain/work/records/conversations.ts); local
-transport is implemented by
+[`conversation-types.ts`](../../../src/application/work/operators/conversation-types.ts);
+local transport is implemented by
 [`conversations.ts`](../../../src/adapters/in/http/work/conversations.ts).
 
 ## Reads

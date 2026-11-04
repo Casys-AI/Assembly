@@ -1,5 +1,5 @@
 import type { ScopedOperatorRef } from "../../../domain/governance/authority.ts";
-import type { RequestSpaceScope } from "../../../domain/work/request-spaces.ts";
+import type { RequestSpaceScope } from "../../../domain/work/request-spaces/scope.ts";
 
 /** Each row describes an independent persisted observation collected during the
  * snapshot's interval, never one atomic global state or the inspected graph. */

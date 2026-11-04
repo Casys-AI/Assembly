@@ -8,10 +8,8 @@ import { SystemRuntime } from "../../../../test/support/system-runtime.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { ModelPort } from "./ports.ts";
 import type { ApprovedChangePublication } from "../../../domain/model/publication/change.ts";
-import type {
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ChatDecision } from "../conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type {
   PendingChange,
 } from "../../../domain/governance/records/pending-change.ts";
@@ -170,7 +168,7 @@ function fixture(batched = false) {
         ...(batched
           ? {
             decideBatch: (
-              context: import("../../../domain/work/dialogue.ts").ChatContext,
+              context: import("../conversation/chat-context.ts").ChatContext,
             ) => {
               decisions++;
               const step = steps.shift();

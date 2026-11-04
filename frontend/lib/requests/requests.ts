@@ -14,12 +14,12 @@ import { type AssemblyEnvironment, parseEnvironment } from "../environment.ts";
 import type {
   AgentConversation,
   ConversationsSnapshot,
-} from "../../../src/domain/work/records/conversations.ts";
+} from "../../../src/application/work/operators/conversation-types.ts";
 import type {
   OpeningCommand,
   OpeningSourceChoice,
-  OpeningView,
-} from "../../../src/domain/work/request-spaces.ts";
+} from "../../../src/domain/work/request-spaces/opening.ts";
+import type { OpeningView } from "../../../src/application/work/request-spaces/opening-view.ts";
 import { createCases, isOpenCase, parseCasesSnapshot } from "../cases/cases.ts";
 import {
   parseConversationsSnapshot,

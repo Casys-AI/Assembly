@@ -12,13 +12,13 @@ import type {
   RequestOperatorDetailsSnapshot,
   RequestOperatorSourceCommand,
 } from "./operator-details-view.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import {
-  type OpeningRecord,
   RequestSpaceError,
   requestSpaceIdentity,
   type RequestSpaceScope,
-  type SpaceController,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
 import type { RequestExecutionBinding } from "../../model/evolution/request-adoption-ports.ts";
 import type { ArtifactSourceServicePort } from "../artifacts/publication.ts";
 import { toolDraftDigest } from "../artifacts/catalog.ts";

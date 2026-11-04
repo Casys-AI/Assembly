@@ -40,7 +40,7 @@ import { MemoryStateStore } from "../support/memory-state-store.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import { type SourceRevision } from "../../src/domain/model/records/source-revision.ts";
 import { sourceLiterals } from "../../src/domain/model/projections/source-facts.ts";
-import type { ChatDecision } from "../../src/domain/work/dialogue.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import { SystemGovernance } from "../../src/domain/governance/policies/governance.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import {

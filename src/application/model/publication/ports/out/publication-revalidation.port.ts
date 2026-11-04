@@ -4,7 +4,7 @@ import type {
   RevalidationEvidence,
   SourcePublication,
 } from "../../../../../domain/model/publication/change.ts";
-import type { Candidate } from "../../../../../domain/work/candidates.ts";
+import type { Candidate } from "../../../../../domain/work/records/candidates.ts";
 import type {
   PendingChange,
 } from "../../../../../domain/governance/records/pending-change.ts";

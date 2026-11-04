@@ -1,5 +1,5 @@
 import type { PreparedChangeDiff } from "../../../src/domain/governance/operator-authority.ts";
-import type { ConversationsSnapshot } from "../../../src/domain/work/records/conversations.ts";
+import type { ConversationsSnapshot } from "../../../src/application/work/operators/conversation-types.ts";
 import type { ChangeWithDiff } from "../../lib/model/revisions/change.ts";
 import type { PendingChange } from "../../../src/domain/governance/records/pending-change.ts";
 

@@ -30,10 +30,8 @@ import {
   type RequestSourceOwnerPhaseBinding,
 } from "../../src/application/model/source-admission/request-source-owner.ts";
 import { parseRequestSourceAdmission } from "../../src/application/model/source-admission/request-source-admission.ts";
-import {
-  requestSpaceDigest,
-  type SpaceController,
-} from "../../src/domain/work/request-spaces.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../../src/domain/work/request-spaces/space-control.ts";
 import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import type { ModelRevision } from "../../src/domain/model/records/revision.ts";
 import {

@@ -29,11 +29,9 @@ import { RequestInformationScope } from "../application/work/context/request-inf
 import type { RequestSpaceRuntimeDependencies } from "../application/work/request-spaces/runtime.ts";
 import type { ExecutableModel } from "../domain/model/execution/executable-model.ts";
 import { SkillError } from "../domain/skills/context-skills.ts";
-import type {
-  ModelSourceRevision,
-  SystemRuntimeState,
-} from "../domain/work/dialogue.ts";
-import { RequestSpaceError } from "../domain/work/request-spaces.ts";
+import type { ModelSourceRevision } from "../application/work/conversation/chat-context.ts";
+import type { SystemRuntimeState } from "../application/work/runtime/state.ts";
+import { RequestSpaceError } from "../domain/work/request-spaces/scope.ts";
 
 export interface RequestRuntimeDependenciesOptions {
   hostScope: PostgresSystemScope;

@@ -1,10 +1,8 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { RequestSupervision, supervisionQuery } from "./supervision.ts";
-import type {
-  OpeningRecord,
-  SpaceController,
-} from "../../../domain/work/request-spaces.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import type { SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import type { RequestExecutionBinding } from "../../model/evolution/request-adoption-ports.ts";
 import {
   requestControlState,

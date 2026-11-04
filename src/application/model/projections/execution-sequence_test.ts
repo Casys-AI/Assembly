@@ -1,6 +1,6 @@
 import { deepStrictEqual, equal, ok } from "node:assert/strict";
 import { projectExecutionSequence } from "./execution-sequence.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../work/runtime/state.ts";
 import type { ModelIdentity } from "../../../domain/shared-kernel/model-identity.ts";
 import type { SourceGraph } from "../../../domain/model/records/source-graph.ts";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";

@@ -11,15 +11,13 @@ import {
   MAX_ACTIVATION_ATTEMPTS,
   requireActivation,
 } from "../../../domain/work/policies/candidate-activation.ts";
-import type {
-  ExecutableCatalogEntry,
-  ExecutableModel,
-} from "../../../domain/model/execution/executable-model.ts";
+import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type {
   Candidate,
+  ExecutableCatalogEntry,
   ModelBinding,
-} from "../../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+} from "../../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type { CandidateModelPort } from "./ports/out/candidate-model.port.ts";
 import { draftDigest, errorText, makeEvent } from "../runtime/values.ts";
 import {

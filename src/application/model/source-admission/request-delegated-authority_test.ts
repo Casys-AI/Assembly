@@ -7,7 +7,7 @@ import {
 } from "./request-delegated-authority.ts";
 import { branchAuthorityFixture } from "../../../../test/support/branch-authority-fixture.ts";
 import { requestAuthorityRoute } from "../../governance/request-authority-routing.ts";
-import { mainExecutionSpace } from "../../../domain/governance/operator-authority.ts";
+import { mainExecutionSpace } from "../../../domain/governance/authority.ts";
 import type { OperatorCommandOrigin } from "../../work/operators/command-delivery.ts";
 
 const origin = {

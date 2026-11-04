@@ -1,10 +1,10 @@
-import { publicationEvent } from "../../../domain/work/release-publication.ts";
+import { publicationEvent } from "../../../domain/work/records/release-publication.ts";
 import {
   ReleaseCreationAuthority,
   type ReleaseCreationAuthorizationPort,
 } from "./creation-authorization.ts";
 import { spaceControlAuthority } from "../../../../test/support/request-space-fixture.ts";
-import type { SpaceController } from "../../../domain/work/request-spaces.ts";
+import type { SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { SavedSystemsService } from "./service.ts";
 import type {
@@ -20,7 +20,7 @@ import {
   SavedSystemError,
   type SavedSystemManifest,
   type SavedSystemRecord,
-} from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/records/saved-systems.ts";
 const scope = { projectId: "p", systemId: "s", executionSpaceId: "main" };
 function fixture(
   creation?: ReleaseCreationAuthorizationPort,

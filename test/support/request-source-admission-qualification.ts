@@ -8,7 +8,7 @@ import {
 } from "../../src/adapters/out/postgres/client.ts";
 import { postgresQualifiedTableIdentifier } from "../../src/adapters/out/postgres/client-schema.ts";
 import type { ModelSources as Sources } from "../../src/domain/model/value-objects/sources.ts";
-import type { OpeningRecord } from "../../src/domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../src/domain/work/request-spaces/opening.ts";
 import type { RequestSourceAdmission } from "../../src/application/model/source-admission/request-source-admission.ts";
 import type { GitRequestSourceProofReader } from "../../src/adapters/out/git/repository.ts";
 

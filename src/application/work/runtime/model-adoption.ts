@@ -9,7 +9,7 @@ import {
   designerExecutionContext,
   localRequestCase,
 } from "../cases/runtime.ts";
-import type { ConversationsSnapshot } from "../../../domain/work/records/conversations.ts";
+import type { ConversationsSnapshot } from "../operators/conversation-types.ts";
 import {
   effectiveModelUpdate,
   type EffectiveModelUpdateOrigin,
@@ -19,10 +19,7 @@ import {
   type ModelDiagnosticAddress,
   requireExistingDiagnosticAddresses,
 } from "../../../domain/model/value-objects/diagnostic-address.ts";
-import type {
-  Event,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { Event, SystemRuntimeState } from "./state.ts";
 import type {
   SystemConfiguration,
 } from "../../../domain/governance/records/system-configuration.ts";

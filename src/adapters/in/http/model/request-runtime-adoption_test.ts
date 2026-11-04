@@ -4,7 +4,7 @@ import {
   type RequestRuntimeAdoptionPort,
 } from "../../../../application/model/evolution/request-adoption-ports.ts";
 import { createRequestRuntimeAdoptionHandler } from "./request-runtime-adoption.ts";
-import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces/scope.ts";
 const origin = "http://127.0.0.1:4311";
 const version = `commit:${"a".repeat(40)}`, target = `commit:${"b".repeat(40)}`;
 const before = { version, digest: "c".repeat(64) },

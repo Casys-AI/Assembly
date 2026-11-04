@@ -17,14 +17,10 @@ import {
 } from "../../src/adapters/out/postgres/request-space-control-store.ts";
 import { ModeledSpaceControlAuthority } from "../../src/application/work/request-spaces/space-control-authority.ts";
 import { SpaceAdmissions } from "../../src/application/work/request-spaces/control.ts";
-import type {
-  OpeningRecord,
-  SpaceExecutionAdmission,
-} from "../../src/domain/work/request-spaces.ts";
-import {
-  conversationPermissions,
-  requestSpaceDigest,
-} from "../../src/domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../src/domain/work/request-spaces/opening.ts";
+import type { SpaceExecutionAdmission } from "../../src/domain/work/request-spaces/space-control.ts";
+import { conversationPermissions } from "../../src/domain/work/request-spaces/branch-team.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
 import type { OperatorExecutionDelivery } from "../../src/application/work/operators/execution.ts";
 import {
   NativeExecutionAdmissionRefused,

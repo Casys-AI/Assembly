@@ -7,12 +7,12 @@ import { ModelRepositoryError } from "../../../../application/model/repository.t
 import { ModelWriteQueueError } from "../../../../application/model/publication/write-queue.ts";
 import { ModelPublicationError } from "../../../../application/model/publication/service.ts";
 import { RequestSourceOwnerError } from "../../../../application/model/source-admission/request-source-owner.ts";
-import { ModelWriteCommandError } from "../../../../domain/model/editing/write-command.ts";
+import { ModelWriteCommandError } from "../../../../domain/model/editing/write-command-error.ts";
 import {
   exactSourceVersion,
   RequestSpaceError,
   requestSpaceIdentity,
-} from "../../../../domain/work/request-spaces.ts";
+} from "../../../../domain/work/request-spaces/scope.ts";
 import { requireLocalJsonCommand } from "../../../../infrastructure/http/local-security.ts";
 import {
   boundedSpaceCommand,

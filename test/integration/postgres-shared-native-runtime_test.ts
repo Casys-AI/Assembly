@@ -34,12 +34,10 @@ import type {
 } from "../../src/application/work/operators/execution.ts";
 import { WorkBudgetService } from "../../src/application/work/budget/service.ts";
 import { AjvSchemaValidator } from "../../src/infrastructure/ajv-schema-validation.ts";
-import {
-  conversationPermissions,
-  type OpeningRecord,
-  requestSpaceDigest,
-  type SpaceExecutionAdmission,
-} from "../../src/domain/work/request-spaces.ts";
+import { conversationPermissions } from "../../src/domain/work/request-spaces/branch-team.ts";
+import { type OpeningRecord } from "../../src/domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
+import { type SpaceExecutionAdmission } from "../../src/domain/work/request-spaces/space-control.ts";
 import {
   requestControlBinding,
   requestControlModel,

@@ -4,8 +4,8 @@ import type { ProfileChip } from "../team/projection.ts";
 import type {
   OperatorTool,
   OperatorToolsSnapshot,
-} from "../../../../src/domain/work/records/conversations.ts";
-import type { Candidate } from "../../../../src/domain/work/candidates.ts";
+} from "../../../../src/application/work/operators/conversation-types.ts";
+import type { Candidate } from "../../../../src/domain/work/records/candidates.ts";
 import { operatorToolKey } from "./decisions.ts";
 
 export interface CandidateRead {

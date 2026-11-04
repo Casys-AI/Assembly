@@ -1,6 +1,6 @@
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { scopedOperator } from "../../../domain/governance/policies/delegation-scope.ts";
-import { OperatorAuthorityError } from "../../../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
 import { exerciseOwnerAuthority } from "../../../domain/governance/authority.ts";
 import { CandidateActivationError } from "../../../domain/work/policies/candidate-activation.ts";
 import type { CandidateDelegatedActor } from "../../../domain/governance/policies/tool-admission-policy.ts";
@@ -12,15 +12,12 @@ import {
   SystemRuntime,
 } from "../../../../test/support/system-runtime.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type {
-  Message,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { Message, SystemRuntimeState } from "../runtime/state.ts";
 import type {
   SkillCatalogRecord,
 } from "../../../domain/skills/records/catalog.ts";
 import type { SkillStorePort } from "../../skills/ports.ts";
-import { modelContextTools } from "../../../domain/model/consultation/context.ts";
+import { modelContextTools } from "../context/model-tools.ts";
 import {
   type ConversationRuntime,
   conversationUnit,

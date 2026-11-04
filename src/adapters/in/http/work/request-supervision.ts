@@ -2,7 +2,7 @@ import type {
   RequestSupervisionQuery,
   RequestSupervisionReadPort,
 } from "../../../../application/work/request-spaces/supervision-view.ts";
-import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces/scope.ts";
 import {
   spaceHttpError,
   spaceJson,

@@ -1,16 +1,15 @@
 import assert from "node:assert/strict";
 import { validateDecision } from "../../adapters/out/llm-providers/output-validation.ts";
+import { OperatorAuthorityError } from "./operator-authority-error.ts";
 import {
   changeDecisionMetadata,
-  modelEditingAuthorityRoots,
-  OperatorAuthorityError,
   validateGrantModelEditing,
   validateRequestOperatorSpec,
 } from "./operator-authority.ts";
 import { assertApprovable } from "./policies/change-approvability.ts";
 import { mainCreationScope } from "./policies/operator-creation-policy.ts";
 import { SystemGovernance } from "./policies/governance.ts";
-import type { ChatDecision } from "../work/dialogue.ts";
+import type { ChatDecision } from "../../application/work/conversation/chat-decision.ts";
 
 const operator = {
   instruction: "Answer bounded requests.",
@@ -217,41 +216,6 @@ Deno.test("governance refuses editing outside the requester and roots overlappin
       reason: "Editing",
       requestedRights: { grantModelEditing: grant },
     }, mainCreationScope(primary.identity))
-  );
-});
-
-Deno.test("authority boundaries include derived types and renamed occurrences", () => {
-  const element = (
-    id: string,
-    qualifiedName: string,
-    typeIds: string[] = [],
-    generalIds: string[] = [],
-  ) => ({
-    id,
-    qualifiedName,
-    typeIds,
-    generalIds,
-    name: id,
-    ownerId: "",
-    metaclass: "ItemUsage",
-    direction: "",
-    isReference: false,
-    redefinedIds: [],
-    multiplicity: "",
-    doc: "",
-  });
-  assert.deepEqual(
-    modelEditingAuthorityRoots([
-      element("occurrence", "Team::requester::business::renamed", ["derived"]),
-      element("derived", "Team::CustomMandate", [], ["mandate"]),
-      element("mandate", "ASECore::ConfiguredMandate"),
-      element("ordinary", "Team::requester::catalog"),
-    ]),
-    [
-      "ASECore::ConfiguredMandate",
-      "Team::CustomMandate",
-      "Team::requester::business::renamed",
-    ],
   );
 });
 

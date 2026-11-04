@@ -1,13 +1,9 @@
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { isOpenCase } from "../../../domain/work/entities/cases.ts";
 import { CaseError } from "../../../domain/work/errors/case.ts";
-import type {
-  ArtifactEvidence,
-  Event,
-  Message,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
+import type { ArtifactEvidence } from "../conversation/chat-context.ts";
+import type { Event, Message, SystemRuntimeState } from "../runtime/state.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
 import type {
   PendingChange,
 } from "../../../domain/governance/records/pending-change.ts";

@@ -8,10 +8,8 @@ import type {
   EvolutionAct,
   EvolutionAuthorityExercise,
 } from "../../../domain/model/evolution/policy.ts";
-import type {
-  ChatContext,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../conversation/chat-context.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import { EvolutionService } from "../../model/evolution/service.ts";
 import {
   type EvolutionDossier,

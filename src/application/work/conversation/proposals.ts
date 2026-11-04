@@ -1,4 +1,4 @@
-import { isRequestTeamMember } from "../../../domain/work/request-spaces.ts";
+import { isRequestTeamMember } from "../../../domain/work/request-spaces/branch-team.ts";
 import { ModelRightsError } from "../../../domain/model/consultation/model-read-policy.ts";
 import { withRecipientSpace } from "../../governance/mandate-change-decisions.ts";
 import { budgetPromotionPendingSelection } from "../runtime/budget-transition.ts";
@@ -12,7 +12,7 @@ import type {
   FlowActionResult,
   FlowValues,
 } from "../../../domain/model/execution/flow.ts";
-import type { ChatDecision } from "../../../domain/work/dialogue.ts";
+import type { ChatDecision } from "./chat-decision.ts";
 import type {
   ConversationProposalHost,
   ConversationTurnState,

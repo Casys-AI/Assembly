@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
 import { sha256 } from "../../../domain/primitives/execution-digest.ts";
 import { openCase } from "../../../domain/work/entities/cases.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import {
   invocationAdmission,
   userSuppliedUrl,

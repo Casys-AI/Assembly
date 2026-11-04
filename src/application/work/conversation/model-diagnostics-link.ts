@@ -1,5 +1,5 @@
 import { parseModelRevisionId } from "../../../domain/shared-kernel/revision-id.ts";
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "./chat-context.ts";
 
 /** Host navigation metadata, never a claim that a report is available or a grant
  * to read it. The destination retains its normal exact-source/access checks. */

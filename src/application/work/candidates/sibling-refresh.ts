@@ -6,8 +6,8 @@ import {
 } from "../../../domain/primitives/canonical-json.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { CompiledFlow } from "../../../domain/model/execution/flow.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { draftDigest, makeEvent, valueDigest } from "../runtime/values.ts";
 
 interface SiblingRefresh {

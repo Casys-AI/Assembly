@@ -1,4 +1,4 @@
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../../../application/work/conversation/chat-context.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
 import { isPlainRecord } from "../../../domain/primitives/is-plain-record.ts";
 import { mayConsultModel } from "../../../domain/model/consultation/model-read-policy.ts";

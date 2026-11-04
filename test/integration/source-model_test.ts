@@ -9,7 +9,7 @@ import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/c
 import { type SourceRepository } from "../../src/application/model/source-repository.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { sourceSnapshot } from "../../src/domain/model/projections/source-facts.ts";
-import type { Candidate } from "../../src/domain/work/candidates.ts";
+import type { Candidate } from "../../src/domain/work/records/candidates.ts";
 import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import type {
   PendingChange,

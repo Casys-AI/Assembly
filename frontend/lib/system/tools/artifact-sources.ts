@@ -10,7 +10,7 @@ import type {
   ArtifactSourceInspection,
   InspectedArtifactSource,
 } from "../../../../src/domain/work/records/artifact-source-inspection.ts";
-import type { ToolDraft } from "../../../../src/domain/work/candidates.ts";
+import type { ToolDraft } from "../../../../src/domain/work/records/candidates.ts";
 
 export interface KnownArtifactSource {
   agentId: string;

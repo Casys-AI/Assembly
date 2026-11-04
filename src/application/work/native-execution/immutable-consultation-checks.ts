@@ -4,7 +4,7 @@ import type {
   ImmutableConsultationMemberOutcome,
   NativeExecutionRequest,
 } from "./contract.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import {
   executionDigest,

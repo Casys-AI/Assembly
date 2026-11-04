@@ -14,8 +14,8 @@ import type {
   FlowValues,
   OperatorExecutionProfile,
 } from "../../../domain/model/execution/flow.ts";
-import type { StateHistoryPort } from "../../../domain/work/history.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { StateHistoryPort } from "../runtime/ports/out/state-history.port.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import {
   caseExecutionContext,
   designerExecutionContext,
@@ -103,7 +103,7 @@ export interface ImmutableConsultationGroupMember {
   effectKey: string;
   argumentsDigest: string;
   choice: Extract<
-    import("../../../domain/work/dialogue.ts").ChatDecision,
+    import("../conversation/chat-decision.ts").ChatDecision,
     { kind: "consult_model" }
   >;
   request: Record<string, ImmutableConsultationJson> & {
@@ -153,9 +153,9 @@ export interface ImmutableConsultationMemberOutcome {
   callId: string;
   effectKey: string;
   argumentsDigest: string;
-  result: import("../../../domain/work/dialogue.ts").ChatCallResult;
-  messages: import("../../../domain/work/dialogue.ts").Message[];
-  events: import("../../../domain/work/dialogue.ts").Event[];
+  result: import("../conversation/chat-decision.ts").ChatCallResult;
+  messages: import("../runtime/state.ts").Message[];
+  events: import("../runtime/state.ts").Event[];
 }
 
 export interface ImmutableConsultationGroupPublication {
@@ -277,7 +277,7 @@ export interface NativeExecutionRequest {
   teamAdoptionContinuation?: RequestTeamContinuation;
   /** Explicit cross-thread initial admission only; never resolved by subject. */
   initialAdmissionTransfer?:
-    import("../../../domain/work/candidates.ts").InitialToolAdmissionTransfer;
+    import("../../../domain/work/records/candidates.ts").InitialToolAdmissionTransfer;
   businessRevision: RuntimeRevisionReference;
   identity: NativeExecutionIdentity;
   contribution: NativeExecutionContribution;

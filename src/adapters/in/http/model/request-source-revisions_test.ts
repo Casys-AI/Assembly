@@ -5,7 +5,7 @@ import {
   match,
 } from "node:assert/strict";
 import { createRequestSourceRevisionsHandler } from "./request-source-revisions.ts";
-import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces/scope.ts";
 import { ModelWriteQueueError } from "../../../../application/model/publication/write-queue.ts";
 import type { RequestSourceRevisions } from "../../../../application/model/source-admission/revisions.ts";
 import type { ModelRevision } from "../../../../domain/model/records/revision.ts";

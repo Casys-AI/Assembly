@@ -7,6 +7,7 @@ import { toolDraftDigest } from "../../work/artifacts/catalog.ts";
 import {
   exerciseOwnerAuthority,
   legacyOwnerAuthority,
+  mainExecutionSpace,
 } from "../../../domain/governance/authority.ts";
 import {
   type CandidateActivationPublication,
@@ -16,7 +17,7 @@ import type { ExecutableModel } from "../../../domain/model/execution/executable
 import { SystemGovernance } from "../../../domain/governance/policies/governance.ts";
 import { modelSourceDigest } from "../../../domain/model/value-objects/sources.ts";
 import type { ModelRevision } from "../../../domain/model/records/revision.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
 import type {
   PendingChange,
 } from "../../../domain/governance/records/pending-change.ts";
@@ -24,7 +25,6 @@ import {
   delegatedCandidateAuthorityExercise,
   toolAdmissionPreparation,
 } from "../../../domain/governance/policies/tool-admission-policy.ts";
-import { mainExecutionSpace } from "../../../domain/governance/operator-authority.ts";
 import { compareModelSources } from "../revisions/source-diff.ts";
 import { NativeModelPublicationRevalidator } from "./revalidation.ts";
 

@@ -1,13 +1,11 @@
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
-import type {
-  ExecutableCatalogEntry,
-  ExecutableModel,
-} from "../../../domain/model/execution/executable-model.ts";
+import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type {
   Candidate,
+  ExecutableCatalogEntry,
   ModelBinding,
-} from "../../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+} from "../../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import {
   type CandidateActivationHost,
   settleActivation,

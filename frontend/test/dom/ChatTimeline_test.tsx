@@ -8,7 +8,7 @@ import { act } from "preact/test-utils";
 import { createWorkbenchState } from "../../lib/workbench/state.ts";
 import { snapshot } from "../support/workbench-fixture.ts";
 import { grant } from "../support/operator-fixture.ts";
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
 import { ChatTimeline } from "../../components/conversations/ChatTimeline.tsx";
 
 const conversation = (id: string): AgentConversation => ({

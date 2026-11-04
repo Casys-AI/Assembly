@@ -30,10 +30,8 @@ import { queryModelRevision } from "../../src/application/model/editing/query-re
 import { ModelContextReader } from "../../src/application/model/consultation/source-reader.ts";
 import { createModelRevisionHandler } from "../../src/adapters/in/http/model/revisions.ts";
 import { ModelRepositoryError } from "../../src/application/model/repository.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import { createClaudeToolsFake } from "../support/claude-tools-fake.ts";
 import type { BehaviorInvocationPort } from "../../src/application/work/behaviors/invocation.ts";
 import type { DecisionInformationPort } from "../../src/application/work/context/information-ports.ts";

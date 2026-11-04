@@ -1,6 +1,6 @@
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
 import { canonical } from "../../../src/domain/primitives/canonical-json.ts";
-import type { Candidate } from "../../../src/domain/work/candidates.ts";
+import type { Candidate } from "../../../src/domain/work/records/candidates.ts";
 import type {
   PendingChange,
 } from "../../../src/domain/governance/records/pending-change.ts";

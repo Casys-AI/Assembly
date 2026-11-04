@@ -136,7 +136,7 @@ into a change to authority or the delegation registry.
 editing rights.
 [`operations.ts`](../../../src/application/governance/model-access/administration/operations.ts)
 and
-[`model-delegation.ts`](../../../src/domain/governance/policies/model-delegation.ts)
+[`model-delegation.ts`](../../../src/domain/governance/model-access/model-delegation.ts)
 check recipients, inclusion of operations and roots, parent, depth and the
 absence of loops or self-assignment. The
 [`proposals.ts`](../../../src/application/work/conversation/proposals.ts) path
@@ -179,7 +179,7 @@ retention after a delegated refusal, receipts, replay and revocation:
   [`governance_test.ts`](../../../src/domain/governance/policies/governance_test.ts),
   [`mandate-change-decisions_test.ts`](../../../src/application/governance/mandate-change-decisions_test.ts),
   [`operator-authority_test.ts`](../../../src/application/work/runtime/operator-authority_test.ts);
-- [`model-delegation_test.ts`](../../../src/domain/governance/policies/model-delegation_test.ts),
+- [`model-delegation_test.ts`](../../../src/domain/governance/model-access/model-delegation_test.ts),
   [`delegation_test.ts`](../../../src/application/work/runtime/delegation_test.ts),
   [`revisions_test.ts`](../../../src/adapters/in/http/model/revisions_test.ts),
   [`model-version_test.ts`](../../../src/application/work/runtime/model-version_test.ts),

@@ -9,11 +9,9 @@ import {
   exerciseOwnerAuthority,
   legacyOwnerAuthority,
 } from "../../../domain/governance/authority.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../conversation/chat-context.ts";
+import type { ChatDecision } from "../conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type { ModelPort } from "./ports.ts";
 import type { MainCandidateInspection } from "../operators/conversations.ts";
 

@@ -1,7 +1,7 @@
 import type { OperatorCreationPolicyRequest } from "../../domain/governance/policies/operator-creation-policy.ts";
 import type { ToolAdmissionPolicyRequest } from "../../domain/governance/policies/tool-admission-policy.ts";
 import type { OperatorAuthorityPolicyRequest } from "../../domain/governance/policies/operator-authority-policy.ts";
-import type { ModelEditOperation } from "../../domain/governance/policies/model-edit-policy.ts";
+import type { ModelEditOperation } from "../../domain/governance/model-access/model-edit-policy.ts";
 import type { OperatorCreationSpec } from "../../domain/governance/operator-authority.ts";
 
 export type OperatorAuthorityRequest =

@@ -1,5 +1,5 @@
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import { Prisma, type PrismaClient } from "./client.ts";
 import { PostgresPrimarySpaceControlSource } from "./primary-space-control-source.ts";
 import { decodePostgresRuntimeState } from "./runtime-state-snapshot.ts";

@@ -3,18 +3,18 @@ import type { SourceCompilationPort } from "../../../model/source-compilation.ts
 import { canonical } from "../../../../domain/primitives/canonical-json.ts";
 import { executionDigest } from "../../../../domain/primitives/execution-digest.ts";
 import type { ExecutableModel } from "../../../../domain/model/execution/executable-model.ts";
-import type { ModelDelegationChange } from "../../../../domain/governance/records/model-delegation-request.ts";
+import type { ModelDelegationChange } from "../../../../domain/governance/model-access/model-delegation-request.ts";
 import {
   assertModelDelegationWithinAuthority,
   type ModelDelegationRecord,
   validateModelDelegationRecord,
-} from "../../../../domain/governance/policies/model-delegation.ts";
-import type { ModelAdministrationAuthorization } from "../../../../domain/governance/records/model-edit-authorization.ts";
+} from "../../../../domain/governance/model-access/model-delegation.ts";
+import type { ModelAdministrationAuthorization } from "../../../../domain/governance/model-access/model-edit-authorization.ts";
 import {
   MODEL_DELEGATIONS_FILE,
   readModelDelegations,
   renderModelDelegations,
-} from "../../../../domain/governance/policies/model-delegation-ledger.ts";
+} from "../../../../domain/governance/model-access/model-delegation-ledger.ts";
 import { type SourceRevision } from "../../../../domain/model/records/source-revision.ts";
 import { ModelRepositoryError } from "../../../model/repository.ts";
 import { assertModelEditScope } from "../../../../domain/model/editing/scope.ts";

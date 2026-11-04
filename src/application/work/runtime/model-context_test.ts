@@ -5,20 +5,20 @@ import { enableCommandFixtureProfile } from "../../../../test/support/execution-
 import { createTestNativeExecution } from "../../../../test/support/native-execution.ts";
 import { ModelNavigationError } from "../../../domain/model/consultation/context.ts";
 import type { ModelContextOverview } from "../../../domain/model/consultation/context.ts";
-import { modelContextTools } from "../../../domain/model/consultation/context.ts";
+import { modelContextTools } from "../context/model-tools.ts";
 import { DEFAULT_NETWORK_IMPACT_LIMITS } from "../../../domain/model/consultation/network-impact.ts";
 import type {
   ChatContext,
-  ChatDecision,
   ModelRevisionRequest,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "../conversation/chat-context.ts";
+import type { ChatDecision } from "../conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import { SystemRuntime } from "../../../../test/support/system-runtime.ts";
 import type { DecisionInformationPort } from "../context/information-ports.ts";
 import type { ModelDiagnosticsPort, ModelPort, StorePort } from "./ports.ts";
 import type { ModelDiagnostic } from "../../../domain/model/policies/diagnostics.ts";
 import type { ModelEditRequest } from "../../../domain/model/editing/tooling.ts";
-import type { ConversationsSnapshot } from "../../../domain/work/records/conversations.ts";
+import type { ConversationsSnapshot } from "../operators/conversation-types.ts";
 
 const source = "package Exact {\n" +
   "// À conserver exactement.\n".repeat(200) + "}\n";

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { artifactModel } from "../../../../test/support/tool-artifact-fixture.ts";
 import { SystemRuntime } from "../../../../test/support/system-runtime.ts";
 import { unexpectedModelAuthoring } from "../../../../test/support/model-authoring.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { ScopedExecutableModel } from "../../../domain/model/evolution/semantic-effects.ts";
 import type { DecisionInformation } from "../context/information-ports.ts";

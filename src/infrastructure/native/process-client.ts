@@ -23,7 +23,16 @@ import {
   type ToolkitBundlePin,
   ToolkitNativeSnapshotError,
 } from "../../adapters/out/sysml-toolkit/runtime/loader.ts";
-import type { ModelToolingDiagnostic } from "../../domain/model/editing/tooling.ts";
+/** Wire diagnostic carried by the native process protocol; typed locally so
+ * infrastructure does not import the application tooling port DTOs. */
+interface NativeProcessDiagnostic {
+  severity: string;
+  message: string;
+  stage?: string;
+  unit?: string;
+  line?: number;
+  col?: number;
+}
 
 export const NATIVE_PROCESS_PROTOCOL_VERSION = 1;
 export const MAX_NATIVE_MESSAGE_BYTES = 64 * 1024 * 1024;
@@ -594,7 +603,7 @@ export class NativeProcessEndpoint extends EventEmitter
 function normalizeError(value: unknown): {
   message: string;
   code?: string;
-  diagnostics: ModelToolingDiagnostic[];
+  diagnostics: NativeProcessDiagnostic[];
 } {
   const record = value as Record<string, unknown> | null;
   return {
@@ -603,7 +612,7 @@ function normalizeError(value: unknown): {
       : "Native toolkit process failed",
     ...(typeof record?.code === "string" ? { code: record.code } : {}),
     diagnostics: Array.isArray(record?.diagnostics)
-      ? record.diagnostics as ModelToolingDiagnostic[]
+      ? record.diagnostics as NativeProcessDiagnostic[]
       : [],
   };
 }

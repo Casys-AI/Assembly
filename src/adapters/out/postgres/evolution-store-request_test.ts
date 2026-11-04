@@ -7,7 +7,7 @@ import { requestAdoptionFixture } from "../../../../test/support/request-adoptio
 import { requestOpeningBase } from "../../../../test/support/request-space-fixture.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { sha256 } from "../../../domain/primitives/execution-digest.ts";
-import { requestSpaceDigest } from "../../../domain/work/request-spaces.ts";
+import { requestSpaceDigest } from "../../../domain/work/request-spaces/scope.ts";
 import type { RequestAdoptionIntent } from "../../../application/model/evolution/request-adoption-ports.ts";
 
 async function recordingStore(member = false) {

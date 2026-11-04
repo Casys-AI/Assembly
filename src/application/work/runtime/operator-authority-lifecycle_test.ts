@@ -1,7 +1,7 @@
 import { WorkBudgetService } from "../budget/service.ts";
 import { requestAuthorityLifecycleBindings } from "../../../composition/request-space-authority-bridge.ts";
 import type { RequestSpaceAuthorityBridge } from "../../governance/request-space-authority-bridge.ts";
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../conversation/chat-context.ts";
 import type { WorkBudgetRecord } from "../../../domain/work/policies/budget.ts";
 import { unexpectedModelAuthoring } from "../../../../test/support/model-authoring.ts";
 import { caseTypesForModel } from "../../../domain/work/records/case-types.ts";
@@ -15,8 +15,8 @@ import { SystemRuntime } from "../../../../test/support/system-runtime.ts";
 import type {
   ChatDecision,
   ChatDecisionBatch,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "../conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type { ModelPort, StorePort } from "./ports.ts";
 import { createTestNativeExecution } from "../../../../test/support/native-execution.ts";
 import type { OperatorExecutionDelivery } from "../operators/execution.ts";

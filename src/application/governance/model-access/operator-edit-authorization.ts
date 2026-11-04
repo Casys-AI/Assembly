@@ -1,6 +1,6 @@
 import { ModelRepositoryError } from "../../model/repository.ts";
-import type { ModelProposalAuthorization } from "../../../domain/governance/records/model-edit-authorization.ts";
-import type { ModelEditOperation } from "../../../domain/governance/policies/model-edit-policy.ts";
+import type { ModelProposalAuthorization } from "../../../domain/governance/model-access/model-edit-authorization.ts";
+import type { ModelEditOperation } from "../../../domain/governance/model-access/model-edit-policy.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { SourceRevision } from "../../../domain/model/records/source-revision.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";

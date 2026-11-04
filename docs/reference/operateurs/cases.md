@@ -401,8 +401,8 @@ This section describes what the space does with a team.
 - **Admission.** The person's control policy still admits the BO alone. The
   space's admission lists `permissions.operatorIds = [BO, ...team]`, each member
   at its own model digest. `branchTeam` in
-  [`request-spaces.ts`](../../../src/domain/work/request-spaces.ts) is the one
-  function that produces the team: it keeps a pinned operator whose
+  [`branch-team.ts`](../../../src/domain/work/request-spaces/branch-team.ts) is
+  the one function that produces the team: it keeps a pinned operator whose
   `operatorTeam.requestId` is the Case and whose creation receipt verifies, at
   most three. A member inherited from `main` or from a Release is not part of
   the team.
@@ -763,7 +763,7 @@ shared with conversation, Request-space and local-control commands.
 - Request spaces:
   [opening](../../../src/application/work/request-spaces/opening.ts) and its
   [ports](../../../src/application/work/request-spaces/ports.ts),
-  [opening records and commands](../../../src/domain/work/request-spaces.ts),
+  [opening records and commands](../../../src/domain/work/request-spaces/opening.ts),
   [identifier allocation](../../../src/adapters/out/postgres/request-space-store.ts),
   [branch refs](../../../src/adapters/out/git/request-branches.ts),
   [base selection](../../../src/application/work/request-spaces/opening-sources.ts),
@@ -778,7 +778,7 @@ shared with conversation, Request-space and local-control commands.
   [PostgreSQL composition tests](../../../test/integration/postgres-request-spaces-composition_test.ts).
   Their presence does not prove that they ran in a given instance.
 - Branch team: `branchTeam` in the
-  [space records](../../../src/domain/work/request-spaces.ts),
+  [space records](../../../src/domain/work/request-spaces/branch-team.ts),
   [team creation decision](../../../src/application/work/request-spaces/request-change-decision.ts),
   [supervision readout](../../../src/application/work/request-spaces/supervision.ts)
   and the

@@ -2,7 +2,7 @@ import type {
   AgentConversation,
   OperatorTool,
   OperatorToolsSnapshot,
-} from "../../../src/domain/work/records/conversations.ts";
+} from "../../../src/application/work/operators/conversation-types.ts";
 import { modelHref } from "../workbench/desk.ts";
 import type { RevisionLocation } from "./revisions/api.ts";
 

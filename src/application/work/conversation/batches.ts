@@ -2,14 +2,16 @@ import type { ExecutableModel } from "../../../domain/model/execution/executable
 import type { FlowActionResult } from "../../../domain/model/execution/flow.ts";
 import type {
   ChatCallResult,
-  ChatContext,
   ChatDecision,
   ChatDecisionBatch,
+} from "./chat-decision.ts";
+import type { ChatContext } from "./chat-context.ts";
+import type {
   ConversationBatchCall,
   ConversationBatchExecution,
   Message,
   SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "../runtime/state.ts";
 import {
   caseExecutionContext,
   caseMessages,

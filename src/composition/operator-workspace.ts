@@ -33,17 +33,15 @@ import { EvolutionService } from "../application/model/evolution/service.ts";
 
 import { PilotCase } from "../application/work/cases/handlers/case-lifecycle-handler.ts";
 
-import {
-  type MainOpener,
-  type OpeningCommand,
-  type OpeningView,
-} from "../domain/work/request-spaces.ts";
+import { type MainOpener } from "../domain/work/request-spaces/space-control.ts";
+import { type OpeningCommand } from "../domain/work/request-spaces/opening.ts";
+import { type OpeningView } from "../application/work/request-spaces/opening-view.ts";
 
 import type { OperatorCommandOrigin } from "../application/work/operators/command-delivery.ts";
 
 import type { RequestSpaceAuthorityBridge } from "../application/governance/request-space-authority-bridge.ts";
 
-import type { ChatContext } from "../domain/work/dialogue.ts";
+import type { ChatContext } from "../application/work/conversation/chat-context.ts";
 
 /** Composition of the normal conversation engine for every admitted model unit. */
 import type { CaseNumberPort } from "../application/work/cases/ports/out/case-number.port.ts";
@@ -76,7 +74,7 @@ import type { ModelRepositoryPort } from "../application/model/repository.ts";
 import type { StorePort } from "../application/work/runtime/ports.ts";
 import type { NativeExecutionPort } from "../application/work/native-execution/contract.ts";
 import type { OperatorExecutionDispatchPort } from "../application/work/operators/execution.ts";
-import type { StateHistoryPort } from "../domain/work/history.ts";
+import type { StateHistoryPort } from "../application/work/runtime/ports/out/state-history.port.ts";
 import type { MemoryStorePort } from "../application/memory/ports/store.ts";
 import type { SkillStorePort } from "../application/skills/ports.ts";
 import type { WorkPlanStorePort } from "../application/work/plans/ports.ts";
@@ -255,7 +253,7 @@ export async function openOperatorWorkspace(options: {
   bindTaskSourceInputs(options.primary);
   const notifyWatch = (
     notice: NonNullable<
-      import("../domain/work/dialogue.ts").SystemRuntimeState[
+      import("../application/work/runtime/state.ts").SystemRuntimeState[
         "watchNotifications"
       ]
     >[number],

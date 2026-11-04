@@ -1,4 +1,4 @@
-import { TOOL_CONTRACTS } from "../../../domain/work/candidates.ts";
+import { TOOL_CONTRACTS } from "../../../domain/work/records/candidates.ts";
 import { REVIEWER_MANDATE } from "../../../domain/governance/mandates.ts";
 import {
   decisionBatchSchema,
@@ -9,20 +9,22 @@ import {
   validateReview,
 } from "./output-validation.ts";
 export { decisionSchema, reviewSchema } from "./output-validation.ts";
-import type { AgentPort } from "../../../application/work/runtime/ports.ts";
 import type {
   AdmissionContext,
-  Candidate,
+  AgentPort,
   ReviewContext,
+} from "../../../application/work/runtime/ports.ts";
+import type {
+  Candidate,
   ReviewDecision,
   TestReport,
-} from "../../../domain/work/candidates.ts";
+} from "../../../domain/work/records/candidates.ts";
+import type { ChatContext } from "../../../application/work/conversation/chat-context.ts";
 import type {
-  ChatContext,
   ChatDecision,
   ChatDecisionBatch,
   ProviderTurn,
-} from "../../../domain/work/dialogue.ts";
+} from "../../../application/work/conversation/chat-decision.ts";
 
 import {
   buildTurnBrief,

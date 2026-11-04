@@ -2,7 +2,7 @@ import { deepStrictEqual } from "node:assert/strict";
 import { requestOpeningBase } from "../../../../test/support/request-space-fixture.ts";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
 import { RequestSpaceModel } from "../request-spaces/request-space-model.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type {
   ConversationProposalHost,
   ConversationTurnState,

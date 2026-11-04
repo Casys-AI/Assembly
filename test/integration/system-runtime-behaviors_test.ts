@@ -19,11 +19,9 @@ import type {
 import type {
   NativeBehaviorContract,
 } from "../../src/domain/model/execution/native-contracts.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import { executableFixture } from "../support/execution-fixture.ts";
 

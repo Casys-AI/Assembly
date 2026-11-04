@@ -14,7 +14,7 @@ import {
 } from "../../src/application/work/operators/command-delivery.ts";
 import { exactDelegatedCommandDecision } from "../../src/application/governance/operator-command-origin.ts";
 import { legacyOwnerAuthority } from "../../src/domain/governance/authority.ts";
-import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority-error.ts";
 import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";
 import type { ModelPort } from "../../src/application/work/runtime/ports.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";

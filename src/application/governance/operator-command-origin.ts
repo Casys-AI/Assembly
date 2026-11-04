@@ -3,11 +3,8 @@ import type {
   OperatorControlCommand,
 } from "../work/operators/command-delivery.ts";
 import { canonical } from "../../domain/primitives/canonical-json.ts";
-import type {
-  ChatDecision,
-  Message,
-  SystemRuntimeState,
-} from "../../domain/work/dialogue.ts";
+import type { ChatDecision } from "../work/conversation/chat-decision.ts";
+import type { Message, SystemRuntimeState } from "../work/runtime/state.ts";
 import type { ExecutableModelVersion } from "../../domain/model/execution/executable-model.ts";
 
 /** Select canonical host-recorded evidence; candidate source text never grants

@@ -1,6 +1,6 @@
 import type { CompiledModel } from "../../../../domain/model/records/compiled-model.ts";
 import type { ModelRevision } from "../../../../domain/model/records/revision.ts";
-import type { ModelProposalAuthorization } from "../../../../domain/governance/records/model-edit-authorization.ts";
+import type { ModelProposalAuthorization } from "../../../../domain/governance/model-access/model-edit-authorization.ts";
 import type { AuthorityExercise } from "../../../../domain/governance/authority.ts";
 import type { EvolutionAuthorityExercise } from "../../../../domain/model/evolution/policy.ts";
 

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createRequestSpaceDispatcher } from "./dispatch.ts";
 import type { OperatorExecutionDelivery } from "../operators/execution.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import { requestSpaceScope as host } from "../../../../test/support/request-space-fixture.ts";
 
 const delivery = {

@@ -6,14 +6,14 @@ import {
   toolServers,
   usableCandidates,
 } from "../../lib/system/tools/servers.ts";
-import type { ModelEditGrant } from "../../../src/domain/governance/policies/model-edit-policy.ts";
+import type { ModelEditGrant } from "../../../src/domain/governance/model-access/model-edit-policy.ts";
 import {
   candidateReadMessage,
   candidatesFor,
   candidateState,
 } from "../../lib/system/tools/candidates.ts";
 import { ToolCandidateChip } from "../system/ToolCandidateChip.tsx";
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
 
 /**
  * What an agent's details read, shared by the drawer on an agent's name

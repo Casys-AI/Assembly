@@ -3,7 +3,7 @@ import type {
   NeverStartedAdoptionSource,
   RetainedInertPredecessor,
 } from "./native-adoption-successor.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type { NativeThreadAdvanceAuthorization } from "../native-execution/contract.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { canonicalDigest } from "../../../domain/primitives/execution-digest.ts";

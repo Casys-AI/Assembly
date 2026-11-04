@@ -15,11 +15,12 @@ import { legacyOwnerAuthority } from "../../../domain/governance/authority.ts";
 import { CandidateActivationError } from "../../../domain/work/policies/candidate-activation.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { CandidateDelegatedActor } from "../../../domain/governance/policies/tool-admission-policy.ts";
-import type { Candidate, ToolDraft } from "../../../domain/work/candidates.ts";
 import type {
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+  Candidate,
+  ToolDraft,
+} from "../../../domain/work/records/candidates.ts";
+import type { ChatDecision } from "../conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import {
   OperatorConversations,
   type OperatorWorkContribution,

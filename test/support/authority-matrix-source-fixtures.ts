@@ -3,14 +3,14 @@ import { legacyProductName } from "../../src/domain/model/sysml-product-names.ts
  * (session 34422f06-997d-42d8-8297-3e654b079992, copied 2026-10-25).
  * Build from repository sources in memory; never write a model repository. */
 import type { ModelSources as Sources } from "../../src/domain/model/value-objects/sources.ts";
-import type { ModelDelegationRecord } from "../../src/domain/governance/policies/model-delegation.ts";
+import type { ModelDelegationRecord } from "../../src/domain/governance/model-access/model-delegation.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { loadSysmlToolkit } from "../../src/adapters/out/sysml-toolkit/runtime/loader.ts";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import { validateSourceExecutables } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { type SourceRevision } from "../../src/domain/model/records/source-revision.ts";
 import { delegationIdentity } from "../../src/application/governance/model-access/delegation/state.ts";
-import { renderModelDelegations } from "../../src/domain/governance/policies/model-delegation-ledger.ts";
+import { renderModelDelegations } from "../../src/domain/governance/model-access/model-delegation-ledger.ts";
 
 export interface MatrixFixtureContext {
   packageDir: string;

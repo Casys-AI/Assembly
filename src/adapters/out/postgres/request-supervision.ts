@@ -1,6 +1,6 @@
 import type { SupervisionObservationPort } from "../../../application/work/request-spaces/supervision.ts";
 import type { ScopedOperatorRef } from "../../../domain/governance/authority.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import type { PostgresRequestExecutionBindingReader } from "./request-execution-binding.ts";
 import { Prisma, type PrismaClient } from "./client.ts";
 import { assertPostgresRuntimeScope } from "./scope.ts";

@@ -21,10 +21,10 @@ import { openPostgresFixtureHost } from "../support/postgres-runtime-fixture.ts"
 import { ContextSkillsService } from "../../src/application/skills/context-skills.ts";
 import { HttpsSkillDownloader } from "../../src/adapters/out/http-client/download.ts";
 import { DenoToolRunner } from "../../src/adapters/out/sandbox/runner.ts";
-import { ToolInvocationError } from "../../src/domain/work/errors/tool-invocation.ts";
+import { ToolInvocationError } from "../../src/application/work/tools/tool-invocation.ts";
 import { sha256 } from "../../src/domain/model/value-objects/artifact.ts";
-import type { Candidate } from "../../src/domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { Candidate } from "../../src/domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import {
   type NetworkImpactRequest,
 } from "../../src/domain/model/consultation/network-impact.ts";

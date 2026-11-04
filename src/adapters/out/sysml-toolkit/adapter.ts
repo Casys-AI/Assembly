@@ -20,11 +20,13 @@ import type {
   ModelViewSummary,
 } from "../../../domain/model/records/diagram-views.ts";
 /** Required source tooling. The existing compiler/repository still publishes. */
-import type { ModelToolingPort } from "../../../application/model/tooling.ts";
 import type {
   ModelToolingDescription,
   ModelToolingDiagnostic,
   ModelToolingEditResult,
+  ModelToolingPort,
+} from "../../../application/model/tooling.ts";
+import type {
   ModelToolingTarget,
   ReferenceSiteFingerprint,
   ResolvedModelEdit,

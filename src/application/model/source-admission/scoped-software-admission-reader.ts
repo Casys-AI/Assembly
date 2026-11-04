@@ -1,4 +1,4 @@
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import type { ScopedSoftwareSourceAdmissionV2 } from "./scoped-software-source-admission.ts";
 
 export interface ScopedSoftwareAdmissionReaderPort {

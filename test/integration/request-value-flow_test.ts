@@ -19,10 +19,8 @@ import { budgetState } from "../../src/domain/work/policies/budget.ts";
 import { caseTypesForModel } from "../../src/domain/work/records/case-types.ts";
 import { designerScopeId } from "../../src/application/work/cases/runtime.ts";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import {
   type MainCandidateInspection,
   OperatorConversationError,
@@ -954,7 +952,7 @@ Deno.test({
       const digests = new Set<string>();
       for (const peer of runtime.peers) {
         const state:
-          import("../../src/domain/work/dialogue.ts").SystemRuntimeState =
+          import("../../src/application/work/runtime/state.ts").SystemRuntimeState =
             runtime.workspace.runtimeFor(peer.agentId)!.runtime.snapshot;
         assert.equal(
           state.candidates.filter((candidate) =>

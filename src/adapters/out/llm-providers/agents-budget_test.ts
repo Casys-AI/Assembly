@@ -1,8 +1,8 @@
 import { deepStrictEqual, equal, rejects, throws } from "node:assert/strict";
 import { createClaudeToolsFake } from "../../../../test/support/claude-tools-fake.ts";
 import { ClaudeAgents } from "./agents.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
+import type { ChatContext } from "../../../application/work/conversation/chat-context.ts";
 import {
   normalizeProviderCallObservation,
   UNKNOWN_PROVIDER_CALL_CORRELATION,

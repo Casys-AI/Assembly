@@ -19,7 +19,7 @@ import {
 import type {
   ChatDecision,
   ProviderRepair,
-} from "../../../domain/work/dialogue.ts";
+} from "../../../application/work/conversation/chat-decision.ts";
 import { currentProviderCallCorrelation } from "./provider-call-context.ts";
 import {
   compileOutputSchema,

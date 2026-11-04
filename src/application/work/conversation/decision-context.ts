@@ -14,11 +14,9 @@ import {
 } from "../cases/runtime.ts";
 import type { DecisionContextPolicy } from "../../../domain/work/policies/context-separation.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import { modelContextTools } from "../../../domain/model/consultation/context.ts";
-import type {
-  ChatContext,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import { modelContextTools } from "../context/model-tools.ts";
+import type { ChatContext } from "./chat-context.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { availableBehaviors } from "../../governance/behavior-call-admission.ts";
 import {
   ContextRepresentationLimitError,
@@ -36,7 +34,7 @@ import {
   canRequestOperatorCreationPolicy,
   type CreationScope,
 } from "../../../domain/governance/policies/operator-creation-policy.ts";
-import { MAIN_EXECUTION_SPACE_ID } from "../../../domain/governance/operator-authority.ts";
+import { MAIN_EXECUTION_SPACE_ID } from "../../../domain/governance/authority.ts";
 import { MAX_BRANCH_TEAM } from "../../../domain/work/records/conversations.ts";
 import { isOpenCase } from "../../../domain/work/entities/cases.ts";
 import { modelDiagnosticsView as diagnosticsView } from "./model-diagnostics-link.ts";

@@ -1,9 +1,9 @@
-import { requestSpaceDigest } from "../../../domain/work/request-spaces.ts";
+import { requestSpaceDigest } from "../../../domain/work/request-spaces/scope.ts";
 import { requestOriginChain } from "../../../../test/support/request-origin-chain.ts";
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { RequestReleaseProvenance } from "./request-release-provenance.ts";
 import { requestReleaseFixture } from "../../../../test/support/request-release-fixture.ts";
-import { savedSystemDigest } from "../../../domain/work/saved-systems.ts";
+import { savedSystemDigest } from "../../../domain/work/records/saved-systems.ts";
 
 async function fixture() {
   const f = await requestReleaseFixture();

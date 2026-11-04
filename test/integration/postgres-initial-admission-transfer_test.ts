@@ -7,7 +7,7 @@ import type { NativeExecutionSession } from "../../src/adapters/out/native-execu
 import assert from "node:assert/strict";
 import { SystemRuntime } from "../../src/application/work/runtime/system.ts";
 import type { ModelPort } from "../../src/application/work/runtime/ports.ts";
-import type { ModelBinding } from "../../src/domain/work/candidates.ts";
+import type { ModelBinding } from "../../src/domain/work/records/candidates.ts";
 import { isOpenCase } from "../../src/domain/work/entities/cases.ts";
 import { WorkBudgetService } from "../../src/application/work/budget/service.ts";
 import { budgetState } from "../../src/domain/work/policies/budget.ts";

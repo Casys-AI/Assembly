@@ -19,7 +19,7 @@ import {
   parseModelEditGrants,
   parseModelEditOperations,
   validateModelEditPolicyIdentity,
-} from "../../../../../../../domain/governance/policies/model-edit-policy.ts";
+} from "../../../../../../../domain/governance/model-access/model-edit-policy.ts";
 import { parseSysmlQualifiedName } from "../../../../../../../domain/model/value-objects/sysml-qualified-name.ts";
 import { isNamespacePartOccurrence } from "../../../../../../../domain/model/policies/model-occurrence.ts";
 import { compileModelPolicyRoot } from "../../authority/model-policy-root.ts";

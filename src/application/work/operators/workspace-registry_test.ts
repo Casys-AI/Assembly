@@ -10,7 +10,7 @@ import { sourceModelIdentity } from "../../../domain/model/records/source-identi
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { ModelRevision } from "../../../domain/model/records/revision.ts";
 import type { OperatorEntry } from "../../../domain/model/records/operator-entry.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { conversationUnit } from "./conversations.ts";
 import {
   assertWorkspaceRuntimeAvailable,

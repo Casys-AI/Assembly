@@ -81,7 +81,7 @@ import {
   requestSourceCommandRef,
   scopedSoftwareSourceAdmissionRef,
   scopedSoftwareSourceCommandRef,
-} from "../../../domain/model/editing/request-source-publication.ts";
+} from "../../../domain/model/editing/source-anchor-refs.ts";
 import { validateSourceEvolutionExecutables } from "../sysml-toolkit/compilation/source-executables.ts";
 import { classifyEvolutionEffects } from "../../../domain/model/evolution/semantic-effects.ts";
 import { requireEvolutionEffectBounds } from "../../../domain/model/evolution/authorization.ts";
@@ -111,10 +111,10 @@ import {
   parseAnyPublication,
   type PreparedPublication,
 } from "../../../domain/model/publication/change.ts";
+import { publicationFailure } from "../../../application/model/publication/publication-failure.ts";
 import {
   ChangePublicationError,
   publicationAuthor,
-  publicationFailure,
   publicationSystemId,
   type SourcePublication,
 } from "../../../domain/model/publication/change.ts";
@@ -137,7 +137,7 @@ import {
 } from "./revision-format.ts";
 import type { SystemSourcesUpdateOptions } from "../../../application/model/repository.ts";
 import { lstat } from "node:fs/promises";
-import type { ModelProposalAuthorization } from "../../../domain/governance/records/model-edit-authorization.ts";
+import type { ModelProposalAuthorization } from "../../../domain/governance/model-access/model-edit-authorization.ts";
 import {
   type ModelDiagnosticAddress,
   modelDiagnosticAddresses,

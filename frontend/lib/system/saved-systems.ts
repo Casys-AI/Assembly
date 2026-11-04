@@ -4,7 +4,7 @@ import {
   assertSavedSystemTag,
   type ReleaseTagBinding,
   type ReleaseTagSelection,
-} from "../../../src/domain/work/release-tags.ts";
+} from "../../../src/domain/work/records/release-tags.ts";
 import {
   currentReleaseSaveHost,
   type ReleaseSaveCommand,
@@ -20,8 +20,8 @@ import {
 import {
   assertSavedSourceSelection,
   type SavedSystemSourceSelection,
-  type SavedSystemView,
-} from "../../../src/domain/work/saved-systems.ts";
+} from "../../../src/domain/work/records/saved-systems.ts";
+import { type SavedSystemView } from "../../../src/application/work/saved-systems/release-view.ts";
 export type { SavedSystemView };
 export class SavedSystemsReadError extends Error {
   constructor(readonly code: string, message: string) {

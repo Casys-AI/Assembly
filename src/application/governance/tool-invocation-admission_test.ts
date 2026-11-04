@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { executableFixture } from "../../../test/support/execution-fixture.ts";
-import type { Candidate } from "../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../domain/work/dialogue.ts";
+import type { Candidate } from "../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../work/runtime/state.ts";
 import { draftDigest } from "../work/runtime/values.ts";
 import {
   invocationAdmission,

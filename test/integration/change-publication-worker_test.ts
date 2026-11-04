@@ -1,5 +1,5 @@
 import { equal, ok, rejects } from "node:assert/strict";
-import { publicationFailure } from "../../src/domain/model/publication/change.ts";
+import { publicationFailure } from "../../src/application/model/publication/publication-failure.ts";
 import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilation/compiler.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 import {

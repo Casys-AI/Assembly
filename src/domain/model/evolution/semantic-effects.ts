@@ -14,7 +14,9 @@ export interface EvolutionBehaviorDeclaration extends NativeBehaviorContract {
 export interface EvolutionCompilationEvidence {
   /** Every exact input, in order, from the base compiler through its wrappers. */
   digestInputs: Record<string, unknown>[];
-  /** Complete native facts, including facts the compiler does not classify. */
+  /** Complete native facts, including facts the compiler does not classify.
+   * Delivered already normalized by the trusted collector: whole-container
+   * source-text copies are absent from unclassified container facts. */
   sourceFacts: Record<string, unknown>;
   /** Assigned only by the trusted native evidence adapter. Unknown facts stay protected. */
   sourceCategories: Record<string, EvolutionCategory>;
@@ -212,15 +214,6 @@ function projectEvolutionSemantics(
     } else {
       const normalized = structuredClone(fact);
       if (object(normalized)) {
-        // The native normalizer records whole-container source extents for
-        // editing/readback. A child's admitted scalar edit changes these text
-        // copies on its PartUsage and Package ancestors, including a shared
-        // package used by an unaffected operator. Typed facts and separately
-        // derived flags remain protected. Transition source text is deliberately
-        // excluded: the native normalizer uses it to establish branch semantics.
-        if (["PartUsage", "Package"].includes(String(normalized["@type"]))) {
-          delete normalized["sysx:sourceText"];
-        }
         for (
           const key of [
             "ownedMember",

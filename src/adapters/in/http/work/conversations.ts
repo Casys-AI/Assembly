@@ -1,23 +1,21 @@
 import { noStoreJson as json } from "../versioning/responses.ts";
 import type { RequestCaseConversationsPort } from "../../../../application/work/request-spaces/conversations.ts";
-import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces/scope.ts";
 import { spaceHttpError, spaceSessionSecret } from "./space-session.ts";
 import {
   ChangePendingError,
   ChangeScopeMissingError,
 } from "../../../../domain/governance/policies/governance.ts";
-import {
-  ChangePublicationError,
-  publicationFailure,
-} from "../../../../domain/model/publication/change.ts";
+import { publicationFailure } from "../../../../application/model/publication/publication-failure.ts";
+import { ChangePublicationError } from "../../../../domain/model/publication/change.ts";
 import { ChangeApprovabilityError } from "../../../../domain/governance/policies/change-approvability.ts";
 import { AuthorityInvariantError } from "../../../../domain/governance/authority.ts";
+import { MAX_USER_MESSAGE_CHARS } from "../../../../domain/work/records/conversations.ts";
 import {
   type AgentMessageCommand,
   type ConversationsSnapshot,
-  MAX_USER_MESSAGE_CHARS,
   type OperatorToolsSnapshot,
-} from "../../../../domain/work/records/conversations.ts";
+} from "../../../../application/work/operators/conversation-types.ts";
 import {
   type OperatorCandidateDecision,
   type OperatorChangeDecision,

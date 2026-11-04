@@ -11,7 +11,7 @@ import {
   readCaseModelScope,
 } from "../lib/case-model-scope.ts";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import type { AgentConversation } from "../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../src/application/work/operators/conversation-types.ts";
 import {
   type AgentDetail,
   AgentHeader,

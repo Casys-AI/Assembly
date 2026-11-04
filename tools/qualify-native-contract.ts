@@ -15,8 +15,8 @@ import { ToolkitCompiler } from "../src/adapters/out/sysml-toolkit/compilation/c
 import { SYSML_TOOLKIT_VERSION } from "../src/adapters/out/sysml-toolkit/runtime/loader.ts";
 import { canonical } from "../src/domain/primitives/canonical-json.ts";
 import type { ModelSources as Sources } from "../src/domain/model/value-objects/sources.ts";
+import type { ModelToolingDescription } from "../src/application/model/tooling.ts";
 import type {
-  ModelToolingDescription,
   ModelToolingTarget,
   ResolvedModelEdit,
 } from "../src/domain/model/editing/tooling.ts";

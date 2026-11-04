@@ -4,7 +4,7 @@ import {
   requestControlModel,
   requestControlState,
 } from "../../test/support/request-space-fixture.ts";
-import type { SystemRuntimeState } from "../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../application/work/runtime/state.ts";
 
 function fixture(saved: SystemRuntimeState | null = requestControlState()) {
   const source = requestControlModel();

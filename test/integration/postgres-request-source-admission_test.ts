@@ -8,7 +8,7 @@ import { parseScopedSoftwareSourceAdmission } from "../../src/application/model/
 import {
   scopedSoftwareSourceAdmissionRef,
   scopedSoftwareSourceCommandRef,
-} from "../../src/domain/model/editing/request-source-publication.ts";
+} from "../../src/domain/model/editing/source-anchor-refs.ts";
 import { PostgresRequestSpaceStore } from "../../src/adapters/out/postgres/request-space-store.ts";
 import { PostgresRequestSourceAdmissionStore } from "../../src/adapters/out/postgres/request-source-admission-store.ts";
 import {
@@ -19,7 +19,7 @@ import {
   parseRequestSourceAdmission,
   requestSourceAdmissionDigest,
 } from "../../src/application/model/source-admission/request-source-admission.ts";
-import { requestSpaceDigest } from "../../src/domain/work/request-spaces.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
 import {
   postgresTestEnabled,
   seedPostgresRuntime,

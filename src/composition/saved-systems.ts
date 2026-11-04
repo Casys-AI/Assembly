@@ -10,7 +10,7 @@ import { canonical } from "../domain/primitives/canonical-json.ts";
 import {
   SavedSystemError,
   type SavedSystemScope,
-} from "../domain/work/saved-systems.ts";
+} from "../domain/work/records/saved-systems.ts";
 import { PostgresArtifactBindings } from "../adapters/out/postgres/artifact-source-bindings.ts";
 import { PostgresSavedSystemStore } from "../adapters/out/postgres/saved-system-store.ts";
 import { SavedSystemAssets } from "../application/work/saved-systems/assets.ts";

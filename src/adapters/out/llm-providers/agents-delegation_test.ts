@@ -6,7 +6,7 @@ import {
 } from "../../../../test/support/claude-tools-fake.ts";
 import { ClaudeAgents, MuseAgents } from "./agents.ts";
 import { decisionSchema, validateDecision } from "./output-validation.ts";
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../../../application/work/conversation/chat-context.ts";
 
 const decision = {
   kind: "propose_model_delegation",

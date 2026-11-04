@@ -5,13 +5,14 @@
 import type {
   ContextEvidenceReference,
   ContextOmissionReason,
-  DecisionContextPolicy,
   MessageObservation,
-} from "../../../domain/work/policies/context-separation.ts";
+} from "./evidence.ts";
+import type { DecisionContextPolicy } from "../../../domain/work/policies/context-separation.ts";
 import { validateContextPolicy } from "../../../domain/work/policies/context-separation.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import type { ChatContext, Message } from "../../../domain/work/dialogue.ts";
+import type { ChatContext } from "../conversation/chat-context.ts";
+import type { Message } from "../runtime/state.ts";
 
 /** A representation failure does not authorize a call with incomplete authority. */
 export class ContextRepresentationLimitError extends Error {

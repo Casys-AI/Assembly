@@ -1,7 +1,7 @@
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import { sha256 } from "../../../domain/primitives/execution-digest.ts";
 import type { BehaviorModelVersion } from "../../../domain/shared-kernel/behavior-model-version.ts";
-import { canContributeFromMain } from "../../../domain/work/request-spaces.ts";
+import { canContributeFromMain } from "../../../domain/work/request-spaces/branch-team.ts";
 import type { ModelRepositoryPort } from "../../model/repository.ts";
 import type { SourceCompilationPort } from "../../model/source-compilation.ts";
 import type {

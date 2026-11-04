@@ -1,7 +1,7 @@
 import { NativeToolkitPanicError } from "./runtime/native-addon.ts";
 import { deepStrictEqual, equal, notEqual, rejects } from "node:assert/strict";
+import type { ModelToolingDiagnostic } from "../../../application/model/tooling.ts";
 import type {
-  ModelToolingDiagnostic,
   ModelToolingTarget,
   ResolvedModelEdit,
 } from "../../../domain/model/editing/tooling.ts";

@@ -15,16 +15,14 @@ import {
 import { modelSourceDigest } from "../../../domain/model/value-objects/sources.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { ModelRevision } from "../../../domain/model/records/revision.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
 import {
   parseRequestSourceAdmission,
   requestSourceAdmissionDigest,
 } from "../../../application/model/source-admission/request-source-admission.ts";
-import {
-  type OpeningRecord,
-  requestSpaceDigest,
-  type SpaceController,
-} from "../../../domain/work/request-spaces.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../../../domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
 import type { AdmittedSourceChain } from "./request-source-admission-store.ts";
 import { requestSpaceSeed } from "../../../application/work/runtime/initialization.ts";
 import {

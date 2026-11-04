@@ -1,4 +1,4 @@
-import type { SystemRuntimeState } from "../../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../src/application/work/runtime/state.ts";
 export function snapshot(): SystemRuntimeState {
   return {
     id: "ui-fixture",

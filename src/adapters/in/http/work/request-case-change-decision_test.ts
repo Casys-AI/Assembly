@@ -4,7 +4,7 @@ import {
   createConversationsHandler,
 } from "./conversations.ts";
 import type { RequestCaseConversationsPort } from "../../../../application/work/request-spaces/conversations.ts";
-import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces/scope.ts";
 
 const origin = "http://127.0.0.1:4311";
 const secret = "a".repeat(64);

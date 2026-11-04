@@ -13,11 +13,11 @@ import type { ExecutableModel } from "../../../domain/model/execution/executable
 import type { ModelRevision } from "../../../domain/model/records/revision.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { modelSourceDigest } from "../../../domain/model/value-objects/sources.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import {
-  type OpeningRecord,
   requestSpaceDigest,
   RequestSpaceError,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
 import type { SourceModel } from "../../model/source-model.ts";
 
 interface PreparedRequestNetworkChange {

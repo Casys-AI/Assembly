@@ -1,13 +1,9 @@
 import type { ExecutableModel } from "../../domain/model/execution/executable-model.ts";
-import type {
-  ChatContext,
-  SystemRuntimeState,
-} from "../../domain/work/dialogue.ts";
+import type { ChatContext } from "../work/conversation/chat-context.ts";
+import type { SystemRuntimeState } from "../work/runtime/state.ts";
 import { delegatedCandidateAuthorityExercise } from "../../domain/governance/policies/tool-admission-policy.ts";
-import {
-  mainExecutionSpace,
-  OperatorAuthorityError,
-} from "../../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../domain/governance/operator-authority-error.ts";
+import { mainExecutionSpace } from "../../domain/governance/authority.ts";
 import { CaseError } from "../../domain/work/errors/case.ts";
 import { candidateCaseInvocation } from "../work/operators/journal.ts";
 

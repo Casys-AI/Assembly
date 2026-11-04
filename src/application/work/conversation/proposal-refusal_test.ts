@@ -1,7 +1,7 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
 import { ChangeApprovabilityError } from "../../../domain/governance/policies/change-approvability.ts";
-import { OperatorAuthorityError } from "../../../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
 import { handleConversationNode } from "./flow-handlers.ts";
 import type {
   ConversationTurnHost,

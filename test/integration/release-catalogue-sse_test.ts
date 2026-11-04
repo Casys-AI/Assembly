@@ -7,8 +7,8 @@ import type {
   PrismaClient,
 } from "../../src/adapters/out/postgres/client.ts";
 import type { SavedSystemRow } from "../../src/adapters/out/postgres/saved-system-store.ts";
-import { savedSystemDigest } from "../../src/domain/work/saved-systems.ts";
-import type { SpaceController } from "../../src/domain/work/request-spaces.ts";
+import { savedSystemDigest } from "../../src/domain/work/records/saved-systems.ts";
+import type { SpaceController } from "../../src/domain/work/request-spaces/space-control.ts";
 import {
   RELEASE_CATALOGUE_INVALIDATED,
   RELEASE_CATALOGUE_INVALIDATION,

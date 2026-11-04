@@ -15,7 +15,7 @@ import {
   type DesignerExecutionContext,
   validDesignerContext,
 } from "../../../domain/work/execution/case-context.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { caseTypesForModel } from "../../../domain/work/records/case-types.ts";
 import type { ClockPort } from "../runtime/ports.ts";
 import { candidateIsPending } from "../candidates/case-candidates.ts";
@@ -305,7 +305,7 @@ export function createRequestCase(
   input: {
     objective: string;
     taskSourceInputs?:
-      import("../../../domain/work/task-source-input.ts").TaskSourceInputCapture[];
+      import("../../../domain/work/records/task-source-input.ts").TaskSourceInputCapture[];
     messageId?: string;
     type?: CaseKind;
     openedBy?: string;

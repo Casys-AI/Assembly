@@ -11,8 +11,8 @@ import {
 import type { SourceRevision } from "../../../../domain/model/records/source-revision.ts";
 import { assert } from "../../../../domain/primitives/assert.ts";
 import { MAX_OPERATOR_UNITS } from "../../../../domain/work/records/conversations.ts";
-import { modelEditingAuthorityRoots } from "../../../../domain/governance/operator-authority.ts";
-import { OperatorAuthorityError } from "../../../../domain/governance/operator-authority.ts";
+import { modelEditingAuthorityRoots } from "../../../../application/governance/model-access/model-editing-authority-roots.ts";
+import { OperatorAuthorityError } from "../../../../domain/governance/operator-authority-error.ts";
 import { executionDigest } from "../../../../domain/primitives/execution-digest.ts";
 import { applyModelDelegations } from "../../../../application/governance/model-access/delegation/state.ts";
 import { compileModelAdministrationPolicy } from "../compilation-policies/governance/model-access/administration/policy.ts";

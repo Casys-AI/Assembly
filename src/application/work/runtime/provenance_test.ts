@@ -5,7 +5,7 @@ import {
   type RuntimeProvenanceRecord,
   runtimeProvenanceRecord,
 } from "../../../domain/work/value-objects/runtime-provenance.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type { ModelPort, StorePort } from "./ports.ts";
 import { SystemRuntime } from "../../../../test/support/system-runtime.ts";
 import { createTestNativeExecution } from "../../../../test/support/native-execution.ts";

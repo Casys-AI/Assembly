@@ -8,7 +8,7 @@ import {
 } from "../cases/runtime.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { CompiledFlowNode } from "../../../domain/model/execution/flow.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type {
   WorkBudgetOperation,
   WorkBudgetPolicy,

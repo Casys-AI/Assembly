@@ -4,17 +4,17 @@ import type {
   CaseVerdict,
 } from "../../../domain/work/entities/cases.ts";
 import { type RequestKpis, requestKpis } from "../../telemetry/request-kpis.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type {
   AgentMessageCommand,
   ConversationsSnapshot,
-} from "../../../domain/work/records/conversations.ts";
+} from "../operators/conversation-types.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import {
-  type OpeningRecord,
   RequestSpaceError,
   requestSpaceIdentity,
   type RequestSpaceScope,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
 import {
   operatorConversationsSnapshot,
   projectOperatorConversation,

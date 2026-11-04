@@ -1,6 +1,6 @@
 import { doesNotMatch, equal, match } from "node:assert/strict";
 import { renderToString } from "preact-render-to-string";
-import type { ConversationsSnapshot } from "../../../src/domain/work/records/conversations.ts";
+import type { ConversationsSnapshot } from "../../../src/application/work/operators/conversation-types.ts";
 import { Workspace } from "../../islands/Workbench.tsx";
 import { createWorkbenchState } from "../../lib/workbench/state.ts";
 import { caseRecord } from "../support/case-fixture.ts";

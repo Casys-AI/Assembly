@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import type { PrismaClient } from "./client.ts";
 import { createRequestRuntimeReaders } from "./request-runtime-readers.ts";
 

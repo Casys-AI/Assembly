@@ -12,7 +12,7 @@ import { CONVERSATION, PROMOTION } from "../fixtures/native-flows.ts";
 import { executableFixture } from "../support/execution-fixture.ts";
 import { SystemGovernance } from "../../src/domain/governance/policies/governance.ts";
 import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";
-import { TOOL_CONTRACTS } from "../../src/domain/work/candidates.ts";
+import { TOOL_CONTRACTS } from "../../src/domain/work/records/candidates.ts";
 import { TOOL_KINDS } from "../../src/domain/shared-kernel/tool-kind.ts";
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import { draftDigest, SystemRuntime } from "../support/system-runtime.ts";
@@ -25,8 +25,8 @@ import {
   parseAcceptedCommand,
   recordedCommandOutcome,
 } from "../../src/application/work/operators/command-delivery.ts";
-import { ToolInvocationError } from "../../src/domain/work/errors/tool-invocation.ts";
-import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority.ts";
+import { ToolInvocationError } from "../../src/application/work/tools/tool-invocation.ts";
+import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority-error.ts";
 import type { OperatorExecutionDelivery } from "../../src/application/work/operators/execution.ts";
 import {
   candidateCaseInvocation,
@@ -44,27 +44,25 @@ import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";
 import { networkScopeFor } from "../../src/domain/governance/policies/network-policy.ts";
 import type {
+  AdmissionContext,
   AgentPort,
   ModelPort,
+  PageResult,
+  ReviewContext,
   StorePort,
   ToolRunnerPort,
 } from "../../src/application/work/runtime/ports.ts";
 import type {
-  AdmissionContext,
   Candidate,
   ModelBinding,
-  PageResult,
-  ReviewContext,
   ReviewDecision,
   Stage,
   TestReport,
   ToolDraft,
-} from "../../src/domain/work/candidates.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../src/domain/work/dialogue.ts";
+} from "../../src/domain/work/records/candidates.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import type {
   NetworkScope,

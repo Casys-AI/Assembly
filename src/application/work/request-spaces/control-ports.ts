@@ -3,7 +3,7 @@ import type {
   SpaceControlAuthority,
   SpaceController,
   SpaceExecutionAdmission,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/space-control.ts";
 export interface SpaceControlCredential {
   id: string;
   kind: "capability" | "session";

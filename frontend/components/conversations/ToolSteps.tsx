@@ -1,4 +1,4 @@
-import type { Message } from "../../../src/domain/work/dialogue.ts";
+import type { Message } from "../../../src/application/work/runtime/state.ts";
 
 /** "1 step", "N steps": how many host and tool records a fold holds. */
 function stepCount(count: number): string {

@@ -5,10 +5,7 @@ import {
   assertRequestTeamChange,
   requestChangeEffect,
 } from "../../../domain/governance/records/request-change.ts";
-import type {
-  Message,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { Message, SystemRuntimeState } from "../runtime/state.ts";
 import { parseRequestDelegatedAuthority } from "../../model/source-admission/request-delegated-authority.ts";
 import type { OperatorExecutionDelivery } from "./execution.ts";
 import {

@@ -1,5 +1,5 @@
 import { equal, notEqual, rejects, throws } from "node:assert/strict";
-import { OperatorAuthorityError } from "../operator-authority.ts";
+import { OperatorAuthorityError } from "../operator-authority-error.ts";
 import type { PendingChange } from "./pending-change.ts";
 import {
   assertRequestNetworkChange,

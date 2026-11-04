@@ -9,10 +9,8 @@ import type { ModelIdentity } from "../../../../../../../domain/shared-kernel/mo
 import type { NativeLiteral } from "../../../../../../../domain/model/records/native-literal.ts";
 import { compileNativeAuthority } from "../../../work/execution-model.ts";
 import { compileModelPolicyRoot } from "../model-policy-root.ts";
-import {
-  OperatorAuthorityError,
-  validateOperatorCreationGrant,
-} from "../../../../../../../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../../../../../../domain/governance/operator-authority-error.ts";
+import { validateOperatorCreationGrant } from "../../../../../../../domain/governance/operator-authority.ts";
 import type { OperatorCreationPolicy } from "../../../../../../../domain/governance/policies/operator-creation-policy.ts";
 import { canonical } from "../../../../../../../domain/primitives/canonical-json.ts";
 

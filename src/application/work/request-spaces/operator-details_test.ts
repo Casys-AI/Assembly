@@ -1,11 +1,9 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { RequestOperatorDetails } from "./operator-details.ts";
 import type { RequestExecutionBinding } from "../../model/evolution/request-adoption-ports.ts";
-import type {
-  OpeningRecord,
-  SpaceController,
-} from "../../../domain/work/request-spaces.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import type { SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import type { SkillCatalogRecord } from "../../../domain/skills/records/catalog.ts";
 import type { ArtifactSourceBindingReference } from "../../../domain/work/artifacts/source-reference.ts";
 import { toolDraftDigest } from "../artifacts/catalog.ts";

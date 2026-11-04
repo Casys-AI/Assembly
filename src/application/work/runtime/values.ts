@@ -1,7 +1,10 @@
 import type { ClockPort } from "./ports.ts";
 import { sha256 } from "../../../domain/primitives/execution-digest.ts";
-import type { Candidate, ToolDraft } from "../../../domain/work/candidates.ts";
-import type { Event } from "../../../domain/work/dialogue.ts";
+import type {
+  Candidate,
+  ToolDraft,
+} from "../../../domain/work/records/candidates.ts";
+import type { Event } from "./state.ts";
 import { toolDraftDigest } from "../artifacts/catalog.ts";
 export async function valueDigest(value: unknown): Promise<string> {
   return await sha256(JSON.stringify(value));

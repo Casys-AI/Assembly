@@ -16,11 +16,9 @@ import type {
   FlowValues,
 } from "../../../domain/model/execution/flow.ts";
 import type { BehaviorInvocationRequest } from "../../../domain/work/execution/modeled-behavior.ts";
-import { ToolInvocationError } from "../../../domain/work/errors/tool-invocation.ts";
-import type {
-  ChatDecision,
-  ToolFailure,
-} from "../../../domain/work/dialogue.ts";
+import { ToolInvocationError } from "../tools/tool-invocation.ts";
+import type { ChatDecision } from "./chat-decision.ts";
+import type { ToolFailure } from "../tools/tool-invocation.ts";
 import {
   type BehaviorAdmission,
   behaviorVersion,

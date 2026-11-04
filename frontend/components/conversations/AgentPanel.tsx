@@ -2,7 +2,7 @@ import { RequestOperatorDetails } from "./RequestOperatorDetails.tsx";
 import { requestVersionInfo } from "../../lib/workbench/version-label.ts";
 import { VersionPill } from "../view/VersionPill.tsx";
 import type { ComponentChildren } from "preact";
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
 import { caseOperatorName } from "../../lib/cases/operator-names.ts";
 import { monogram } from "../../lib/workbench/desk.ts";
 import type { WorkbenchState } from "../../lib/workbench/state.ts";

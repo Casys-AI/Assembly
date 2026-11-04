@@ -25,7 +25,8 @@ import { selectedFlowRoot } from "../../src/adapters/out/sysml-toolkit/compilati
 import { caseMessages } from "../../src/application/work/cases/runtime.ts";
 import { readDecisionContextEvidence } from "../../src/application/work/context/separation.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";
-import type { ChatContext, Message } from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { Message } from "../../src/application/work/runtime/state.ts";
 
 type Fixture = Awaited<ReturnType<typeof openNativeEvolutionFixture>>;
 

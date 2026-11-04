@@ -5,7 +5,10 @@ import {
   recordedWorkPlans,
   soleToolPageEvidence,
 } from "./request-value-attribution.ts";
-import type { Event, Message } from "../../src/domain/work/dialogue.ts";
+import type {
+  Event,
+  Message,
+} from "../../src/application/work/runtime/state.ts";
 import { projectDecisionContext } from "../../src/application/work/context/separation.ts";
 import { requestValueContextPolicy } from "./request-value-profile.ts";
 import type { WorkPlanRecord } from "../../src/domain/work/entities/plans.ts";

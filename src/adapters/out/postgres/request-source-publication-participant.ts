@@ -24,7 +24,7 @@ import {
   type RequestChangeEffect,
   requestChangeEffect,
 } from "../../../domain/governance/records/request-change.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import { isOpenCase } from "../../../domain/work/entities/cases.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { sameOwnerAuthorityIdentity } from "../../../domain/governance/authority.ts";

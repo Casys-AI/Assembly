@@ -10,7 +10,7 @@ import type {
 import type {
   NativeBehaviorContract,
 } from "../../../domain/model/execution/native-contracts.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { WorkArtifactObservationBehavior } from "./artifact-observation.ts";
 async function fixture() {
   const model = executableFixture({

@@ -1,13 +1,11 @@
-import {
-  RequestSpaceError,
-  type SpaceController,
-} from "../../../domain/work/request-spaces.ts";
-import { SavedSystemError } from "../../../domain/work/saved-systems.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
+import { SavedSystemError } from "../../../domain/work/records/saved-systems.ts";
 import {
   assertReleaseRetentionIntent,
   type ReleaseRetentionAuthorization,
   type ReleaseRetentionIntent,
-} from "../../../domain/work/release-retention.ts";
+} from "../../../domain/work/records/release-retention.ts";
 import type { SpaceControlPort } from "../request-spaces/ports.ts";
 
 export interface ReleaseCreationAuthorizationPort {

@@ -2,7 +2,7 @@ import type {
   ExecutableModel,
   ModelExecutionReference,
 } from "../../../domain/model/execution/executable-model.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type { RequestAdoptionIntent } from "../../model/evolution/request-adoption-ports.ts";
 import { RequestAdoptionError } from "../../model/evolution/request-adoption-ports.ts";
 import {

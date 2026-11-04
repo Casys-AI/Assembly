@@ -1,7 +1,7 @@
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import { type Case, openCase } from "../../../../domain/work/entities/cases.ts";
 import { CaseError } from "../../../../domain/work/errors/case.ts";
-import type { SystemRuntimeState } from "../../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../runtime/state.ts";
 import {
   CloseCase,
   PilotCase,

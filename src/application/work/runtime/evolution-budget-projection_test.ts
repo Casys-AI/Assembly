@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { artifactModel } from "../../../../test/support/tool-artifact-fixture.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import type { WorkBudgetRecord } from "../../../domain/work/policies/budget.ts";
 import { WorkBudgetService } from "../budget/service.ts";
 import { evolutionCheckpoint } from "./evolution.ts";

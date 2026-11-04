@@ -9,8 +9,8 @@ import {
 } from "../../../adapters/out/postgres/execution-transaction.ts";
 import type { PrismaClient } from "../../../adapters/out/postgres/client.ts";
 import { requestAdoptionFixture } from "../../../../test/support/request-adoption-fixture.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { SystemRuntimeState } from "../../work/runtime/state.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import type { EvolutionAuthorityExercise } from "../../../domain/model/evolution/policy.ts";
 import type {
   EvolutionAdoptionReceipt,

@@ -189,7 +189,7 @@ pending, it waits for a decision before preparing the next candidate. Resume
 does not duplicate candidates already prepared or silently replace a candidate
 whose selection has changed.
 
-The [HTML contracts](../../../src/domain/work/candidates.ts) and engine
+The [HTML contracts](../../../src/domain/work/records/candidates.ts) and engine
 permissions continue to apply. This catalogue is not a general integration for
 plugins, MCP or external tools.
 

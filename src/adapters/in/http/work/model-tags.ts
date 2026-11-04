@@ -1,11 +1,11 @@
 import { noStoreJson as json } from "../versioning/responses.ts";
 import type { RequestReleases } from "../../../../application/work/saved-systems/request-releases.ts";
-import { assertReleaseTagName } from "../../../../domain/work/release-tags.ts";
+import { assertReleaseTagName } from "../../../../domain/work/records/release-tags.ts";
 import {
   assertSavedSourceSelection,
   SavedSystemError,
-} from "../../../../domain/work/saved-systems.ts";
-import { RequestSpaceError } from "../../../../domain/work/request-spaces.ts";
+} from "../../../../domain/work/records/saved-systems.ts";
+import { RequestSpaceError } from "../../../../domain/work/request-spaces/scope.ts";
 import {
   LocalHttpFailure,
   requireLocalJsonCommand,

@@ -6,13 +6,13 @@ import type { PostgresHostStorage } from "../adapters/out/postgres/host-storage.
 import type { PostgresRequestSpaceStore } from "../adapters/out/postgres/request-space-store.ts";
 import type { RequestExecutionBindingPort } from "../application/model/evolution/request-adoption-ports.ts";
 import type { SystemRuntime } from "../application/work/runtime/system.ts";
-import type { SystemRuntimeState } from "../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../application/work/runtime/state.ts";
 import type { OperatorNotice } from "../domain/governance/operator-authority.ts";
 import type { Case } from "../domain/work/entities/cases.ts";
 import { branchAuthorityFixture } from "../../test/support/branch-authority-fixture.ts";
 import { requestSpaceScope } from "../../test/support/request-space-fixture.ts";
 import { eventually } from "../../test/support/eventually.ts";
-import { OperatorAuthorityError } from "../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../domain/governance/operator-authority-error.ts";
 import {
   bindMainAuthorityReplay,
   createRequestSpaceAuthorityBridge,

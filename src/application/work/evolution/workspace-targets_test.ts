@@ -9,7 +9,7 @@ import {
   EvolutionError,
 } from "../../model/evolution/ports.ts";
 import type { SystemRuntime } from "../runtime/system.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type { WorkspaceRuntime } from "../operators/workspace-registry.ts";
 
 function fixture() {

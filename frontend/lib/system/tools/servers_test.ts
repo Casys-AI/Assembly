@@ -1,6 +1,6 @@
 import { deepStrictEqual } from "node:assert/strict";
-import type { Candidate } from "../../../../src/domain/work/candidates.ts";
-import type { ModelContextTool } from "../../../../src/domain/model/consultation/context.ts";
+import type { Candidate } from "../../../../src/domain/work/records/candidates.ts";
+import { type ModelContextTool } from "../../../../src/application/work/context/model-tools.ts";
 import { operatorTools, toolServers } from "./servers.ts";
 
 const candidate = (

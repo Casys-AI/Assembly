@@ -14,7 +14,7 @@ import {
   parseRequestAdoptionReceipt,
 } from "../../model/evolution/request-adoption-invariants.ts";
 import { requestWriteAuthorityPrior } from "../../model/source-admission/request-delegated-authority.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type { ScopedSoftwareNeverStartedSuccessorContext } from "./scoped-software-adoption-successor.ts";
 import {
   canonicalDigest,

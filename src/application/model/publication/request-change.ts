@@ -1,5 +1,5 @@
 import { OWNER_AUTHORITY_IDENTITY_FIELDS } from "../../../domain/governance/authority.ts";
-import { ModelWriteCommandError } from "../../../domain/model/editing/write-command.ts";
+import { ModelWriteCommandError } from "../../../domain/model/editing/write-command-error.ts";
 import { assertRequestNetworkChange } from "../../../domain/governance/records/request-network-change.ts";
 import {
   assertRequestChange,

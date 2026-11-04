@@ -32,12 +32,10 @@ import {
   invocationKey,
 } from "../../src/application/work/operators/journal.ts";
 import { legacyOwnerAuthority } from "../../src/domain/governance/authority.ts";
-import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority-error.ts";
 import type { CandidateDelegatedActor } from "../../src/domain/governance/policies/tool-admission-policy.ts";
-import type {
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import { caseTypesForModel } from "../../src/domain/work/records/case-types.ts";
 import type { CandidateDecisionInput } from "../../src/application/work/candidates/decisions.ts";
 import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";

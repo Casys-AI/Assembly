@@ -8,7 +8,7 @@ import {
 import {
   requestSourceAdmissionRef,
   requestSourceCommandRef,
-} from "../../src/domain/model/editing/request-source-publication.ts";
+} from "../../src/domain/model/editing/source-anchor-refs.ts";
 import {
   buildDescriptor,
   buildKey,

@@ -3,7 +3,7 @@ import type {
   FlowActionResult,
   FlowValues,
 } from "../../../domain/model/execution/flow.ts";
-import type { ToolFailure } from "../../../domain/work/dialogue.ts";
+import type { ToolFailure } from "../tools/tool-invocation.ts";
 import type {
   ConversationObservationHost,
   ConversationTurnState,

@@ -6,8 +6,8 @@ import {
   MODEL_DELEGATIONS_FILE,
   readModelDelegations,
   renderModelDelegations,
-} from "../../src/domain/governance/policies/model-delegation-ledger.ts";
-import type { ModelDelegationChange } from "../../src/domain/governance/records/model-delegation-request.ts";
+} from "../../src/domain/governance/model-access/model-delegation-ledger.ts";
+import type { ModelDelegationChange } from "../../src/domain/governance/model-access/model-delegation-request.ts";
 import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import {
   delegationSystems,

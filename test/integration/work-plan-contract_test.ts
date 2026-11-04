@@ -6,7 +6,7 @@ import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilatio
 import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { availableBehaviors } from "../../src/application/governance/behavior-call-admission.ts";
 import type { NativeBehaviorContract } from "../../src/domain/model/execution/native-contracts.ts";
-import type { ChatContext } from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");
 

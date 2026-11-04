@@ -3,7 +3,7 @@ import type {
   ExecutableModel,
   NativePolicyIdentity,
 } from "../../model/execution/executable-model.ts";
-import { OperatorAuthorityError } from "../operator-authority.ts";
+import { OperatorAuthorityError } from "../operator-authority-error.ts";
 import { type ExecutionSpaceRef } from "../authority.ts";
 import { exerciseOwnerAuthority } from "../authority.ts";
 import { canonical } from "../../primitives/canonical-json.ts";
@@ -149,7 +149,7 @@ export function toolAdmissionPreparation(
 
 export function delegatedCandidateAuthorityExercise(
   model: ExecutableModel,
-  candidate: import("../../work/candidates.ts").Candidate,
+  candidate: import("../../work/records/candidates.ts").Candidate,
   actor: CandidateDelegatedActor,
   space: ExecutionSpaceRef,
 ): import("../authority.ts").AuthorityExercise {
@@ -222,7 +222,7 @@ export function delegatedCandidateAuthorityExercise(
 /** Recheck the exact recorded authority before creating an unpublished effect. */
 export function assertCandidateDelegationReceipt(
   model: ExecutableModel,
-  candidate: import("../../work/candidates.ts").Candidate,
+  candidate: import("../../work/records/candidates.ts").Candidate,
   space: ExecutionSpaceRef,
 ): void {
   const exercise = candidate.admissionDecision?.authorityExercise;

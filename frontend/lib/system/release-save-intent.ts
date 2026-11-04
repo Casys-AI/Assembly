@@ -1,8 +1,8 @@
 import {
   assertReleaseTagSelection,
   type ReleaseTagSelection,
-} from "../../../src/domain/work/release-tags.ts";
-import type { SavedSystemSourceSelection } from "../../../src/domain/work/saved-systems.ts";
+} from "../../../src/domain/work/records/release-tags.ts";
+import type { SavedSystemSourceSelection } from "../../../src/domain/work/records/saved-systems.ts";
 
 /** Browser recovery data only. None of these values grants host authority. */
 export interface ReleaseSaveCommand {

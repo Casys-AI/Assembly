@@ -22,11 +22,9 @@ import {
 } from "../../src/application/work/operators/command-delivery.ts";
 import type { OperatorWorkContribution } from "../../src/application/work/operators/conversations.ts";
 import type { OperatorExecutionDelivery } from "../../src/application/work/operators/execution.ts";
-import type {
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../src/domain/work/dialogue.ts";
-import type { ToolDraft } from "../../src/domain/work/candidates.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
+import type { ToolDraft } from "../../src/domain/work/records/candidates.ts";
 import type { CandidateDelegatedActor } from "../../src/domain/governance/policies/tool-admission-policy.ts";
 import { legacyOwnerAuthority } from "../../src/domain/governance/authority.ts";
 import { executionDigest } from "../../src/domain/primitives/execution-digest.ts";

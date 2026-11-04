@@ -1,5 +1,5 @@
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
-import type { Message } from "../../../src/domain/work/dialogue.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
+import type { Message } from "../../../src/application/work/runtime/state.ts";
 import { type CaseRecord, messageCaseId } from "./cases.ts";
 import { caseOperatorName } from "./operator-names.ts";
 

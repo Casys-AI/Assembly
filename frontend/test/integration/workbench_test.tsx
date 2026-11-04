@@ -22,7 +22,7 @@ import Workbench, {
 import type {
   AgentConversation,
   ConversationsSnapshot,
-} from "../../../src/domain/work/records/conversations.ts";
+} from "../../../src/application/work/operators/conversation-types.ts";
 import { RuntimeRevisionCard } from "../../components/model/revisions/RevisionsView.tsx";
 import { ChatView } from "../../components/conversations/ChatView.tsx";
 import { GraphView } from "../../components/graph/GraphView.tsx";

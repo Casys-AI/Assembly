@@ -12,7 +12,7 @@ import { isOpenCase } from "../../../domain/work/entities/cases.ts";
 import type {
   InitialToolAdmissionTransfer,
   ReviewDecision,
-} from "../../../domain/work/candidates.ts";
+} from "../../../domain/work/records/candidates.ts";
 import type {
   NativeExecutionContribution,
   NativeExecutionPort,
@@ -20,16 +20,14 @@ import type {
 } from "../native-execution/contract.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { CompiledFlowNode } from "../../../domain/model/execution/flow.ts";
-import type { MessageObservation } from "../../../domain/work/policies/context-separation.ts";
+import type { MessageObservation } from "../context/evidence.ts";
 import type {
   ArtifactReuseOrigin,
   Candidate,
   ToolDraft,
-} from "../../../domain/work/candidates.ts";
-import type {
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "../../../domain/work/records/candidates.ts";
+import type { ChatDecision } from "../conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import {
   candidateCaseInvocation,
   invocationInput,
@@ -59,12 +57,12 @@ import {
   makeEvent,
   valueDigest,
 } from "../runtime/values.ts";
-import { exerciseOwnerAuthority } from "../../../domain/governance/authority.ts";
-import { hasActivationIntent } from "../../../domain/work/policies/candidate-activation.ts";
 import {
+  exerciseOwnerAuthority,
   mainExecutionSpace,
-  OperatorAuthorityError,
-} from "../../../domain/governance/operator-authority.ts";
+} from "../../../domain/governance/authority.ts";
+import { hasActivationIntent } from "../../../domain/work/policies/candidate-activation.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import {
   type CandidateDelegatedActor,

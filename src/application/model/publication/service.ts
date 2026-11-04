@@ -24,12 +24,12 @@ import {
 } from "../../../domain/model/value-objects/build.ts";
 import type { ModelRevision } from "../../../domain/model/records/revision.ts";
 import { modelSourceDigest } from "../../../domain/model/value-objects/sources.ts";
+import { assertOperationJournal } from "../../../domain/model/editing/operation-journal.ts";
 import {
-  assertOperationJournal,
   type JournalReplayBlock,
-  operationJournalDigest,
   planJournalReplay,
-} from "../../../domain/model/editing/write-command.ts";
+} from "../../../domain/model/editing/journal-replay.ts";
+import { operationJournalDigest } from "../../../domain/model/editing/write-command.ts";
 import { ModelRepositoryError, type PublicationFence } from "../repository.ts";
 import type { ModelCompiler } from "../builds/ports/out/model-compiler.port.ts";
 import type { PreparePublicationInput } from "./commands/inputs.ts";

@@ -9,7 +9,7 @@ import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import {
   MODEL_DELEGATIONS_FILE,
   readModelDelegations,
-} from "../../../domain/governance/policies/model-delegation-ledger.ts";
+} from "../../../domain/governance/model-access/model-delegation-ledger.ts";
 
 interface ModelProposalPreview {
   proposalId: string;

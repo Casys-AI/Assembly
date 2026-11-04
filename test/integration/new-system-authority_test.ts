@@ -22,7 +22,7 @@ import { resolveModelEdits } from "../../src/domain/model/editing/source-index.t
 import { NativeModelSourceAuthorization } from "../../src/application/governance/model-access/source-authorization.ts";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";
 import { SystemGovernance } from "../../src/domain/governance/policies/governance.ts";
-import type { ChatDecision } from "../../src/domain/work/dialogue.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 
 /** Only source storage is doubled; compilation and authorization are real.

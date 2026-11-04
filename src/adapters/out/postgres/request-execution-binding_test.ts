@@ -10,7 +10,7 @@ import type {
   RequestAdoptionReceipt,
   RequestExecutionBinding,
 } from "../../../application/model/evolution/request-adoption-ports.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import { requestAdoptionFixture } from "../../../../test/support/request-adoption-fixture.ts";
 import {
   requestControlState,
@@ -19,9 +19,9 @@ import {
   spaceControlAuthority,
 } from "../../../../test/support/request-space-fixture.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import { requestSpaceDigest } from "../../../domain/work/request-spaces.ts";
+import { requestSpaceDigest } from "../../../domain/work/request-spaces/scope.ts";
 import { requestSpaceSeed } from "../../../application/work/runtime/initialization.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
 
 async function sourceContextFixture() {
   const base = await requestOpeningBase("c");

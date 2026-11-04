@@ -9,10 +9,8 @@ import {
   activeBatchCall,
   cancelQueuedAfterTeamPublication,
 } from "../work/conversation/batches.ts";
-import {
-  isTeamOperatorSpec,
-  OperatorAuthorityError,
-} from "../../domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../domain/governance/operator-authority-error.ts";
+import { isTeamOperatorSpec } from "../../domain/governance/operator-authority.ts";
 import {
   assertCreationWithinPolicy,
   creationMode,
@@ -34,7 +32,7 @@ import {
   workReceipt,
 } from "../work/operators/journal.ts";
 import type { OperatorWorkReceipt } from "../../domain/work/execution/case-context.ts";
-import { isRequestTeamMember } from "../../domain/work/request-spaces.ts";
+import { isRequestTeamMember } from "../../domain/work/request-spaces/branch-team.ts";
 import { OperatorConversationError } from "../work/operators/conversations.ts";
 import { CaseError } from "../../domain/work/errors/case.ts";
 import { canonical } from "../../domain/primitives/canonical-json.ts";
@@ -43,23 +41,20 @@ import {
   assertChangeAuthorityReceipt,
   ChangeApprovabilityError,
 } from "../../domain/governance/policies/change-approvability.ts";
+import { publicationFailure } from "../model/publication/publication-failure.ts";
 import {
   type ApprovedChangePublication,
   assertPublicationMatches,
   changePublication,
   ChangePublicationError,
-  publicationFailure,
 } from "../../domain/model/publication/change.ts";
 import {
   ChangeScopeMissingError,
   SystemGovernance,
 } from "../../domain/governance/policies/governance.ts";
 import type { ExecutableModel } from "../../domain/model/execution/executable-model.ts";
-import type {
-  ChatDecision,
-  Event,
-  SystemRuntimeState,
-} from "../../domain/work/dialogue.ts";
+import type { ChatDecision } from "../work/conversation/chat-decision.ts";
+import type { Event, SystemRuntimeState } from "../work/runtime/state.ts";
 import type {
   PendingChange,
 } from "../../domain/governance/records/pending-change.ts";

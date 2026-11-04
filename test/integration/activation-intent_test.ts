@@ -13,11 +13,9 @@ import { ToolNameError } from "../../src/domain/work/value-objects/tool-name.ts"
 import type {
   Candidate,
   ModelBinding,
-} from "../../src/domain/work/candidates.ts";
-import type {
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../src/domain/work/dialogue.ts";
+} from "../../src/domain/work/records/candidates.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import { compileNativeFixtureFlows } from "../support/execution-fixture.ts";
 import { SystemRuntime } from "../support/system-runtime.ts";
 import { createTestNativeExecution } from "../support/native-execution.ts";

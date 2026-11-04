@@ -8,9 +8,9 @@ import {
   mainCreationScope,
   matchesTeamProvision,
 } from "../../../domain/governance/policies/operator-creation-policy.ts";
+import { mainExecutionSpace } from "../../../domain/governance/authority.ts";
 import {
   isTeamOperatorSpec,
-  mainExecutionSpace,
   type TeamOperatorSpec,
   validateOperatorCreationSpec,
 } from "../../../domain/governance/operator-authority.ts";
@@ -32,7 +32,7 @@ import { canonicalDigest } from "../../../domain/primitives/execution-digest.ts"
 import { modelSourceDigest } from "../../../domain/model/value-objects/sources.ts";
 import type { ModelRevision } from "../../../domain/model/records/revision.ts";
 import { assertCandidateDelegationReceipt } from "../../../domain/governance/policies/tool-admission-policy.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
 import { compareModelSources } from "../revisions/source-diff.ts";
 import { sourceLiterals } from "../../../domain/model/projections/source-facts.ts";
 import { discoverConversationUnits } from "../../../domain/model/records/source-identity.ts";

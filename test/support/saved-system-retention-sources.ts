@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
-import type { ToolDraft } from "../../src/domain/work/candidates.ts";
+import type { ToolDraft } from "../../src/domain/work/records/candidates.ts";
 import { withInitialTools } from "../../src/adapters/out/sysml-toolkit/compilation-policies/work/initial-catalog.ts";
 
 export const retainedToolDraft = {

@@ -1,6 +1,6 @@
 import { equal, rejects } from "node:assert/strict";
 import { executableFixture } from "../../../../../test/support/execution-fixture.ts";
-import type { SystemRuntimeState } from "../../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../runtime/state.ts";
 import { selectDesignerInvocation } from "../../cases/runtime.ts";
 import type { ConversationTurnHost } from "../turn-context.ts";
 import { ExecuteConversationTurn } from "./conversation-handler.ts";

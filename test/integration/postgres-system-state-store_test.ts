@@ -10,7 +10,7 @@ import {
   decodeRuntimeSnapshotPayload,
   RUNTIME_SNAPSHOT_PREFIX,
 } from "../../src/adapters/out/postgres/runtime-snapshot-codec.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import {
   postgresTestEnabled,
   seedPostgresRuntime,

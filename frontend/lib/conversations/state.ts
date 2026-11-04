@@ -3,7 +3,7 @@ import type {
   AgentConversation,
   AgentMessageCommand,
   ConversationsSnapshot,
-} from "../../../src/domain/work/records/conversations.ts";
+} from "../../../src/application/work/operators/conversation-types.ts";
 import { readEvolutionRecord } from "./evolution.ts";
 import { retryOnceAfterStale, sendErrorMessage } from "../api-error.ts";
 

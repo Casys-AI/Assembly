@@ -12,10 +12,8 @@ import legacy from "../fixtures/legacy-specialist-awaiting-admission.json" with 
 };
 import { draftDigest, SystemRuntime } from "../support/system-runtime.ts";
 import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";
-import type {
-  ChatContext,
-  SystemRuntimeState,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import {
   candidateCaseId,
   candidateCaseInvocation,

@@ -1,10 +1,10 @@
-import type { SystemRuntimeState } from "../../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../src/application/work/runtime/state.ts";
 import { responseError } from "../api-error.ts";
 import type {
   AgentMessageCommand,
   ConversationsSnapshot,
   OperatorToolsSnapshot,
-} from "../../../src/domain/work/records/conversations.ts";
+} from "../../../src/application/work/operators/conversation-types.ts";
 import { parseConversationsSnapshot } from "../conversations/state.ts";
 import {
   type OperatorToolDecision,
@@ -13,7 +13,7 @@ import {
 import type {
   ProjectionSnapshot,
   StateRevision,
-} from "../../../src/domain/work/history.ts";
+} from "../../../src/application/work/runtime/ports/out/state-history.port.ts";
 
 export type HistoryEntry = Omit<
   StateRevision,

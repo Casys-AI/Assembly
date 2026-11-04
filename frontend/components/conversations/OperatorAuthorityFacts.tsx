@@ -1,5 +1,5 @@
 import { useEffect } from "preact/hooks";
-import type { Candidate } from "../../../src/domain/work/candidates.ts";
+import type { Candidate } from "../../../src/domain/work/records/candidates.ts";
 import type {
   PendingChange,
 } from "../../../src/domain/governance/records/pending-change.ts";

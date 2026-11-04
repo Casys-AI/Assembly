@@ -80,8 +80,9 @@ to checkpoints.
 | **5.2 Governed Memory Promotion**                                  | [governed-memory-promotion.ts](domain/memory/governed-memory-promotion.ts), [governed-memory-promotion.ts](application/memory/governed-memory-promotion.ts), [memory-store.ts](adapters/out/postgres/memory-store.ts)       | Candidate notes, review/admission, recall and withdrawal. Local implementation; no independent review between owners.                 |
 
 For **4.1 Operator Identity & Mandate**,
-[model-delegation.ts](domain/governance/policies/model-delegation.ts) resolves
-granting and redelegation rights, which are distinct from exercising a right.
+[model-delegation.ts](./domain/governance/model-access/model-delegation.ts)
+resolves granting and redelegation rights, which are distinct from exercising a
+right.
 [operations.ts](./application/governance/model-access/administration/operations.ts)
 builds the exact proposal and checks it again at admission; the
 [administration guide](../docs/how-to/operateurs/administration-deleguee.md)

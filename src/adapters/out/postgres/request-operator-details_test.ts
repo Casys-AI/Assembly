@@ -1,7 +1,7 @@
 import { deepStrictEqual, equal } from "node:assert/strict";
 import { PostgresRequestOperatorDetailsObservations } from "./request-operator-details.ts";
 import type { PrismaClient } from "./client.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import type { RequestExecutionBinding } from "../../../application/model/evolution/request-adoption-ports.ts";
 
 Deno.test("persisted Request details select exact skill scope with no runtime factory or writes", async () => {

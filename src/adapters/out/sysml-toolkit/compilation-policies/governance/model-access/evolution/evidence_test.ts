@@ -409,3 +409,46 @@ Deno.test("evidence follows every owner through shared cyclic descendants and st
   assert.deepEqual(scope.model.version.sourceIds, admittedSourceIds);
   assert.deepEqual(input.model.version.sourceIds, admittedSourceIds);
 });
+Deno.test("collector removes container source-text copies and keeps transition text protected", async () => {
+  const input = fixture();
+  change(input, "main")["sysx:sourceText"] = "part main { old }";
+  input.elements.push(
+    fact("pkg", "Package", "main", {
+      "sysx:sourceText": "package Test { old }",
+    }),
+    fact("trans", "TransitionUsage", "main", {
+      "sysx:sourceText": "if condition then action",
+    }),
+  );
+  input.model.version.sourceIds.push("pkg", "trans");
+  const before = await capture(input);
+  assert.equal(
+    Object.hasOwn(
+      before.evidence.sourceFacts.main as Fact,
+      "sysx:sourceText",
+    ),
+    false,
+  );
+  assert.equal(
+    Object.hasOwn(before.evidence.sourceFacts.pkg as Fact, "sysx:sourceText"),
+    false,
+  );
+  assert.equal(
+    (before.evidence.sourceFacts.trans as Fact)["sysx:sourceText"],
+    "if condition then action",
+  );
+  const containersOnly = structuredClone(input);
+  change(containersOnly, "main")["sysx:sourceText"] = "part main { new }";
+  change(containersOnly, "pkg")["sysx:sourceText"] = "package Test { new }";
+  assert.deepEqual(
+    classifyEvolutionEffects([before], [await capture(containersOnly)]),
+    [],
+  );
+  const transitionChanged = structuredClone(input);
+  change(transitionChanged, "trans")["sysx:sourceText"] = "else action";
+  const afterTransition = await capture(transitionChanged);
+  assert.throws(
+    () => classifyEvolutionEffects([before], [afterTransition]),
+    /Protected or unclassified/,
+  );
+});

@@ -1,6 +1,6 @@
 import { equal } from "node:assert/strict";
-import type { Candidate } from "../../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import {
   abandonCaseCandidates,
   type CaseCandidatesHost,

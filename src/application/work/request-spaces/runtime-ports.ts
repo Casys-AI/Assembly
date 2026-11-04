@@ -1,5 +1,5 @@
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type { ScopedOperatorRef } from "../../../domain/governance/authority.ts";
 import type {
   RequestAdoptionManifest,

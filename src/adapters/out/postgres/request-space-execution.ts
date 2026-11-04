@@ -8,22 +8,24 @@ import {
 import {
   requestReleaseOriginMatches,
   type VerifiedRequestReleaseSource,
-} from "../../../domain/work/request-release-origin.ts";
-import type { SavedSystemManifest } from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/records/request-release-origin.ts";
+import type { SavedSystemManifest } from "../../../domain/work/records/saved-systems.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import {
   retainedToolAdmissionId,
   retainedToolDescriptors,
   retainedToolResourceId,
-} from "../../../domain/work/retained-tool-dependencies.ts";
+} from "../../../domain/work/records/retained-tool-dependencies.ts";
 import {
   assertBaseForChoice,
   assertOpeningBase,
   type OpeningBase,
   recordedOpeningCommand,
+} from "../../../domain/work/request-spaces/opening.ts";
+import {
   requestSpaceDigest,
   RequestSpaceError,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
 import type { Prisma, PrismaClient } from "./client.ts";
 import type { PostgresHostStorage } from "./host-storage.ts";
 import type { PostgresSpaceAdmissions } from "./request-space-control-store.ts";

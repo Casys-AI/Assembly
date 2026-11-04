@@ -16,8 +16,8 @@ import {
   type HostEdit,
   isSpellable,
 } from "../../src/domain/model/editing/host-edit.ts";
-import type { Candidate } from "../../src/domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { Candidate } from "../../src/domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import { toolkitIntegrationEnabled } from "../support/toolkit-integration.ts";
 
 Deno.test({

@@ -1,6 +1,6 @@
 import { equal } from "node:assert/strict";
 import type { MemoryContent } from "../../domain/memory/entities/memory-record.ts";
-import type { Message } from "../../domain/work/dialogue.ts";
+import type { Message } from "../work/runtime/state.ts";
 import { workspaceMemoryProvenance } from "./workspace-memory-provenance.ts";
 
 Deno.test("workspace memory provenance resolves exact local decisions, sources and observed outcomes", async () => {

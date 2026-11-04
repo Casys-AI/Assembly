@@ -3,13 +3,13 @@ import type { ReleaseTagsPort } from "../../../application/work/saved-systems/po
 import {
   SavedSystemError,
   type SavedSystemSourceEvidence,
-} from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/records/saved-systems.ts";
 import {
   assertReleaseTagBinding,
   assertReleaseTagSelection,
   type ReleaseTagBinding,
   type ReleaseTagSelection,
-} from "../../../domain/work/release-tags.ts";
+} from "../../../domain/work/records/release-tags.ts";
 import type { GitModelRepositoryReader } from "./repository.ts";
 import type { RepositoryWriterLock } from "./writer-lock.ts";
 

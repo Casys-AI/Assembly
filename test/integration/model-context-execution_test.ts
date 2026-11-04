@@ -18,10 +18,8 @@ import { SystemRuntime } from "../../src/application/work/runtime/system.ts";
 import { openPostgresRuntimeFixture } from "../support/postgres-runtime-fixture.ts";
 import { createClaudeToolsFake } from "../support/claude-tools-fake.ts";
 import type { DecisionInformationPort } from "../../src/application/work/context/information-ports.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 
 const packageDir = Deno.env.get("SYSML_TOOLKIT_DIR");
 for (const profile of ["legacy", "current"] as const) {

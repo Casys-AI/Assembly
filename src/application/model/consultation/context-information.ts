@@ -11,25 +11,24 @@ import type {
 import type { NetworkImpactConsultation } from "../impact/consultation.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import {
+  type ModelContextTool,
+  modelContextTools,
+} from "../../work/context/model-tools.ts";
+import {
   immutableModelConsultation,
   ModelContextAccessError,
   type ModelContextCapabilities,
   type ModelContextOverview,
   type ModelContextQuery,
   type ModelContextQueryResult,
-  type ModelContextTool,
-  modelContextTools,
   type ModelExpressionQuery,
   ModelNavigationError,
   type NetworkImpactConsultationQuery,
 } from "../../../domain/model/consultation/context.ts";
 import type { BehaviorModelVersion } from "../../../domain/shared-kernel/behavior-model-version.ts";
 import { characterCount } from "../../../domain/primitives/character-count.ts";
-import type {
-  Message,
-  ModelSourceRevision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { Message, SystemRuntimeState } from "../../work/runtime/state.ts";
+import type { ModelSourceRevision } from "../../work/conversation/chat-context.ts";
 
 export interface ModelContextInformationOptions {
   projectId: string;

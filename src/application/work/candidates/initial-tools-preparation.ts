@@ -3,7 +3,7 @@ import type {
   InitialToolsPreparationIntent,
   InitialToolsPreparationReference,
   SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "../runtime/state.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";

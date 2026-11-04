@@ -1,9 +1,6 @@
 import { deepStrictEqual, equal } from "node:assert/strict";
 import type { Case } from "../../domain/work/entities/cases.ts";
-import type {
-  Message,
-  SystemRuntimeState,
-} from "../../domain/work/dialogue.ts";
+import type { Message, SystemRuntimeState } from "../work/runtime/state.ts";
 import { requestKpis } from "./request-kpis.ts";
 
 const openedAt = "2026-11-03T00:00:00.000Z";

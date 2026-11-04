@@ -1,5 +1,5 @@
 import { signal } from "@preact/signals";
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
 import { messageCaseId } from "./cases.ts";
 import { readBrowserPreference } from "../browser/preferences.ts";
 

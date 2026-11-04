@@ -1,6 +1,6 @@
 import { createSourceModel } from "../../composition/source-model-services.ts";
 import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
-import type { ModelSourceProposalStatus } from "../../domain/work/dialogue.ts";
+import type { ModelSourceProposalStatus } from "../work/conversation/chat-context.ts";
 import type {
   PendingChange,
 } from "../../domain/governance/records/pending-change.ts";

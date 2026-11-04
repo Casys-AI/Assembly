@@ -2,10 +2,10 @@
  * delegated policy in the space where it is read. */
 import { deepStrictEqual, equal } from "node:assert/strict";
 import {
+  type ExecutionSpaceRef,
   MAIN_EXECUTION_SPACE_ID,
   sameScopedOperator,
-} from "../operator-authority.ts";
-import { type ExecutionSpaceRef } from "../authority.ts";
+} from "../authority.ts";
 import {
   type DelegationSubjects,
   namesHolderInstance,

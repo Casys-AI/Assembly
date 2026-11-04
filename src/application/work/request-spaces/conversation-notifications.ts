@@ -1,7 +1,7 @@
 import {
   requestSpaceIdentity,
   type RequestSpaceScope,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
 import type { OpeningStorePort } from "./ports.ts";
 
 /** Advisory only: read the changed Request through its authorized endpoint.

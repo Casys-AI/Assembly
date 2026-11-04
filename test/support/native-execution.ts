@@ -43,7 +43,7 @@ import {
   validateNativeBudgetCeilingAdvance,
   verifyScalarBudgetCandidate,
 } from "../../src/application/work/runtime/budget-transition.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
 import {
   nativeCandidateConversationAdvanceEvidence,
@@ -61,7 +61,7 @@ import {
 import type {
   BudgetCeilingManifest,
   BudgetCeilingMember,
-} from "../../src/domain/work/records/budget-ceiling-transition.ts";
+} from "../../src/application/work/runtime/budget-ceiling-transition.ts";
 import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";
 import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import type { BehaviorModelVersion } from "../../src/domain/shared-kernel/behavior-model-version.ts";

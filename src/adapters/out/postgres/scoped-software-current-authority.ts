@@ -21,7 +21,7 @@ export interface PreparedScopedSourceEvidence {
   assessment: Awaited<ReturnType<typeof compileEvolutionAssessment>>;
   sources: Map<string, ScopedExecutableModel[]>;
   operations:
-    readonly import("../../../domain/governance/policies/model-edit-policy.ts").ModelEditOperation[];
+    readonly import("../../../domain/governance/model-access/model-edit-policy.ts").ModelEditOperation[];
   facilities: Map<
     string,
     Awaited<
@@ -318,7 +318,7 @@ export class ScopedSoftwareCurrentAuthority {
         dossier:
           import("../../../application/model/evolution/scoped-software-dossier.ts").ScopedSoftwareEvolutionDossierV2,
       ): Promise<
-        readonly import("../../../domain/governance/policies/model-edit-policy.ts").ModelEditOperation[]
+        readonly import("../../../domain/governance/model-access/model-edit-policy.ts").ModelEditOperation[]
       >;
     },
   ) {}
@@ -420,7 +420,7 @@ export class ScopedSoftwareCurrentAuthority {
       "../../../domain/model/editing/scope.ts"
     );
     const { MODEL_DELEGATIONS_FILE } = await import(
-      "../../../domain/governance/policies/model-delegation-ledger.ts"
+      "../../../domain/governance/model-access/model-delegation-ledger.ts"
     );
     const d = await parseScopedSoftwareDossier(dossier);
     const scope = d.scope;

@@ -18,11 +18,9 @@ import {
   modelWriteDossierDigestV2,
 } from "../../src/application/model/publication/write-command-v2.ts";
 import { parseRequestSourceAdmission } from "../../src/application/model/source-admission/request-source-admission.ts";
-import {
-  type OpeningRecord,
-  requestSpaceDigest,
-  type SpaceController,
-} from "../../src/domain/work/request-spaces.ts";
+import { type OpeningRecord } from "../../src/domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../../src/domain/work/request-spaces/space-control.ts";
 import {
   postgresTestEnabled,
   seedPostgresRuntime,

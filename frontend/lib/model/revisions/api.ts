@@ -1,8 +1,8 @@
 import type { NativeModelEditPolicy } from "../../../../src/domain/model/execution/native-contracts.ts";
-import type { ModelAdministrationAuthority } from "../../../../src/domain/governance/policies/model-delegation.ts";
+import type { ModelAdministrationAuthority } from "../../../../src/domain/governance/model-access/model-delegation.ts";
 import type { OperatorAuthorityPolicy } from "../../../../src/domain/governance/policies/operator-authority-policy.ts";
 import type { ToolAdmissionPolicy } from "../../../../src/domain/governance/policies/tool-admission-policy.ts";
-import type { ModelProposalAuthorization } from "../../../../src/domain/governance/records/model-edit-authorization.ts";
+import type { ModelProposalAuthorization } from "../../../../src/domain/governance/model-access/model-edit-authorization.ts";
 import type {
   ModelChangedFile,
   ModelCommitAuthor,

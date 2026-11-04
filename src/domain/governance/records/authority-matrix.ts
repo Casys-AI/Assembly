@@ -1,5 +1,5 @@
 import type { BoardGrant } from "../../model/records/board.ts";
-import type { ModelEditOperation } from "../policies/model-edit-policy.ts";
+import type { ModelEditOperation } from "../model-access/model-edit-policy.ts";
 import type { ModelRevisionId } from "../../shared-kernel/revision-id.ts";
 import { parseSysmlQualifiedName } from "../../model/value-objects/sysml-qualified-name.ts";
 import { TOOL_KINDS, type ToolKind } from "../../shared-kernel/tool-kind.ts";

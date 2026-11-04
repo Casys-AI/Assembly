@@ -7,8 +7,8 @@ import type {
   ToolReuseImport,
   ToolReuseReceipt,
 } from "../../src/application/work/artifacts/catalog.ts";
-import type { Stage } from "../../src/domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { Stage } from "../../src/domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import type {
   ModelPort,
   StorePort,

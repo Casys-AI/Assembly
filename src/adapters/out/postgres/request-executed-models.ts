@@ -1,4 +1,4 @@
-import { retainedMember } from "../../../domain/work/request-spaces.ts";
+import { retainedMember } from "../../../domain/work/request-spaces/branch-team.ts";
 import { scopedOperator } from "../../../domain/governance/policies/delegation-scope.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { BehaviorModelVersion } from "../../../domain/shared-kernel/behavior-model-version.ts";
@@ -6,7 +6,7 @@ import type { RequestExecutionBinding } from "../../../application/model/evoluti
 import { requestExecutionPinFor } from "../../../application/model/evolution/request-execution-pin.ts";
 import type { ModelRevision } from "../../../domain/model/records/revision.ts";
 import { RequestAdoptionError } from "../../../application/model/evolution/request-adoption-ports.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import type {
   OpeningSourcePort,
   OpeningStorePort,

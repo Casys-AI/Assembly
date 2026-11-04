@@ -11,7 +11,7 @@ export interface OperatorRequestOpening {
 /** Actual opener captured by the Main host. */
 export interface IndependentRequestResume {
   taskSourceInputs?:
-    import("../../../../domain/work/task-source-input.ts").TaskSourceInputCapture[];
+    import("../../../../domain/work/records/task-source-input.ts").TaskSourceInputCapture[];
   caseId: string;
   resumeId: string;
   instruction: string;

@@ -3,7 +3,10 @@ import { Client } from "pg";
 /** A+ joined A1/Release/Request witness. The provider and page fetch are
  * controlled; generated tool modules execute in the real Darwin sandbox. */
 import assert from "node:assert/strict";
-import type { Candidate, ToolDraft } from "../../src/domain/work/candidates.ts";
+import type {
+  Candidate,
+  ToolDraft,
+} from "../../src/domain/work/records/candidates.ts";
 import {
   artifactSourcePublicationFromDossier,
   type ModelWriteDossier,

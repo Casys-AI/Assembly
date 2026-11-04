@@ -5,7 +5,7 @@ import {
   publicationEvent,
   type ReleasePublication,
   type ReleasePublicationIssue,
-} from "../../../domain/work/release-publication.ts";
+} from "../../../domain/work/records/release-publication.ts";
 import { afterCommittedReleaseMutation } from "../../../application/work/saved-systems/notifications.ts";
 import {
   TAG_MUTATION_TRANSACTION,
@@ -20,14 +20,14 @@ import {
   type ReleaseRetentionIntent,
   releaseRetentionIntentDigest,
   type ReleaseRetentionProof,
-} from "../../../domain/work/release-retention.ts";
+} from "../../../domain/work/records/release-retention.ts";
 import type { SavedSystemStorePort } from "../../../application/work/saved-systems/ports.ts";
 import {
   assertReleaseTagRejection,
   assertReleaseTagSelection,
   assertSavedSystemTag,
   type ReleaseTagRejection,
-} from "../../../domain/work/release-tags.ts";
+} from "../../../domain/work/records/release-tags.ts";
 import {
   assertSavedCapture,
   type SavedSystemCapture,
@@ -36,7 +36,7 @@ import {
   savedSystemObservation,
   type SavedSystemRecord,
   type SavedSystemScope,
-} from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/records/saved-systems.ts";
 import { postgresQualifiedTable, Prisma, type PrismaClient } from "./client.ts";
 
 type Tx = Prisma.TransactionClient;

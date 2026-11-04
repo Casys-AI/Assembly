@@ -1,8 +1,6 @@
 import { deepStrictEqual, equal, rejects, throws } from "node:assert/strict";
-import {
-  buildElementRefFromIri,
-  type BuildRef,
-} from "../../../domain/model/value-objects/element-ref.ts";
+import { buildElementRefFromIri } from "./iri.ts";
+import { type BuildRef } from "../../../domain/model/value-objects/element-ref.ts";
 import {
   type ModelSemanticIndex,
   SemanticIndexError,

@@ -11,7 +11,7 @@ import { parseModelRevisionId } from "../../../../domain/shared-kernel/revision-
 /** Local revision controls. Agents propose source changes; admission and runtime
  * adoption are distinct explicit controls, with no graphical source editor. */
 import type { ModelPort } from "../../../../application/work/runtime/ports.ts";
-import type { SystemRuntimeState } from "../../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../../application/work/runtime/state.ts";
 import type { ExecutableModel } from "../../../../domain/model/execution/executable-model.ts";
 import type { ModelRepositoryPort } from "../../../../application/model/repository.ts";
 import { compareModelSources } from "../../../../application/model/revisions/source-diff.ts";

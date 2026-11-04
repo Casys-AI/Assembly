@@ -15,7 +15,7 @@ import {
   retainedToolAdmissionId,
   retainedToolDescriptors,
   retainedToolResourceId,
-} from "../../../domain/work/retained-tool-dependencies.ts";
+} from "../../../domain/work/records/retained-tool-dependencies.ts";
 import { decodeRequestSpaceOpening } from "./request-space-store.ts";
 import {
   requestControlModel,
@@ -23,11 +23,11 @@ import {
   requestSpaceScope,
   spaceUuid,
 } from "../../../../test/support/request-space-fixture.ts";
+import { type OpeningBase } from "../../../domain/work/request-spaces/opening.ts";
 import {
-  type OpeningBase,
   requestSpaceDigest,
   RequestSpaceError,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
 import {
   createRequestSpaceEffectStartGuard,
   createRequestSpaceResolver,

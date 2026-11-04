@@ -3,8 +3,8 @@ import {
   ChangePendingError,
   DuplicateOperatorCreationError,
 } from "../../../domain/governance/policies/governance.ts";
-import { OperatorAuthorityError } from "../../../domain/governance/operator-authority.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type {
   CompiledFlowNode,

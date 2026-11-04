@@ -9,7 +9,7 @@ import {
   PostgresSavedSystemStore,
   type SavedSystemRow,
 } from "../../src/adapters/out/postgres/saved-system-store.ts";
-import type { SavedSystemTag } from "../../src/domain/work/release-tags.ts";
+import type { SavedSystemTag } from "../../src/domain/work/records/release-tags.ts";
 import {
   postgresQualifiedTable,
   Prisma,
@@ -19,7 +19,7 @@ import {
   type SavedSystemCapture,
   savedSystemDigest,
   SavedSystemError,
-} from "../../src/domain/work/saved-systems.ts";
+} from "../../src/domain/work/records/saved-systems.ts";
 import {
   postgresTestEnabled,
   seedPostgresRuntime,

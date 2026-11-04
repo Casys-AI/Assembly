@@ -8,9 +8,9 @@ import type { WorkbenchState } from "../../lib/workbench/state.ts";
 import type {
   AgentConversation,
   OperatorTool,
-} from "../../../src/domain/work/records/conversations.ts";
-import type { Candidate } from "../../../src/domain/work/candidates.ts";
-import type { Message } from "../../../src/domain/work/dialogue.ts";
+} from "../../../src/application/work/operators/conversation-types.ts";
+import type { Candidate } from "../../../src/domain/work/records/candidates.ts";
+import type { Message } from "../../../src/application/work/runtime/state.ts";
 import type {
   PendingChange,
 } from "../../../src/domain/governance/records/pending-change.ts";

@@ -13,7 +13,7 @@ import { emptyChangePreview } from "../../../../test/support/model-authoring.ts"
 import type { SystemRuntime } from "../runtime/system.ts";
 import { requestAuthorityRoute } from "../../governance/request-authority-routing.ts";
 import { buildRequestDelegatedAuthority } from "../../model/source-admission/request-delegated-authority.ts";
-import { mainExecutionSpace } from "../../../domain/governance/operator-authority.ts";
+import { mainExecutionSpace } from "../../../domain/governance/authority.ts";
 import {
   ownerChangesOf,
   requestSpaceInitialDelivery,
@@ -24,13 +24,13 @@ import { requestSpaceSeed } from "../runtime/initialization.ts";
 import { AjvSchemaValidator } from "../../../infrastructure/ajv-schema-validation.ts";
 import { requestNetworkProposalDigest } from "../../../domain/governance/records/request-network-change.ts";
 import type { PendingChange } from "../../../domain/governance/records/pending-change.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import {
-  type OpeningRecord,
   requestSpaceDigest,
   RequestSpaceError,
-  type SpaceExecutionAdmission,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
+import { type SpaceExecutionAdmission } from "../../../domain/work/request-spaces/space-control.ts";
 import type { OperatorExecutionDelivery } from "../operators/execution.ts";
 import {
   requestControlModel,

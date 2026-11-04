@@ -2,7 +2,7 @@ import type {
   RequestExecutionBinding,
   RequestExecutionBindingPort,
 } from "../../../application/model/evolution/request-adoption-ports.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
 import type { RequestSourceOwnerContextPort } from "../../../application/model/source-admission/owner-authorization.ts";
 import { assertRequestSpaceBirth } from "../../../application/work/runtime/initialization.ts";
 import type { OpeningStorePort } from "../../../application/work/request-spaces/ports.ts";
@@ -23,9 +23,9 @@ import {
   assertBaseForChoice,
   assertOpeningBase,
   type OpeningRecord,
-  requestSpaceDigest,
-  type SpaceController,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../../../domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
 import type { PostgresHostStorage } from "./host-storage.ts";
 import type { AdmittedSourceChain } from "./request-source-admission-store.ts";
 import type { GitModelRepositoryReader } from "../git/repository.ts";

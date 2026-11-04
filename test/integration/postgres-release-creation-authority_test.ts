@@ -18,20 +18,20 @@ import { ModeledSpaceControlAuthority } from "../../src/application/work/request
 import { CryptographicSpaceSecrets } from "../../src/infrastructure/space-control-secrets.ts";
 import { SpaceControls } from "../../src/application/work/request-spaces/control.ts";
 import { ReleaseCreationAuthority } from "../../src/application/work/saved-systems/creation-authorization.ts";
-import { releaseRetentionIntentDigest } from "../../src/domain/work/release-retention.ts";
+import { releaseRetentionIntentDigest } from "../../src/domain/work/records/release-retention.ts";
 import {
   type SavedSystemCapture,
   savedSystemDigest,
   SavedSystemError,
   type SavedSystemScope,
   type SavedSystemSourceEvidence,
-  savedSystemView,
-} from "../../src/domain/work/saved-systems.ts";
+} from "../../src/domain/work/records/saved-systems.ts";
+import { savedSystemView } from "../../src/application/work/saved-systems/release-view.ts";
 import {
   requestSpaceDigest,
   RequestSpaceError,
-  type SpaceController,
-} from "../../src/domain/work/request-spaces.ts";
+} from "../../src/domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../../src/domain/work/request-spaces/space-control.ts";
 import {
   postgresTestEnabled,
   withPostgresDatabase,

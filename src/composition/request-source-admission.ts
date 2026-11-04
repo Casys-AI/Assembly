@@ -1,4 +1,4 @@
-import { retainedMember } from "../domain/work/request-spaces.ts";
+import { retainedMember } from "../domain/work/request-spaces/branch-team.ts";
 import type { ClockPort } from "../application/work/runtime/ports.ts";
 import { SystemClock } from "../infrastructure/clock.ts";
 import type { ScopedOperatorRef } from "../domain/governance/authority.ts";
@@ -49,11 +49,9 @@ import {
 } from "../domain/model/editing/request-write-destination.ts";
 import { parseModelWriteDossierV2 } from "../application/model/publication/write-command-v2.ts";
 import { canonical } from "../domain/primitives/canonical-json.ts";
-import {
-  type OpeningRecord,
-  RequestSpaceError,
-  type SpaceController,
-} from "../domain/work/request-spaces.ts";
+import { type OpeningRecord } from "../domain/work/request-spaces/opening.ts";
+import { RequestSpaceError } from "../domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../domain/work/request-spaces/space-control.ts";
 
 export interface RequestSourceAdmissionCompositionOptions {
   readonly storage: Pick<

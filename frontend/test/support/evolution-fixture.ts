@@ -1,5 +1,5 @@
 import type { EvolutionConversationRecord } from "../../../src/domain/work/records/operator-evolution.ts";
-import type { Message } from "../../../src/domain/work/dialogue.ts";
+import type { Message } from "../../../src/application/work/runtime/state.ts";
 export function evolutionRecord(
   patch: Partial<EvolutionConversationRecord> = {},
 ): EvolutionConversationRecord {

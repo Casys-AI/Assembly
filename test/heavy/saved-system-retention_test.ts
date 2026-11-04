@@ -21,10 +21,8 @@ import type {
 } from "../../src/application/work/runtime/ports.ts";
 import { DenoRuntimeProvenanceCollector } from "../../src/infrastructure/runtime-provenance.ts";
 import { createConversationsHandler } from "../../src/adapters/in/http/work/conversations.ts";
-import {
-  savedSystemDigest,
-  type SavedSystemView,
-} from "../../src/domain/work/saved-systems.ts";
+import { savedSystemDigest } from "../../src/domain/work/records/saved-systems.ts";
+import { type SavedSystemView } from "../../src/application/work/saved-systems/release-view.ts";
 import { toolDraftDigest } from "../../src/application/work/artifacts/catalog.ts";
 
 const enabled = toolkitIntegrationEnabled &&

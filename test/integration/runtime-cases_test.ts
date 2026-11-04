@@ -4,11 +4,9 @@ import { deepStrictEqual, equal, ok, rejects } from "node:assert/strict";
 import { executableFixture } from "../support/execution-fixture.ts";
 import { SystemRuntime } from "../support/system-runtime.ts";
 import { createTestNativeExecution } from "../support/native-execution.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import { CaseError } from "../../src/domain/work/errors/case.ts";
 import type { WorkBudgetRecord } from "../../src/domain/work/policies/budget.ts";
 

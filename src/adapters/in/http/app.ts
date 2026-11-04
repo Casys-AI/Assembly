@@ -44,10 +44,10 @@ import { ChangeApprovabilityError } from "../../../domain/governance/policies/ch
 import { AuthorityInvariantError } from "../../../domain/governance/authority.ts";
 import { CaseError } from "../../../domain/work/errors/case.ts";
 import { publicPostgresFailure } from "../../out/postgres/errors.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
-import type { StateRevision } from "../../../domain/work/history.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
+import type { StateRevision } from "../../../application/work/runtime/ports/out/state-history.port.ts";
 import type { LocalModelProject } from "../../out/filesystem/model-project.ts";
-import type { SpaceController } from "../../../domain/work/request-spaces.ts";
+import type { SpaceController } from "../../../domain/work/request-spaces/space-control.ts";
 import type {
   SseAudience,
   SseClient,

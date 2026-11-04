@@ -1,8 +1,11 @@
 import { deepStrictEqual, equal, ok } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type { Candidate, ToolDraft } from "../../../domain/work/candidates.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type {
+  Candidate,
+  ToolDraft,
+} from "../../../domain/work/records/candidates.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import {
   activate,
   artifactEvidence,

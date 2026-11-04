@@ -3,7 +3,7 @@ import { PostgresRequestExecutionBindingReader } from "../../src/adapters/out/po
 import { PostgresRequestSourceAdmissionStore } from "../../src/adapters/out/postgres/request-source-admission-store.ts";
 import { SpaceControls } from "../../src/application/work/request-spaces/control.ts";
 import { ModeledSpaceControlAuthority } from "../../src/application/work/request-spaces/space-control-authority.ts";
-import { projectSpaceControlAuthority } from "../../src/domain/work/space-control-source.ts";
+import { projectSpaceControlAuthority } from "../../src/domain/work/policies/space-control-source.ts";
 import {
   createPostgresAdmittedRequestRuntime,
   createPostgresNativeRuntime,
@@ -34,10 +34,8 @@ import {
   Prisma,
   type PrismaClient,
 } from "../../src/adapters/out/postgres/client.ts";
-import {
-  type OpeningRecord,
-  requestSpaceDigest,
-} from "../../src/domain/work/request-spaces.ts";
+import { type OpeningRecord } from "../../src/domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
 import type { SpaceControlCredential } from "../../src/application/work/request-spaces/control-ports.ts";
 import {
   postgresTestEnabled,

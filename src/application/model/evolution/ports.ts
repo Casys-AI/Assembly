@@ -1,6 +1,6 @@
 import type { ScopedOperatorRef } from "../../../domain/governance/authority.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import type { SystemRuntime } from "../../work/runtime/system.ts";
 import type { NativeExecutionSnapshot } from "../../work/native-execution/contract.ts";
 import type { RequestExecutionBinding } from "./request-adoption-ports.ts";

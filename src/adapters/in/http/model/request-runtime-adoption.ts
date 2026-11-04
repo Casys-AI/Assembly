@@ -7,7 +7,7 @@ import {
   exactSourceVersion,
   RequestSpaceError,
   requestSpaceIdentity,
-} from "../../../../domain/work/request-spaces.ts";
+} from "../../../../domain/work/request-spaces/scope.ts";
 import {
   LocalHttpFailure,
   requireLocalJsonCommand,

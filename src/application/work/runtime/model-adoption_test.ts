@@ -6,7 +6,7 @@ import {
   type ModelAdoptionHost,
 } from "./model-adoption.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import {
   WorkBudgetError,
   type WorkBudgetRecord,

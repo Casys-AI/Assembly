@@ -1,7 +1,5 @@
-import {
-  SavedSystemError,
-  type SavedSystemView,
-} from "../../../../domain/work/saved-systems.ts";
+import { SavedSystemError } from "../../../../domain/work/records/saved-systems.ts";
+import { type SavedSystemView } from "../../../../application/work/saved-systems/release-view.ts";
 import { deepStrictEqual, equal } from "node:assert/strict";
 import { createSavedSystemsHandler } from "./saved-systems.ts";
 const source = {

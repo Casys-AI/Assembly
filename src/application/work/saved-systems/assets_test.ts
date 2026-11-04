@@ -4,7 +4,7 @@ import {
   savedSystemDigest,
   SavedSystemError,
   type SavedSystemManifest,
-} from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/records/saved-systems.ts";
 import type { BuildDescriptor } from "../../../domain/model/value-objects/build.ts";
 import type { SourceExecutablesCompilationPort } from "../../model/source-compilation.ts";
 import type { SourceRevision } from "../../../domain/model/records/source-revision.ts";

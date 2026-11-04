@@ -19,14 +19,14 @@ import { ModeledSpaceControlAuthority } from "../../src/application/work/request
 import { CryptographicSpaceSecrets } from "../../src/infrastructure/space-control-secrets.ts";
 import { SpaceControls } from "../../src/application/work/request-spaces/control.ts";
 import { ReleaseCreationAuthority } from "../../src/application/work/saved-systems/creation-authorization.ts";
-import type { ReleaseRetentionAuthorization } from "../../src/domain/work/release-retention.ts";
+import type { ReleaseRetentionAuthorization } from "../../src/domain/work/records/release-retention.ts";
 import {
   savedManifest,
   type SavedSystemCapture,
   savedSystemDigest,
   SavedSystemError,
-} from "../../src/domain/work/saved-systems.ts";
-import { requestSpaceDigest } from "../../src/domain/work/request-spaces.ts";
+} from "../../src/domain/work/records/saved-systems.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
 import { admissionFixture } from "../support/request-source-admission-fixture.ts";
 import {
   requestControlBinding,

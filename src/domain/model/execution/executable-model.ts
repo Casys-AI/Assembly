@@ -15,13 +15,15 @@ import type {
 import type { CompiledFlow } from "./flow.ts";
 import type { OperatorEntry } from "../records/operator-entry.ts";
 import type { OwnerAuthority } from "../../governance/authority.ts";
-import type { ChatContext } from "../../work/dialogue.ts";
 import type { ModelIdentity } from "../../shared-kernel/model-identity.ts";
-import type { NativeToolContract, Stage } from "../../work/candidates.ts";
 import type {
+  ExecutableCatalogEntry,
+  NativeToolContract,
+} from "../../work/records/candidates.ts";
+import type {
+  ExecutionMandate,
   SystemConfiguration,
 } from "../../governance/records/system-configuration.ts";
-import type { ToolKind } from "../../shared-kernel/tool-kind.ts";
 
 export interface ExecutableModelVersion {
   digest: string;
@@ -48,16 +50,6 @@ export interface ExecutionPolicy {
   mayConsultModel?: boolean;
   /** Generic source revision proposals still require separate admission. */
   mayProposeSysmlRevision?: boolean;
-}
-
-export interface ExecutableCatalogEntry {
-  nativeId: string;
-  candidateId: string;
-  contractId: string;
-  name: string;
-  kind: ToolKind;
-  digest: string;
-  status: Stage;
 }
 
 export interface NativePolicyIdentity {
@@ -104,14 +96,14 @@ export interface ExecutableModel {
   modelEditPolicy?: NativeModelEditPolicy;
   modelAdministrationPolicy?: NativeModelAdministrationPolicy;
   modelAdministration?:
-    import("../../governance/policies/model-delegation.ts").ModelAdministrationAuthority;
+    import("../../governance/model-access/model-delegation.ts").ModelAdministrationAuthority;
   /** Optional cumulative invocation budget admitted for this operator case. */
   workBudgetPolicy?: NativeWorkBudgetPolicy;
   workResultContracts?:
     import("../../work/policies/verified-effect-closure.ts").WorkResultContract[];
   /** Selected source-owned bytes still follow normal testing and admission. */
   initialTools?:
-    import("../../work/initial-tool-catalog.ts").NativeInitialToolSeed[];
+    import("../../work/records/initial-tool-catalog.ts").NativeInitialToolSeed[];
   /** Opt-in native policies; missing fields preserve historical encodings. */
   contextPolicy?: NativeContextPolicy;
   memoryPolicy?: NativeMemoryPolicy;
@@ -131,7 +123,7 @@ export interface ExecutableModel {
   version: ExecutableModelVersion;
   /** Derived from model values; changes is an optional audit log, not authority. */
   configuration: SystemConfiguration;
-  mandate: NonNullable<ChatContext["mandate"]>;
+  mandate: ExecutionMandate;
   policy: ExecutionPolicy;
   contracts: NativeToolContract[];
   flows: { conversation: CompiledFlow; promotion: CompiledFlow };

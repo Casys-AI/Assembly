@@ -11,7 +11,7 @@ import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import { NativeModelSourceAuthorization } from "../../src/application/governance/model-access/source-authorization.ts";
 import type { SourceModel } from "../../src/application/model/source-model.ts";
 import { SysmlToolkitAdapter } from "../../src/adapters/out/sysml-toolkit/adapter.ts";
-import type { ModelDelegationChange } from "../../src/domain/governance/records/model-delegation-request.ts";
+import type { ModelDelegationChange } from "../../src/domain/governance/model-access/model-delegation-request.ts";
 import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import { editPolicy, mandateSources } from "./model-edit-mandate.ts";
 

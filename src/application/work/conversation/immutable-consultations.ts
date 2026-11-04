@@ -5,19 +5,22 @@ import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { executionDigest } from "../../../domain/primitives/execution-digest.ts";
 import { characterCount } from "../../../domain/primitives/character-count.ts";
 import {
+  type ModelContextTool,
+  modelContextTools,
+} from "../context/model-tools.ts";
+import {
   immutableModelConsultation,
   modelConsultationRefusalEvidence,
   ModelContextAccessError,
-  modelContextTools,
   ModelNavigationError,
 } from "../../../domain/model/consultation/context.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
 import type { CompiledFlow } from "../../../domain/model/execution/flow.ts";
+import type { ChatDecision } from "./chat-decision.ts";
 import type {
-  ChatDecision,
   ConversationBatchExecution,
   SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "../runtime/state.ts";
 import type { SchemaValidationPort } from "../behaviors/schema-validation.ts";
 import { isOpenCase } from "../../../domain/work/entities/cases.ts";
 import {
@@ -43,7 +46,6 @@ import {
 } from "../native-execution/contract.ts";
 import { errorText } from "../runtime/values.ts";
 import type { ModelConsultationPin } from "../context/information-ports.ts";
-import type { ModelContextTool } from "../../../domain/model/consultation/context.ts";
 
 type Request = ImmutableConsultationGroupMember["request"];
 type ReadChoice = Extract<ChatDecision, { kind: "consult_model" }>;

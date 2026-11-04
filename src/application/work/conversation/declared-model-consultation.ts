@@ -4,8 +4,8 @@ import type {
   CompiledFlowNode,
   FlowActionResult,
 } from "../../../domain/model/execution/flow.ts";
-import type { MessageObservation } from "../../../domain/work/policies/context-separation.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { MessageObservation } from "../context/evidence.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { characterCount } from "../../../domain/primitives/character-count.ts";
 import type { DecisionInformationPort } from "../context/information-ports.ts";
 import { caseMessages } from "../cases/runtime.ts";

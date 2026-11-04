@@ -3,8 +3,11 @@
  * retained in a Request with an adopted team. It does not qualify Main-origin
  * Release retention with tools. */
 import assert from "node:assert/strict";
-import type { Candidate, ToolDraft } from "../../src/domain/work/candidates.ts";
-import { RequestSpaceError } from "../../src/domain/work/request-spaces.ts";
+import type {
+  Candidate,
+  ToolDraft,
+} from "../../src/domain/work/records/candidates.ts";
+import { RequestSpaceError } from "../../src/domain/work/request-spaces/scope.ts";
 import { bundledSkillReader } from "../../src/adapters/out/filesystem/skill-bundles.ts";
 import { PostgresRequestSpaceStore } from "../../src/adapters/out/postgres/request-space-store.ts";
 import {

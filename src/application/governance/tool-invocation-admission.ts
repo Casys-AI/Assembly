@@ -3,22 +3,20 @@ import {
   activeTools,
   type RetainedToolsPort,
 } from "../work/tools/active-tools.ts";
-import type { RetainedToolInvocationTarget } from "../../domain/work/retained-tool-dependencies.ts";
+import type { RetainedToolInvocationTarget } from "../../domain/work/records/retained-tool-dependencies.ts";
 import {
   normalizeTaskSourceUrl,
   type TaskSourceInput,
   validTaskSourceInputs,
-} from "../../domain/work/task-source-input.ts";
+} from "../../domain/work/records/task-source-input.ts";
 import { caseExecutionContext } from "../work/cases/runtime.ts";
 import type { ExecutableModel } from "../../domain/model/execution/executable-model.ts";
-import type { Candidate, Stage } from "../../domain/work/candidates.ts";
-import type {
-  ChatDecision,
-  SystemRuntimeState,
-  ToolFailure,
-} from "../../domain/work/dialogue.ts";
-import { ToolInvocationError } from "../../domain/work/errors/tool-invocation.ts";
-import type { MessageObservation } from "../../domain/work/policies/context-separation.ts";
+import type { Candidate, Stage } from "../../domain/work/records/candidates.ts";
+import type { ChatDecision } from "../work/conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../work/runtime/state.ts";
+import type { ToolFailure } from "../work/tools/tool-invocation.ts";
+import { ToolInvocationError } from "../work/tools/tool-invocation.ts";
+import type { MessageObservation } from "../work/context/evidence.ts";
 import { draftDigest, makeEvent } from "../work/runtime/values.ts";
 import { caseMessages, currentCase } from "../work/cases/runtime.ts";
 

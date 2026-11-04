@@ -27,7 +27,7 @@ import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import type {
   Candidate,
   ModelBinding,
-} from "../../src/domain/work/candidates.ts";
+} from "../../src/domain/work/records/candidates.ts";
 import type { ModelIdentity } from "../../src/domain/shared-kernel/model-identity.ts";
 import type { ExecutableModel } from "../../src/domain/model/execution/executable-model.ts";
 

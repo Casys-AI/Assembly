@@ -1,6 +1,6 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { MemoryStateStore } from "./memory-state-store.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 
 Deno.test("memory-tier state snapshots isolate readers and preserve create/revision CAS", async () => {
   const store = new MemoryStateStore();

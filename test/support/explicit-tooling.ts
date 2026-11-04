@@ -1,10 +1,10 @@
-import type { ModelToolingPort } from "../../src/application/model/tooling.ts";
-import type { CompiledModel } from "../../src/domain/model/records/compiled-model.ts";
 import type {
   ModelToolingDescription,
   ModelToolingDiagnostic,
-  ModelToolingTarget,
-} from "../../src/domain/model/editing/tooling.ts";
+  ModelToolingPort,
+} from "../../src/application/model/tooling.ts";
+import type { CompiledModel } from "../../src/domain/model/records/compiled-model.ts";
+import type { ModelToolingTarget } from "../../src/domain/model/editing/tooling.ts";
 
 /** Read-only fixture provider, never a SysML parser or compiler.
  * Every read requires explicitly supplied fixture data, otherwise TEST_TOOLING_READ.

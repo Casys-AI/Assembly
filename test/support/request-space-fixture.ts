@@ -1,13 +1,13 @@
 import { executableFixture } from "./execution-fixture.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
-import { savedManifest } from "../../src/domain/work/saved-systems.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
+import { savedManifest } from "../../src/domain/work/records/saved-systems.ts";
+import { type OpeningBase } from "../../src/domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
 import {
-  type OpeningBase,
-  requestSpaceDigest,
   type SpaceControlAdoptedState,
   type SpaceControlAuthority,
   type SpaceControlSourceBinding,
-} from "../../src/domain/work/request-spaces.ts";
+} from "../../src/domain/work/request-spaces/space-control.ts";
 export const requestSpaceScope = {
   projectId: "space-project",
   systemId: "space-system",

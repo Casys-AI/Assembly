@@ -10,7 +10,7 @@ import { h, render } from "preact";
 import { act } from "preact/test-utils";
 import { createWorkbenchState } from "../../lib/workbench/state.ts";
 import { snapshot } from "../../test/support/workbench-fixture.ts";
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
 import {
   caseExchanges,
   changedSource,

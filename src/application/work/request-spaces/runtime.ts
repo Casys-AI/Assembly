@@ -1,12 +1,12 @@
 import {
   type VerifiedRequestTeam,
   verifiedRequestTeam,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/branch-team.ts";
 import { adoptionRequester } from "../../model/evolution/request-adoption-invariants.ts";
 import { caseExecutionContext } from "../cases/runtime.ts";
 import { scopedOperator } from "../../../domain/governance/policies/delegation-scope.ts";
-import { sameScopedOperator } from "../../../domain/governance/operator-authority.ts";
-import type { MainOpener } from "../../../domain/work/request-spaces.ts";
+import { sameScopedOperator } from "../../../domain/governance/authority.ts";
+import type { MainOpener } from "../../../domain/work/request-spaces/space-control.ts";
 
 import type { ScopedOperatorRef } from "../../../domain/governance/authority.ts";
 import {
@@ -23,7 +23,7 @@ import { assertRetainedCatalog } from "../tools/retained-catalog.ts";
 import {
   retainedToolDescriptors,
   retainedToolResourceId,
-} from "../../../domain/work/retained-tool-dependencies.ts";
+} from "../../../domain/work/records/retained-tool-dependencies.ts";
 import type {
   RequestExecutionBinding,
   RequestExecutionBindingPort,
@@ -54,7 +54,7 @@ import {
   OperatorConversations,
   type OperatorConversationUnit,
 } from "../operators/conversations.ts";
-import type { AgentMessageCommand } from "../../../domain/work/records/conversations.ts";
+import type { AgentMessageCommand } from "../operators/conversation-types.ts";
 import { SystemRuntime } from "../runtime/system.ts";
 import {
   assertRequestSpaceBirth,
@@ -75,13 +75,17 @@ import type {
 } from "./ports.ts";
 import {
   assertBaseForChoice,
+  type OpeningRecord,
+} from "../../../domain/work/request-spaces/opening.ts";
+import {
   branchTeam,
   type BranchTeamMember,
-  type OpeningRecord,
+} from "../../../domain/work/request-spaces/branch-team.ts";
+import {
   requestSpaceDigest,
   RequestSpaceError,
-  type SpaceExecutionAdmission,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/scope.ts";
+import { type SpaceExecutionAdmission } from "../../../domain/work/request-spaces/space-control.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import {
   type CaseClosureEvidence,
@@ -103,7 +107,7 @@ import type {
 } from "./runtime-ports.ts";
 import type { ResolvedOperatorScope } from "../native-execution/contract.ts";
 import type { ExecutableModel } from "../../../domain/model/execution/executable-model.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 
 /** Host dependencies only. Mutable information services must be built from the
  * supplied scoped stores, never inherited from Main's workspace. */

@@ -5,7 +5,7 @@ import type {
   SavedSystemScope,
   SavedSystemSourceEvidence,
   SavedSystemSourceSelection,
-} from "../../../domain/work/saved-systems.ts";
+} from "../../../domain/work/records/saved-systems.ts";
 
 /** Source/local-admission facts only. Neither this port nor ownership grants
  * retain-release, open-request or an execution admission. */

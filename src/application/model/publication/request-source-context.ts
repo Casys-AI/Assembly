@@ -1,9 +1,9 @@
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import { ModelBuildServiceError } from "../builds/service.ts";
 import { BuildStoreError } from "../builds/ports/out/build-store.port.ts";
 import { ModelRepositoryError } from "../repository.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import { ModelWriteCommandError } from "../../../domain/model/editing/write-command.ts";
+import { ModelWriteCommandError } from "../../../domain/model/editing/write-command-error.ts";
 import {
   modelWriteDossierDigestV2,
   parseModelWriteDossierV2,

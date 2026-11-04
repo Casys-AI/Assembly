@@ -5,7 +5,7 @@ import {
   match,
 } from "node:assert/strict";
 import { renderToString } from "preact-render-to-string";
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
 import { caseTree } from "../../lib/cases/tree.ts";
 import { press } from "../../test/support/press.ts";
 import { CaseTree } from "./CaseTree.tsx";

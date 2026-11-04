@@ -21,10 +21,8 @@ import { NativeModelSourceAuthorization } from "../../src/application/governance
 import { compareModelSources } from "../../src/application/model/revisions/source-diff.ts";
 import { createConversationsHandler } from "../../src/adapters/in/http/work/conversations.ts";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import type { PendingChange } from "../../src/domain/governance/records/pending-change.ts";
 import {
   type BehaviorInvocationPort,
@@ -38,10 +36,8 @@ import {
   MAX_APPROVAL_RECEIPT_BYTES,
 } from "../../src/domain/model/publication/change.ts";
 import { canonical } from "../../src/domain/primitives/canonical-json.ts";
-import {
-  isTeamOperatorSpec,
-  OperatorAuthorityError,
-} from "../../src/domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority-error.ts";
+import { isTeamOperatorSpec } from "../../src/domain/governance/operator-authority.ts";
 import { operatorAuthorityRequests } from "../../src/composition/source-model-services.ts";
 import { requestOperatorSystemName } from "../../src/application/governance/operator-authority-values.ts";
 import { exerciseOwnerAuthority } from "../../src/domain/governance/authority.ts";

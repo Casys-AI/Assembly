@@ -1,7 +1,7 @@
 import { unexpectedModelAuthoring } from "../../../../test/support/model-authoring.ts";
 import { deepStrictEqual, equal, match, rejects } from "node:assert/strict";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "./state.ts";
 import { SystemRuntime } from "../../../../test/support/system-runtime.ts";
 import type {
   AgentPort,

@@ -3,10 +3,8 @@ import { GitModelRepository } from "../../src/adapters/out/git/repository.ts";
 import { GitRequestBranches } from "../../src/adapters/out/git/request-branches.ts";
 import { repositoryWriterLock } from "../../src/adapters/out/git/writer-lock.ts";
 import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
-import {
-  type OpeningRecord,
-  requestSpaceDigest,
-} from "../../src/domain/work/request-spaces.ts";
+import { type OpeningRecord } from "../../src/domain/work/request-spaces/opening.ts";
+import { requestSpaceDigest } from "../../src/domain/work/request-spaces/scope.ts";
 import {
   requestOpeningBase,
   requestSpaceScope,

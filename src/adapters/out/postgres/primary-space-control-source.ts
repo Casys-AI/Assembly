@@ -1,12 +1,12 @@
 import type { CurrentSpaceControlSourcePort } from "../../../application/work/request-spaces/space-control-authority.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
-import type { SpaceControlSourceBinding } from "../../../domain/work/request-spaces.ts";
-import { RequestSpaceError } from "../../../domain/work/request-spaces.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
+import type { SpaceControlSourceBinding } from "../../../domain/work/request-spaces/space-control.ts";
+import { RequestSpaceError } from "../../../domain/work/request-spaces/scope.ts";
 import {
   spaceControlChanged,
   type SpaceControlSource,
   spaceControlSourceFromModel,
-} from "../../../domain/work/space-control-source.ts";
+} from "../../../domain/work/policies/space-control-source.ts";
 import { decodePostgresRuntimeState } from "./runtime-state-snapshot.ts";
 import {
   RUNTIME_SNAPSHOT_HEADER_CHARS,

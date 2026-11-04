@@ -1,10 +1,8 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
 import { validateDecision } from "../../../adapters/out/llm-providers/output-validation.ts";
 import { ChangeApprovabilityError } from "../../../domain/governance/policies/change-approvability.ts";
-import type {
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+import type { ChatDecision } from "./chat-decision.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import { executableFixture } from "../../../../test/support/execution-fixture.ts";
 import { legacyOwnerAuthority } from "../../../domain/governance/authority.ts";
 import { unexpectedModelAuthoring } from "../../../../test/support/model-authoring.ts";

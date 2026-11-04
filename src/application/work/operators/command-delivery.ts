@@ -4,15 +4,15 @@ import type { CandidateDelegatedActor } from "../../../domain/governance/policie
 import type {
   InitialToolsPreparationReference,
   SystemRuntimeState,
-} from "../../../domain/work/dialogue.ts";
+} from "../runtime/state.ts";
 import { characterCount } from "../../../domain/primitives/character-count.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import {
   executionDigest,
   isSha256Hex,
 } from "../../../domain/primitives/execution-digest.ts";
-import { OperatorAuthorityError } from "../../../domain/governance/operator-authority.ts";
-import type { OperatorCommandOutcome } from "../../../domain/work/records/operator-command-outcome.ts";
+import { OperatorAuthorityError } from "../../../domain/governance/operator-authority-error.ts";
+import type { OperatorCommandOutcome } from "../runtime/operator-command-outcome.ts";
 import type {
   NativeExecutionIdentity,
   RuntimeRevisionReference,

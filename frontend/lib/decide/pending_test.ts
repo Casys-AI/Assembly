@@ -3,12 +3,12 @@ import type {
   AgentConversation,
   ConversationsSnapshot,
   OperatorToolsSnapshot,
-} from "../../../src/domain/work/records/conversations.ts";
-import type { Candidate } from "../../../src/domain/work/candidates.ts";
+} from "../../../src/application/work/operators/conversation-types.ts";
+import type { Candidate } from "../../../src/domain/work/records/candidates.ts";
 import type {
   PendingChange,
 } from "../../../src/domain/governance/records/pending-change.ts";
-import type { SystemRuntimeState } from "../../../src/domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../../src/application/work/runtime/state.ts";
 import {
   aggregatePendingDecisions,
   aggregateRequestDecisions,

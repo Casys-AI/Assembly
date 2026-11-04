@@ -1,6 +1,6 @@
 import type { ComponentChildren, Ref } from "preact";
 import { useRef } from "preact/hooks";
-import type { AgentConversation } from "../../../src/domain/work/records/conversations.ts";
+import type { AgentConversation } from "../../../src/application/work/operators/conversation-types.ts";
 import type { WorkbenchState } from "../../lib/workbench/state.ts";
 import { AgentContextPanel } from "./AgentContextPanel.tsx";
 import { useOutsidePress } from "../view/useOutsidePress.ts";

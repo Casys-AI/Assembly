@@ -9,10 +9,8 @@ import {
   REQUEST_CONVERSATIONS_INVALIDATED,
   RequestConversationEvents,
 } from "../application/work/request-spaces/conversation-notifications.ts";
-import {
-  RequestSpaceError,
-  type SpaceController,
-} from "../domain/work/request-spaces.ts";
+import { RequestSpaceError } from "../domain/work/request-spaces/scope.ts";
+import { type SpaceController } from "../domain/work/request-spaces/space-control.ts";
 import { SseAudience } from "../infrastructure/http/sse.ts";
 
 /**

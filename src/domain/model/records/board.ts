@@ -1,4 +1,4 @@
-import type { ModelEditGrant } from "../../governance/policies/model-edit-policy.ts";
+import type { ModelEditGrant } from "../../governance/model-access/model-edit-policy.ts";
 /** Board contract ase.board/1: the home table behind the System pages.
  *
  * The frontend codes the Team, Explore, Flows, Requirements, Rights and

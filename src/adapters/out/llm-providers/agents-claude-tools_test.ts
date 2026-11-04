@@ -7,10 +7,10 @@ import {
   CLAUDE_REVIEW_TOOL,
   ClaudeAgents,
 } from "./agents.ts";
-import { modelContextTools } from "../../../domain/model/consultation/context.ts";
+import { modelContextTools } from "../../../application/work/context/model-tools.ts";
 import { decisionSchema } from "./output-validation.ts";
-import type { Candidate } from "../../../domain/work/candidates.ts";
-import type { ChatContext } from "../../../domain/work/dialogue.ts";
+import type { Candidate } from "../../../domain/work/records/candidates.ts";
+import type { ChatContext } from "../../../application/work/conversation/chat-context.ts";
 import { normalizeProviderCallObservation } from "../../../application/telemetry/provider-call.ts";
 import type { CompletionSink } from "./completion-observer.ts";
 

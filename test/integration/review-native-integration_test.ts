@@ -13,7 +13,9 @@ import {
 } from "node:assert/strict";
 import { SystemRuntime } from "../support/system-runtime.ts";
 import type {
+  AdmissionContext,
   AgentPort,
+  ReviewContext,
   StorePort,
   ToolRunnerPort,
 } from "../../src/application/work/runtime/ports.ts";
@@ -21,18 +23,14 @@ import { ToolkitCompiler } from "../../src/adapters/out/sysml-toolkit/compilatio
 import { loadInitialSources } from "../../src/adapters/out/filesystem/initial-model-sources.ts";
 import type { SourceModel } from "../../src/application/model/source-model.ts";
 import type {
-  AdmissionContext,
   Candidate,
-  ReviewContext,
   ReviewDecision,
   TestReport,
   ToolDraft,
-} from "../../src/domain/work/candidates.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-  SystemRuntimeState,
-} from "../../src/domain/work/dialogue.ts";
+} from "../../src/domain/work/records/candidates.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import type {
   PendingChange,
 } from "../../src/domain/governance/records/pending-change.ts";

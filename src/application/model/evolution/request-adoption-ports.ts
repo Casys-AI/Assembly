@@ -5,12 +5,12 @@ import type { ExecutableModel } from "../../../domain/model/execution/executable
 import type { BuildDescriptor } from "../../../domain/model/value-objects/build.ts";
 import type { ModelRevisionRef } from "../../../domain/model/value-objects/element-ref.ts";
 import type { RequestModelWriteLocator } from "../../../domain/model/editing/request-write-destination.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { SystemRuntimeState } from "../../work/runtime/state.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import type {
-  OpeningRecord,
   SpaceController,
   SpaceExecutionAdmission,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/space-control.ts";
 import type { EvolutionBlocker } from "./ports.ts";
 
 /** Complete server-resolved destination. An operator ID alone never selects a Request. */

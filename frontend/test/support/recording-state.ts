@@ -1,4 +1,4 @@
-import type { ConversationsSnapshot } from "../../../src/domain/work/records/conversations.ts";
+import type { ConversationsSnapshot } from "../../../src/application/work/operators/conversation-types.ts";
 import { createWorkbenchState } from "../../lib/workbench/state.ts";
 import { operatorRoster } from "./operator-fixture.ts";
 import { snapshot } from "./workbench-fixture.ts";

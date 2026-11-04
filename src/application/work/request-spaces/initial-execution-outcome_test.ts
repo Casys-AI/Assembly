@@ -5,8 +5,8 @@ import type {
   OperatorDeliveryReceipt,
   OperatorExecutionDelivery,
 } from "../operators/execution.ts";
-import type { OpeningRecord } from "../../../domain/work/request-spaces.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import {
   readRequestInitialExecutionOutcome,
   type RequestInitialExecutionReader,

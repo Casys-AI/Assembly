@@ -11,8 +11,8 @@ import type {
   ProjectionSnapshot,
   StateHistoryPort,
   StateRevision,
-} from "../../../domain/work/history.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+} from "../../../application/work/runtime/ports/out/state-history.port.ts";
+import type { SystemRuntimeState } from "../../../application/work/runtime/state.ts";
 import { CaseError } from "../../../domain/work/errors/case.ts";
 import {
   decodeRuntimeSnapshotPayload,

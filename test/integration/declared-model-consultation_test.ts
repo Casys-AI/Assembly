@@ -7,15 +7,15 @@ import {
 import { ModelContextInformation } from "../../src/application/model/consultation/context-information.ts";
 import type { ModelConsultationReader } from "../../src/application/work/context/information-ports.ts";
 import type { ModelContextOverview } from "../../src/domain/model/consultation/context.ts";
-import type { MessageObservation } from "../../src/domain/work/policies/context-separation.ts";
-import type { SystemRuntimeState } from "../../src/domain/work/dialogue.ts";
+import type { MessageObservation } from "../../src/application/work/context/evidence.ts";
+import type { SystemRuntimeState } from "../../src/application/work/runtime/state.ts";
 import { artifactModel } from "../support/tool-artifact-fixture.ts";
 import { SystemRuntime } from "../support/system-runtime.ts";
 import { enableCommandFixtureProfile } from "../support/execution-fixture.ts";
 import { unexpectedModelAuthoring } from "../support/model-authoring.ts";
 import { ModelContextReader } from "../../src/application/model/consultation/source-reader.ts";
 import { materialize } from "../../src/domain/model/value-objects/artifact.ts";
-import type { ChatContext } from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
 
 function fixture() {
   const model = artifactModel("reader");

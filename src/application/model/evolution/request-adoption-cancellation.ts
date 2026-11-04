@@ -1,6 +1,6 @@
 import { isSha256Hex } from "../../../domain/primitives/execution-digest.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
-import { exactSourceVersion } from "../../../domain/work/request-spaces.ts";
+import { exactSourceVersion } from "../../../domain/work/request-spaces/scope.ts";
 import type { ModelIdentity } from "../../../domain/shared-kernel/model-identity.ts";
 import { RequestAdoptionError } from "./request-adoption-ports.ts";
 

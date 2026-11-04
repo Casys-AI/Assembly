@@ -19,7 +19,7 @@ import {
   inheritModelViewContext,
   unavailableModelScope,
 } from "../../lib/workbench/model-context.ts";
-import type { OperatorToolsSnapshot } from "../../../src/domain/work/records/conversations.ts";
+import type { OperatorToolsSnapshot } from "../../../src/application/work/operators/conversation-types.ts";
 import { type BoardApi, boardCanRetry } from "../../lib/system/board/api.ts";
 import type { BoardStore } from "../../lib/system/board/store.ts";
 import {

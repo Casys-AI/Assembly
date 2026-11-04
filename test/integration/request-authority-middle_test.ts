@@ -18,10 +18,8 @@ import {
 } from "../../src/application/work/behaviors/invocation.ts";
 import { WorkBudgetService } from "../../src/application/work/budget/service.ts";
 import type { AgentPort } from "../../src/application/work/runtime/ports.ts";
-import type {
-  ChatContext,
-  ChatDecision,
-} from "../../src/domain/work/dialogue.ts";
+import type { ChatContext } from "../../src/application/work/conversation/chat-context.ts";
+import type { ChatDecision } from "../../src/application/work/conversation/chat-decision.ts";
 import { validateSourceExecutable } from "../../src/adapters/out/sysml-toolkit/compilation/source-executables.ts";
 import { caseTypesForModel } from "../../src/domain/work/records/case-types.ts";
 import { designerScopeId } from "../../src/application/work/cases/runtime.ts";
@@ -31,7 +29,7 @@ import {
 } from "../../src/domain/model/projections/source-facts.ts";
 import { compileOperatorAuthorityPolicies } from "../../src/adapters/out/sysml-toolkit/compilation-policies/governance/authority/operator/policy.ts";
 import { compileToolAdmissionPolicies } from "../../src/adapters/out/sysml-toolkit/compilation-policies/governance/authority/tool-admission-policy.ts";
-import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority.ts";
+import { OperatorAuthorityError } from "../../src/domain/governance/operator-authority-error.ts";
 import { AuthorityInvariantError } from "../../src/domain/governance/authority.ts";
 
 function networkPolicy(id: string, recipient: string, host: string) {

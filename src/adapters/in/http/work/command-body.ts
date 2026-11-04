@@ -1,4 +1,4 @@
-import { SavedSystemError } from "../../../../domain/work/saved-systems.ts";
+import { SavedSystemError } from "../../../../domain/work/records/saved-systems.ts";
 
 export async function readWorkCommandBody(
   request: Request,

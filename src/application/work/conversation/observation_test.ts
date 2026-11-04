@@ -1,7 +1,7 @@
 import { deepStrictEqual, equal } from "node:assert/strict";
 import { publishedArtifact } from "../../../../test/support/tool-artifact-fixture.ts";
-import type { MessageObservation } from "../../../domain/work/policies/context-separation.ts";
-import type { SystemRuntimeState } from "../../../domain/work/dialogue.ts";
+import type { MessageObservation } from "../context/evidence.ts";
+import type { SystemRuntimeState } from "../runtime/state.ts";
 import type {
   ConversationObservationHost,
   ConversationTurnState,

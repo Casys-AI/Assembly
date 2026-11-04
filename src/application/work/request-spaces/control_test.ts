@@ -1,5 +1,5 @@
 import { deepStrictEqual, equal, rejects } from "node:assert/strict";
-import { retainedToolAdmissionId } from "../../../domain/work/retained-tool-dependencies.ts";
+import { retainedToolAdmissionId } from "../../../domain/work/records/retained-tool-dependencies.ts";
 import {
   ADMISSION_MAX_MS,
   SESSION_MAX_MS,
@@ -11,13 +11,15 @@ import type {
   SpaceControlCredential,
   SpaceCredentialStorePort,
 } from "./control-ports.ts";
+import { type OpeningRecord } from "../../../domain/work/request-spaces/opening.ts";
 import {
-  type OpeningRecord,
   requestSpaceDigest,
   RequestSpaceError,
+} from "../../../domain/work/request-spaces/scope.ts";
+import {
   type SpaceControlAuthority,
   type SpaceExecutionAdmission,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/space-control.ts";
 import {
   requestControlAdoptedState,
   requestOpeningBase,

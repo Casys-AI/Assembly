@@ -1,8 +1,6 @@
 import { parseModelRevisionRef } from "../../../domain/model/value-objects/element-ref.ts";
-import {
-  type OpeningBase,
-  retainedMember,
-} from "../../../domain/work/request-spaces.ts";
+import { type OpeningBase } from "../../../domain/work/request-spaces/opening.ts";
+import { retainedMember } from "../../../domain/work/request-spaces/branch-team.ts";
 import {
   RequestAdoptionError,
   type RequestAdoptionManifest,

@@ -2,7 +2,7 @@ import { PostgresRequestSourceAdmissionStore } from "./request-source-admission-
 import { decodeRequestSpaceOpening } from "./request-space-store.ts";
 import { requestExecutionPinFor } from "../../../application/model/evolution/request-execution-pin.ts";
 import { PostgresPrimarySpaceControlSource } from "./primary-space-control-source.ts";
-import { projectSpaceControlAuthority } from "../../../domain/work/space-control-source.ts";
+import { projectSpaceControlAuthority } from "../../../domain/work/policies/space-control-source.ts";
 import type {
   SpaceAdmissionStorePort,
   SpaceControlCredential,
@@ -12,17 +12,19 @@ import {
   requestSpaceDigest,
   RequestSpaceError,
   type RequestSpaceScope,
+} from "../../../domain/work/request-spaces/scope.ts";
+import {
   type SpaceControlAdoptedState,
   type SpaceControlAuthority,
   type SpaceController,
   type SpaceControlSourceBinding,
   type SpaceExecutionAdmission,
-} from "../../../domain/work/request-spaces.ts";
+} from "../../../domain/work/request-spaces/space-control.ts";
 import {
   effectiveSpaceControlAuthority,
   sameEffectiveSpaceControlAuthority,
   spaceControlAuthorityMatchesBinding,
-} from "../../../domain/work/request-space-authority.ts";
+} from "../../../domain/work/policies/request-space-authority.ts";
 import { canonical } from "../../../domain/primitives/canonical-json.ts";
 import { postgresQualifiedTable, Prisma, type PrismaClient } from "./client.ts";
 import { assertPostgresSystemScope } from "./scope.ts";
@@ -408,7 +410,7 @@ export interface SpaceEffectStartCheck {
   act: "conversation";
   expectedResourceIds?: string[];
   retainedTool?:
-    import("../../../domain/work/retained-tool-dependencies.ts").RetainedToolInvocationTarget;
+    import("../../../domain/work/records/retained-tool-dependencies.ts").RetainedToolInvocationTarget;
 }
 /** Exact adopted source and verified revisions, persisted atomically on started. */
 export interface SpaceEffectStartProof {
@@ -426,7 +428,7 @@ export interface SpaceEffectStartProof {
   >["adoptedState"];
   effectiveAuthorityDigest: string;
   retainedTool?:
-    import("../../../domain/work/retained-tool-dependencies.ts").RetainedToolInvocationTarget;
+    import("../../../domain/work/records/retained-tool-dependencies.ts").RetainedToolInvocationTarget;
 }
 /** Narrow SQL guard for the same-transaction Effect.started hook.
  * No transaction is opened here; passing a PrismaClient instead of the ledger
